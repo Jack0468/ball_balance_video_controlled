@@ -10,7 +10,8 @@ The system is a hybrid software/hardware architecture consisting of a Host PC ru
 - **Host PC**: Captures webcam video and microphone audio. Runs Python-based ML models for inference.
 - **USB/PCIe Bridge**: Uses the Opal Kelly FrontPanel SDK (Python wrapper) to pass data seamlessly to the FPGA.
 - **Opal Kelly FPGA**: Runs hardware-synthesized Verilog (converted via Vitis HLS) to perform Inverse Kinematics (IK) and fast PID loop calculations in pure silicon.
-- **Actuators**: Three stepper motors (controlled via step/direction drivers) operating the 3-DOF parallel manipulator platform.
+- **Actuators**: Three Nema 17 stepper motors (17HS3401S) operating the 3-DOF parallel manipulator platform.
+- **Motor Drivers**: TMC2208 stepper motor drivers (rated at 2A) providing power to the Nema 17s. These drivers use a UART operational control interface, allowing the FPGA to dynamically configure microstepping, stealthChop parameters, and drive current over a serial line alongside the standard movement pulses.
 
 ## 2. Vision Subsystem (Python)
 

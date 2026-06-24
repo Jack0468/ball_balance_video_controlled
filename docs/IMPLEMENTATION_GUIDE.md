@@ -28,7 +28,7 @@ To convert the legacy C++ code (from `ball-balancing-bot/`) into FPGA hardware:
 2. Import the Opal Kelly `okHost` module. This module handles the USB/PCIe physical layer.
 3. Import your HLS-generated IK/PID IP core.
 4. Connect `okWireIn` endpoints from the `okHost` to the `x` and `y` coordinate inputs on your HLS core.
-5. Route the Step/Direction output pins from the HLS core to the physical FPGA output pins connected to the stepper motor drivers.
+5. Route the operational and UART configuration output pins from the HLS core to the physical FPGA output pins connected to the TMC2208 stepper motor drivers.
 6. Generate the Bitstream (`.bit` file).
 
 ## Phase 4: Host Communication Bridge
