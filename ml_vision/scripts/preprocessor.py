@@ -17,10 +17,9 @@ class Preprocessor:
         self.dist_coeffs = dist_coeffs
         self.platform_size = platform_size # (width, height) of the output warped image
         
-        # ArUco dictionary
-        self.aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
-        self.aruco_params = cv2.aruco.DetectorParameters()
-        self.aruco_detector = cv2.aruco.ArucoDetector(self.aruco_dict, self.aruco_params)
+        # Canny edge detection parameters
+        self.canny_threshold1 = 50
+        self.canny_threshold2 = 150
         
         # Desired corner coordinates in the output image (top-down view)
         # Order: top-left, top-right, bottom-right, bottom-left
@@ -50,45 +49,46 @@ class Preprocessor:
 
     def get_perspective_transform(self, frame):
         """
-        Detects ArUco markers and returns the warped top-down view of the platform.
-        Assumes 4 markers with IDs 0, 1, 2, 3 placed at TL, TR, BR, BL corners.
+        Uses Canny edge detection to find the largest quadrilateral (assumed to be the platform)
+        and returns the warped top-down view.
         """
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        corners, ids, rejected = self.aruco_detector.detectMarkers(gray)
+        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+        edges = cv2.Canny(blurred, self.canny_threshold1, self.canny_threshold2)
 
-        if ids is None or len(ids) < 4:
-            # Cannot perform perspective transform if we don't see all 4 corners
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        if not contours:
             return None, frame
 
-        # Map marker IDs to expected corner positions
-        marker_centers = {}
-        for i, marker_id in enumerate(ids.flatten()):
-            # Calculate the center of the marker
-            c = corners[i][0]
-            center_x = int(np.mean(c[:, 0]))
-            center_y = int(np.mean(c[:, 1]))
-            marker_centers[marker_id] = (center_x, center_y)
+        # Find the largest contour by area
+        largest_contour = max(contours, key=cv2.contourArea)
+        
+        # Approximate the contour to a polygon
+        peri = cv2.arcLength(largest_contour, True)
+        approx = cv2.approxPolyDP(largest_contour, 0.02 * peri, True)
 
-        # Check if all required IDs are present
-        required_ids = [0, 1, 2, 3] # TL, TR, BR, BL
-        if not all(rid in marker_centers for rid in required_ids):
-             return None, frame
+        # If the largest contour has 4 corners, we assume it's the platform
+        if len(approx) == 4:
+            # Order points: top-left, top-right, bottom-right, bottom-left
+            # We use a simple sorting method based on sums and differences of x,y
+            pts = approx.reshape(4, 2)
+            rect = np.zeros((4, 2), dtype="float32")
+            
+            s = pts.sum(axis=1)
+            rect[0] = pts[np.argmin(s)] # Top-Left
+            rect[2] = pts[np.argmax(s)] # Bottom-Right
+            
+            diff = np.diff(pts, axis=1)
+            rect[1] = pts[np.argmin(diff)] # Top-Right
+            rect[3] = pts[np.argmax(diff)] # Bottom-Left
+            
+            M = cv2.getPerspectiveTransform(rect, self.dst_pts)
+            warped = cv2.warpPerspective(frame, M, self.platform_size)
+            
+            return M, warped
 
-        # Extract source points in the correct order
-        src_pts = np.array([
-            marker_centers[0],
-            marker_centers[1],
-            marker_centers[2],
-            marker_centers[3]
-        ], dtype="float32")
-
-        # Compute the perspective transform matrix
-        M = cv2.getPerspectiveTransform(src_pts, self.dst_pts)
-
-        # Warp the image
-        warped = cv2.warpPerspective(frame, M, self.platform_size)
-
-        return M, warped
+        return None, frame
 
     def process_frame(self, frame):
         """

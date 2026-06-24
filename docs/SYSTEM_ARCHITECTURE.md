@@ -16,7 +16,7 @@ The system is a hybrid software/hardware architecture consisting of a Host PC ru
 
 The vision system is responsible for continuous spatial tracking.
 - **Inputs**: Real-time video feed from an overhead camera.
-- **Preprocessing**: Applies perspective transformations (via ArUco markers) to normalize the platform view.
+- **Preprocessing**: Uses Canny edge detection and contour approximation to dynamically find the platform boundary, then applies a perspective transformation to normalize the view.
 - **Tracking Algorithm**: Uses a trained ML model (e.g., YOLOv8 or MobileNet SSD) to detect and bound the ball.
 - **Coordinate Transformation**: The Python script is strictly responsible for transforming raw camera pixels into real-world physical coordinates (millimeters from the center) before transmission, offloading floating-point math from the FPGA.
 
