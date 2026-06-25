@@ -42,26 +42,14 @@ def run_pipeline(source=0, headless=False, fallback='raw', max_frames=None):
     print(f"Headless mode: {headless}")
     print(f"Fallback mode: {fallback} (If Canny fails to find platform)")
     print("Press 'q' to quit at any time (if not headless).\n")
-    
-    print("Startup buffer: Waiting 5 seconds for camera stabilization...")
-    buffer_start = time.time()
+
 
     while True:
         ret, frame = cap.read()
         if not ret:
             break
             
-        # 5-Second Startup Buffer
-        elapsed_buffer = time.time() - buffer_start
-        if elapsed_buffer < 5.0:
-            if not headless:
-                countdown = int(5.0 - elapsed_buffer) + 1
-                cv2.putText(frame, f"Starting in {countdown}...", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 255), 3)
-                cv2.imshow("Raw Camera Feed", frame)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
-            continue
-            
+
         start_time = time.time()
         
         # 1. PREPROCESSING (Edge Detection + Warp)

@@ -32,11 +32,10 @@ class Preprocessor:
         
         # Temporal smoothing state
         self.prev_corners = None
-        self.ema_alpha = 0.2
+        # Increased from 0.2 to 0.8 to reduce visual lag/sluggishness on the display
+        self.ema_alpha = 0.9
         
         # HSV Color masking parameters (White/Grey platform)
-        # We tighten the saturation (0-40) and require higher brightness (80-255)
-        # to prevent detecting dark shadows or slightly tinted walls.
         self.hsv_lower = np.array([0, 0, 80])
         self.hsv_upper = np.array([180, 40, 255])
 
@@ -71,6 +70,11 @@ class Preprocessor:
         kernel_mask = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7))
         mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel_mask)
         mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel_mask)
+        
+        # Generate an edge-map of the binary color mask using morphological gradient
+        # This gives us a 1-pixel thin outline of every object the color filter caught.
+        kernel_grad = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+        mask_edges = cv2.morphologyEx(mask, cv2.MORPH_GRADIENT, kernel_grad)
         
         # Show the mask in a window so the user can physically see what the color filter is catching
         try:
@@ -116,11 +120,23 @@ class Preprocessor:
                 if touches_border:
                     continue
                     
+                # Edge Overlap Verification
+                # We draw the 4 edges of the candidate polygon and check how much they overlap with the actual color boundary
+                poly_outline = np.zeros((h, w), dtype=np.uint8)
+                cv2.drawContours(poly_outline, [approx], -1, 255, 2)  # 2 pixel thickness
+                
+                overlap = cv2.bitwise_and(poly_outline, mask_edges)
+                overlap_ratio = np.count_nonzero(overlap) / (np.count_nonzero(poly_outline) + 1e-6)
+                
+                # If less than 60% of the polygon's perimeter aligns with a real color boundary, reject it
+                if overlap_ratio < 0.6:
+                    continue
+                    
                 # Color Uniformity Check
                 # Create a mask of just this quadrilateral and measure the variance/texture of the colors inside it
-                mask = np.zeros((h, w), dtype=np.uint8)
-                cv2.fillPoly(mask, [np.int32(approx)], 255)
-                mean_color, stddev_color = cv2.meanStdDev(frame, mask=mask)
+                poly_mask = np.zeros((h, w), dtype=np.uint8)
+                cv2.fillPoly(poly_mask, [np.int32(approx)], 255)
+                mean_color, stddev_color = cv2.meanStdDev(frame, mask=poly_mask)
                 avg_stddev = np.mean(stddev_color)
                 
                 # A solid colored platform (even with lighting gradients or small markers) will have low variance (< 45).

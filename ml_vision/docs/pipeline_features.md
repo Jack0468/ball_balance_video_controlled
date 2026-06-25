@@ -21,12 +21,13 @@ The pipeline now uses an HSV color filter (specifically tuned for low-saturation
 #### Morphological Gap Bridging
 Following the color masking, a morphological closing operation (`cv2.morphologyEx` with `cv2.MORPH_CLOSE`) using a 7x7 rectangular kernel is applied. This removes salt-and-pepper noise and bridges tiny gaps, increasing the probability of extracting a single, contiguous polygon for the platform.
 
-#### Robust Platform Extraction (Direct Contours)
-Instead of running edge detection, the pipeline directly calls `cv2.findContours` on the binary HSV mask. It searches the top 5 largest shapes and applies several heuristics (must be 4-sided, convex, not touch the image borders, and have low internal color variance) to lock onto the platform. If the edge is slightly occluded, it falls back to `cv2.minAreaRect`, which guarantees that the system still bounds the largest contour with exactly 4 corners, preventing complete pipeline failure.
+#### Robust Platform Extraction (Direct Contours & Edge Overlap)
+Instead of running edge detection, the pipeline directly calls `cv2.findContours` on the binary HSV mask. It searches the top 5 largest shapes and applies several heuristics (must be 4-sided, convex, not touch the image borders, and have low internal color variance) to lock onto the platform. 
+To handle lighting drop-offs (e.g. fading edges when the platform tilts), the pipeline uses an **Edge Overlap Verification** heuristic. It mathematically draws a 2-pixel wide outline of the candidate polygon and computes a `bitwise_and` against a morphological gradient edge-map of the HSV mask. As long as at least 60% of the polygon's perimeter precisely overlaps with a true color boundary in the physical world, the script locks onto it. If the edge is slightly occluded, it falls back to `cv2.minAreaRect`, which guarantees that the system still bounds the largest contour with exactly 4 corners, preventing complete pipeline failure.
 
 #### Temporal Smoothing (EMA)
 To stabilize the generated 2D plane and reduce bounding box jitter from frame to frame, the 4 extracted platform corners are smoothed using an Exponential Moving Average (EMA). 
-- An `alpha` of `0.2` is applied.
+- An `alpha` of `0.9` is applied (previously 0.2, increased to eliminate visual lag/sluggishness).
 - Smoothing only occurs if the corners haven't jumped more than a 150-pixel distance threshold, ensuring the camera can still recover tracking if completely moved.
 - This creates an incredibly stable top-down feed for downstream models.
 
@@ -52,3 +53,12 @@ python ./scripts/realtime_pipeline_test.py
 ```
 - Accepts `--headless` to skip CV2 rendering for pure latency benchmarks.
 - Fallbacks (`--fallback`) can be specified to route the raw camera feed to YOLO if the perspective transformation drops a frame.
+
+---
+
+## 3. References & Theory
+
+The mathematical principles underpinning this pipeline's projective geometry—specifically the mapping of 3D real-world coordinates into a 2D plane via Homogeneous Coordinates, Pinhole Camera Models, and Homography (`cv2.getPerspectiveTransform`)—are deeply grounded in the core literature of computer vision. 
+
+For a comprehensive breakdown of the underlying math driving this physics-based tracking, please refer to the core textbook:
+- [Foundations of Computer Vision: 2D Motion from 3D](https://github.com/Foundations-of-Computer-Vision/visionbook/blob/main/2d_motion_from_3d.qmd)
