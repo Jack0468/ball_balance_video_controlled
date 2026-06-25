@@ -27,7 +27,9 @@ Initial benchmarking.
 Use different open source ML models to determine best model for our application.
 we want to identify the center of the ball (x,y) with respect to the plane of the platform.
 
-Initally we have a video which we can break up into individual frames. the data is currently unlabelled. but we will collect the data in the future.
+Initally we have a video which we can break up into individual frames. The data is currently unlabelled, but we will collect a comprehensive dataset in the future. 
+> [!NOTE]
+> All future data collection and processing MUST adhere to the Medallion Architecture (Bronze/Silver/Gold) as outlined in the core `ENGINEERING_STANDARDS.md`.
 
 We will need preprocessing pipelines for this data.
 
