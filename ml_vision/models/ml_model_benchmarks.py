@@ -13,7 +13,10 @@ import numpy as np
 # for loading and timing these models.
 
 class YOLOBenchmark:
-    def __init__(self, model_path='yolov8n.pt'):
+    def __init__(self, model_path=None):
+        if model_path is None:
+            import os
+            model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'weights', 'yolov8n.pt')
         try:
             from ultralytics import YOLO
             self.model = YOLO(model_path)
@@ -81,11 +84,38 @@ class Benchmarker:
         return results
 
 if __name__ == "__main__":
-    # Example usage:
-    # from classical_cv_model import ClassicalCVModel
-    # benchmarker = Benchmarker()
-    # benchmarker.add_model("ClassicalCV", ClassicalCVModel())
-    # benchmarker.add_model("YOLOv8n", YOLOBenchmark())
-    # results = benchmarker.run_benchmark(sample_frames, sample_labels)
-    # print(results)
-    pass
+    import cv2
+    import os
+    import glob
+
+    # Dynamically find the image directory based on the medallion file structure
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    image_dir = os.path.join(base_dir, "data", "image", "YT_video1")
+    image_paths = glob.glob(os.path.join(image_dir, "*.png")) + glob.glob(os.path.join(image_dir, "*.jpg"))
+    
+    sample_frames = []
+    print(f"Loading {len(image_paths)} images from {image_dir}...")
+    for path in image_paths[:100]: # Load at most 100 frames to keep the benchmark fast
+        frame = cv2.imread(path)
+        if frame is not None:
+            sample_frames.append(frame)
+            
+    if not sample_frames:
+        print("No images found. Please ensure images exist in the data/image/YT_video1/ folder.")
+    else:
+        sample_labels = [None] * len(sample_frames)  # Dummy labels since we don't have annotated (Gold) data yet
+        
+        from classical_cv_model import ClassicalCVModel
+        benchmarker = Benchmarker()
+        benchmarker.add_model("ClassicalCV", ClassicalCVModel())
+        benchmarker.add_model("YOLOv8n", YOLOBenchmark())
+        
+        results = benchmarker.run_benchmark(sample_frames, sample_labels)
+        for name, res in results.items():
+            print(f"\n--- {name} Results ---")
+            print(f"FPS: {res['fps']:.2f}")
+            if res['avg_mse'] == float('inf'):
+                print("Avg MSE: N/A (No ground truth labels provided)")
+            else:
+                print(f"Avg MSE: {res['avg_mse']}")
+            print(f"Valid Predictions: {res['valid_predictions']}/{res['total_frames']}")
