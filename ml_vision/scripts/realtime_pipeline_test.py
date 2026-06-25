@@ -42,49 +42,52 @@ def run_pipeline(source=0, headless=False, fallback='raw', max_frames=None):
     print(f"Headless mode: {headless}")
     print(f"Fallback mode: {fallback} (If Canny fails to find platform)")
     print("Press 'q' to quit at any time (if not headless).\n")
+    
+    print("Startup buffer: Waiting 5 seconds for camera stabilization...")
+    buffer_start = time.time()
 
     while True:
         ret, frame = cap.read()
         if not ret:
             break
             
+        # 5-Second Startup Buffer
+        elapsed_buffer = time.time() - buffer_start
+        if elapsed_buffer < 5.0:
+            if not headless:
+                countdown = int(5.0 - elapsed_buffer) + 1
+                cv2.putText(frame, f"Starting in {countdown}...", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 255), 3)
+                cv2.imshow("Raw Camera Feed", frame)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
+            continue
+            
         start_time = time.time()
         
         # 1. PREPROCESSING (Edge Detection + Warp)
         preproc_start = time.time()
-        M, warped_platform = preproc.get_perspective_transform(frame)
+        # draw_corners=True will physically paint the detected corners onto the 'frame' variable
+        M, warped_platform = preproc.get_perspective_transform(frame, draw_corners=True)
         preproc_time = (time.time() - preproc_start) * 1000
         
-        # Determine which image to run inference on
+        # 2. YOLO INFERENCE (Bypassed for Preprocessor tuning)
         inference_frame = None
         warp_successful = False
-        
-        if M is not None and warped_platform is not None:
-            inference_frame = warped_platform
-            warp_successful = True
-        else:
-            if fallback == 'raw':
-                inference_frame = frame
-            elif fallback == 'skip':
-                inference_frame = None
-                
-        # 2. YOLO INFERENCE
         infer_time = 0
         annotated_frame = None
         
-        if inference_frame is not None:
-            infer_start = time.time()
-            results = model(inference_frame, classes=[32], verbose=False) # 32 = sports ball
-            infer_time = (time.time() - infer_start) * 1000
-            annotated_frame = results[0].plot()
-            
-            # Print coordinates if detected
-            boxes = results[0].boxes
-            if len(boxes) > 0:
-                x1, y1, x2, y2 = boxes[0].xyxy[0].cpu().numpy()
-                cx, cy = (x1 + x2) / 2, (y1 + y2) / 2
-                status = "WARPED" if warp_successful else "RAW (FALLBACK)"
-                # print(f"Frame {frame_count}: Ball at ({cx:.1f}, {cy:.1f}) on {status} image")
+        # Just display the raw frame (which now has the platform corners drawn on it)
+        # and the warped platform so we can see the flattening effect if it succeeded.
+        if M is not None and warped_platform is not None:
+             annotated_frame = warped_platform
+             
+        # Print status
+        if M is not None:
+            # print(f"Frame {frame_count}: Platform Detected")
+            pass
+        else:
+            # print(f"Frame {frame_count}: Platform LOST")
+            pass
                 
         latency = (time.time() - start_time) * 1000
         
@@ -95,7 +98,8 @@ def run_pipeline(source=0, headless=False, fallback='raw', max_frames=None):
         
         # Display statistics periodically in console
         if frame_count % 30 == 0:
-            print(f"FPS: {1000/latency:.1f} | Preproc: {preproc_time:.1f}ms | YOLO: {infer_time:.1f}ms | Total: {latency:.1f}ms")
+            safe_latency = max(latency, 0.001) # Prevent ZeroDivisionError
+            print(f"FPS: {1000/safe_latency:.1f} | Preproc: {preproc_time:.1f}ms | YOLO: {infer_time:.1f}ms | Total: {latency:.1f}ms")
 
         # 3. GUI DISPLAY (If not headless)
         if not headless:
@@ -118,7 +122,8 @@ def run_pipeline(source=0, headless=False, fallback='raw', max_frames=None):
         print(f"Average Preprocessing Latency: {total_preproc_latency / frame_count:.1f}ms")
         print(f"Average YOLO Inference Latency: {total_infer_latency / frame_count:.1f}ms")
         print(f"Average Total Pipeline Latency: {total_latency / frame_count:.1f}ms")
-        print(f"Average Pipeline FPS: {1000 / (total_latency / frame_count):.1f} FPS")
+        safe_avg_latency = max(total_latency / frame_count, 0.001)
+        print(f"Average Pipeline FPS: {1000 / safe_avg_latency:.1f} FPS")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Real-Time ML Vision Pipeline Test")
