@@ -65,6 +65,7 @@ class Preprocessor:
         # Convert to HSV and apply color mask (Targeting White/Grey)
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         mask = cv2.inRange(hsv, self.hsv_lower, self.hsv_upper)
+        self.last_mask = mask.copy()
         
         # Morphological operations to clean up the mask (remove salt & pepper noise)
         kernel_mask = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7))
@@ -76,11 +77,7 @@ class Preprocessor:
         kernel_grad = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
         mask_edges = cv2.morphologyEx(mask, cv2.MORPH_GRADIENT, kernel_grad)
         
-        # Show the mask in a window so the user can physically see what the color filter is catching
-        try:
-            cv2.imshow("HSV Tuning Mask", mask)
-        except Exception:
-            pass
+
         
         # Find contours directly on the binary mask instead of using Canny!
         # This completely ignores background clutter because everything not matching the color is already gone.

@@ -66,29 +66,8 @@ def generate_yolo_labels(keypoints, img_width, img_height):
     w /= img_width
     h /= img_height
     
-    # Normalize keypoints and add visibility flag
-    norm_kps = []
-    for kp in keypoints:
-        kx = kp[0] / img_width
-        ky = kp[1] / img_height
-        
-        # Check if keypoint got warped off-screen
-        if kx < 0.0 or kx > 1.0 or ky < 0.0 or ky > 1.0:
-            visibility = 0 # Not visible
-        else:
-            visibility = 2 # Visible and labeled
-            
-        # YOLO strictly requires bounding box and keypoints to be clamped between 0 and 1
-        kx = max(0.0, min(1.0, kx))
-        ky = max(0.0, min(1.0, ky))
-        
-        norm_kps.append(kx)
-        norm_kps.append(ky)
-        norm_kps.append(visibility)
-        
     # Class is 0 (platform)
-    label_str = f"0 {cx:.6f} {cy:.6f} {w:.6f} {h:.6f} "
-    label_str += " ".join([f"{val:.6f}" if isinstance(val, float) else str(val) for val in norm_kps])
+    label_str = f"0 {cx:.6f} {cy:.6f} {w:.6f} {h:.6f}"
     return label_str
 
 def generate_dataset(dataset, output_dir, total_images=1000):

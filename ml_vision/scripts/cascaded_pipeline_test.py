@@ -18,14 +18,17 @@ def sort_corners(pts):
 def main():
     print("Loading Models...")
     
-    # NOTE: You will need to train the YOLO-Pose model on the synthetic dataset first!
-    # Uncomment the line below once trained:
-    # pose_model = YOLO('runs/pose/train/weights/best.pt')
+    import os
     
-    ball_model = YOLO('yolov8n.pt')
+    # Safely resolve the absolute paths so it doesn't matter what folder you run the script from
+    bbox_model_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../models/platform_bbox_model-4/weights/best.pt'))
+    
+    # Load the trained YOLOv8 BBox model
+    bbox_model = YOLO(bbox_model_path, task='detect')
+    
     preproc = Preprocessor()
     
-    cap = cv2.VideoCapture(1) # Assuming camera index 1
+    cap = cv2.VideoCapture(0) # Assuming camera index 1
     if not cap.isOpened():
         print("Error: Could not open camera.")
         return
@@ -40,50 +43,59 @@ def main():
         t0 = time.time()
         
         # ==========================================
-        # STAGE 1: PLATFORM DETECTION (YOLO-Pose)
+        # STAGE 1: PLATFORM DETECTION (YOLO BBox)
         # ==========================================
         warped = None
         M = None
         
-        # --- UNCOMMENT WHEN POSE MODEL IS TRAINED ---
-        # results_pose = pose_model(frame, verbose=False)
-        # if len(results_pose[0].keypoints) > 0:
-        #     # Extract 4 keypoints
-        #     kps = results_pose[0].keypoints.xy[0].cpu().numpy()
-        #     if len(kps) == 4:
-        #         sorted_kps = sort_corners(kps)
-        #         M = cv2.getPerspectiveTransform(sorted_kps, preproc.dst_pts)
-        #         warped = cv2.warpPerspective(frame, M, preproc.platform_size)
+        results = bbox_model(frame, verbose=False)
+        t_pose_end = time.time()
         
-        # Fallback to classical preprocessor if YOLO-Pose is not ready or fails
+        if len(results[0].boxes) > 0:
+            # Get the highest confidence bounding box
+            box = results[0].boxes[0]
+            x1, y1, x2, y2 = map(int, box.xyxy[0].cpu().numpy())
+            
+            # Add padding to avoid edge clipping
+            pad = 30
+            h, w = frame.shape[:2]
+            y1_pad = max(0, y1 - pad)
+            y2_pad = min(h, y2 + pad)
+            x1_pad = max(0, x1 - pad)
+            x2_pad = min(w, x2 + pad)
+            
+            # Create a masked frame where everything outside the bounding box is black
+            masked_frame = np.zeros_like(frame)
+            masked_frame[y1_pad:y2_pad, x1_pad:x2_pad] = frame[y1_pad:y2_pad, x1_pad:x2_pad]
+            
+            # Draw the bounding box on the original frame for visualization
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            cv2.putText(frame, "YOLO BBox", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            
+            # STAGE 2: CLASSICAL CV FALLBACK ON MASKED FRAME
+            M, warped = preproc.get_perspective_transform(masked_frame)
+        
+        # Fallback to classical preprocessor if YOLO BBox is not ready or fails
         if warped is None:
             M, warped = preproc.get_perspective_transform(frame)
             
-        t_preproc = time.time()
-        
-        # ==========================================
-        # STAGE 2: BALL DETECTION (YOLO-Ball)
-        # ==========================================
-        results_ball = ball_model(warped, classes=[32], verbose=False)
-        t_yolo = time.time()
+        t_warp_end = time.time()
         
         # ==========================================
         # VISUALIZATION
         # ==========================================
-        for r in results_ball:
-            boxes = r.boxes
-            for box in boxes:
-                x1, y1, x2, y2 = box.xyxy[0]
-                cv2.rectangle(warped, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
-                
-        cv2.imshow("Cascaded Output", warped)
+        cv2.imshow("Original Feed (Corners)", frame)
+        if warped is not None:
+            cv2.imshow("Cascaded Output (Top-Down)", warped)
+        if hasattr(preproc, 'last_mask') and preproc.last_mask is not None:
+            cv2.imshow("HSV Tuning Mask", preproc.last_mask)
         
-        dt_preproc = (t_preproc - t0) * 1000
-        dt_yolo = (t_yolo - t_preproc) * 1000
-        dt_total = (t_yolo - t0) * 1000
+        dt_bbox = (t_pose_end - t0) * 1000
+        dt_warp = (t_warp_end - t_pose_end) * 1000
+        dt_total = (t_warp_end - t0) * 1000
         fps = 1000.0 / max(dt_total, 1.0)
         
-        print(f"FPS: {fps:.1f} | Pose/Warp: {dt_preproc:.1f}ms | YOLO-Ball: {dt_yolo:.1f}ms")
+        print(f"FPS: {fps:.1f} | YOLO BBox: {dt_bbox:.1f}ms | Warp: {dt_warp:.1f}ms")
         
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
