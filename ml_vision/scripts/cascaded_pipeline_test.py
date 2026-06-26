@@ -3,6 +3,7 @@ import time
 import numpy as np
 from ultralytics import YOLO
 from preprocessor import Preprocessor
+from marker_tracker import MarkerTracker
 
 def sort_corners(pts):
     # Sorts points into: top-left, top-right, bottom-right, bottom-left
@@ -27,6 +28,8 @@ def main():
     bbox_model = YOLO(bbox_model_path, task='detect')
     
     preproc = Preprocessor()
+    tracker = MarkerTracker()
+    tracker.setup_tuning_window()
     
     cap = cv2.VideoCapture(0) # Assuming camera index 1
     if not cap.isOpened():
@@ -41,6 +44,9 @@ def main():
             break
             
         t0 = time.time()
+        
+        # Read values from tuning window if user adjusts them
+        tracker.read_tuning_window()
         
         # ==========================================
         # STAGE 1: PLATFORM DETECTION (YOLO BBox)
@@ -82,17 +88,42 @@ def main():
         t_warp_end = time.time()
         
         # ==========================================
+        # STAGE 3: TARGET MARKER DETECTION
+        # ==========================================
+        targets = {}
+        if warped is not None:
+            targets, masks = tracker.find_targets(warped)
+            
+            # Draw targets on the warped image
+            color_bgr_mapping = {
+                'blue': (255, 0, 0),
+                'grey': (128, 128, 128),
+                'black': (0, 0, 0),
+                'red': (0, 0, 255)
+            }
+            
+            for color_name, pt in targets.items():
+                if pt is not None:
+                    cx, cy = pt
+                    bgr = color_bgr_mapping.get(color_name, (255, 255, 255))
+                    # Draw a distinct crosshair
+                    cv2.drawMarker(warped, (cx, cy), bgr, markerType=cv2.MARKER_CROSS, markerSize=20, thickness=2)
+                    cv2.circle(warped, (cx, cy), 10, bgr, 2)
+                    cv2.putText(warped, f"{color_name.upper()} {cx},{cy}", (cx + 15, cy - 15), 
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, bgr, 2)
+        
+        # ==========================================
         # VISUALIZATION
         # ==========================================
         cv2.imshow("Original Feed (Corners)", frame)
         if warped is not None:
             cv2.imshow("Cascaded Output (Top-Down)", warped)
         if hasattr(preproc, 'last_mask') and preproc.last_mask is not None:
-            cv2.imshow("HSV Tuning Mask", preproc.last_mask)
+            cv2.imshow("Platform HSV Mask", preproc.last_mask)
         
         dt_bbox = (t_pose_end - t0) * 1000
         dt_warp = (t_warp_end - t_pose_end) * 1000
-        dt_total = (t_warp_end - t0) * 1000
+        dt_total = (time.time() - t0) * 1000
         fps = 1000.0 / max(dt_total, 1.0)
         
         print(f"FPS: {fps:.1f} | YOLO BBox: {dt_bbox:.1f}ms | Warp: {dt_warp:.1f}ms")

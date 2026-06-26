@@ -36,15 +36,16 @@ We will need preprocessing pipelines for this data.
 normalisation features to consider:
 - exposure
 - lighting
-- ball position
-- ball size
 - camera position
 - camera angle
 - platform position
 - platform angle
 - platform size
-- ball position
-- ball size
+
+ball properties for detection:
+- Spherical and highly reflective surface.
+- Dynamic (in continuous motion during balancing).
+- Must be uniquely distinguished from the static, painted target markers on the platform.
 
 output vector:
 
@@ -53,7 +54,9 @@ output vector:
 potential outputs which may be useful in the future.
 axis of the plane in xyz.
 
-FUTURE IMPLEMENTATION.
-WE ARE NOT DOING THIS NOW.
-will also need to be able to identify markers on the plane. 
-the final goal is to move the ball between markers based on a command from the microcontroller.
+## Target Marker Detection
+Alongside tracking the ball, the vision model must identify specific colored markers on the platform in real-time. 
+- **Marker Colors**: Blue, Grey, Black, Red.
+- **Purpose**: These markers represent target destinations for the ball. They can be placed anywhere on the platform plane.
+- **Output**: The system must extract the `(x,y)` centroid of each marker relative to the normalized 2D plane of the platform.
+- **Integration**: These `(x,y)` coordinates will be sent as target destinations to the inverse kinematics math, directing the robot to tilt the platform and roll the ball to the selected marker.

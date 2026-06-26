@@ -58,7 +58,23 @@ python ./scripts/cascaded_pipeline_test.py
 
 ---
 
-## 3. References & Theory
+## 3. Target Marker Detection (`marker_tracker.py`)
+
+To support dynamic ball routing via inverse kinematics, the pipeline implements **Target Marker Detection**. It identifies the 2D centroids of 4 specific colored markers (Blue, Grey, Black, Red) placed anywhere on the platform.
+
+### The "Shape-First, Color-Second" Architecture
+Tracking low-brightness (Black) and low-saturation (Grey) objects using pure HSV color filtering is highly unreliable under real-world lighting, as shadows and glare mimic these exact color profiles.
+
+To achieve maximum robustness, the tracker uses a "Shape-First" methodology:
+1. **Geometric Isolation**: The 2D warped plane is converted to grayscale and processed with `cv2.adaptiveThreshold` and `cv2.Canny` edges. Adaptive thresholding relies on *local* contrast instead of absolute lighting, instantly highlighting all geometric shapes regardless of glare or shadows.
+2. **Circularity Filtering**: The system runs `cv2.findContours` and filters the blobs using a mathematical Circularity threshold (`> 0.5`). This perfectly isolates the round physical markers from background noise and platform edges.
+3. **Color Classification**: Only *after* the circular markers are mathematically isolated does the algorithm sample the original HSV image. It computes the mean `(Hue, Saturation, Value)` of the pixels *inside* the circle. If the mean HSV matches the tuned bounds for Blue, Grey, Black, or Red, the marker is confidently labeled and its exact `(x,y)` centroid is recorded.
+
+*Note: The actual ball is distinguished from these markers natively by its dynamic motion and highly reflective spherical properties, allowing separate downstream tracking models to operate cleanly without confusing the ball for a static target marker.*
+
+---
+
+## 4. References & Theory
 
 The mathematical principles underpinning this pipeline's projective geometry—specifically the mapping of 3D real-world coordinates into a 2D plane via Homogeneous Coordinates, Pinhole Camera Models, and Homography (`cv2.getPerspectiveTransform`)—are deeply grounded in the core literature of computer vision. 
 
