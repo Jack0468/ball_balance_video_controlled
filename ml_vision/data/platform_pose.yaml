@@ -1,0 +1,17 @@
+# Dataset configuration for Ultralytics YOLO-Pose
+
+# Relative path to the dataset directory (from the directory where training is run)
+path: ../data/image/augmented_dataset
+
+# For a quick test, we will use the same folder for train and val.
+train: images
+val: images
+
+# Classes
+names:
+  0: platform
+
+# Keypoints configuration
+# We have 4 corners (top-left, top-right, bottom-right, bottom-left)
+# Each has 3 values (x, y, visibility)
+kpt_shape: [4, 3]
