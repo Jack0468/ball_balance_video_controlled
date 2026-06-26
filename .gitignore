@@ -36,3 +36,4 @@ ml_vision/data/video/*.avi
 ml_vision/data/image/
 *.csv
 evaluation_results/
+ball-balancing-bot/ball-balancing-bot
