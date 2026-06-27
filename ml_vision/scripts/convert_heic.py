@@ -51,7 +51,7 @@ def convert_heic_to_jpg(input_dir, output_dir):
                 print(f"Warning: Could not find HEIC file for {filename_base}")
 
 if __name__ == "__main__":
-    input_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../data/image/images_find_plane1"))
-    output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../data/image/base_images"))
+    input_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../data/01_bronze/images_find_plane1"))
+    output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../data/02_silver/base_images"))
     convert_heic_to_jpg(input_dir, output_dir)
     print("Done converting HEIC to JPG.")

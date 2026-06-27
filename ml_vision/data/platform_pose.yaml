@@ -1,7 +1,7 @@
 # Dataset configuration for Ultralytics YOLO-Pose
 
 # Relative path to the dataset directory (from the directory where training is run)
-path: ../data/image/augmented_dataset
+path: ../data/03_gold/augmented_dataset
 
 # For a quick test, we will use the same folder for train and val.
 train: images

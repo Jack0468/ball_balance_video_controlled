@@ -1,5 +1,5 @@
 # YOLOv8 Object Detection Configuration for Platform Bounding Box
-path: C:/Users/Admin/Documents/Windows_codespace/VRI_2026/ml_vision/data/image/augmented_dataset
+path: C:/Users/Admin/Documents/Windows_codespace/VRI_2026/ml_vision/data/03_gold/augmented_dataset
 train: images
 val: images # Using the same dataset for val since this is a synthetic overfitting test
 
