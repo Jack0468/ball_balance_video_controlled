@@ -22,3 +22,11 @@ Because the C++ code is destined for pure silicon synthesis on the FPGA, standar
   - `0x00 - 0x1F`: Reserved for `WireIn` (Host to FPGA parameters like ML coordinates and audio targets).
   - `0x20 - 0x3F`: Reserved for `WireOut` (FPGA to Host telemetry).
 - **Clock Domains**: The system must explicitly separate the FrontPanel USB clock domain (`okClk`) from the fast logic clock domain used for PWM generation. Crossing clock domains must be handled with proper synchronizers.
+
+## 4. Data Management & File Structure (Medallion Architecture)
+
+To ensure high-quality ML model training, all datasets (both Vision and Audio) must adhere strictly to a **Medallion Architecture** file structure:
+
+- **`data/bronze/` (Raw)**: Raw, unvalidated data directly from the sensors. This includes messy webcam frames, continuous video captures, and raw noisy audio clips. Data here is append-only and should never be overwritten.
+- **`data/silver/` (Cleansed & Processed)**: Filtered data. This includes frames where the platform has been successfully cropped/warped using the Canny preprocessor, or audio clips with noise reduction applied. It may contain auto-generated bounding box annotations that have not been human-validated.
+- **`data/gold/` (ML-Ready)**: The final, curated, and human-validated datasets. Data here must be perfectly annotated and split into `train/`, `val/`, and `test/` directories, ready to be directly ingested by the YOLOv8 tracking model or the audio classification model.

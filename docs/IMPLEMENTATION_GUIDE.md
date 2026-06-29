@@ -4,8 +4,9 @@ This guide provides step-by-step instructions for developing, building, and depl
 
 ## Phase 1: ML Pipeline Setup (Host PC)
 
-1. **Environment Initialization**:
+1. **Environment & Data Initialization**:
    Ensure your conda environment is active (`conda activate ball_balance_env`), which includes OpenCV, Ultralytics, and Pandas.
+   Set up your local dataset folders using the Medallion Architecture (`data/bronze/`, `data/silver/`, `data/gold/`) to ensure clean model training.
 2. **Vision Model Benchmarking**:
    Run `python ml_vision/scripts/extract_frames.py` to generate sample images.
    Execute `python ml_vision/models/ml_model_benchmarks.py` to evaluate YOLO vs MobileNet SSD performance on your hardware.
@@ -28,7 +29,7 @@ To convert the legacy C++ code (from `ball-balancing-bot/`) into FPGA hardware:
 2. Import the Opal Kelly `okHost` module. This module handles the USB/PCIe physical layer.
 3. Import your HLS-generated IK/PID IP core.
 4. Connect `okWireIn` endpoints from the `okHost` to the `x` and `y` coordinate inputs on your HLS core.
-5. Route the operational and UART configuration output pins from the HLS core to the physical FPGA output pins connected to the TMC2208 stepper motor drivers.
+5. Route the Step (STEP) and Direction (DIR) output pins from the HLS core to the physical FPGA output pins connected to the TMC2208 stepper motor drivers.
 6. Generate the Bitstream (`.bit` file).
 
 ## Phase 4: Host Communication Bridge

@@ -13,7 +13,9 @@ from ultralytics import YOLO
 
 def test_yolo(source, max_frames=None):
     print("Loading YOLOv8n pre-trained model...")
-    model = YOLO("yolov8n.pt")
+    # Initialize the specific model from the weights directory
+    model_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "models", "weights", "yolov8n.pt")
+    model = YOLO(model_path)
     
     # Check if source is an integer (webcam) or a directory/file
     try:
@@ -71,9 +73,9 @@ def test_yolo(source, max_frames=None):
                 
             out_frame = process_frame(frame)
             
-            # cv2.imshow("YOLO Tracking", out_frame)
-            # if cv2.waitKey(1) & 0xFF == ord('q'):
-            #     break
+            cv2.imshow("YOLO Tracking", out_frame)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
                 
             frame_count += 1
             if max_frames and frame_count >= max_frames:

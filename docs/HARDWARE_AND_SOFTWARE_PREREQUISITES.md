@@ -45,6 +45,7 @@ Since the control system relies on visual precision and fast, jerky physical mov
 
 ### Structural Integrity (Linkages & Mounts)
 - **Material**: The arms connecting the stepper motors to the platform will experience high shearing forces when the PID loop reacts aggressively. Standard PLA is brittle and may snap during a crash. **PETG or ABS** is highly recommended for the arms.
+- Note that the original design uses PLA.
 - **Infill**: 
   - **Motor Mounts/Arms**: Print with 40-50% Gyroid or Cubic infill for maximum strength.
   - **Platform**: Print with 15-20% infill to keep it as lightweight as possible, reducing the inertia the motors have to overcome.
@@ -59,4 +60,4 @@ Since the control system relies on visual precision and fast, jerky physical mov
 ### Motors and Drivers
 - **Motors**: Nema 17 stepper motors (Model: 17HS3401S). These provide the necessary torque and speed for rapid balancing.
 - **Drivers**: TMC2208 stepper motor drivers (rated for 2A). 
-- **Control Interface**: The TMC2208 drivers must be wired for **UART operational control**. This allows the FPGA to configure microstepping and current dynamically via serial commands, rather than relying solely on hardwired pins or potentiometers.
+- **Control Interface**: The TMC2208 drivers will be controlled directly via their **STEP and DIR pins**. UART configuration is too slow for real-time motion and will not be used. Microstepping and current limits should be configured via the hardware pins and the onboard potentiometers.

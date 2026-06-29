@@ -11,7 +11,7 @@ The system is a hybrid software/hardware architecture consisting of a Host PC ru
 - **USB/PCIe Bridge**: Uses the Opal Kelly FrontPanel SDK (Python wrapper) to pass data seamlessly to the FPGA.
 - **Opal Kelly FPGA**: Runs hardware-synthesized Verilog (converted via Vitis HLS) to perform Inverse Kinematics (IK) and fast PID loop calculations in pure silicon.
 - **Actuators**: Three Nema 17 stepper motors (17HS3401S) operating the 3-DOF parallel manipulator platform.
-- **Motor Drivers**: TMC2208 stepper motor drivers (rated at 2A) providing power to the Nema 17s. These drivers use a UART operational control interface, allowing the FPGA to dynamically configure microstepping, stealthChop parameters, and drive current over a serial line alongside the standard movement pulses.
+- **Motor Drivers**: TMC2208 stepper motor drivers (rated at 2A) providing power to the Nema 17s. These drivers are controlled directly via their **STEP and DIR pins** to achieve the ultra-low latency required for real-time PID balancing.
 
 ## 2. Vision Subsystem (Python)
 

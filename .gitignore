@@ -31,8 +31,16 @@ env.bak/
 venv.bak/
 
 # Data and large files
-ml_vision/data/video/*.mp4
-ml_vision/data/video/*.avi
-ml_vision/data/image/
+ml_vision/data/01_bronze/
+ml_vision/data/02_silver/
+ml_vision/data/03_gold/
 *.csv
 evaluation_results/
+
+# Neural Network Weights and Logs
+*.pt
+*.onnx
+ml_vision/models/platform_pose_model/
+ml_vision/models/weights/
+runs/
+ball-balancing-bot/ball-balancing-bot
