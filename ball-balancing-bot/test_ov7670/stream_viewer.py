@@ -8,7 +8,8 @@ WIDTH = 160
 HEIGHT = 120
 BYTES_PER_PIXEL = 2
 FRAME_SIZE = WIDTH * HEIGHT * BYTES_PER_PIXEL
-SYNC_HEADER = b'\xAA\xBB\xCC\xDD'
+SYNC_HEADER = b'\xAA\xBB\xCC\xDD\xEE\xFF\x99\x88'
+SYNC_LEN = len(SYNC_HEADER)
 
 def main(port_name):
     print(f"Connecting to Teensy on {port_name}...")
@@ -54,11 +55,11 @@ def main(port_name):
             
             if idx != -1:
                 # We found the header! Check if we have a full frame's worth of data yet.
-                if len(buffer) >= idx + 4 + FRAME_SIZE:
+                if len(buffer) >= idx + SYNC_LEN + FRAME_SIZE:
                     # Extract the full frame
-                    frame_data = buffer[idx+4 : idx+4+FRAME_SIZE]
+                    frame_data = buffer[idx+SYNC_LEN : idx+SYNC_LEN+FRAME_SIZE]
                     # Keep any remaining bytes in the buffer for the next frame
-                    buffer = buffer[idx+4+FRAME_SIZE:]
+                    buffer = buffer[idx+SYNC_LEN+FRAME_SIZE:]
                 else:
                     # We found the header but don't have all the pixels yet.
                     # Keep looping to read more data.
@@ -76,9 +77,9 @@ def main(port_name):
                 except:
                     pass
                     
-                # Keep the last 3 bytes just in case the 4-byte header was split across chunks.
-                if len(buffer) > 3:
-                    buffer = buffer[-3:]
+                # Keep the last few bytes just in case the header was split across chunks.
+                if len(buffer) > (SYNC_LEN - 1):
+                    buffer = buffer[-(SYNC_LEN - 1):]
                 continue
 
             # 3. Convert raw bytes to RGB565 numpy array
@@ -92,10 +93,11 @@ def main(port_name):
             g = ((raw_pixels >> 5) & 0x3F).astype(np.uint8)
             b = (raw_pixels & 0x1F).astype(np.uint8)
 
-            # Scale colors to full 0-255 range
-            r = (r * 255) // 31
-            g = (g * 255) // 63
-            b = (b * 255) // 31
+            # Scale colors to full 0-255 range using fast bitwise shifting 
+            # (Prevents the uint8 overflow bug caused by multiplying by 255)
+            r = (r << 3) | (r >> 2)
+            g = (g << 2) | (g >> 4)
+            b = (b << 3) | (b >> 2)
 
             # Stack into an OpenCV BGR image (OpenCV uses BGR, not RGB)
             bgr_image = np.dstack((b, g, r))

@@ -29,12 +29,12 @@ const uint8_t OV7670_REG_SETUP[][2] = {
   {0xFF, 0xFF}, // Delay marker
   
   // Timing / Clock
-  {0x11, 0x01}, // CLKRC: Internal clock pre-scaler (Use external clock / 1)
+  {0x11, 0x01}, // CLKRC: Internal clock pre-scaler (0x01 = Divide by 2 -> 30fps to avoid USB bottlenecking)
   {0x3b, 0x0a}, // COM11: Night mode, banding filter
   {0x3a, 0x04}, // TSLB: YUYV, UYVY formatting (very important for colors)
 
   // Output format (RGB565)
-  {0x12, 0x04}, // COM7: Output format RGB
+  {0x12, 0x04}, // COM7: Output format RGB (Color bar disabled)
   {0x40, 0x10}, // COM15: RGB565 output format
   {0x8c, 0x00}, // RGB444: Disable
   {0x3a, 0x04}, // TSLB: UYVY formatting
@@ -60,6 +60,9 @@ const uint8_t OV7670_REG_SETUP[][2] = {
   {0x6a, 0x40}, {0x6b, 0x0a}, {0x6c, 0x0a},
   {0x6d, 0x55}, {0x6e, 0x11}, {0x6f, 0x9f},
   {0xb0, 0x84},
+  
+  // Image Quality Enhancements
+  {0x41, 0x38}, // COM16: Enable Edge Enhancement, De-noise, and Color Matrix AWG
 
   // Auto Exposure / Auto Gain / Auto White Balance
   {0x13, 0xe7}, // COM8: Enable AEC, AGC, AWB
@@ -114,9 +117,11 @@ void setup() {
   Serial.begin(115200);
   Serial.println("Starting OV7670 High-Speed Test...");
   
-  // 1. Generate XCLK Hardware PWM (12 MHz on Pin 9)
+  // 1. Generate XCLK Hardware PWM (10 MHz on Pin 9)
+  // On Teensy 3.5/3.6 (60MHz bus), 10MHz gives exactly 6 clock ticks.
+  // 128/255 * 6 = exactly 3 ticks (perfect 50% duty cycle).
   pinMode(XCLK_PIN, OUTPUT);
-  analogWriteFrequency(XCLK_PIN, 12000000); 
+  analogWriteFrequency(XCLK_PIN, 10000000); 
   analogWrite(XCLK_PIN, 128); // 50% duty cycle
 
   // 2. Configure Sync Pins
@@ -144,14 +149,22 @@ bool captureFrame() {
   
   // Wait for VSYNC high (Start of new frame)
   timeout = micros();
-  while(!(GPIOA_PDIR & (1 << 13))) {
-    if (micros() - timeout > 100000) { Serial.println("ERR: VSYNC stuck LOW"); return false; }
+  while(true) {
+    if ((GPIOA_PDIR & (1 << 13))) { // VSYNC went HIGH
+      delayMicroseconds(50); // Software debounce to ignore electrical noise
+      if ((GPIOA_PDIR & (1 << 13))) break; // Still HIGH, it's a real frame!
+    }
+    if (micros() - timeout > 500000) { Serial.println("ERR: VSYNC stuck LOW"); return false; }
   }
   
   // Wait for VSYNC low (Active frame)
   timeout = micros();
-  while((GPIOA_PDIR & (1 << 13))) {
-    if (micros() - timeout > 100000) { Serial.println("ERR: VSYNC stuck HIGH"); return false; }
+  while(true) {
+    if (!(GPIOA_PDIR & (1 << 13))) { // VSYNC went LOW
+      delayMicroseconds(50); // Software debounce to ignore electrical noise
+      if (!(GPIOA_PDIR & (1 << 13))) break; // Still LOW, data is starting!
+    }
+    if (micros() - timeout > 500000) { Serial.println("ERR: VSYNC stuck HIGH"); return false; }
   }
   
   uint32_t p = 0; // Pixel index buffer pointer
@@ -216,8 +229,9 @@ void loop() {
   if (captureFrame()) {
     // Stream the frame over USB Serial ONLY if successful
     // 1. Send a magic sync header so the Python script can align to the start of a frame
-    const uint8_t syncHeader[] = {0xAA, 0xBB, 0xCC, 0xDD};
-    Serial.write(syncHeader, 4);
+    // Expanded from 4 bytes to 8 bytes to prevent the "rolling film" desync issue!
+    const uint8_t syncHeader[] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x99, 0x88};
+    Serial.write(syncHeader, 8);
     
     // 2. Blast the entire 38,400 byte buffer (160x120 * 2 bytes)
     Serial.write((uint8_t*)frameBuffer, sizeof(frameBuffer));
