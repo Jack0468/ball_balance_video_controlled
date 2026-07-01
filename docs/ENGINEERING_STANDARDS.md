@@ -1,5 +1,11 @@
 # Engineering Standards
 
+## Project Revision Strategy
+
+The project is structured into two hardware revisions to ensure stable iterative development:
+- **Baseline Revision:** Uses a **Teensy microcontroller** to handle the PID control loop and motor actuation, alongside Python for ML computation on the host PC. 
+- **Future Revision (Hardware Acceleration):** Once the baseline is verified, the system will shift to an **FPGA**. The FPGA will use High-Level Synthesis (HLS) to offload the PID loop, Inverse Kinematics, and audio encoding for lower latency. The standards below for C++ and HLS apply to this future revision.
+
 To maintain consistency across the Python software and the hardware compilation domains, all contributors must adhere to the following standards:
 
 ## 1. Python ML Standards
