@@ -5,3 +5,8 @@ for 25/06/2026
 - Completed: Added a 5-second camera stabilization startup buffer (later removed for faster iterations).
 - Completed: Fixed ZeroDivisionError when running in headless/no-YOLO modes.
 - Completed: Reverted slow CLAHE algorithm and instead implemented an ultra-fast Edge Overlap Verification heuristic. The pipeline now verifies candidates by performing a bitwise intersection against a 1-pixel thin morphological gradient edge-map of the HSV mask.
+
+for 1/07/26
+
+work on the polling infractucture of the camera via verilog fpga.
+
