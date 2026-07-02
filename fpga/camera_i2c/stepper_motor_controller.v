@@ -3,39 +3,65 @@
 module stepper_motor_controller (
     input wire clk,      // 48MHz system clock
     input wire rst,
+    input wire zero_motors,
     
-    input wire [15:0] target_velocity, // Signed 16-bit velocity
+    input wire signed [31:0] target_position,
     
     output reg step_pin,
-    output reg dir_pin
+    output reg dir_pin,
+    output reg signed [31:0] current_position
 );
 
-    // Get absolute value for speed (magnitude)
-    wire [14:0] speed = target_velocity[15] ? -target_velocity : target_velocity;
+    wire signed [31:0] error = target_position - current_position;
+    wire [31:0] abs_error = (error < 0) ? -error : error;
     
-    // 24-bit Phase Accumulator
-    // Max speed (32767) adds to accumulator. 
-    // Overflow rate = (48MHz / 2^24) * 32767 = ~93.7 kHz step rate
-    // Lowest speed (1) = (48MHz / 2^24) * 1 = ~2.8 Hz step rate
+    // Proportional speed control (P-controller)
+    // Multiply error by 64 (shift left by 6).
+    wire [31:0] p_term = abs_error << 6;
+    
+    // Clamp max speed to 32767 (15-bit max for our accumulator)
+    wire [14:0] speed = (p_term > 32767) ? 15'd32767 : p_term[14:0];
+    
     reg [23:0] acc = 0;
+    reg last_step_pin = 0;
     
     always @(posedge clk or posedge rst) begin
         if (rst) begin
             acc <= 0;
             step_pin <= 0;
             dir_pin <= 0;
+            current_position <= 0;
+            last_step_pin <= 0;
+        end else if (zero_motors) begin
+            current_position <= 0;
+            acc <= 0;
+            step_pin <= 0;
+            last_step_pin <= 0;
         end else begin
-            dir_pin <= target_velocity[15]; // Sign bit sets direction
+            last_step_pin <= step_pin;
             
-            // Only accumulate if we have a non-zero speed to prevent drifting
-            if (speed > 0) begin
+            if (error > 0) begin
+                dir_pin <= 1'b1; // Positive direction
+            end else if (error < 0) begin
+                dir_pin <= 1'b0; // Negative direction
+            end
+            
+            // Only accumulate if we have not reached target
+            if (abs_error > 0) begin
                 acc <= acc + speed;
             end else begin
                 acc <= 0;
             end
             
-            // MSB of accumulator acts as a 50% duty cycle step pulse
             step_pin <= acc[23];
+            
+            // On rising edge of step_pin, update current position
+            if (step_pin && !last_step_pin) begin
+                if (dir_pin == 1'b1)
+                    current_position <= current_position + 1;
+                else
+                    current_position <= current_position - 1;
+            end
         end
     end
 
