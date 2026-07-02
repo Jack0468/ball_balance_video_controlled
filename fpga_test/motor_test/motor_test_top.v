@@ -47,7 +47,7 @@ module motor_test_top(
 	
 	always @(posedge clk1) begin
 		prescale <= prescale + 1'b1;
-		tick     <= (prescale == 15'd0);   // 1-cycle pulse every 2^23 clk1
+		tick     <= (prescale == 15'd0);   // 1-cycle pulse every 2^15 clk1
 	end
 	
 	// based on slower 'tick', this steps the motor
