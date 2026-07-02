@@ -10,3 +10,4 @@ for 1/07/26
 
 work on the polling infractucture of the camera via verilog fpga.
 
+- [ ] RETUNE PID: The Python Host-PC control loop running over USB will have a completely different latency profile than the original bare-metal Teensy C++ loop. The constants (kp=0.8, ki=0.2, kd=0.09) will cause oscillations and need aggressive retuning.

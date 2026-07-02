@@ -39,6 +39,8 @@ host_software/ml_audio/data/
 *.csv
 evaluation_results/
 
+generated/
+
 # Neural Network Weights and Logs
 *.pt
 *.onnx
