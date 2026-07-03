@@ -19,8 +19,8 @@ module stepper_motor_controller (
     // Multiply error by 64 (shift left by 6).
     wire [31:0] p_term = abs_error << 6;
     
-    // Clamp max speed to 32767 (15-bit max for our accumulator)
-    wire [14:0] speed = (p_term > 32767) ? 15'd32767 : p_term[14:0];
+    // Clamp max speed to 700 to prevent motor stalling (~2 kHz step rate max)
+    wire [14:0] speed = (p_term > 700) ? 15'd700 : p_term[14:0];
     
     reg [23:0] acc = 0;
     reg last_step_pin = 0;

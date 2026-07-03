@@ -65,6 +65,7 @@ module fpga_usb_streamer(
     
     // --- 1. Camera Clock Generation (24MHz) ---
     wire reset = 1'b0; // System reset can be added if needed
+    wire sys_rst = reset;
     
     camera_xclk_gen xclk_gen(
         .clk_in(clk1), // Use the robust PLL clock!
@@ -135,21 +136,33 @@ module fpga_usb_streamer(
     wire signed [31:0] current1, current2, current3;
 
     stepper_motor_controller motor1(
-        .clk(clk1), .rst(reset), .zero_motors(clk1_zero), 
-        .target_position(target1), .current_position(current1),
-        .step_pin(step1_pin), .dir_pin(dir1_pin)
+        .clk(clk1), 
+        .rst(sys_rst), 
+        .zero_motors(clk1_zero), 
+        .target_position(target1), 
+        .current_position(current1),
+        .step_pin(step1_pin), 
+        .dir_pin(dir1_pin)
     );
     
     stepper_motor_controller motor2(
-        .clk(clk1), .rst(reset), .zero_motors(clk1_zero),
-        .target_position(target2), .current_position(current2),
-        .step_pin(step2_pin), .dir_pin(dir2_pin)
+        .clk(clk1), 
+        .rst(sys_rst), 
+        .zero_motors(clk1_zero), 
+        .target_position(target2), 
+        .current_position(current2),
+        .step_pin(step2_pin), 
+        .dir_pin(dir2_pin)
     );
     
     stepper_motor_controller motor3(
-        .clk(clk1), .rst(reset), .zero_motors(clk1_zero),
-        .target_position(target3), .current_position(current3),
-        .step_pin(step3_pin), .dir_pin(dir3_pin)
+        .clk(clk1), 
+        .rst(sys_rst), 
+        .zero_motors(clk1_zero), 
+        .target_position(target3), 
+        .current_position(current3),
+        .step_pin(step3_pin), 
+        .dir_pin(dir3_pin)
     );
 
     // WireOuts to read exact current position of each motor
