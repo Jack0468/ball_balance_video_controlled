@@ -21,5 +21,9 @@ void move_heart(double size, double speed, int repeat = 0);
 void muteAllSerialOutput();
 void enableAllSerialOutput();
 
+extern double error[2];
+extern double integ[2];
+extern double deriv[2];
+extern double output_angles[2];
 
 #endif

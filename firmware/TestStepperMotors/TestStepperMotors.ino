@@ -1,8 +1,8 @@
 #include <AccelStepper.h>
 
-#define ENA_PIN 8
-#define STEP_PIN 2
-#define DIR_PIN 3
+#define ENA_PIN PD0
+#define STEP_PIN PD5
+#define DIR_PIN PD4
 
 AccelStepper motorA(1, STEP_PIN, DIR_PIN);
 
@@ -56,4 +56,23 @@ void loop() {
 
   Serial.println("Cycle complete. Waiting 2 seconds...");
   delay(2000);
+
+  
+}
+
+void canRotate() {
+  // 1. Ensure driver is enabled
+  digitalWrite(ENA_PIN, LOW); 
+  
+  // 2. Set direction
+  digitalWrite(DIR_PIN, HIGH); 
+  
+  // 3. Manually pulse the STEP pin
+  digitalWrite(STEP_PIN, HIGH);
+  delayMicroseconds(50); // 50us HIGH pulse
+  digitalWrite(STEP_PIN, LOW);
+  
+  // 4. Wait a bit before the next step (controls speed)
+  // 2000us = roughly 500 steps a second
+  delayMicroseconds(2000); 
 }

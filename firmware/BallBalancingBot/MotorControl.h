@@ -14,6 +14,7 @@ extern AccelStepper motorB;
 extern AccelStepper motorC;
 extern MultiStepper motors;
 
+extern long int pos[3];
 
 // Function prototypes
 void motor_init();

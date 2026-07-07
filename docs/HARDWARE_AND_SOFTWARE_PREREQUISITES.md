@@ -23,8 +23,8 @@ You will need a **hybrid toolchain** utilizing two different Xilinx suites:
 
 > [!WARNING]
 > **Microcontroller vs. FPGA (The Spartan-3 Space Problem)**
-> A common misconception is that an FPGA has "more compute power" or "more SRAM" than a microcontroller like the Teensy. 
-> - A **Teensy (Microcontroller)** has a dedicated Floating Point Unit (FPU). You can run a complex trig function like `acos()` a million times sequentially, and it doesn't take up any extra "physical space" on the chip.
+> A common misconception is that an FPGA has "more compute power" or "more SRAM" than a microcontroller like the STM32F407. 
+> - A **Microcontroller (STM32F407G-DISC1)** has a dedicated Hardware Floating Point Unit (Cortex-M4F). You can run a complex trig function like `acos()` a million times sequentially, and it doesn't take up any extra "physical space" on the chip.
 > - An **FPGA** doesn't run code sequentially; it builds physical circuits out of logic gates. Synthesizing hardware for `acos()` or `sqrt()` requires wiring together thousands of logic cells and DSP slices. If your IK calculates `acos()` for 3 arms simultaneously, the FPGA must physically construct three separate `acos()` circuits on the silicon.
 > 
 > The older **Spartan-3** on the XEM3010 only has ~32 DSP slices. Because we are physically limited by silicon real estate (not memory/SRAM), synthesizing trigonometric IK math directly into hardware might exceed the physical capacity of the chip. 

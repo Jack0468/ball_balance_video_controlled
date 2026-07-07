@@ -1,5 +1,14 @@
 # Project Logbook
 
+## 07/07/2026
+### Architecture Refactor: Offloading Control to Teensy
+- **Control Logic Migration**: Migrated the `DataCollectionStateMachine`, PID controller execution, and Inverse Kinematics entirely to the Teensy firmware, offloading the Python host script.
+- **Fixed-Rate Control Loop**: Restructured `BallBalancingBot.ino` to run a strict 50Hz (20ms) control loop, guaranteeing stable PID `dt` timings and robust telemetry streaming.
+- **Telemetry Enhancements**: Engineered a 68-byte packed binary struct for high-efficiency USB telemetry. Expanded the dataset to log 17 variables, including explicit motor targets (`theta_a`, `theta_b`, `theta_c`) and PID internal states (`integral`, `derivative`), to properly capture expert action-states for future ML Imitation Learning / Behavioral Cloning.
+- **Timestamp Synchronization**: Rewrote `collect_training_data.py` to feature a daemon thread that captures the 50Hz Teensy telemetry while the main thread captures 30fps FPGA frames. Immediately timestamps incoming data on the host to create a reliable unified time-domain and perfectly sync ML labels with images.
+- **Teensy Camera Removal**: Cleaned up the Teensy codebase by deleting the obsolete `CameraAcquisition` modules, as the Opal Kelly FPGA is now exclusively responsible for all video streaming.
+- **Microcontroller Migration**: JMC broke the Teensy 3.6 by omitting a proper star ground on the power supply perf board, leading to a catastrophic ground loop/voltage spike. The architecture has now been migrated to an **STM32F407G-DISC1**. Firmware and hardware documentation updated to reflect STM32 compatibility (e.g., removing Teensy-specific `Serial.send_now()`).
+
 ## 03/07/2026
 ### FPGA Architecture & Motor Control Debugging (Opal Kelly XEM3010)
 - **Directory Restructuring**: Renamed the outdated `fpga/camera_i2c` directory to `fpga/main_controller` to accurately reflect its role as the unified top-level Verilog architecture (handling camera streaming, ADC touchscreens, and 3-axis hardware PID motor control). Updated `README.md` with synthesis instructions for Xilinx ISE 14.7.

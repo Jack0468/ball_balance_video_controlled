@@ -40,6 +40,7 @@ host_software/ml_audio/data/
 evaluation_results/
 
 generated/
+logs/
 
 # Neural Network Weights and Logs
 *.pt

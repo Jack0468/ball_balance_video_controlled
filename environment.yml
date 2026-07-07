@@ -11,3 +11,7 @@ dependencies:
   - pip:
       - ultralytics
       - tensorflow
+      - pyserial
+      - matplotlib
+      - albumentations
+      - cocotb
