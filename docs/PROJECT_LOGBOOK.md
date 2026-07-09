@@ -1,5 +1,12 @@
 # Project Logbook
 
+## 09/07/2026
+### Motor Calibration & Touchscreen Inverse Kinematics Fixes
+- **Motor Initialization**: Updated `MotorControl.cpp` to use the correct user-calibrated raw steps (`STEPS_TO_ORIGIN` 475, 425, 505) instead of approximate angles to guarantee a perfectly flat horizontal plane upon startup. Fixed the `ENA` pin mapping on the STM32 to `PD0` to correctly power on the drivers.
+- **Removed Blocking PID Delay**: Removed an erroneous `delay(10)` from the `pid_balance()` timeout condition. This delay was starving the non-blocking `AccelStepper` `run()` function of CPU cycles, forcing the motors to crawl back to horizontal at a sluggish 100 steps/sec (which appeared as "jittering/locking"). The motors now return to perfectly horizontal instantly.
+- **PID Speed Limits & Jitter Fix**: Drastically increased `AccelStepper` limits (Max Speed 6000, Accel 25000) for instant, rapid flicking in response to PID outputs. Uncommented the `deriv[i]` constraint in `PIDControllers.cpp` to heavily filter out touchscreen ADC noise and eliminate derivative motor buzz when the ball is stationary.
+- **Touchscreen 180-Degree Coordinate Alignment**: Diagnosed a severe Inverse Kinematics runaway positive feedback loop where pressing the Top Left corner of the screen caused the plate to tilt *towards* the stylus. Discovered the physical touchscreen is mounted 180 degrees rotated relative to the mathematical model (Motor C is physically Top Left, but mathematically Bottom Right). Fixed by digitally inverting the `x_mm` and `y_mm` mappings in `Screen.cpp` by `*-1`.
+
 ## 07/07/2026
 ### Architecture Refactor: Offloading Control to Teensy
 - **Control Logic Migration**: Migrated the `DataCollectionStateMachine`, PID controller execution, and Inverse Kinematics entirely to the Teensy firmware, offloading the Python host script.

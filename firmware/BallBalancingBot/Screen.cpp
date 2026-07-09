@@ -1,27 +1,28 @@
 #include "Screen.h"
 
 // Touchscreen wiring (lettering on the ribbon pin is the underside, red wire goes to 14)
-#define YP 16  // Must be an analog pin
-#define XM 15  // Must be an analog pin
-#define YM 14
-#define XP 17
+#define YP PA2  // Must be an analog pin (ADC123_IN2)
+#define XM PA3  // Must be an analog pin (ADC123_IN3)
+#define YM PB0  // Can be digital (but is also ADC capable)
+#define XP PB1  // Can be digital (but is also ADC capable)
 
 
-// Touch screen calibration (adjust if needed)
-#define TS_MINX 60
-#define TS_MAXX 963
-#define TS_MINY 80
-#define TS_MAXY 947
+// Touch screen calibration from physical bounds
+// The touchscreen axes are physically rotated 90 degrees relative to the screen dimensions!
+#define TS_LEFT 957    // Raw Y at Left Edge
+#define TS_RIGHT 54    // Raw Y at Right Edge
+#define TS_TOP 936     // Raw X at Top Edge
+#define TS_BOTTOM 92   // Raw X at Bottom Edge
 
 // Screen dimensions
-#define SCREEN_WIDTH_MM 167.0
-#define SCREEN_HEIGHT_MM 135.5
+#define SCREEN_WIDTH_MM 187.5
+#define SCREEN_HEIGHT_MM 141.0
 
 // Pressure thresholds (adjust if needed)
 #define MINPRESSURE .000000000001
 #define MAXPRESSURE 500
 
-TouchScreen ts = TouchScreen(XP, YP, XM, YM, 200);  // 300 = ohms of touchscreen
+TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);  // 300 = ohms of touchscreen
 TSPoint currentPoint;
 
 //map command but can return floating point values
@@ -41,7 +42,7 @@ bool check_detected() {
   pinMode(XM, OUTPUT);
   pinMode(YP, OUTPUT);
 
-  return (currentPoint.x > 0 && currentPoint.y < 1023);
+  return (currentPoint.z > 3);
 }
 
 //returns coordinates of the ball's position
@@ -54,24 +55,30 @@ coords get_coords() {
   pinMode(XM, OUTPUT);
   pinMode(YP, OUTPUT);
 
-  // Map raw values to mm with (0,0) in center
-  double x_mm = mapf(currentPoint.x, TS_MINX, TS_MAXX, SCREEN_WIDTH_MM / 2, -SCREEN_WIDTH_MM / 2);
-  double y_mm = mapf(currentPoint.y, TS_MINY, TS_MAXY, SCREEN_HEIGHT_MM / 2, -SCREEN_HEIGHT_MM / 2);
+  // Map raw values to physical mm with (0,0) dead center.
+  // Note: Raw Y controls physical Left/Right (X_mm)
+  //       Raw X controls physical Top/Bottom (Y_mm)
+  double x_mm = mapf(currentPoint.y, TS_LEFT, TS_RIGHT, -SCREEN_WIDTH_MM / 2.0, SCREEN_WIDTH_MM / 2.0);
+  double y_mm = mapf(currentPoint.x, TS_BOTTOM, TS_TOP, -SCREEN_HEIGHT_MM / 2.0, SCREEN_HEIGHT_MM / 2.0);
 
+  // The original Teensy code relied on X > 0, but the STM32 ADC floats and reads noise!
+  // We must use the Z pressure to filter out phantom touches.
+  bool isValidTouch = (currentPoint.z > 3);
 
-  if (x_mm == 94.60 || y_mm == -79.63) {
+  // If no touch is detected, return the last known good position
+  if (!isValidTouch) {
     p.x_mm = last_x;
     p.y_mm = last_y;
-    p.z = 0;
+    p.z = 0; // Signals NO TOUCH to the PID controller
     return p;
   }
 
-  // All good — save and return
-  last_x = x_mm;
-  last_y = y_mm;
-  p.x_mm = x_mm;
-  p.y_mm = y_mm;
-  p.z = currentPoint.z;
+  // Valid touch!
+  last_x = -x_mm;
+  last_y = -y_mm;
+  p.x_mm = -x_mm;
+  p.y_mm = -y_mm;
+  p.z = 1; // Signals TOUCH DETECTED to the PID controller
 
   return p;
 }

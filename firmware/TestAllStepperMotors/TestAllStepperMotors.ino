@@ -1,18 +1,18 @@
 #include <AccelStepper.h>
 
-#define ENA_PIN 0
+#define ENA_PIN PD0
 
 // Motor A pins
-#define STEP_PIN_A 3
-#define DIR_PIN_A 2
+#define STEP_PIN_A PD3
+#define DIR_PIN_A PD2
 
 // Motor B pins
-#define STEP_PIN_B 5
-#define DIR_PIN_B 4
+#define STEP_PIN_B PD5
+#define DIR_PIN_B PD4
 
 // Motor C pins
-#define STEP_PIN_C 7
-#define DIR_PIN_C 6
+#define STEP_PIN_C PD7
+#define DIR_PIN_C PD6
 
 AccelStepper motorA(1, STEP_PIN_A, DIR_PIN_A);
 AccelStepper motorB(1, STEP_PIN_B, DIR_PIN_B);
