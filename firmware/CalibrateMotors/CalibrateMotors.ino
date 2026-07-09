@@ -20,10 +20,10 @@ int step_size = 10;
 void setup() {
   Serial.begin(115200);
   pinMode(ENA_PIN, OUTPUT);
-  
+
   // ENA is active LOW for TMC2208
-  digitalWrite(ENA_PIN, LOW); 
-  
+  digitalWrite(ENA_PIN, LOW);
+
   motorA.setMaxSpeed(1000);
   motorA.setAcceleration(800);
   motorB.setMaxSpeed(1000);
@@ -44,30 +44,61 @@ void loop() {
   if (Serial.available() > 0) {
     char cmd = Serial.read();
     bool moved = false;
-    
+
     // Motor A
-    if (cmd == 'q') { stepsA += step_size; motorA.moveTo(stepsA); moved = true; }
-    else if (cmd == 'a') { stepsA -= step_size; motorA.moveTo(stepsA); moved = true; }
-    
+    if (cmd == 'q') {
+      stepsA += step_size;
+      motorA.moveTo(stepsA);
+      moved = true;
+    } else if (cmd == 'a') {
+      stepsA -= step_size;
+      motorA.moveTo(stepsA);
+      moved = true;
+    }
+
     // Motor B
-    else if (cmd == 'w') { stepsB += step_size; motorB.moveTo(stepsB); moved = true; }
-    else if (cmd == 's') { stepsB -= step_size; motorB.moveTo(stepsB); moved = true; }
-    
+    else if (cmd == 'w') {
+      stepsB += step_size;
+      motorB.moveTo(stepsB);
+      moved = true;
+    } else if (cmd == 's') {
+      stepsB -= step_size;
+      motorB.moveTo(stepsB);
+      moved = true;
+    }
+
     // Motor C
-    else if (cmd == 'e') { stepsC += step_size; motorC.moveTo(stepsC); moved = true; }
-    else if (cmd == 'd') { stepsC -= step_size; motorC.moveTo(stepsC); moved = true; }
-    
+    else if (cmd == 'e') {
+      stepsC += step_size;
+      motorC.moveTo(stepsC);
+      moved = true;
+    } else if (cmd == 'd') {
+      stepsC -= step_size;
+      motorC.moveTo(stepsC);
+      moved = true;
+    }
+
     // Step Size
-    else if (cmd == '+') { step_size *= 2; Serial.print("Step size: "); Serial.println(step_size); }
-    else if (cmd == '-') { step_size = max(1, step_size / 2); Serial.print("Step size: "); Serial.println(step_size); }
-    
+    else if (cmd == '+') {
+      step_size *= 2;
+      Serial.print("Step size: ");
+      Serial.println(step_size);
+    } else if (cmd == '-') {
+      step_size = max(1, step_size / 2);
+      Serial.print("Step size: ");
+      Serial.println(step_size);
+    }
+
     if (moved) {
-      Serial.print("Current Absolute Steps -> A: "); Serial.print(stepsA);
-      Serial.print("\tB: "); Serial.print(stepsB);
-      Serial.print("\tC: "); Serial.println(stepsC);
+      Serial.print("Current Absolute Steps -> A: ");
+      Serial.print(stepsA);
+      Serial.print("\tB: ");
+      Serial.print(stepsB);
+      Serial.print("\tC: ");
+      Serial.println(stepsC);
     }
   }
-  
+
   motorA.run();
   motorB.run();
   motorC.run();

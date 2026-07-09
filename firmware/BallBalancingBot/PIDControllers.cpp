@@ -3,13 +3,13 @@
 #include "PIDControllers.h"
 
 // PID Constants
-#define kp .8  //.8
-#define ki .2 //.2
-#define kd .09 //.09
-#define kv 0.05 //.05
-#define kp_adj .4 //.4
-#define ki_adj .25 //.25
-#define kd_adj .23 //.23
+#define kp .8            //.8
+#define ki .2            //.2
+#define kd .09           //.09
+#define kv 0.05          //.05
+#define kp_adj .40       //.45
+#define ki_adj 0.0      // 0.25
+#define kd_adj 0.23       //.23
 #define max_output 83.5  // max X distance away from the center
 #define max_angle 12.5   // max tilt angle
 
@@ -56,24 +56,40 @@ void pid_balance(double setpoint_x, double setpoint_y) {
         //if (i == 0) continue; // Skip Y axis during X tuning
 
         error_prev[i] = error[i];
-        double error_current = (i == 0) ? (p.y_mm - setpoint_y) : (p.x_mm - setpoint_x);  //Calculates error based on ball position
-        double v = constrain(ball_vel[i], -1000, 1000); // chooses ball velocity from earlier depending on axis
+        double error_raw = (i == 0) ? (p.y_mm - setpoint_y) : (p.x_mm - setpoint_x);  //Calculates error based on ball position
+        double error_current = error_raw;
+
+        // Deadband: If the ball is within 3.0mm of the center, consider the error to be 0 to let it settle
+        // This instantly silences the P and D terms, completely removing touchscreen ADC noise so the motors freeze quietly!
+        if (abs(error_current) < 3.0) {
+            error_current = 0;
+            // Note: We DO NOT clear integ[i] here! The I-term must remain active to continuously 
+            // compensate for any physical miscalibration in the motor offsets (steady-state tilt).
+        }
+
         error[i] = error_current; 
+        
+        // Calculate derivative using the processed error. 
+        // When entering the deadband (e.g. 3.1 -> 0.0), this creates a massive negative derivative that gets clipped to 55,
+        // providing a perfectly-timed 'braking pulse' to stop the ball exactly in the center!
+        deriv[i] = (error[i] - error_prev[i]) / dt;
+        deriv[i] = isnan(deriv[i]) || isinf(deriv[i]) ? 0 : deriv[i];
+        deriv[i] = constrain(deriv[i], -800, 800);
+        
+        double v = constrain(ball_vel[i], -1000, 1000); // chooses ball velocity from earlier depending on axis
         integ[i] += error[i] * dt;                                                       // Calculates integral term by summing up error * dt
-        integ[i] = constrain(integ[i], -50, 50);                                         // Constrains integral values to prevent windup
-        deriv[i] = (error[i] - error_prev[i]) / dt;                                      //Calculates derivative term by finding rate of change in the given interval
-        deriv[i] = isnan(deriv[i]) || isinf(deriv[i]) ? 0 : deriv[i];                    // Simple check to eliminate nonreal or infinite numbers, as derivative is being divided by a number that could be zero
-        deriv[i] = constrain(deriv[i], -55, 55); // Constrains derivative, which prevents random spikes
+        integ[i] = constrain(integ[i], -150, 150);                                       // Increased constraint to allow pushing ball out of standing divots
 
         if (abs(error[i]) < 25) {
           output[i] = kp_adj * error[i] + ki_adj * integ[i] + kd_adj * deriv[i];
+          Serial.println((String) "P: " + (kp_adj * error[i]) + " I: " + (ki_adj * integ[i]) + " D: " + (kd_adj * deriv[i]) + " V: " + (kv * v));
         }
         else {
           output[i] = kp * error[i] + ki * integ[i] + kd * deriv[i] - kv*v; // Forms output by adding P, I, and D terms. Currently an arbitrary value
+          Serial.println((String) "P: " + (kp * error[i]) + " I: " + (ki * integ[i]) + " D: " + (kd * deriv[i]) + " V: " + (kv * v));
         }
 
         output_angles[i] = constrain(output[i], -max_output, max_output) * (max_angle / max_output);  // scales down PID output and maps it to an angle
-        Serial.println((String) "P: " + (kp * error[i]) + " I: " + (ki * integ[i]) + " D: " + (kd * deriv[i]) + " V: " + (kv * v));
         Serial.println((String) "error[i]: " + error[i] + " .error_prev[i]: " + error_prev[i] + " .dt: " + dt);
       }
 

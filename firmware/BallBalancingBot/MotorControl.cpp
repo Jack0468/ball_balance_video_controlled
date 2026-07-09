@@ -1,8 +1,8 @@
 #include "MotorControl.h"
 
-#define STEPS_TO_ORIGIN_A 475 // steps offset from hardstop
-#define STEPS_TO_ORIGIN_B 425 // steps offset from hardstop
-#define STEPS_TO_ORIGIN_C 505 // steps offset from hardstop
+#define STEPS_TO_ORIGIN_A 150 // steps offset from hardstop
+#define STEPS_TO_ORIGIN_B 110 // steps offset from hardstop
+#define STEPS_TO_ORIGIN_C 220 // steps offset from hardstop
 #define ENA PD0 // ENA pin
 #define h0 87 // height of platform when motors are at zero position
 #define ks 100.0 // a constant to change our proportional speed function
@@ -45,6 +45,8 @@ double steps_to_angle(int steps) {
 //moves motors to position where bottom leg is parallel to the ground. this is the zero position
 void home_motors() {
 
+  // Move NEGATIVE steps to go UP (away from hardstops)
+  // Because the A/B motors were physically flipped, positive steps move DOWN!
   pos[0] = STEPS_TO_ORIGIN_A;
   pos[1] = STEPS_TO_ORIGIN_B;
   pos[2] = STEPS_TO_ORIGIN_C;
