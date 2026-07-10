@@ -11,6 +11,7 @@
 extern AccelStepper motorA;
 extern AccelStepper motorB;
 extern AccelStepper motorC;
+extern long int pos[3];
 
 
 // Function prototypes
@@ -20,6 +21,7 @@ double steps_to_angle(int steps);
 void home_motors();
 void go_home();
 void move_to_angle(double theta_deg, double phi_deg, double h);
+void speed_controller();
 void test_motor_speed();
 
 #endif

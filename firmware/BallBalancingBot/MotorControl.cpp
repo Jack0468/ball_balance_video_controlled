@@ -1,8 +1,8 @@
 #include "MotorControl.h"
 
-#define STEPS_TO_ORIGIN_A 130 // steps offset from hardstop
+#define STEPS_TO_ORIGIN_A 114 // steps offset from hardstop
 #define STEPS_TO_ORIGIN_B 125 // steps offset from hardstop
-#define STEPS_TO_ORIGIN_C 155 // steps offset from hardstop
+#define STEPS_TO_ORIGIN_C 170 // steps offset from hardstop
 #define ENA PD0 // ENA pin
 #define h0 87 // height of platform when motors are at zero position
 #define ks 100.0 // a constant to change our proportional speed function
@@ -12,6 +12,7 @@ AccelStepper motorA(1, PD3, PD2);  //(driver type, STEP, DIR) Driver A
 AccelStepper motorB(1, PD5, PD4);  //(driver type, STEP, DIR) Driver B
 AccelStepper motorC(1, PD7, PD6);  //(driver type, STEP, DIR) Driver C
 long int pos[3]; // stores positions of stepper motors
+double speed_prev[3] = {0, 0, 0}; // stores previous speeds for smoothing
 
 //initializes motors by adding them in multistepper class
 void motor_init() {
@@ -94,4 +95,27 @@ void move_to_angle(double theta_deg, double phi_deg, double h) {
   motorA.moveTo(pos[0]);
   motorB.moveTo(pos[1]);
   motorC.moveTo(pos[2]);
+}
+
+// Calculates proportional motor speeds for all three motors to make movements smooth
+void speed_controller() {
+  double current_pos[3];
+
+  current_pos[0] = motorA.currentPosition();
+  current_pos[1] = motorB.currentPosition();
+  current_pos[2] = motorC.currentPosition();
+
+  for (int i = 0; i < 3; i++) {
+    double target_speed = abs(current_pos[i] - pos[i]) * ks;
+    // Constrain speed so there aren't any sudden jumps
+    target_speed = constrain(target_speed, speed_prev[i] - 300, speed_prev[i] + 300);
+    // Constrain to physical limits (min 10 so it doesn't get permanently stuck if error is tiny)
+    target_speed = constrain(target_speed, 10, 1300);
+    
+    speed_prev[i] = target_speed;
+
+    if (i == 0) motorA.setMaxSpeed(target_speed);
+    if (i == 1) motorB.setMaxSpeed(target_speed);
+    if (i == 2) motorC.setMaxSpeed(target_speed);
+  }
 }

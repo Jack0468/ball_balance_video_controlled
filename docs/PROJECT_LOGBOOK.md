@@ -1,6 +1,33 @@
 # Project Logbook
 
-## 09/07/2026
+## 10/07/2026 (Part 2)
+### ML Vision Data Synchronization Pipeline
+- **Phase Stability Gating**: Updated `DataCollectionStateMachine.cpp` to explicitly wait for the ball to become completely stationary (using the EWMA `< 3mm` filter) before transitioning out of the `START` target of each phase. This enforces a strict constraint that we do not change targets until we have stable control, improving the consistency of our dataset.
+- **End-of-Run Sequence**: Added a finish sequence to `BallBalancingBot.ino`. When `is_done` triggers after all phases are complete, the controller overrides the setpoints to pitch the platform at a steep 12 degrees (dumping the ball off the table) and indefinitely locks the stepper motors.
+- **Hardware-Level Optical Synchronization**: Built `sync_telemetry_video.py` to synchronize 30fps vertical iPhone video (1080x1920) with the 50Hz binary telemetry dataset. The script identifies the first bright 500ms white/gray flash emitted by the laptop screen to anchor the video's start time to `host_timestamp_ms`. It then aligns frames based on closest timestamps (under a 50ms drift limit).
+- **Manual Crop Selector**: Developed `select_crop.py` as a manual ROI selection tool for the 1080p dataset. Because raw 1080p vertical video doesn't natively fit on standard laptop monitors during `cv2.selectROI`, the script intelligently downscales the display frame by 60% (scale=0.4) for easy user selection, then seamlessly multiplies the coordinates back up to return a perfect 1:1 original crop boundary.
+- **Automated Pipeline Execution**: Processed over 30,000+ frames from `video1` and `video2`. The `sync_telemetry_video.py` script ingests the manual crop bounds, perfectly isolates the touch platform, downscales the ROI to `640x480` for ML training efficiency, and outputs the labeled dataset to `02_silver`.
+
+#### Pipeline Usage Documentation
+To synchronize a new raw video dataset:
+
+1. **Find your Crop Box**: Run the helper script on the raw video. Drag a bounding box over the platform and press ENTER. It will print your crop coordinates.
+   ```bash
+   conda run -n ball_balance_env python host_software/ml_vision/scripts/select_crop.py --video host_software/ml_vision/data/01_bronze/video1/20260710_054604000_iOS.MOV
+   ```
+2. **Process and Sync Dataset**: Run the main sync script, feeding it the raw video, raw telemetry CSV, output directory, and the exact `--crop` string you received from step 1 (wrapped in quotes to avoid PowerShell parsing issues).
+   ```bash
+   conda run -n ball_balance_env python host_software/ml_vision/scripts/sync_telemetry_video.py --video host_software/ml_vision/data/01_bronze/video1/20260710_054604000_iOS.MOV --telemetry ml_vision/data/bronze/iphone_telemetry.csv --output host_software/ml_vision/data/02_silver --crop "82,435,915,762"
+   ```## 10/07/2026
+### Control Systems Overhaul & Data Collection Robustness
+- **Virtual Wall Oscillation Fix**: Discovered that the emergency "Virtual Wall" was causing the ball to aggressively ping-pong off the edges. The wall was teleporting the setpoint to `(0,0)`, which created a massive 71mm error and catapulted the ball at the maximum 12.5-degree tilt. Softened the wall to only push the target 15mm inwards (`56mm`), providing a firm but controlled restorative tilt.
+- **Slew Rate Limiter**: Implemented a Setpoint Slew Rate Limiter in `PIDControllers.cpp`. The state machine now instantly outputs discrete targets, but the PID controller internally ramps the setpoint at a maximum of `80mm/s`. This prevents sudden massive target jumps from generating violent error spikes.
+- **Derivative Kick Elimination**: Diagnosed severe control loop fighting caused by the new Slew Rate Limiter. Because the target was actively moving, taking the derivative of the Error (`Target - Ball`) caused the D-term to think the ball was flying at 80mm/s. Rewrote the D-term to calculate Derivative on Measurement (raw ball velocity) instead of Error, perfectly smoothing the movement.
+- **EWMA Settling Filter**: Removed the unreliable "3-second timer" for detecting when the ball reached a target. Replaced it with an Exponentially Weighted Moving Average (EWMA) filter on the X and Y errors. Adjusted the alpha weight to `0.015` (requiring ~8 seconds of continuous deadband stability) to mathematically guarantee the ball is at rest before generating the next target.
+- **Phase Start Synchronization**: Discovered that Phase 2 (Patterns) and Phase 3 (Sweeps) were blindly tracing their trajectories without waiting for the ball to arrive at the starting points. Added a `waiting_at_start` boolean to force the state machine to wait for EWMA stability at the start of every pattern and sweep, drastically improving the cleanliness of the ML dataset.
+- **Touchscreen ADC Debouncing**: Resistive touchscreens occasionally drop readings for 1-2 milliseconds due to ADC noise or the ball slightly bouncing. Added a `last_ball_detected_ms` tracker to gracefully debounce signal drops. The state machine now gives the ball a 1.5-second grace period before triggering an emergency Phase 0 recovery.
+- **End-of-Run Finish Sequence**: Modified the main `BallBalancingBot.ino` loop to capture the `is_done` flag. When all data collection phases are complete, the robot now automatically tilts to a steep 12-degree pitch to roll the ball completely off the platform, and permanently locks the stepper motors.
+- **Telemetry Upgrades**: Updated the Python `iphone_data_logger.py` and real-time `plot_log.py` scripts to dynamically parse an expanded binary struct. 
 ### Motor Calibration & Touchscreen Inverse Kinematics Fixes
 - **Motor Initialization**: Updated `MotorControl.cpp` to use the correct user-calibrated raw steps (`STEPS_TO_ORIGIN` 475, 425, 505) instead of approximate angles to guarantee a perfectly flat horizontal plane upon startup. Fixed the `ENA` pin mapping on the STM32 to `PD0` to correctly power on the drivers.
 - **Removed Blocking PID Delay**: Removed an erroneous `delay(10)` from the `pid_balance()` timeout condition. This delay was starving the non-blocking `AccelStepper` `run()` function of CPU cycles, forcing the motors to crawl back to horizontal at a sluggish 100 steps/sec (which appeared as "jittering/locking"). The motors now return to perfectly horizontal instantly.

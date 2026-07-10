@@ -2,13 +2,22 @@
 #include <math.h>
 
 DataCollectionStateMachine::DataCollectionStateMachine() {
-    state = PHASE_1_RANDOM;
+    state = PHASE_0_CENTERING;
     state_start_time_ms = millis();
     last_random_update_ms = millis();
     last_sweep_update_ms = millis();
     
+    phase0_duration_ms = 10000;  // 10 seconds for centering
     phase1_duration_ms = 100000; // 100 seconds
     phase2_duration_per_pattern_ms = 50000; // 50 seconds
+    
+    ewma_err_x = 100.0;
+    ewma_err_y = 100.0;
+    
+    waiting_at_start = true;
+    
+    in_recovery = false;
+    state_before_recovery = PHASE_0_CENTERING;
     
     current_pattern_idx = 0;
     
@@ -39,22 +48,119 @@ DataCollectionStateMachine::DataCollectionStateMachine() {
 void DataCollectionStateMachine::getNextTarget(double &out_x, double &out_y, bool &is_done) {
     unsigned long now = millis();
     unsigned long elapsed_in_state = now - state_start_time_ms;
+    
+    extern bool ball_detected;
+    
+    // Track the last time we had a solid reading
+    if (ball_detected) {
+        last_ball_detected_ms = now;
+    }
+    
+    // If ball goes missing for > 1500ms, automatically hijack the state machine into recovery mode!
+    // This perfectly debounces touchscreen ADC noise or bouncing.
+    if ((now - last_ball_detected_ms > 1500) && !in_recovery) {
+        in_recovery = true;
+        state_before_recovery = state;
+        state = PHASE_0_CENTERING;
+        ewma_err_x = 100.0;
+        ewma_err_y = 100.0;
+        state_start_time_ms = now;
+    }
+    
     is_done = false;
     
-    if (state == PHASE_1_RANDOM) {
-        if (now - last_random_update_ms >= 3333) { // 100 frames at 30Hz ~ 3.33 seconds
-            target_x = random(-600, 600) / 10.0;
-            target_y = random(-450, 450) / 10.0;
-            last_random_update_ms = now;
+    if (state == PHASE_0_CENTERING) {
+        target_x = 0.0;
+        target_y = 0.0;
+        
+        extern double current_ball_x;
+        extern double current_ball_y;
+        double err_x = abs(current_ball_x - target_x);
+        double err_y = abs(current_ball_y - target_y);
+        
+        // Update EWMA error metrics (alpha = 0.015 gives roughly 8 seconds of settling memory)
+        if (ball_detected) {
+            ewma_err_x = 0.015 * err_x + 0.985 * ewma_err_x;
+            ewma_err_y = 0.015 * err_y + 0.985 * ewma_err_y;
+        }
+        
+        // Once the moving average drops below 3.0mm, we consider it completely settled
+        if (ewma_err_x < 3.0 && ewma_err_y < 3.0) {
+            if (in_recovery) {
+                state = state_before_recovery;
+                in_recovery = false;
+            } else {
+                state = PHASE_1_RANDOM;
+            }
+            state_start_time_ms = now;
+            
+            // Reset EWMA for the next state
+            ewma_err_x = 100.0;
+            ewma_err_y = 100.0;
+        }
+    }
+    else if (state == PHASE_1_RANDOM) {
+        extern double current_ball_x;
+        extern double current_ball_y;
+        double err_x = abs(current_ball_x - target_x);
+        double err_y = abs(current_ball_y - target_y);
+        
+        // Update EWMA error metrics (alpha = 0.015 gives roughly 8 seconds of settling memory)
+        if (ball_detected) {
+            ewma_err_x = 0.015 * err_x + 0.985 * ewma_err_x;
+            ewma_err_y = 0.015 * err_y + 0.985 * ewma_err_y;
+        }
+        
+        if (ewma_err_x < 3.0 && ewma_err_y < 3.0) {
+            // EWMA has settled! Pick a new target.
+            double new_tx = random(-600, 600) / 10.0;
+            double new_ty = random(-450, 450) / 10.0;
+            
+            // Final constraint to keep it within safe target bounds
+            target_x = constrain(new_tx, -60.0, 60.0);
+            target_y = constrain(new_ty, -45.0, 45.0);
+            
+            // Reset EWMA for the next target
+            ewma_err_x = 100.0;
+            ewma_err_y = 100.0;
         }
         
         if (elapsed_in_state > phase1_duration_ms) {
             state = PHASE_2_PATTERNS;
             state_start_time_ms = now;
             current_pattern_idx = 0;
+            waiting_at_start = true;
+            ewma_err_x = 100.0;
+            ewma_err_y = 100.0;
         }
     }
     else if (state == PHASE_2_PATTERNS) {
+        if (waiting_at_start) {
+            if (current_pattern_idx == 0) {
+                target_x = 0.0; target_y = 0.0;
+            } else {
+                target_x = 5.0; target_y = 0.0; // Start of spiral
+            }
+            
+            extern double current_ball_x;
+            extern double current_ball_y;
+            double err_x = abs(current_ball_x - target_x);
+            double err_y = abs(current_ball_y - target_y);
+            
+            if (ball_detected) {
+                ewma_err_x = 0.015 * err_x + 0.985 * ewma_err_x;
+                ewma_err_y = 0.015 * err_y + 0.985 * ewma_err_y;
+            }
+            
+            if (ewma_err_x < 3.0 && ewma_err_y < 3.0) {
+                waiting_at_start = false;
+                state_start_time_ms = now; // Restart the phase timer so we get the full duration!
+                ewma_err_x = 100.0;
+                ewma_err_y = 100.0;
+            }
+            return;
+        }
+        
         // Frame count equivalent for smooth math: 30 frames per second
         double t_frames = (elapsed_in_state / 1000.0) * 30.0;
         double t = t_frames * 0.05;
@@ -71,6 +177,9 @@ void DataCollectionStateMachine::getNextTarget(double &out_x, double &out_y, boo
         if (elapsed_in_state > phase2_duration_per_pattern_ms) {
             current_pattern_idx++;
             state_start_time_ms = now; // reset timer for next pattern
+            waiting_at_start = true;
+            ewma_err_x = 100.0;
+            ewma_err_y = 100.0;
             if (current_pattern_idx >= 2) {
                 state = PHASE_3_SWEEPS;
                 state_start_time_ms = now;
@@ -88,6 +197,31 @@ void DataCollectionStateMachine::getNextTarget(double &out_x, double &out_y, boo
         
         double start_x = start_points[current_start_idx].x;
         double start_y = start_points[current_start_idx].y;
+        
+        if (waiting_at_start) {
+            target_x = start_x;
+            target_y = start_y;
+            
+            extern double current_ball_x;
+            extern double current_ball_y;
+            double err_x = abs(current_ball_x - target_x);
+            double err_y = abs(current_ball_y - target_y);
+            
+            if (ball_detected) {
+                ewma_err_x = 0.015 * err_x + 0.985 * ewma_err_x;
+                ewma_err_y = 0.015 * err_y + 0.985 * ewma_err_y;
+            }
+            
+            if (ewma_err_x < 3.0 && ewma_err_y < 3.0) {
+                waiting_at_start = false;
+                sweep_distance = 0.0;
+                last_sweep_update_ms = now;
+                ewma_err_x = 100.0;
+                ewma_err_y = 100.0;
+            }
+            return;
+        }
+        
         double dir_dx = directions[current_dir_idx].x;
         double dir_dy = directions[current_dir_idx].y;
         
@@ -108,6 +242,10 @@ void DataCollectionStateMachine::getNextTarget(double &out_x, double &out_y, boo
         if (abs(target_x) > 65.0 || abs(target_y) > 50.0 || sweep_distance >= 100.0) {
             sweep_distance = 0.0;
             current_dir_idx++;
+            waiting_at_start = true; // Wait for ball to return to start point!
+            ewma_err_x = 100.0;
+            ewma_err_y = 100.0;
+            
             if (current_dir_idx >= 8) {
                 current_dir_idx = 0;
                 current_start_idx++;

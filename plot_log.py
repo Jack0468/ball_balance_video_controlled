@@ -1,31 +1,32 @@
-import re
 import sys
 import threading
 import collections
+import struct
+import csv
 
 def analyze_log(filename):
-    y_errors = []
-    x_errors = []
+    y_err = []
+    x_err = []
     
-    with open(filename, 'r') as f:
-        lines = f.readlines()
-        
-    for i in range(len(lines)):
-        if lines[i].startswith("P: "):
-            if i+1 < len(lines) and lines[i+1].startswith("error[i]:"):
-                m = re.search(r"error\[i\]:\s+([-\d.]+)", lines[i+1])
-                if m:
-                    err = float(m.group(1))
-                    x_errors.append(err)
-
-    if not x_errors:
-        print("No errors found.")
+    print(f"Analyzing CSV log: {filename}")
+    try:
+        with open(filename, 'r') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                try:
+                    y_err.append(float(row['error_y']))
+                    x_err.append(float(row['error_x']))
+                except (ValueError, KeyError):
+                    continue
+    except Exception as e:
+        print(f"Failed to read CSV: {e}")
         return
 
-    y_err = x_errors[0::2]
-    x_err = x_errors[1::2]
-    
-    print(f"Total frames: {len(y_err)} (approx {len(y_err)*0.01:.2f} seconds)")
+    if not x_err:
+        print("No valid error data found in CSV.")
+        return
+
+    print(f"Total frames: {len(y_err)} (approx {len(y_err)*0.033:.2f} seconds at 30Hz)")
     
     # Check if settled
     y_in_deadband = [abs(e) < 3.0 for e in y_err]
@@ -54,8 +55,8 @@ def analyze_log(filename):
     y_settle = find_settling_time(y_err)
     x_settle = find_settling_time(x_err)
     
-    print(f"Y settled at frame: {y_settle} (approx {y_settle*0.01:.2f}s)")
-    print(f"X settled at frame: {x_settle} (approx {x_settle*0.01:.2f}s)")
+    print(f"Y settled at frame: {y_settle} (approx {y_settle*0.033:.2f}s)")
+    print(f"X settled at frame: {x_settle} (approx {x_settle*0.033:.2f}s)")
     
     def count_crossings(err_list):
         crossings = 0
@@ -81,6 +82,7 @@ def analyze_log(filename):
     print(f"Y peaks (mm): {[round(p, 1) for p in y_peaks[:10]]}... (total {len(y_peaks)})")
     print(f"X peaks (mm): {[round(p, 1) for p in x_peaks[:10]]}... (total {len(x_peaks)})")
 
+
 def live_plot(port):
     try:
         import serial
@@ -91,63 +93,49 @@ def live_plot(port):
         print("Please run: pip install pyserial matplotlib")
         return
 
-    print(f"Connecting to {port}...")
+    print(f"Connecting to {port} at 2000000 baud...")
     try:
-        ser = serial.Serial(port, 115200, timeout=1)
+        ser = serial.Serial(port, 2000000, timeout=1)
     except Exception as e:
         print(f"Failed to connect to {port}: {e}")
         return
 
     MAX_POINTS = 300
     
-    # Y-axis data
+    # Data deques
     y_errors = collections.deque(maxlen=MAX_POINTS)
-    y_P = collections.deque(maxlen=MAX_POINTS)
-    y_I = collections.deque(maxlen=MAX_POINTS)
-    y_D = collections.deque(maxlen=MAX_POINTS)
-    
-    # X-axis data
+    y_roll = collections.deque(maxlen=MAX_POINTS)
     x_errors = collections.deque(maxlen=MAX_POINTS)
-    x_P = collections.deque(maxlen=MAX_POINTS)
-    x_I = collections.deque(maxlen=MAX_POINTS)
-    x_D = collections.deque(maxlen=MAX_POINTS)
-    
-    current_axis = 0 # 0 for Y, 1 for X
+    x_pitch = collections.deque(maxlen=MAX_POINTS)
     
     def read_serial():
-        nonlocal current_axis
-        current_pid = None
+        struct_format = "<Ifffffffffffffff"
+        expected_size = struct.calcsize(struct_format)
+        sync_buf = bytearray()
+        
         while True:
             try:
-                line = ser.readline().decode('utf-8', errors='ignore').strip()
-                if not line:
-                    continue
-                
-                # Check for PID components
-                if line.startswith("P:"):
-                    m = re.match(r"P:\s*([-\d.]+)\s+I:\s*([-\d.]+)\s+D:\s*([-\d.]+)\s+V:\s*([-\d.]+)", line)
-                    if m:
-                        current_pid = (float(m.group(1)), float(m.group(2)), float(m.group(3)), float(m.group(4)))
+                if ser.in_waiting > 0:
+                    b = ser.read(1)
+                    sync_buf.append(b[0])
+                    if len(sync_buf) > 4:
+                        sync_buf.pop(0)
                         
-                # Check for error
-                elif line.startswith("error[i]:"):
-                    m = re.search(r"error\[i\]:\s+([-\d.]+)", line)
-                    if m and current_pid is not None:
-                        err = float(m.group(1))
-                        if current_axis == 0:
-                            y_errors.append(err)
-                            y_P.append(current_pid[0])
-                            y_I.append(current_pid[1])
-                            y_D.append(current_pid[2])
-                            current_axis = 1
-                        else:
-                            x_errors.append(err)
-                            x_P.append(current_pid[0])
-                            x_I.append(current_pid[1])
-                            x_D.append(current_pid[2])
-                            current_axis = 0
-                        current_pid = None
-                        
+                    # Match sync header 0xAABBCCDD
+                    if bytes(sync_buf) == b'\xAA\xBB\xCC\xDD':
+                        data = ser.read(expected_size)
+                        if len(data) == expected_size:
+                            unpacked = struct.unpack(struct_format, data)
+                            # unpacked: [0]=mcu_micros, [1]=target_x, [2]=target_y
+                            # [3]=touch_x, [4]=touch_y, [5]=error_x, [6]=error_y
+                            # [7]=pitch, [8]=roll, ...
+                            
+                            x_errors.append(unpacked[5])
+                            y_errors.append(unpacked[6])
+                            x_pitch.append(unpacked[7]) # pitch (controls X)
+                            y_roll.append(unpacked[8])  # roll (controls Y)
+                            
+                        sync_buf.clear()
             except Exception as e:
                 pass
 
@@ -155,7 +143,7 @@ def live_plot(port):
     t.start()
 
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(14, 8))
-    fig.canvas.manager.set_window_title(f'Live PID Tuning - {port}')
+    fig.canvas.manager.set_window_title(f'Live Binary Telemetry Plot - {port}')
     
     # Y Error Plot
     line_y_err, = ax1.plot([], [], 'b-', label='Y Error (mm)')
@@ -168,14 +156,12 @@ def live_plot(port):
     ax1.legend(loc='upper right')
     ax1.grid(True)
 
-    # Y PID Plot
-    line_y_p, = ax2.plot([], [], 'r-', label='P', alpha=0.8)
-    line_y_i, = ax2.plot([], [], 'g-', label='I', alpha=0.8)
-    line_y_d, = ax2.plot([], [], 'orange', label='D', alpha=0.8)
+    # Y Output Angle Plot
+    line_y_roll, = ax2.plot([], [], 'r-', label='Roll Angle')
     ax2.axhline(0, color='black', linewidth=1)
     ax2.set_xlim(0, MAX_POINTS)
-    ax2.set_ylim(-150, 150)
-    ax2.set_title('Y-Axis PID Output')
+    ax2.set_ylim(-15, 15)
+    ax2.set_title('Y-Axis Output Angle')
     ax2.legend(loc='upper right')
     ax2.grid(True)
 
@@ -190,14 +176,12 @@ def live_plot(port):
     ax3.legend(loc='upper right')
     ax3.grid(True)
 
-    # X PID Plot
-    line_x_p, = ax4.plot([], [], 'r-', label='P', alpha=0.8)
-    line_x_i, = ax4.plot([], [], 'g-', label='I', alpha=0.8)
-    line_x_d, = ax4.plot([], [], 'orange', label='D', alpha=0.8)
+    # X Output Angle Plot
+    line_x_pitch, = ax4.plot([], [], 'r-', label='Pitch Angle')
     ax4.axhline(0, color='black', linewidth=1)
     ax4.set_xlim(0, MAX_POINTS)
-    ax4.set_ylim(-150, 150)
-    ax4.set_title('X-Axis PID Output')
+    ax4.set_ylim(-15, 15)
+    ax4.set_title('X-Axis Output Angle')
     ax4.legend(loc='upper right')
     ax4.grid(True)
 
@@ -205,33 +189,28 @@ def live_plot(port):
         if len(y_errors) > 0:
             rng_y = range(len(y_errors))
             line_y_err.set_data(rng_y, list(y_errors))
-            line_y_p.set_data(rng_y, list(y_P))
-            line_y_i.set_data(rng_y, list(y_I))
-            line_y_d.set_data(rng_y, list(y_D))
+            line_y_roll.set_data(rng_y, list(y_roll))
             
         if len(x_errors) > 0:
             rng_x = range(len(x_errors))
             line_x_err.set_data(rng_x, list(x_errors))
-            line_x_p.set_data(rng_x, list(x_P))
-            line_x_i.set_data(rng_x, list(x_I))
-            line_x_d.set_data(rng_x, list(x_D))
+            line_x_pitch.set_data(rng_x, list(x_pitch))
             
-        return line_y_err, line_y_p, line_y_i, line_y_d, line_x_err, line_x_p, line_x_i, line_x_d
+        return line_y_err, line_y_roll, line_x_err, line_x_pitch
 
     print("Opening live plot... Close the window to stop.")
-    ani = animation.FuncAnimation(fig, update, interval=50, blit=True, cache_frame_data=False)
+    ani = animation.FuncAnimation(fig, update, interval=33, blit=True, cache_frame_data=False)
     plt.tight_layout()
     plt.show()
     ser.close()
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python plot_log.py <logfile.log OR COM_PORT>")
+        print("Usage: python plot_log.py <logfile.csv OR COM_PORT>")
         sys.exit(1)
         
     target = sys.argv[1]
     
-    # Check if the argument is a COM port or Linux serial device
     if target.upper().startswith("COM") or target.startswith("/dev/"):
         live_plot(target)
     else:

@@ -4,6 +4,7 @@
 #include <Arduino.h>
 
 enum DataCollectionState {
+    PHASE_0_CENTERING,
     PHASE_1_RANDOM,
     PHASE_2_PATTERNS,
     PHASE_3_SWEEPS,
@@ -23,8 +24,15 @@ public:
 private:
     DataCollectionState state;
     unsigned long state_start_time_ms;
+    unsigned long phase0_duration_ms;
     unsigned long phase1_duration_ms;
     unsigned long phase2_duration_per_pattern_ms;
+    
+    double ewma_err_x;
+    double ewma_err_y;
+    
+    bool in_recovery;
+    DataCollectionState state_before_recovery;
     
     int current_pattern_idx;
     
@@ -40,6 +48,9 @@ private:
     
     unsigned long last_random_update_ms;
     unsigned long last_sweep_update_ms;
+    unsigned long last_ball_detected_ms;
+    
+    bool waiting_at_start;
 };
 
 #endif

@@ -8,11 +8,43 @@
 #define ki 0.1           //.2
 #define kd 0.05           //.09
 #define kv 0.0           //.05
-#define kp_adj 0.3       //.4
-#define ki_adj 0.2       //.25
-#define kd_adj 0.05       //.23
+#define kp_adj 0.3       // restored to original
+#define ki_adj 0.3       // restored to original
+#define kd_adj 0.05      // restored to original
 #define max_output 73.5  // max X distance away from the center
 #define max_angle 12.5   // max tilt angle
+
+extern bool enable_binary_telemetry;
+extern double current_ball_x;
+extern double current_ball_y;
+extern bool ball_detected;
+
+bool enable_binary_telemetry = true;
+double current_ball_x = 0;
+double current_ball_y = 0;
+bool ball_detected = false;
+
+#pragma pack(push, 1)
+struct TelemetryPacket {
+    uint32_t sync_header;
+    uint32_t mcu_micros;
+    float target_x;
+    float target_y;
+    float touch_x;
+    float touch_y;
+    float error_x;
+    float error_y;
+    float pitch;
+    float roll;
+    float theta_a;
+    float theta_b;
+    float theta_c;
+    float integral_x;
+    float integral_y;
+    float deriv_x;
+    float deriv_y;
+};
+#pragma pack(pop)
 
 //Variables needed for PID control
 double error[2] = { 0, 0 }, error_prev[2], error_raw_prev[2] = { 0, 0 }, integ[2] = { 0, 0 }, deriv[2] = { 0, 0 }, deriv_prev[2] = { 0, 0 }, output[2], output_angles[2];  // error/error_prev for P, integ for I, deriv for D
@@ -35,14 +67,58 @@ void pid_balance(double setpoint_x, double setpoint_y) {
     return;  // Ends function
   }
 
-  // Only runs if minimum sample time has passed (0.02 seconds or 20 milliseconds)
-  //Remember, a higher sample size will reduce max speed as it will only call the run function once per sample
-  if (dt >= 0.01) {
+  // Only runs if minimum sample time has passed (0.033 seconds or 33 milliseconds for 30Hz)
+  if (dt >= 0.033) {
     coords p = get_coords();           // retrieves ball's position
     bool detected = (p.z > 0);         // checks if ball is detected (get_coords sets p.z to 1 if valid, 0 if not)
+    ball_detected = detected;
 
     if (detected) {
       last_detected_time = t;
+      current_ball_x = p.x_mm;
+      current_ball_y = p.y_mm;
+
+      // Target position guardrail: Never allow the state machine to target closer than 14mm to the edge!
+      // Physical edges: 85mm (X) and 75mm (Y). Max targets: 71mm (X) and 61mm (Y).
+      setpoint_x = constrain(setpoint_x, -71.0, 71.0);
+      setpoint_y = constrain(setpoint_y, -61.0, 61.0);
+
+      // --- SETPOINT SLEW RATE LIMITER ---
+      // Moves the internal PID target smoothly towards the requested setpoint
+      // at a maximum velocity of 80mm/second. This prevents massive instantaneous
+      // errors from throwing the ball off the table when crossing the center.
+      static double internal_setpoint_x = 0;
+      static double internal_setpoint_y = 0;
+      
+      double max_slew_velocity = 80.0; // mm per second
+      double max_step = max_slew_velocity * dt;
+      
+      // Slew X
+      if (setpoint_x > internal_setpoint_x) {
+          internal_setpoint_x += max_step;
+          if (internal_setpoint_x > setpoint_x) internal_setpoint_x = setpoint_x;
+      } else if (setpoint_x < internal_setpoint_x) {
+          internal_setpoint_x -= max_step;
+          if (internal_setpoint_x < setpoint_x) internal_setpoint_x = setpoint_x;
+      }
+      
+      // Slew Y
+      if (setpoint_y > internal_setpoint_y) {
+          internal_setpoint_y += max_step;
+          if (internal_setpoint_y > setpoint_y) internal_setpoint_y = setpoint_y;
+      } else if (setpoint_y < internal_setpoint_y) {
+          internal_setpoint_y -= max_step;
+          if (internal_setpoint_y < setpoint_y) internal_setpoint_y = setpoint_y;
+      }
+
+      // --- VIRTUAL WALL (Edge Protection) ---
+      // Instead of teleporting the target to 0 (which creates a massive 12.5 degree catapult effect that causes edge oscillations),
+      // we just push the target 15mm inwards from the edge. This creates a firm but controlled restorative tilt to catch the ball.
+      if (p.x_mm > 71.0) internal_setpoint_x = 56.0;
+      else if (p.x_mm < -71.0) internal_setpoint_x = -56.0;
+      
+      if (p.y_mm > 61.0) internal_setpoint_y = 46.0;
+      else if (p.y_mm < -61.0) internal_setpoint_y = -46.0;
 
       // Predictive velocity control
       ball_vel[0] = (p.y_mm - p_prev[0]) / (dt*50);
@@ -57,7 +133,7 @@ void pid_balance(double setpoint_x, double setpoint_y) {
         //if (i == 0) continue; // Skip Y axis during X tuning
 
         error_prev[i] = error[i];
-        double error_raw = (i == 0) ? (p.y_mm - setpoint_y) : (p.x_mm - setpoint_x);  //Calculates error based on ball position
+        double error_raw = (i == 0) ? (p.y_mm - internal_setpoint_y) : (p.x_mm - internal_setpoint_x);  // Calculates error based on ball position
         double error_current = error_raw;
 
         // Deadband: If the ball is within 3.0mm of the center, consider the error to be 0 to let it settle
@@ -70,30 +146,36 @@ void pid_balance(double setpoint_x, double setpoint_y) {
 
         error[i] = error_current; 
         
-        // Calculate derivative using the raw error so the deadband doesn't cause massive artificial spikes!
-        double raw_deriv = (error_raw - error_raw_prev[i]) / dt;
-        error_raw_prev[i] = error_raw;
+        // Calculate derivative on Measurement (ball velocity) rather than Error!
+        // This prevents "Derivative Kick" where the continuously moving slew-target injects massive fake velocity into the D-term!
+        static double p_prev_raw[2] = {0, 0};
+        double current_pos = (i == 0) ? p.y_mm : p.x_mm;
+        double raw_deriv = (current_pos - p_prev_raw[i]) / dt;
+        p_prev_raw[i] = current_pos;
+        
         raw_deriv = isnan(raw_deriv) || isinf(raw_deriv) ? 0 : raw_deriv;
         
-        // Low-pass filter the derivative with a stronger alpha (0.1 instead of 0.25) to kill sensor noise
-        deriv[i] = (0.10 * raw_deriv) + (0.90 * deriv_prev[i]);
+        // Because we are running at 30Hz instead of 100Hz, the time step is 3.3x longer.
+        // To maintain the same physical filter time-constant (0.1 seconds), we must increase alpha from 0.10 to 0.35.
+        // If we don't, the D-term will lag 3x further behind reality, which makes the robot 'cooked' and unstable!
+        deriv[i] = (0.35 * raw_deriv) + (0.65 * deriv_prev[i]);
         deriv_prev[i] = deriv[i];
         
         double v = constrain(ball_vel[i], -1000, 1000); // chooses ball velocity from earlier depending on axis
         integ[i] += error[i] * dt;                                                       // Calculates integral term by summing up error * dt
-        integ[i] = constrain(integ[i], -150, 150);                                       // Increased constraint to allow pushing ball out of standing divots
+        integ[i] = constrain(integ[i], -50, 50);                                         // Reduced to prevent windup throwing it off the edge
 
         if (abs(error[i]) < 25) {
           output[i] = kp_adj * error[i] + ki_adj * integ[i] + kd_adj * deriv[i];
-          Serial.println((String) "P: " + (kp_adj * error[i]) + " I: " + (ki_adj * integ[i]) + " D: " + (kd_adj * deriv[i]) + " V: " + (kv * v));
+          if (!enable_binary_telemetry) Serial.println((String) "P: " + (kp_adj * error[i]) + " I: " + (ki_adj * integ[i]) + " D: " + (kd_adj * deriv[i]) + " V: " + (kv * v));
         }
         else {
           output[i] = kp * error[i] + ki * integ[i] + kd * deriv[i] - kv*v; // Forms output by adding P, I, and D terms. Currently an arbitrary value
-          Serial.println((String) "P: " + (kp * error[i]) + " I: " + (ki * integ[i]) + " D: " + (kd * deriv[i]) + " V: " + (kv * v));
+          if (!enable_binary_telemetry) Serial.println((String) "P: " + (kp * error[i]) + " I: " + (ki * integ[i]) + " D: " + (kd * deriv[i]) + " V: " + (kv * v));
         }
 
         output_angles[i] = constrain(output[i], -max_output, max_output) * (max_angle / max_output);  // scales down PID output and maps it to an angle
-        Serial.println((String) "error[i]: " + error[i] + " .error_prev[i]: " + error_prev[i] + " .dt: " + dt);
+        if (!enable_binary_telemetry) Serial.println((String) "error[i]: " + error[i] + " .error_prev[i]: " + error_prev[i] + " .dt: " + dt);
       }
 
       // SPIKE FILTERING
@@ -120,8 +202,36 @@ void pid_balance(double setpoint_x, double setpoint_y) {
       
       // Update motor targets
       move_to_angle(output_angles[0], -output_angles[1], 80);
+      
+      // Dynamically adjust max speeds to smooth out discrete 30Hz movements!
+      speed_controller();
 
-      //Serial.println((String) "X angle: " + output_angles[1] + ". Y angle: " + output_angles[0]);
+      // Send telemetry packet if enabled
+      if (enable_binary_telemetry) {
+          TelemetryPacket pkt;
+          pkt.sync_header = 0xDDCCBBAA; // 0xAABBCCDD packed little-endian
+          pkt.mcu_micros = micros();
+          pkt.target_x = setpoint_x; // Log the true state machine target
+          pkt.target_y = setpoint_y;
+          pkt.touch_x = p.x_mm;
+          pkt.touch_y = p.y_mm;
+          pkt.error_x = error[1];
+          pkt.error_y = error[0];
+          pkt.pitch = output_angles[1];
+          pkt.roll = output_angles[0];
+          
+          pkt.theta_a = steps_to_angle(pos[0]);
+          pkt.theta_b = steps_to_angle(pos[1]);
+          pkt.theta_c = steps_to_angle(pos[2]);
+          
+          pkt.integral_x = integ[1];
+          pkt.integral_y = integ[0];
+          pkt.deriv_x = deriv[1];
+          pkt.deriv_y = deriv[0];
+          
+          Serial.write((uint8_t*)&pkt, sizeof(TelemetryPacket));
+      }
+
     }
 
     else {
