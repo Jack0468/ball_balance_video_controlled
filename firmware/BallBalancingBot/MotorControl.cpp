@@ -1,8 +1,8 @@
 #include "MotorControl.h"
 
-#define STEPS_TO_ORIGIN_A 150 // steps offset from hardstop
-#define STEPS_TO_ORIGIN_B 110 // steps offset from hardstop
-#define STEPS_TO_ORIGIN_C 220 // steps offset from hardstop
+#define STEPS_TO_ORIGIN_A 130 // steps offset from hardstop
+#define STEPS_TO_ORIGIN_B 125 // steps offset from hardstop
+#define STEPS_TO_ORIGIN_C 155 // steps offset from hardstop
 #define ENA PD0 // ENA pin
 #define h0 87 // height of platform when motors are at zero position
 #define ks 100.0 // a constant to change our proportional speed function
@@ -23,9 +23,8 @@ void motor_init() {
   motorB.setAcceleration(25000);
   motorC.setAcceleration(25000);
   
-  // Since you physically flipped A and B to reverse them, we need to invert C in software
-  // so it moves in the same direction!
-  motorC.setPinsInverted(false, true, false);
+  // Motor directions will be calibrated and fixed purely in hardware.
+  // No software inversion is applied.
   pinMode(ENA, OUTPUT);
   digitalWrite(ENA, HIGH);
   delay(2000);

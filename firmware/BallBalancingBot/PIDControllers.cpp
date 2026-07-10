@@ -3,18 +3,19 @@
 #include "PIDControllers.h"
 
 // PID Constants
-#define kp .8            //.8
-#define ki .2            //.2
-#define kd .09           //.09
-#define kv 0.05          //.05
-#define kp_adj .40       //.45
-#define ki_adj 0.0      // 0.25
-#define kd_adj 0.23       //.23
-#define max_output 83.5  // max X distance away from the center
+// PID Constants
+#define kp 0.25           //.8
+#define ki 0.1           //.2
+#define kd 0.05           //.09
+#define kv 0.0           //.05
+#define kp_adj 0.3       //.4
+#define ki_adj 0.2       //.25
+#define kd_adj 0.05       //.23
+#define max_output 73.5  // max X distance away from the center
 #define max_angle 12.5   // max tilt angle
 
 //Variables needed for PID control
-double error[2] = { 0, 0 }, error_prev[2], integ[2] = { 0, 0 }, deriv[2] = { 0, 0 }, output[2], output_angles[2];  // error/error_prev for P, integ for I, deriv for D
+double error[2] = { 0, 0 }, error_prev[2], error_raw_prev[2] = { 0, 0 }, integ[2] = { 0, 0 }, deriv[2] = { 0, 0 }, deriv_prev[2] = { 0, 0 }, output[2], output_angles[2];  // error/error_prev for P, integ for I, deriv for D
 // variables for velocity damping
 double ball_vel[2] = {0,0}, p_prev[2] = {0,0};
 double predict_time = 0.3; 
@@ -69,12 +70,14 @@ void pid_balance(double setpoint_x, double setpoint_y) {
 
         error[i] = error_current; 
         
-        // Calculate derivative using the processed error. 
-        // When entering the deadband (e.g. 3.1 -> 0.0), this creates a massive negative derivative that gets clipped to 55,
-        // providing a perfectly-timed 'braking pulse' to stop the ball exactly in the center!
-        deriv[i] = (error[i] - error_prev[i]) / dt;
-        deriv[i] = isnan(deriv[i]) || isinf(deriv[i]) ? 0 : deriv[i];
-        deriv[i] = constrain(deriv[i], -800, 800);
+        // Calculate derivative using the raw error so the deadband doesn't cause massive artificial spikes!
+        double raw_deriv = (error_raw - error_raw_prev[i]) / dt;
+        error_raw_prev[i] = error_raw;
+        raw_deriv = isnan(raw_deriv) || isinf(raw_deriv) ? 0 : raw_deriv;
+        
+        // Low-pass filter the derivative with a stronger alpha (0.1 instead of 0.25) to kill sensor noise
+        deriv[i] = (0.10 * raw_deriv) + (0.90 * deriv_prev[i]);
+        deriv_prev[i] = deriv[i];
         
         double v = constrain(ball_vel[i], -1000, 1000); // chooses ball velocity from earlier depending on axis
         integ[i] += error[i] * dt;                                                       // Calculates integral term by summing up error * dt
