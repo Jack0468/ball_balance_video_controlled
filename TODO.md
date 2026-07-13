@@ -11,3 +11,69 @@ for 1/07/26
 work on the polling infractucture of the camera via verilog fpga.
 
 - [ ] RETUNE PID: The Python Host-PC control loop running over USB will have a completely different latency profile than the original bare-metal Teensy C++ loop. The constants (kp=0.8, ki=0.2, kd=0.09) will cause oscillations and need aggressive retuning.
+
+13/07/2026
+DO NOT BEGIN THIS WORK UNTIL INSTRUCTED.
+Here is the straight-to-implementation blueprint for the RRS ball tracking pipeline. This minimizes latency and keeps the real-time embedded logic separate from the heavy Python processing.
+
+Phase 1: iPhone to Laptop (Vision Pipeline)
+Protocol: UDP over USB-Tethered Network
+Framerate Target: 30 FPS (~33ms per frame)
+
+iPhone (Pyto Script):
+
+Initialize cv2.VideoCapture() and standard Python socket (UDP/IPv4).
+
+Inside the main loop:
+
+Read the frame.
+
+Downscale if necessary (e.g., 640x480 is plenty for ball tracking and saves bandwidth).
+
+Compress to JPEG: _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80]).
+
+Send the byte array directly to the laptop's tethered IP address via sock.sendto().
+
+Laptop (Receiver Thread):
+
+Open a UDP socket bound to the tethered IP/Port.
+
+Receive the byte array (sock.recvfrom()).
+
+Decompress instantly: frame = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_COLOR).
+
+Push this frame into a thread-safe queue so your PyTorch loop always has the most recent frame (drop older frames if the ML is running slower than 30 FPS).
+
+Phase 2: Laptop ML & Error Calculation
+Environment: Python + PyTorch + PySerial
+
+Inference: Pull the latest frame from the queue and run it through your PyTorch model to get the ball's bounding box (x, y, w, h).
+
+Error Calculation: Calculate the pixel difference between the center of the ball and the center of the camera frame (this is your setpoint error).
+
+Example: error_x = target_center_x - frame_center_x
+
+Data Serialization: Do not send raw strings (like "X:120, Y:-40\n") over serial; string parsing on the STM32 wastes clock cycles. Pack the error values into a fixed byte structure using Python's struct library.
+
+Format: [Start Byte] [Error X (16-bit int)] [Error Y (16-bit int)] [End Byte]
+
+Example: payload = struct.pack('<chh', b'<', error_x, error_y)
+
+Transmit: Blast that packed byte array out via pyserial at a high baud rate (e.g., 115200 or 921600).
+
+Phase 3: STM32 Actuator Control (The Real-Time Node)
+Environment: Embedded C/C++
+
+UART Reception: Set up a DMA (Direct Memory Access) or Interrupt-driven UART receive buffer. It looks for the start byte (<), reads the next 4 bytes (the two 16-bit integers), and updates a global current_error struct.
+
+The Hardware PID Loop:
+
+Run your PID math strictly on the STM32 using a hardware timer interrupt (e.g., firing exactly every 10ms or 20ms).
+
+The PID algorithm reads the latest current_error from the UART buffer, calculates the Proportional, Integral, and Derivative terms, and computes the new motor output.
+
+Actuation:
+
+The output of the PID loop directly updates the CCR (Capture/Compare Register) values for the PWM timers driving your motor controllers.
+
+Failsafe: Add a timeout. If the STM32 hasn't received a valid serial packet from the laptop in >100ms (meaning the ML crashed or the cable disconnected), immediately set PWM to neutral to stop the robot from spinning out of control.
