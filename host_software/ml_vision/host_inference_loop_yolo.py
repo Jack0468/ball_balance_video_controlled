@@ -148,7 +148,7 @@ def main():
                     
                     # Send to STM32
                     if ser:
-                        payload = struct.pack('<hh', int(err_x), int(err_y))
+                        payload = struct.pack('<chh', b'<', int(err_x), int(err_y))
                         ser.write(payload)
                         
                     inference_ms = (time.perf_counter() - start_t) * 1000.0
