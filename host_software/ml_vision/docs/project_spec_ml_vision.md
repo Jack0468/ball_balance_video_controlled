@@ -31,6 +31,14 @@ Initally we have a video which we can break up into individual frames. The data 
 > [!NOTE]
 > All future data collection and processing MUST adhere to the Medallion Architecture (Bronze/Silver/Gold) as outlined in the core `ENGINEERING_STANDARDS.md`.
 
+> [!IMPORTANT]
+> **Prerequisite for ML File Structure:** All ML codebase additions MUST strictly adhere to the established logical sub-directories within `host_software/ml_vision/`:
+> - `core/`: Foundational modules (`preprocessor.py`, `coordinate_math.py`, etc.)
+> - `data_processing/`: Video and telemetry processing tools
+> - `training/`: Model generation, YOLO pose, and export scripts
+> - `tests/`: Validation and real-time inference scripts
+> Do not dump scripts into a generic `scripts/` directory.
+
 We will need preprocessing pipelines for this data.
 
 normalisation features to consider:

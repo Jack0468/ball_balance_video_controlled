@@ -1,3 +1,11 @@
+
+import sys
+import os
+# Add ml_vision root to sys.path to allow importing from core
+_ml_vision_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _ml_vision_root not in sys.path:
+    sys.path.insert(0, _ml_vision_root)
+
 """
 test_preprocessor.py
 
@@ -8,7 +16,7 @@ Reads an image, applies the preprocessor, and saves the output.
 import cv2
 import argparse
 import os
-from preprocessor import Preprocessor
+from core.preprocessor import Preprocessor
 
 def test_preprocess(image_path, output_path):
     if not os.path.exists(image_path):

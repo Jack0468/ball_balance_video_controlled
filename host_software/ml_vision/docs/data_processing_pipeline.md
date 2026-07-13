@@ -20,26 +20,26 @@ From that anchor frame, OpenCV can extract the exact presentation timestamp (`po
 Run the interactive timestamp finder script. Use your `Right/Left Arrow` keys (or `e`/`q` to jump) to step forward into the video until the laptop screen is visible and you clearly see the giant green number.
 Write down BOTH the **Frame Index** (shown in red at the top left) and the **Giant Green Timestamp** (shown on the laptop).
 ```powershell
-conda run -n ball_balance_env python host_software/ml_vision/scripts/get_timestamp.py --video host_software/ml_vision/data/01_bronze/video1/20260710_054604000_iOS.MOV
+conda run -n ball_balance_env python host_software/ml_vision/data_processing/get_timestamp.py --video host_software/ml_vision/data/01_bronze/video1/20260710_054604000_iOS.MOV
 ```
 
 ### Step 2: Synchronize Data
 Feed BOTH the Frame Index and the Green Timestamp into the synchronizer. This script analyzes the Variable Frame Rate offsets, takes ~10 seconds, and creates a `synced_telemetry.csv` file perfectly mapping every video frame to the correct physics row.
 ```powershell
-conda run -n ball_balance_env python host_software/ml_vision/scripts/sync_data.py --video host_software/ml_vision/data/01_bronze/video1/20260710_054604000_iOS.MOV --telemetry ml_vision/data/bronze/iphone_telemetry.csv --sync-frame <FRAME_INDEX> --sync-timestamp <YOUR_GREEN_NUMBER> --output host_software/ml_vision/data/01_bronze/video1/synced_telemetry.csv
+conda run -n ball_balance_env python host_software/ml_vision/data_processing/sync_data.py --video host_software/ml_vision/data/01_bronze/video1/20260710_054604000_iOS.MOV --telemetry ml_vision/data/bronze/iphone_telemetry.csv --sync-frame <FRAME_INDEX> --sync-timestamp <YOUR_GREEN_NUMBER> --output host_software/ml_vision/data/01_bronze/video1/synced_telemetry.csv
 ```
 
 ### Step 3: Fast Sync Verification (Optional but Recommended)
 Before running the 30-minute full preprocessing script, run the checker script to instantly generate a 10-second verification video from the raw `.MOV` file. It will overlay the physical target positions onto the video based on your synchronized CSV. If the red circle tracks perfectly with the finger in the video, the sync is flawless.
 ```powershell
-conda run -n ball_balance_env python host_software/ml_vision/scripts/check_sync.py --video host_software/ml_vision/data/01_bronze/video1/20260710_054604000_iOS.MOV --synced-csv host_software/ml_vision/data/01_bronze/video1/synced_telemetry.csv --crop "82,435,915,762" --start-idx 3000
+conda run -n ball_balance_env python host_software/ml_vision/data_processing/check_sync.py --video host_software/ml_vision/data/01_bronze/video1/20260710_054604000_iOS.MOV --synced-csv host_software/ml_vision/data/01_bronze/video1/synced_telemetry.csv --crop "82,435,915,762" --start-idx 3000
 ```
 *(You can change `--start-idx` to check any specific part of the video.)*
 
 ### Step 4: Preprocess Dataset
 Run the computer vision preprocessor to apply your crop box, resize all frames to standard 640x480, and extract the final images. This will take ~20-30 minutes for a long video. The resulting output is stored as `02_silver` data ready for ML training.
 ```powershell
-conda run -n ball_balance_env python host_software/ml_vision/scripts/preprocess_dataset.py --video host_software/ml_vision/data/01_bronze/video1/20260710_054604000_iOS.MOV --synced-csv host_software/ml_vision/data/01_bronze/video1/synced_telemetry.csv --crop "82,435,915,762"
+conda run -n ball_balance_env python host_software/ml_vision/data_processing/preprocess_dataset.py --video host_software/ml_vision/data/01_bronze/video1/20260710_054604000_iOS.MOV --synced-csv host_software/ml_vision/data/01_bronze/video1/synced_telemetry.csv --crop "82,435,915,762"
 ```
 
 ---

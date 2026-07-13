@@ -1,3 +1,11 @@
+
+import sys
+import os
+# Add ml_vision root to sys.path to allow importing from core
+_ml_vision_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _ml_vision_root not in sys.path:
+    sys.path.insert(0, _ml_vision_root)
+
 """
 realtime_pipeline_test.py
 
@@ -18,7 +26,7 @@ import numpy as np
 from ultralytics import YOLO
 
 # Import our custom preprocessor
-from preprocessor import Preprocessor
+from core.preprocessor import Preprocessor
 
 def run_pipeline(source=0, headless=False, fallback='raw', max_frames=None):
     print("Loading YOLOv8n pre-trained model...")

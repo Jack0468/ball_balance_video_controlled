@@ -1,9 +1,17 @@
+
+import sys
+import os
+# Add ml_vision root to sys.path to allow importing from core
+_ml_vision_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _ml_vision_root not in sys.path:
+    sys.path.insert(0, _ml_vision_root)
+
 import cv2
 import time
 import numpy as np
 from ultralytics import YOLO
-from preprocessor import Preprocessor
-from marker_tracker import MarkerTracker
+from core.preprocessor import Preprocessor
+from core.marker_tracker import MarkerTracker
 
 def sort_corners(pts):
     # Sorts points into: top-left, top-right, bottom-right, bottom-left
