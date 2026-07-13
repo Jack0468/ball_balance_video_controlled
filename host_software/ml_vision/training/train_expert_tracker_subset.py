@@ -63,7 +63,7 @@ def main():
     
     num_epochs = 5  # Reduced to 5 for an even faster test!
     best_loss = float('inf')
-    save_path = os.path.join(project_dir, 'expert_tracker_subset_best.pth')
+    save_path = os.path.join(project_dir, 'resnet18_expert_tracker_subset/expert_tracker_subset_best.pth')
     
     print(f"Starting training on {device}...")
     

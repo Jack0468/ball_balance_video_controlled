@@ -56,7 +56,7 @@ def main():
     
     num_epochs = 10
     best_loss = float('inf')
-    save_path = os.path.join(project_dir, 'expert_tracker_best.pth')
+    save_path = os.path.join(project_dir, 'resnet18_expert_tracker/expert_tracker_best.pth')
     
     print(f"Starting training on {device}...")
     

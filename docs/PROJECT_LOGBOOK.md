@@ -1,5 +1,13 @@
 # Project Logbook
 
+## 13/07/2026
+### ML Vision Inference & Architecture
+- **Inference Pipeline Framework**: Developed the foundational scripts for real-time inference on the host PC (`host_inference_loop.py`). The pipeline ingests 30FPS compressed UDP frames from the iPhone, instantly decodes them, passes them through a PyTorch model for `(x, y)` inference, calculates positional error based on targets, and pushes packed 16-bit binary targets directly to the STM32 over serial.
+- **Color Space Bug Fix**: Identified and resolved a critical bug where OpenCV's `BGR` default decoding would invert the red and blue color channels during real-time inference (since the PyTorch model was trained on `RGB` via PIL). Inserted an instantaneous `cv2.cvtColor` step into the pipeline.
+- **Temporal Dataset Restrictions**: Refactored the ML training scripts (`train_expert_tracker.py` and `train_expert_tracker_subset.py`) to enforce strictly temporal train/test splits. Instead of randomized shuffling, the model trains exclusively on earlier chronological sequences (e.g., first 80%) and validates on completely unseen future contiguous sequences to prevent temporal data leakage.
+- **Unsupervised Marker Identification Test**: Explored identifying physical control markers via pure Unsupervised Machine Learning (K-Means spatial-color clustering). Developed a multi-masking HSV strategy to isolate Red, Green, Grey, and Black markers. Discovered that preserving the low-saturation Grey/Black markers forced the mask to absorb over 92,000 background shadow pixels per frame, slowing K-Means to a crippling 5 seconds per frame (0.2 FPS). Concluded that purely unsupervised thresholding lacks the spatial context to reliably discard shadows in real-time. Documented this finding in `archived_ideas.md` and pivoted towards Transfer Learning.
+- **FPGA Edge Inference Roadmap**: Logged a project goal in the Vision TODO to ultimately synthesize the final ML model weights into logic gates using Vitis HLS/hls4ml for native FPGA execution, eliminating host PC communication latency entirely.
+
 ## 10/07/2026 (Part 2)
 ### ML Vision Data Synchronization Pipeline
 - **Phase Stability Gating**: Updated `DataCollectionStateMachine.cpp` to explicitly wait for the ball to become completely stationary (using the EWMA `< 3mm` filter) before transitioning out of the `START` target of each phase. This enforces a strict constraint that we do not change targets until we have stable control, improving the consistency of our dataset.
