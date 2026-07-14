@@ -16,7 +16,10 @@ module motor_test_top(
 	output reg step,
 	output wire enable,
 	output wire dir,
-	output wire volt_supply
+	output wire volt_supply,
+	output wire test1,
+	output wire test2,
+	output wire test3
    );
 	
 
@@ -47,7 +50,7 @@ module motor_test_top(
 	
 	always @(posedge clk1) begin
 		prescale <= prescale + 1'b1;
-		tick     <= (prescale == 15'd0);   // 1-cycle pulse every 2^15 clk1
+		tick     <= (prescale == 16'd0);   // 1-cycle pulse every 2^15 clk1
 	end
 	
 	// based on slower 'tick', this steps the motor
@@ -69,8 +72,11 @@ module motor_test_top(
 	assign dir = 1'b1; 
 	assign volt_supply = 1'b1;
 	
+	assign test1 = 1'b1;
+	assign test2 = 1'b1;
+	assign test3 = 1'b1;
+	
 	okWireOut wo20 (.ok1(ok1), .ok2(ok2x), .ep_addr(8'h20),
 		.ep_datain({step, counter[14:0]}));
 
 endmodule
-
