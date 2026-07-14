@@ -64,6 +64,51 @@ class UDPReceiver:
         self.running = False
         self.sock.close()
 
+class USBReceiver:
+    def __init__(self, camera_id=0):
+        # cv2.CAP_DSHOW is often faster for Windows webcams
+        self.cap = cv2.VideoCapture(camera_id, cv2.CAP_DSHOW)
+        if not self.cap.isOpened():
+            # Fallback if DSHOW fails
+            self.cap = cv2.VideoCapture(camera_id)
+            
+        # Try to set resolution and framerate to high values
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+        self.cap.set(cv2.CAP_PROP_FPS, 60)
+            
+        self.frame_queue = queue.Queue(maxsize=1)
+        self.running = True
+        self.thread = threading.Thread(target=self._receive_loop, daemon=True)
+        if self.cap.isOpened():
+            self.thread.start()
+            print(f"USB Camera {camera_id} initialized.")
+        else:
+            print(f"ERROR: Could not open USB Camera {camera_id}")
+            
+    def _receive_loop(self):
+        while self.running and self.cap.isOpened():
+            ret, frame = self.cap.read()
+            if ret and frame is not None:
+                if self.frame_queue.full():
+                    try:
+                        self.frame_queue.get_nowait()
+                    except queue.Empty:
+                        pass
+                self.frame_queue.put(frame)
+            else:
+                time.sleep(0.01)
+
+    def get_latest_frame(self):
+        try:
+            return self.frame_queue.get(timeout=1.0)
+        except queue.Empty:
+            return None
+
+    def stop(self):
+        self.running = False
+        self.cap.release()
+
 def load_expert_model(model_path, device):
     print("Loading PyTorch ResNet18 Expert Model...")
     model = models.resnet18()
@@ -82,10 +127,16 @@ def load_expert_model(model_path, device):
     return model
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--camera", type=str, choices=['udp', 'usb'], default='usb', help="Camera source (udp or usb)")
+    parser.add_argument("--cam_id", type=int, default=0, help="Camera ID for USB mode (0, 1, 2, etc)")
+    args = parser.parse_args()
+
     # 1. Hardware/Model Init
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    model_path = os.path.abspath(os.path.join(script_dir, '../models/resnet18_expert_tracker/expert_tracker_best.pth'))
+    model_path = os.path.abspath(os.path.join(script_dir, 'models/resnet18_expert_tracker/expert_tracker_best.pth'))
     
     model = load_expert_model(model_path, device)
     
@@ -106,10 +157,13 @@ def main():
         print("Continuing in dry-run mode (no serial transmission).")
         ser = None
 
-    # 3. UDP Stream Init
-    receiver = UDPReceiver(UDP_IP, UDP_PORT)
+    # 3. Stream Init
+    if args.camera == 'udp':
+        receiver = UDPReceiver(UDP_IP, UDP_PORT)
+    else:
+        receiver = USBReceiver(args.cam_id)
     
-    print("Starting Main Inference Loop...")
+    print(f"Starting Main Inference Loop (Mode: {args.camera})...")
     try:
         while True:
             # Blocks until a new frame arrives
@@ -148,18 +202,32 @@ def main():
                 payload = struct.pack('<chh', b'<', err_x_int, err_y_int)
                 if ser is not None:
                     ser.write(payload)
+                    
             except Exception as e:
-                print(f"Failed to pack or send data: {e}")
+                print(f"Serial Error: {e}")
                 
-            elapsed = (time.perf_counter() - start_t) * 1000.0
-            print(f"Processed frame in {elapsed:.1f}ms | Error: X={err_x_int}, Y={err_y_int}")
+            end_t = time.perf_counter()
+            fps = 1.0 / (end_t - start_t)
             
+            # --- Visualization Phase ---
+            # Draw the predicted position and FPS on the frame
+            cv2.putText(frame, f"Pred: X={touch_x:.1f} Y={touch_y:.1f} mm", (20, 50), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+            cv2.putText(frame, f"FPS: {fps:.1f}", (20, 100), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 200, 0), 2)
+                        
+            cv2.imshow("Live Inference (Press 'q' to quit)", frame)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+                
     except KeyboardInterrupt:
-        print("\nShutting down pipeline...")
+        pass
     finally:
         receiver.stop()
-        if ser is not None:
+        if ser:
             ser.close()
+        cv2.destroyAllWindows()
+        print("Inference loop stopped.")
 
 if __name__ == '__main__':
     main()
