@@ -5,9 +5,14 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, Subset, random_split
 from torchvision import models
 
+import argparse
 from ball_dataset import BallDataset
 
 def main():
+    parser = argparse.ArgumentParser(description="Train ResNet18 Expert Tracker (Subset)")
+    parser.add_argument("--data_dir", default="../data/02_silver", help="Path to data directory")
+    args = parser.parse_args()
+
     print("Initializing PyTorch Expert Tracker Model (ResNet18) [SUBSET MODE]...")
     
     # 1. Initialize pre-trained ResNet18
@@ -22,7 +27,12 @@ def main():
     
     # 2. Set absolute paths for dataset
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    data_dir = os.path.abspath(os.path.join(script_dir, '../data/02_silver'))
+    
+    if os.path.isabs(args.data_dir):
+        data_dir = args.data_dir
+    else:
+        data_dir = os.path.abspath(os.path.join(script_dir, args.data_dir))
+        
     csv_path = os.path.join(data_dir, 'labels.csv')
     images_dir = os.path.join(data_dir, 'images')
     project_dir = os.path.abspath(os.path.join(script_dir, '../models'))
@@ -61,9 +71,10 @@ def main():
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     
-    num_epochs = 5  # Reduced to 5 for an even faster test!
+    num_epochs = 10
     best_loss = float('inf')
     save_path = os.path.join(project_dir, 'resnet18_expert_tracker_subset/expert_tracker_subset_best.pth')
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
     
     print(f"Starting training on {device}...")
     
