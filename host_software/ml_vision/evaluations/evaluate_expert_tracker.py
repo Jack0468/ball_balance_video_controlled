@@ -14,16 +14,27 @@ training_dir = os.path.abspath(os.path.join(script_dir, '../training'))
 if training_dir not in sys.path:
     sys.path.append(training_dir)
 
+import argparse
 from ball_dataset import BallDataset
 
 def main():
-    print("Initializing Evaluation Script for Expert Tracker (Subset)...")
+    parser = argparse.ArgumentParser(description="Evaluate ResNet18 Expert Tracker")
+    parser.add_argument("--data_dir", default="../data/02_silver", help="Path to data directory")
+    parser.add_argument("--model_path", required=True, help="Path to the trained .pth file (e.g. models/resnet18_expert_tracker/expert_tracker_best.pth)")
+    args = parser.parse_args()
+
+    print("Initializing Evaluation Script for Expert Tracker...")
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    project_dir = os.path.abspath(os.path.join(script_dir, '../models/resnet18_expert_tracker_subset'))
-    model_path = os.path.join(project_dir, 'expert_tracker_subset_best.pth')
+    
+    if os.path.isabs(args.model_path):
+        model_path = args.model_path
+    else:
+        model_path = os.path.abspath(os.path.join(script_dir, args.model_path))
+        
+    project_dir = os.path.dirname(model_path)
     
     if not os.path.exists(model_path):
         print(f"ERROR: Model not found at {model_path}. Train it first.")
@@ -40,28 +51,25 @@ def main():
     model.eval()
     
     # 2. Load the test subset data
-    data_dir = os.path.abspath(os.path.join(script_dir, '../data/02_silver'))
+    if os.path.isabs(args.data_dir):
+        data_dir = args.data_dir
+    else:
+        data_dir = os.path.abspath(os.path.join(script_dir, args.data_dir))
+        
     csv_path = os.path.join(data_dir, 'labels.csv')
     images_dir = os.path.join(data_dir, 'images')
     
     print(f"Loading dataset from: {csv_path}")
     full_dataset = BallDataset(csv_file=csv_path, root_dir=images_dir)
     
-    # Replicate subset logic from training script to get the exact test set
-    START_INDEX = 15000
-    SUBSET_SIZE = 1000
-    
-    if len(full_dataset) >= START_INDEX + SUBSET_SIZE:
-        indices = list(range(START_INDEX, START_INDEX + SUBSET_SIZE))
-    else:
-        indices = list(range(len(full_dataset)))
-        
+    # We want to test on the last 20% of the dataset
+    indices = list(range(len(full_dataset)))
     train_size = int(0.8 * len(indices))
     test_indices = indices[train_size:]
     
     test_dataset = Subset(full_dataset, test_indices)
     test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False, num_workers=0)
-    print(f"Evaluating on {len(test_dataset)} unseen future contiguous frames.")
+    print(f"Evaluating on {len(test_dataset)} unseen test frames.")
     
     MAX_BOUND = 200.0 # From ball_dataset.py
     

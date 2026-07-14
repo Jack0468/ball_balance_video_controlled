@@ -33,6 +33,7 @@ venv.bak/
 host_software/ml_vision/data/01_bronze/
 host_software/ml_vision/data/02_silver/
 host_software/ml_vision/data/03_gold/
+host_software/ml_vision/data/03_synthetic_yolo/
 host_software/data_collection/data/
 host_software/ml_audio/data/
 *.csv

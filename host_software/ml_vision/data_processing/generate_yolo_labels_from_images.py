@@ -27,6 +27,7 @@ def mouse_callback(event, x, y, flags, param):
 def main():
     parser = argparse.ArgumentParser(description="Generate YOLO labels from existing images and labels.csv")
     parser.add_argument("--data_dir", required=True, help="Path to data directory (e.g., data/02_silver)")
+    parser.add_argument("--calibration_image", required=False, help="Optional: Path to a well-lit image taken from the EXACT same camera angle to use for clicking the 4 markers.")
     args = parser.parse_args()
 
     images_dir = os.path.join(args.data_dir, "images")
@@ -44,19 +45,36 @@ def main():
         return
 
     # 1. Manual Calibration (One-Time)
-    frame_index = len(df) // 2
-    frame = None
-    while frame_index < len(df):
-        first_image_filename = df.iloc[frame_index]['image_file']
-        first_image_path = os.path.join(images_dir, first_image_filename)
-        
-        frame = cv2.imread(first_image_path)
+    if args.calibration_image and os.path.exists(args.calibration_image):
+        print(f"Using custom calibration image: {args.calibration_image}")
+        frame = cv2.imread(args.calibration_image)
         if frame is None:
-            frame_index += 1
-            continue
+            print("Error: Could not read calibration image.")
+            return
+        frame_index = -1 # Special index
+    else:
+        frame_index = len(df) // 2
+        frame = None
+        while frame_index < len(df):
+            first_image_filename = df.iloc[frame_index]['image_file']
+            first_image_path = os.path.join(images_dir, first_image_filename)
+            
+            frame = cv2.imread(first_image_path)
+            if frame is None:
+                frame_index += 1
+                continue
+            break
+            
+    if frame is None:
+        print("Error: Could not find any valid frames to calibrate with.")
+        return
 
+    while True:
         print("=========================================================")
-        print(f"Viewing Frame {frame_index}")
+        if frame_index == -1:
+            print("Viewing Custom Calibration Image")
+        else:
+            print(f"Viewing Frame {frame_index}")
         print("Please click the 4 markers in order:")
         print("1. Green (Top-Left)")
         print("2. Red (Top-Right)")
@@ -102,14 +120,24 @@ def main():
             
             key = cv2.waitKey(10) & 0xFF
             if key == ord('n'):
-                skip = True
-                break
+                if frame_index == -1:
+                    print("Cannot skip custom calibration image. Please press 'c' to change contrast or close the window.")
+                else:
+                    skip = True
+                    break
             elif key == ord('c'):
                 contrast_mode = (contrast_mode + 1) % 5
 
         if skip:
-            print("Skipping to next frame...")
-            frame_index += 1
+            if frame_index != -1:
+                print("Skipping to next frame...")
+                frame_index += 1
+                while frame_index < len(df):
+                    next_image_path = os.path.join(images_dir, df.iloc[frame_index]['image_file'])
+                    frame = cv2.imread(next_image_path)
+                    if frame is not None:
+                        break
+                    frame_index += 1
             continue
             
         cv2.destroyAllWindows()

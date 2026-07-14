@@ -10,6 +10,15 @@ for 1/07/26
 
 work on the polling infractucture of the camera via verilog fpga.
 
+- [x] Create a robust Expert Position Classification Model (ResNet18) to predict `(x, y)` purely from image frames
+  - [x] Define a PyTorch Dataset loading from `data/02_silver`
+  - [x] Script to train `models.resnet18` targeting normalized `(x, y)` output
+  - [x] Option A: Add a subset test evaluator on last 20%
+- [x] Resolve YOLO marker detection glare issues
+  - [x] Build synthetic dataset generator (`data/03_synthetic_yolo`) using real `02_silver` images with HSV red ball masking
+  - [x] Synthesize translucent fake markers to teach YOLO marker localization through extreme glare
+- [x] Improve Colab training stability
+  - [x] Split monolithic notebook into `colab_train_yolo.ipynb` and `colab_train_expert.ipynb`
 - [ ] RETUNE PID: The Python Host-PC control loop running over USB will have a completely different latency profile than the original bare-metal Teensy C++ loop. The constants (kp=0.8, ki=0.2, kd=0.09) will cause oscillations and need aggressive retuning.
 
 13/07/2026
@@ -77,3 +86,9 @@ Actuation:
 The output of the PID loop directly updates the CCR (Capture/Compare Register) values for the PWM timers driving your motor controllers.
 
 Failsafe: Add a timeout. If the STM32 hasn't received a valid serial packet from the laptop in >100ms (meaning the ML crashed or the cable disconnected), immediately set PWM to neutral to stop the robot from spinning out of control.
+
+14/07/2026
+- [ ] **DATASET FAILURE**: Discovered that the 02_silver dataset has ±10mm camera shifts across the 3 collection runs. This completely invalidates the static pixel-to-millimeter mapping needed by the ResNet tracker.
+- [ ] **PIVOT**: The YOLO pivot is the correct path forward to compute dynamic homography and ignore camera bumps. However, glare in the dataset prevents manual ground-truth labeling.
+- [ ] **DECISION**: We will implement a Teacher-Student VLM pipeline (Option A) using Qwen-VL or similar to auto-label the dataset offline. 
+- [ ] **IMMEDIATE FOCUS**: Do not modify YOLO pipeline code right now. Focus entirely on the expert model (ResNet18) for position detection first to establish a baseline and evaluate its performance.
