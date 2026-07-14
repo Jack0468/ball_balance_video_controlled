@@ -1,0 +1,257 @@
+module camera_top
+    (
+        // from Opal Kelly
+        input  wire [7:0]  hi_in,
+        output wire [1:0]  hi_out,
+        inout  wire [15:0] hi_inout,
+        output wire        hi_muxsel,
+        inout  wire        i2c_sda,
+        inout  wire        i2c_scl,
+	    input wire         clk1,
+
+        // from OV7670
+        input wire         pclk,
+        input wire         vsync,
+        input wire         href,
+        input wire [7:0]   p_data,
+	
+        // to OV7670
+        output wire        xclk,
+	    output wire        siod,
+        output wire        sioc,
+
+        output wire        v_sup
+    );
+
+	//target interface bus
+	wire ti_clk;
+	wire [30:0] ok1;
+	wire [16:0] ok2;
+	wire [17*8-1:0] ok2x;
+	
+	//pipe out 
+	wire pipe_out_read;
+	wire pipe_out_ready;
+	wire [15:0] pipe_out_data;
+
+	// from python 
+	wire [15:0] start; 
+	wire [15:0] reset;
+	wire [15:0] arm_wire;
+
+	// camera read
+    wire done;
+    wire [15:0] pixel_data;
+    wire pixel_valid;
+    wire frame_done;
+	 wire frame_start;
+	 
+	// fifo 
+	 wire wr_en;
+	 wire rd_en;
+	 wire empty;
+	 wire full;
+	 
+	 wire overflow;
+	 wire [12:0] rd_data_count;
+	
+	 
+	 assign hi_muxsel = 1'b0;   // connect FPGA to the USB microcontroller, not the PROM
+	assign i2c_sda   = 1'bz;   // release the I2C bus as it's irrelevant 
+	assign i2c_scl   = 1'bz;
+
+    assign xclk = clk1;  // clk from fpga to camera
+    assign v_sup = 1'b1; // power the camera		
+
+
+    // xclk 
+    camera_config #(.CLK_FREQ(24000000)) writer(
+        .clk(clk1),
+        .start(start[0]),
+        .sioc(sioc),
+        .siod(siod),
+        .done(done)
+        );
+    
+    //pclk from camera
+    camera_read reader(
+		  .config_done(done),
+		  .full(full),
+        .p_clock(pclk),
+        .vsync(vsync),
+        .href(href),
+        .p_data(p_data),
+        .pixel_data(pixel_data),
+        .pixel_valid(pixel_valid),
+        .frame_done(frame_done),
+		  .frame_start(frame_start)
+    );
+
+	//old logic  
+	// reg armed;
+	//   always @(posedge pclk) begin
+	//  	if (reset[0])          armed <= 0;
+	//  	else if (frame_done)   armed <= 0;
+	//  	else if (frame_start)  armed <= 1;
+	// end
+	// reg [1:0] rst_s = 0;
+	// always @(posedge pclk) rst_s <= {rst_s[0], reset[0]};
+	 
+	// assign wr_en =  pixel_valid & ~full & armed;
+	// assign rd_en = pipe_out_read;
+	
+	// wire fifo_rst = rst_s[1] | frame_start;
+	//old logic
+
+	//insert gemini attempt number 500000000
+
+		// 1. Detect Host Arm Request
+	
+	reg [2:0] arm_s = 0;
+	always @(posedge pclk) arm_s <= {arm_s[1:0], arm_wire[0]};
+	wire arm_rise = arm_s[1] & ~arm_s[2];
+
+	// 2. Safe FIFO Reset State Machine
+	localparam S_IDLE       = 3'd0;
+	localparam S_WAIT_VSYNC = 3'd1;
+	localparam S_RST        = 3'd2;
+	localparam S_RECOVERY   = 3'd3;
+	localparam S_CAP        = 3'd4;
+
+	reg [2:0] state = S_IDLE;
+	reg [3:0] rst_cnt = 0;
+	reg armed = 0;
+	reg fifo_rst_r = 0;
+
+	always @(posedge pclk) begin
+		case (state)
+			S_IDLE: begin
+				armed <= 0; 
+				fifo_rst_r <= 0;
+				if (arm_rise) state <= S_WAIT_VSYNC; 
+			end
+			
+			S_WAIT_VSYNC: begin
+				// Wait for VSYNC to drop, signaling the start of a frame
+				if (frame_start) begin 
+					rst_cnt <= 0;
+					state <= S_RST; 
+				end
+			end
+			
+			S_RST: begin
+				// Hold FIFO reset high for 10 clock cycles safely
+				fifo_rst_r <= 1;
+				rst_cnt <= rst_cnt + 1'b1;
+				if (rst_cnt == 4'd10) begin
+					fifo_rst_r <= 0;
+					rst_cnt <= 0;
+					state <= S_RECOVERY;
+				end
+			end
+			
+			S_RECOVERY: begin
+				// Wait 10 clock cycles for FIFO to safely recover before writing
+				rst_cnt <= rst_cnt + 1'b1;
+				if (rst_cnt == 4'd10) begin
+					armed <= 1; 
+					state <= S_CAP;
+				end
+			end
+			
+			S_CAP: begin
+				if (frame_done) begin 
+					armed <= 0; 
+					state <= S_IDLE; 
+				end
+			end
+		endcase
+	end
+
+	// 3. Connect the Reset
+	reg [1:0] rst_s = 0;
+	always @(posedge pclk) rst_s <= {rst_s[0], reset[0]};
+
+	// Reset is active if Python manually requests it, OR if the state machine is resetting
+	wire fifo_rst = rst_s[1] | fifo_rst_r;
+
+	// 4. Write Enable Protection
+	assign wr_en = pixel_valid & ~full & armed;
+	assign rd_en = pipe_out_read;
+
+	reg overflow_sticky = 0;
+	always @(posedge pclk) begin
+		if (frame_start) overflow_sticky <= 0;
+		else if (pixel_valid & full & armed) overflow_sticky <= 1; 
+	end
+
+		
+	 fifo fifo(
+			.rst(fifo_rst),
+			
+			.wr_clk(pclk),
+			.din(pixel_data),
+			.wr_en(wr_en),
+			.full(full),
+			
+			.rd_clk(ti_clk),
+			.dout(pipe_out_data),
+			.rd_en(rd_en),
+			.empty(empty),
+			
+			.overflow(overflow),
+			.rd_data_count(rd_data_count)
+	 );
+	 
+	 assign pipe_out_ready = (rd_data_count >= 10'd512);
+	 
+	 //debugging 
+	reg [15:0] pclk_cnt  = 0;
+	reg [15:0] vsync_cnt = 0;
+	reg [15:0] href_cnt  = 0;
+	always @(posedge pclk) begin
+		pclk_cnt <= pclk_cnt + 1'b1;                 
+		if (frame_start) vsync_cnt <= vsync_cnt + 1; 
+		if (href)        href_cnt  <= href_cnt  + 1; 
+	end
+	  
+	 //okHost interface with endpoints 
+	okHost okHI(
+	.hi_in(hi_in), .hi_out(hi_out), .hi_inout(hi_inout), .ti_clk(ti_clk),
+	.ok1(ok1), .ok2(ok2));
+	
+	okWireOR # (.N(7)) wireOR (ok2, ok2x);
+
+	okWireIn  wi02(.ok1(ok1),.ep_addr(8'h02), .ep_dataout(start));
+	okWireIn  wi03(.ok1(ok1), .ep_addr(8'h03), .ep_dataout(reset));
+	okWireIn  wi04(.ok1(ok1), .ep_addr(8'h04), .ep_dataout(arm_wire));
+
+
+
+	okWireOut wo21(.ok1(ok1), .ok2(ok2x[0*17 +: 17]), .ep_addr(8'h21),
+						.ep_datain({15'd0, full}));
+						
+	okWireOut wo22(.ok1(ok1), .ok2(ok2x[1*17 +: 17]), .ep_addr(8'h22),
+					   .ep_datain({15'd0, empty}));
+
+	okWireOut wo23(.ok1(ok1), .ok2(ok2x[2*17 +: 17]), .ep_addr(8'h23),
+					   .ep_datain({15'd0, overflow_sticky}));
+	
+	okWireOut wo24(.ok1(ok1), .ok2(ok2x[3*17 +: 17]), .ep_addr(8'h24),
+					   .ep_datain({15'd0, vsync_cnt}));
+						
+	okWireOut wo25(.ok1(ok1), .ok2(ok2x[4*17 +: 17]), .ep_addr(8'h25),
+					   .ep_datain({15'd0, href_cnt }));
+	
+	okWireOut wo26(.ok1(ok1), .ok2(ok2x[5*17 +: 17]), .ep_addr(8'h26),
+					   .ep_datain({15'd0, pclk_cnt}));
+	
+
+
+	okBTPipeOut epA0(.ok1(ok1), .ok2(ok2x[6*17 +: 17]), .ep_addr(8'ha0), 
+						  .ep_read(pipe_out_read),  .ep_blockstrobe(), 
+						  .ep_datain(pipe_out_data), .ep_ready(pipe_out_ready));
+						  
+
+endmodule
+

@@ -1,0 +1,1 @@
+ok @ file:///C:/Program%20Files/Opal%20Kelly/FrontPanel-Platform/API/Python/x64/ok-6.0.0-cp39-abi3-win_amd64.whl#sha256=57a4581c95e50da93294fad5fa46a727afd6d746e1dbbacc499ca6b182445d3c
