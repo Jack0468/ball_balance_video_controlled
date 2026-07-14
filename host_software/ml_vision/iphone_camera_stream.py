@@ -5,7 +5,7 @@ import time
 # --- Configuration ---
 # Hardcoded IP of the tethered laptop (e.g. standard iOS USB tethering IP is usually 172.20.10.2)
 # Update this directly in Pyto if the laptop gets a different IP.
-LAPTOP_IP = '172.20.10.2'
+LAPTOP_IP = '172.20.10.4'
 UDP_PORT = 5005
 FPS_TARGET = 30
 # ---------------------
@@ -23,9 +23,12 @@ def main():
         print("Error: Could not open iPhone camera.")
         return
 
-    # Optional: set camera resolution explicitly if supported
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    # We avoid explicitly setting cv2.CAP_PROP_FRAME_WIDTH and HEIGHT here
+    # as it causes an NSInvalidArgumentException on iOS when the dimension
+    # exceeds the activeFormat's dimensions. The frame is resized in the loop.
+    
+    print("Camera opened, giving it a moment to warm up...")
+    time.sleep(1.0)
 
     frame_time = 1.0 / FPS_TARGET
     
@@ -35,15 +38,17 @@ def main():
             
             ret, frame = cap.read()
             if not ret:
-                print("Failed to grab frame.")
-                break
+                print("Failed to grab frame, retrying...")
+                time.sleep(0.1)
+                continue
                 
-            # Force resize to 640x480 just in case the camera ignored the property setting
-            frame = cv2.resize(frame, (640, 480))
+            # Force resize to 320x240 to ensure the JPEG fits inside a single UDP packet.
+            # Our inference model expects 320x240 anyway, so this saves bandwidth.
+            frame = cv2.resize(frame, (320, 240))
             
             # Compress to JPEG
-            # Quality 80 provides a good balance between visual clarity and low network bandwidth
-            encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 80]
+            # Quality 60 to further guarantee a small payload size under the UDP MTU limit.
+            encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 60]
             success, buffer = cv2.imencode('.jpg', frame, encode_param)
             
             if success:
