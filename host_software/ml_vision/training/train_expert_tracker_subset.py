@@ -118,6 +118,10 @@ def main():
             best_loss = epoch_test_loss
             torch.save(model.state_dict(), save_path)
             print(f"Saved new best model to {save_path}")
+            
+        # Save the latest model at the end of every epoch just in case Colab crashes
+        latest_path = os.path.join(project_dir, 'resnet18_expert_tracker_subset/expert_tracker_subset_latest.pth')
+        torch.save(model.state_dict(), latest_path)
 
     print("Training complete!")
 

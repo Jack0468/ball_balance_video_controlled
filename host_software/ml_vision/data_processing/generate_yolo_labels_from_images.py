@@ -62,21 +62,36 @@ def main():
         print("2. Red (Top-Right)")
         print("3. Black (Bottom-Right)")
         print("4. Grey (Bottom-Left)")
-        print("--> Press 'n' to skip frame | Press 'c' to toggle contrast <--")
+        print("--> Press 'n' to skip frame | Press 'c' to cycle contrast modes <--")
         print("=========================================================")
         
-        high_contrast = False
+        contrast_mode = 0
         display_frame = frame.copy()
         
         clicked_points.clear()
 
         skip = False
         while len(clicked_points) < 4:
-            if high_contrast:
-                # Apply high contrast to help see washed out dots
-                display_frame = cv2.convertScaleAbs(frame, alpha=2.0, beta=-100)
-            else:
+            if contrast_mode == 0:
                 display_frame = frame.copy()
+            elif contrast_mode == 1:
+                # CLAHE (Adaptive Histogram)
+                lab = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
+                l, a, b = cv2.split(lab)
+                clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
+                cl = clahe.apply(l)
+                limg = cv2.merge((cl,a,b))
+                display_frame = cv2.cvtColor(limg, cv2.COLOR_LAB2BGR)
+            elif contrast_mode == 2:
+                # Darken
+                display_frame = cv2.convertScaleAbs(frame, alpha=0.5, beta=0)
+            elif contrast_mode == 3:
+                # Lighten
+                display_frame = cv2.convertScaleAbs(frame, alpha=1.5, beta=0)
+            elif contrast_mode == 4:
+                # Grayscale Histogram Equalization
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                display_frame = cv2.cvtColor(cv2.equalizeHist(gray), cv2.COLOR_GRAY2BGR)
                 
             # Draw circles where user already clicked
             for i, pt in enumerate(clicked_points):
@@ -90,7 +105,7 @@ def main():
                 skip = True
                 break
             elif key == ord('c'):
-                high_contrast = not high_contrast
+                contrast_mode = (contrast_mode + 1) % 5
 
         if skip:
             print("Skipping to next frame...")
