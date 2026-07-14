@@ -1,0 +1,9 @@
+{
+    "MAE_X_mm": 3.532578468322754,
+    "MAE_Y_mm": 3.7566494941711426,
+    "RMSE_X_mm": 5.54265832901001,
+    "RMSE_Y_mm": 5.372961044311523,
+    "Mean_Euclidean_Error_mm": 5.60267972946167,
+    "Max_Euclidean_Error_mm": 114.44036102294922,
+    "95th_Percentile_Error_mm": 14.797237396240234
+}

@@ -10,23 +10,11 @@ def main():
     parser.add_argument("--batch_size", type=int, default=16, help="Batch size")
     args = parser.parse_args()
     
-    # 1. Create a dataset.yaml file dynamically
     dataset_yaml_path = os.path.join(args.data_dir, "dataset.yaml")
     
-    yaml_content = {
-        "path": os.path.abspath(args.data_dir),
-        "train": ".",  # Since our generator just dumped them in one dir for now
-        "val": ".",    # We evaluate on the same for this initial script (we can split later)
-        "names": {
-            0: "ball",
-            1: "marker"
-        }
-    }
-    
-    with open(dataset_yaml_path, 'w') as f:
-        yaml.dump(yaml_content, f, default_flow_style=False)
-        
-    print(f"Created YOLO dataset configuration at {dataset_yaml_path}")
+    if not os.path.exists(dataset_yaml_path):
+        print(f"ERROR: {dataset_yaml_path} not found. Ensure you are pointing to the synthetic dataset directory.")
+        return
     
     # 2. Load a pre-trained YOLOv8 nano model (fastest inference for edge)
     print("Loading pre-trained YOLOv8n model...")
@@ -34,6 +22,9 @@ def main():
     
     # 3. Train the model
     print(f"Starting training for {args.epochs} epochs...")
+    
+    import torch
+    device_str = "0" if torch.cuda.is_available() else "cpu"
     
     # Use workers=0 for Windows to avoid multiprocessing issues
     results = model.train(
@@ -44,7 +35,7 @@ def main():
         workers=0,
         project="../models",
         name="yolov8_marker_and_ball_detector",
-        device="cpu"  # Assuming we are running on CPU for now; change to 'cuda:0' if GPU available
+        device=device_str
     )
     
     print("Training complete! Model saved in ../models/yolov8_marker_and_ball_detector/weights/best.pt")

@@ -98,6 +98,12 @@ def main():
     os.makedirs(out_images_dir, exist_ok=True)
     os.makedirs(out_labels_dir, exist_ok=True)
     
+    # Clear old generated files to prevent duplicates when re-running
+    for f in glob.glob(os.path.join(out_images_dir, "*")):
+        os.remove(f)
+    for f in glob.glob(os.path.join(out_labels_dir, "*")):
+        os.remove(f)
+    
     image_paths = glob.glob(os.path.join(input_dir, "*.jpg")) + glob.glob(os.path.join(input_dir, "*.png"))
     if not image_paths:
         print(f"ERROR: No images found in {input_dir}")
@@ -134,11 +140,14 @@ def main():
             labels.append(f"0 {ball_bbox[0]:.6f} {ball_bbox[1]:.6f} {ball_bbox[2]:.6f} {ball_bbox[3]:.6f}")
             
         # 2. Pick 4 random points forming a perspective rectangle
-        margin = 30
-        min_w, max_w = 300, 800
-        min_h, max_h = 300, 800
+        # Constrain strictly to the center of the image (on the physical platform)
+        min_w, max_w = 120, 250
+        min_h, max_h = 100, 200
         
-        cx, cy = random.randint(img_w//3, 2*img_w//3), random.randint(img_h//3, 2*img_h//3)
+        # Center of a 640x480 image is 320x240. The platform is roughly in the middle.
+        cx = random.randint(img_w//2 - 40, img_w//2 + 40)
+        cy = random.randint(img_h//2 - 40, img_h//2 + 40)
+        
         w, h = random.randint(min_w, max_w), random.randint(min_h, max_h)
         
         pts = [
@@ -148,13 +157,14 @@ def main():
             [cx - w//2, cy + h//2]  # BL
         ]
         
-        jitter_x = int(w * 0.15)
-        jitter_y = int(h * 0.15)
+        jitter_x = int(w * 0.1)
+        jitter_y = int(h * 0.1)
         for pt in pts:
             pt[0] += random.randint(-jitter_x, jitter_x)
             pt[1] += random.randint(-jitter_y, jitter_y)
-            pt[0] = max(margin, min(img_w - margin, pt[0]))
-            pt[1] = max(margin, min(img_h - margin, pt[1]))
+            # Ensure they don't clip off the screen at all
+            pt[0] = max(10, min(img_w - 10, pt[0]))
+            pt[1] = max(10, min(img_h - 10, pt[1]))
             
         # 3. Draw markers and create labels
         for i, pt in enumerate(pts):
