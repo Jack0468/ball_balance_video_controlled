@@ -1,8 +1,8 @@
 #include "MotorControl.h"
 
-#define STEPS_TO_ORIGIN_A 114 // steps offset from hardstop
-#define STEPS_TO_ORIGIN_B 125 // steps offset from hardstop
-#define STEPS_TO_ORIGIN_C 170 // steps offset from hardstop
+#define STEPS_TO_ORIGIN_A 0 // steps offset from hardstop
+#define STEPS_TO_ORIGIN_B 0 // steps offset from hardstop
+#define STEPS_TO_ORIGIN_C 0 // steps offset from hardstop
 #define ENA PD0 // ENA pin
 #define h0 87 // height of platform when motors are at zero position
 #define ks 100.0 // a constant to change our proportional speed function
