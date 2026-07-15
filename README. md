@@ -1,0 +1,61 @@
+# VRI 2026: ML Audio Module
+
+The ML Audio Module is the speech-command interface for the ball-balancing robot. It uses a trained audio classification model to convert spoken user commands into a target colour state that can be used by the video and fusion modules.
+
+This module does not directly move the robot. Instead, it identifies what the user requested, such as `go blue`, `hold`, or `stop`, and outputs a structured target state for the main execution loop.
+
+## Audio System Architecture
+
+The audio pipeline is divided into four main stages:
+
+1. **Audio Recording**
+   
+   Spoken commands are recorded from multiple speakers using a microphone. The supported command set is:
+
+   - `go red`
+   - `go blue`
+   - `go green`
+   - `go yellow`
+   - `hold`
+   - `stop`
+
+2. **Audio Preprocessing**
+   
+   Raw audio clips are cleaned before training. The preprocessing stage aligns the spoken part of each clip, removes unnecessary silence, normalizes the volume, and converts each waveform into a spectrogram.
+
+3. **ML Audio Classification**
+   
+   A TensorFlow-based audio classifier is trained using the processed command recordings. The model predicts which command was spoken and assigns a confidence score to the prediction.
+
+4. **Target State Output**
+   
+   The predicted command is converted into a target state dictionary. This target state is passed to the video/fusion module so the robot knows which colour target the user selected.
+
+## Supported Commands
+
+| Spoken command | Model command | Target colour | Robot meaning |
+|---|---|---|---|
+| `go red` | `go_red` | `red` | Move ball to red target |
+| `go blue` | `go_blue` | `blue` | Move ball to blue target |
+| `go green` | `go_green` | `green` | Move ball to green target |
+| `go yellow` | `go_yellow` | `yellow` | Move ball to yellow target |
+| `hold` | `hold` | `null` | Hold current state |
+| `stop` | `stop` | `null` | Emergency stop |
+
+## Model Output
+
+For example, if the user says `go blue`, the audio module outputs:
+
+```json
+{
+  "mode": "colour_select",
+  "target_colour": "blue",
+  "colour_setpoint": "blue",
+  "hold": false,
+  "emergency_stop": false,
+  "source": "audio_module",
+  "command": "go_blue",
+  "phrase": "go blue",
+  "confidence": 0.92,
+  "timestamp": 1782866835.5088387
+}
