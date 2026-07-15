@@ -2,30 +2,30 @@
 
 unsigned long last_packet_time = 0;
 
-void check_serial_commands(double &target_x, double &target_y) {
+void check_serial_commands(double &cam_x, double &cam_y, bool &cam_active) {
     // 1. Failsafe logic:
-    // If we lose connection for >100ms, gently level out the platform
-    // but keep motors engaged so it doesn't crash down.
+    // If we lose connection for >100ms, consider the camera stream dead.
     if (millis() - last_packet_time > 100) {
-        target_x = 0;
-        target_y = 0;
+        cam_active = false;
+    } else {
+        cam_active = true;
     }
     
     // 2. Read Serial buffer
-    // Expected Payload: '<' (1 byte) + error_x (2 bytes) + error_y (2 bytes) = 5 bytes total
+    // Expected Payload: '<' (1 byte) + cam_x (2 bytes) + cam_y (2 bytes) = 5 bytes total
     while (Serial.available() >= 5) {
         if (Serial.read() == '<') {
-            int16_t err_x = 0;
-            int16_t err_y = 0;
+            int16_t in_x = 0;
+            int16_t in_y = 0;
             
-            // We have exactly the bytes we need in the buffer, so readBytes is safe
-            Serial.readBytes((char*)&err_x, 2);
-            Serial.readBytes((char*)&err_y, 2);
+            Serial.readBytes((char*)&in_x, 2);
+            Serial.readBytes((char*)&in_y, 2);
             
-            target_x = err_x;
-            target_y = err_y;
+            cam_x = in_x;
+            cam_y = in_y;
             
             last_packet_time = millis();
+            cam_active = true;
         }
     }
 }
