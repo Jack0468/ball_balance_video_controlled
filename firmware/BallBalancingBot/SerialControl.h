@@ -3,6 +3,6 @@
 
 #include <Arduino.h>
 
-void check_serial_commands(double &target_x, double &target_y);
+void check_serial_commands(double &cam_x, double &cam_y, bool &cam_active);
 
 #endif

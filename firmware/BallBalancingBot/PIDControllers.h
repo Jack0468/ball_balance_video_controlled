@@ -9,7 +9,7 @@
 #include <AccelStepper.h>
 #include <MultiStepper.h>
 
-void pid_balance(double setpoint_x, double setpoint_y);
+void pid_balance(double setpoint_x, double setpoint_y, double cam_x, double cam_y, bool cam_active);
 void move_to_point(double setpoint_x, double setpoint_y, unsigned long delay);
 
 // Exported for telemetry logging
