@@ -53,7 +53,7 @@ double ball_vel[2] = {0,0}, p_prev[2] = {0,0};
 double predict_time = 0.3; 
 
 //Runs X and Y PID Controllers to balance ball at a specific point
-void pid_balance(double setpoint_x, double setpoint_y, double cam_x, double cam_y, bool cam_active) {
+void pid_balance(double setpoint_x, double setpoint_y) {
 
   static unsigned long t_prev = 0;              // Records previous time (uses static so the variable gets remembered through each loop iteration)
   static unsigned long last_detected_time = 0;  // Track when ball was last detected
@@ -68,22 +68,15 @@ void pid_balance(double setpoint_x, double setpoint_y, double cam_x, double cam_
   }
 
   // Only runs if minimum sample time has passed (0.033 seconds or 33 milliseconds for 30Hz)
-    coords p = get_coords();           // retrieves ball's position from touchscreen
-    bool detected = false;
-    
-    if (cam_active) {
-      detected = true;
-      current_ball_x = cam_x;
-      current_ball_y = cam_y;
-    } else {
-      detected = (p.z > 0);
-      current_ball_x = p.x_mm;
-      current_ball_y = p.y_mm;
-    }
+  if (dt >= 0.033) {
+    coords p = get_coords();           // retrieves ball's position
+    bool detected = (p.z > 0);         // checks if ball is detected (get_coords sets p.z to 1 if valid, 0 if not)
     ball_detected = detected;
 
     if (detected) {
       last_detected_time = t;
+      current_ball_x = p.x_mm;
+      current_ball_y = p.y_mm;
 
       // Target position guardrail: Never allow the state machine to target closer than 14mm to the edge!
       // Physical edges: 85mm (X) and 75mm (Y). Max targets: 71mm (X) and 61mm (Y).
@@ -119,18 +112,20 @@ void pid_balance(double setpoint_x, double setpoint_y, double cam_x, double cam_
       }
 
       // --- VIRTUAL WALL (Edge Protection) ---
-      if (current_ball_x > 71.0) internal_setpoint_x = 56.0;
-      else if (current_ball_x < -71.0) internal_setpoint_x = -56.0;
+      // Instead of teleporting the target to 0 (which creates a massive 12.5 degree catapult effect that causes edge oscillations),
+      // we just push the target 15mm inwards from the edge. This creates a firm but controlled restorative tilt to catch the ball.
+      if (p.x_mm > 71.0) internal_setpoint_x = 56.0;
+      else if (p.x_mm < -71.0) internal_setpoint_x = -56.0;
       
-      if (current_ball_y > 61.0) internal_setpoint_y = 46.0;
-      else if (current_ball_y < -61.0) internal_setpoint_y = -46.0;
+      if (p.y_mm > 61.0) internal_setpoint_y = 46.0;
+      else if (p.y_mm < -61.0) internal_setpoint_y = -46.0;
 
       // Predictive velocity control
-      ball_vel[0] = (current_ball_y - p_prev[0]) / (dt*50);
-      ball_vel[1] = (current_ball_x - p_prev[1]) / (dt*50);
+      ball_vel[0] = (p.y_mm - p_prev[0]) / (dt*50);
+      ball_vel[1] = (p.x_mm - p_prev[1]) / (dt*50);
 
-      p_prev[0] = current_ball_y;
-      p_prev[1] = current_ball_x;
+      p_prev[0] = p.y_mm;
+      p_prev[1] = p.x_mm;
 
 
       for (int i = 0; i < 2; i++) {
@@ -138,7 +133,7 @@ void pid_balance(double setpoint_x, double setpoint_y, double cam_x, double cam_
         //if (i == 0) continue; // Skip Y axis during X tuning
 
         error_prev[i] = error[i];
-        double error_raw = (i == 0) ? (current_ball_y - internal_setpoint_y) : (current_ball_x - internal_setpoint_x);  // Calculates error based on ball position
+        double error_raw = (i == 0) ? (p.y_mm - internal_setpoint_y) : (p.x_mm - internal_setpoint_x);  // Calculates error based on ball position
         double error_current = error_raw;
 
         // Deadband: If the ball is within 3.0mm of the center, consider the error to be 0 to let it settle
@@ -154,7 +149,7 @@ void pid_balance(double setpoint_x, double setpoint_y, double cam_x, double cam_
         // Calculate derivative on Measurement (ball velocity) rather than Error!
         // This prevents "Derivative Kick" where the continuously moving slew-target injects massive fake velocity into the D-term!
         static double p_prev_raw[2] = {0, 0};
-        double current_pos = (i == 0) ? current_ball_y : current_ball_x;
+        double current_pos = (i == 0) ? p.y_mm : p.x_mm;
         double raw_deriv = (current_pos - p_prev_raw[i]) / dt;
         p_prev_raw[i] = current_pos;
         
@@ -255,7 +250,7 @@ void pid_balance(double setpoint_x, double setpoint_y, double cam_x, double cam_
 void move_to_point(double setpoint_x, double setpoint_y, unsigned long delay) {
   unsigned long t_prev = millis();
   while (millis() - t_prev < delay) {
-    pid_balance(setpoint_x, setpoint_y, 0, 0, false);
+    pid_balance(setpoint_x, setpoint_y);
   }
 }
 
