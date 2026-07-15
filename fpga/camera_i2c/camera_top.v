@@ -8,6 +8,7 @@ module camera_top
         inout  wire        i2c_sda,
         inout  wire        i2c_scl,
 	    input wire         clk1,
+        input wire         clk2,
 
         // from OV7670
         input wire         pclk,
@@ -17,10 +18,19 @@ module camera_top
 	
         // to OV7670
         output wire        xclk,
-	    output wire        siod,
+	    inout  wire        siod,
         output wire        sioc,
 
-        output wire        v_sup
+        // SDRAM Physical Pins
+        output wire [12:0] sdram_a,
+        output wire [ 1:0] sdram_ba,
+        inout  wire [15:0] sdram_dq,
+        output wire        sdram_cke,
+        output wire        sdram_cs_n,
+        output wire        sdram_ras_n,
+        output wire        sdram_cas_n,
+        output wire        sdram_we_n,
+        output wire [ 1:0] sdram_dqm
     );
 
 	//target interface bus
@@ -50,22 +60,21 @@ module camera_top
 	 wire wr_en;
 	 wire rd_en;
 	 wire empty;
-	 wire full;
+	 wire full = 1'b0; // SDRAM acts as an infinite buffer for a single frame
 	 
 	 wire overflow;
-	 wire [12:0] rd_data_count;
+	 wire [10:0] rd_data_count;
 	
 	 
 	 assign hi_muxsel = 1'b0;   // connect FPGA to the USB microcontroller, not the PROM
 	assign i2c_sda   = 1'bz;   // release the I2C bus as it's irrelevant 
 	assign i2c_scl   = 1'bz;
 
-    assign xclk = clk1;  // clk from fpga to camera
-    assign v_sup = 1'b1; // power the camera		
+    assign xclk = clk2;  // clk from fpga to camera
 
 
     // xclk 
-    camera_config #(.CLK_FREQ(24000000)) writer(
+    camera_config #(.CLK_FREQ(100000000)) writer(
         .clk(clk1),
         .start(start[0]),
         .sioc(sioc),
@@ -185,25 +194,37 @@ module camera_top
 		else if (pixel_valid & full & armed) overflow_sticky <= 1; 
 	end
 
-		
-	 fifo fifo(
-			.rst(fifo_rst),
-			
-			.wr_clk(pclk),
-			.din(pixel_data),
-			.wr_en(wr_en),
-			.full(full),
-			
-			.rd_clk(ti_clk),
-			.dout(pipe_out_data),
-			.rd_en(rd_en),
-			.empty(empty),
-			
-			.overflow(overflow),
-			.rd_data_count(rd_data_count)
-	 );
+		// SDRAM Arbiter (Replacing old 4KB FIFO)
+	wire sdram_init_complete;
+
+	sdram_arbiter arbiter (
+		.clk_100mhz(clk1),
+		.rst_n(~reset[0]), // Active low reset from host
+		.frame_rst(fifo_rst_r), // Active high reset from arm signal
+
+		.pclk(pclk),
+		.cam_wr_en(pixel_valid & armed),
+		.cam_wr_data(pixel_data),
+
+		.ti_clk(ti_clk),
+		.usb_rd_en(pipe_out_read),
+		.usb_rd_data(pipe_out_data),
+		.usb_empty(empty), // Used by WireOut to check if read is valid if needed
+
+		.sdram_a(sdram_a),
+		.sdram_ba(sdram_ba),
+		.sdram_dq(sdram_dq),
+		.sdram_cke(sdram_cke),
+		.sdram_cs_n(sdram_cs_n),
+		.sdram_ras_n(sdram_ras_n),
+		.sdram_cas_n(sdram_cas_n),
+		.sdram_we_n(sdram_we_n),
+		.sdram_dqm(sdram_dqm),
+
+		.init_complete(sdram_init_complete)
+	);		
 	 
-	 assign pipe_out_ready = (rd_data_count >= 10'd512);
+	 assign pipe_out_ready = ~empty;
 	 
 	 //debugging 
 	reg [15:0] pclk_cnt  = 0;
@@ -220,13 +241,14 @@ module camera_top
 	.hi_in(hi_in), .hi_out(hi_out), .hi_inout(hi_inout), .ti_clk(ti_clk),
 	.ok1(ok1), .ok2(ok2));
 	
-	okWireOR # (.N(7)) wireOR (ok2, ok2x);
+	okWireOR # (.N(8)) wireOR (ok2, ok2x);
 
 	okWireIn  wi02(.ok1(ok1),.ep_addr(8'h02), .ep_dataout(start));
 	okWireIn  wi03(.ok1(ok1), .ep_addr(8'h03), .ep_dataout(reset));
 	okWireIn  wi04(.ok1(ok1), .ep_addr(8'h04), .ep_dataout(arm_wire));
 
-
+	okWireOut wo20(.ok1(ok1), .ok2(ok2x[6*17 +: 17]), .ep_addr(8'h20),
+					   .ep_datain({15'd0, done}));
 
 	okWireOut wo21(.ok1(ok1), .ok2(ok2x[0*17 +: 17]), .ep_addr(8'h21),
 						.ep_datain({15'd0, full}));
@@ -238,17 +260,17 @@ module camera_top
 					   .ep_datain({15'd0, overflow_sticky}));
 	
 	okWireOut wo24(.ok1(ok1), .ok2(ok2x[3*17 +: 17]), .ep_addr(8'h24),
-					   .ep_datain({15'd0, vsync_cnt}));
+					   .ep_datain(vsync_cnt));
 						
 	okWireOut wo25(.ok1(ok1), .ok2(ok2x[4*17 +: 17]), .ep_addr(8'h25),
-					   .ep_datain({15'd0, href_cnt }));
+					   .ep_datain(href_cnt));
 	
 	okWireOut wo26(.ok1(ok1), .ok2(ok2x[5*17 +: 17]), .ep_addr(8'h26),
-					   .ep_datain({15'd0, pclk_cnt}));
+					   .ep_datain(pclk_cnt));
 	
 
 
-	okBTPipeOut epA0(.ok1(ok1), .ok2(ok2x[6*17 +: 17]), .ep_addr(8'ha0), 
+	okBTPipeOut epA0(.ok1(ok1), .ok2(ok2x[7*17 +: 17]), .ep_addr(8'ha0), 
 						  .ep_read(pipe_out_read),  .ep_blockstrobe(), 
 						  .ep_datain(pipe_out_data), .ep_ready(pipe_out_ready));
 						  

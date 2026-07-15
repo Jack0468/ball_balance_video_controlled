@@ -92,3 +92,8 @@ Failsafe: Add a timeout. If the STM32 hasn't received a valid serial packet from
 - [ ] **PIVOT**: The YOLO pivot is the correct path forward to compute dynamic homography and ignore camera bumps. However, glare in the dataset prevents manual ground-truth labeling.
 - [ ] **DECISION**: We will implement a Teacher-Student VLM pipeline (Option A) using Qwen-VL or similar to auto-label the dataset offline. 
 - [ ] **IMMEDIATE FOCUS**: Do not modify YOLO pipeline code right now. Focus entirely on the expert model (ResNet18) for position detection first to establish a baseline and evaluate its performance.
+
+15/07/2026
+
+refactor the audio section to align with our project standards.
+write the script to integrate the audio model with the video inference in order to control the ball

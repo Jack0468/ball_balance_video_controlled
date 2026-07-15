@@ -1,0 +1,128 @@
+import ok
+import numpy as np
+import time
+import cv2
+import sys
+import os
+
+WI_START = 0x02
+WI_RESET = 0x03
+WO_FRAME = 0x21
+WO_CONF  = 0x20
+PIPE_OUT = 0xA0
+
+BLOCK_SIZE  = 1024
+W, H        = 640, 480
+FRAME_BYTES = W * H * 2
+
+def main():
+    dev = ok.FrontPanelDevices().Open("")
+    if not dev:
+        print("Failed to open FPGA device.")
+        sys.exit(1)
+
+    print("FPGA Device opened. Configuring...")
+    # Assume we run this from VRI_2026/fpga/camera_i2c
+    dev.ConfigureFPGA("bitfiles/camera_top.bit")
+
+    pll = ok.PLL22393()
+    pll.SetReference(48.0)
+    
+    # Camera Clock (clk2) - 24MHz (FPGA P9)
+    # VCO = 48MHz * (5/1) = 240MHz (Valid: 100-400MHz)
+    pll.SetPLLParameters(0, 5, 1, True)
+    pll.SetOutputSource(2, ok.PLL22393.ClkSrc_PLL0_0)
+    pll.SetOutputDivider(2, 10)
+    pll.SetOutputEnable(2, True)
+
+    # SDRAM Clock (clk1) - 100MHz (Hardwired to SDRAM on XEM3010 N9!)
+    # VCO = 48MHz * (25/3) = 400MHz (Valid: 100-400MHz)
+    pll.SetPLLParameters(1, 25, 3, True)
+    pll.SetOutputSource(1, ok.PLL22393.ClkSrc_PLL1_0)
+    pll.SetOutputDivider(1, 4)
+    pll.SetOutputEnable(1, True)
+
+    dev.SetPLL22393Configuration(pll)
+    time.sleep(0.05) 
+
+    fp = dev.GetFPGADataPortClassic()
+   
+    fp.SetWireInValue(WI_RESET, 0x1)
+    fp.UpdateWireIns()
+    time.sleep(0.01)
+    fp.SetWireInValue(WI_RESET, 0x0)
+    fp.UpdateWireIns()
+    time.sleep(0.05)
+
+    fp.SetWireInValue(WI_START, 0x1)
+    fp.UpdateWireIns()
+    time.sleep(0.01)
+    fp.SetWireInValue(WI_START, 0x0)
+    fp.UpdateWireIns()
+
+    t0 = time.time()
+    while True:
+        fp.UpdateWireOuts()
+        if fp.GetWireOutValue(WO_CONF) & 0x1:
+            print("Configuration done.", flush=True)
+            break
+        if time.time() - t0 > 2.0:
+            print("Configuration timeout!", flush=True)
+            break
+    
+    fp.SetWireInValue(WI_RESET, 0x1)
+    fp.UpdateWireIns()
+    time.sleep(0.01)
+    fp.SetWireInValue(WI_RESET, 0x0)    
+    fp.UpdateWireIns()
+    
+    WI_ARM = 0x04
+    buf = bytearray(FRAME_BYTES)
+    
+    # Grab 5 frames to let it stabilize, then save the 5th
+    frames_captured = 0
+    max_frames = 5
+    
+    dev.SetTimeout(2000) # 2 second timeout
+    while frames_captured < max_frames:
+        fp.SetWireInValue(WI_ARM, 0x1)
+        fp.UpdateWireIns()
+        fp.SetWireInValue(WI_ARM, 0x0)
+        fp.UpdateWireIns()
+
+        n = fp.ReadFromBlockPipeOut(PIPE_OUT, BLOCK_SIZE, buf)
+        
+        if n != FRAME_BYTES:
+            print(f"Short read: {n} bytes.", flush=True)
+            fp.SetWireInValue(WI_RESET, 0x1)
+            fp.UpdateWireIns()
+            fp.SetWireInValue(WI_RESET, 0x0)
+            fp.UpdateWireIns()
+            time.sleep(0.05)
+            continue
+    
+        fp.UpdateWireOuts()
+        if fp.GetWireOutValue(0x23) & 0x1:
+            print("OVERFLOW!")
+            fp.SetWireInValue(WI_RESET, 0x1)
+            fp.UpdateWireIns()
+            fp.SetWireInValue(WI_RESET, 0x0)
+            fp.UpdateWireIns()
+            continue
+
+        frames_captured += 1
+        print(f"Captured frame {frames_captured}")
+
+    # Process the last frame
+    px = np.frombuffer(buf, dtype='<u2').reshape(H, W)
+    r = ((px >> 11) & 0x1F) << 3
+    g = ((px >> 5)  & 0x3F) << 2
+    b = ( px        & 0x1F) << 3
+    bgr = np.dstack((b, g, r)).astype(np.uint8)
+    
+    out_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_frame.png")
+    cv2.imwrite(out_path, bgr)
+    print(f"Saved image to {out_path}")
+
+if __name__ == "__main__":
+    main()
