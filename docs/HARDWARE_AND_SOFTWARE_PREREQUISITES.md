@@ -62,4 +62,5 @@ Since the control system relies on visual precision and fast, jerky physical mov
 - **Drivers**: TMC2208 stepper motor drivers (rated for 2A). 
 - **Control Interface**: The TMC2208 drivers will be controlled directly via their **STEP and DIR pins**. UART configuration is too slow for real-time motion and will not be used. Microstepping and current limits should be configured via the hardware pins and the onboard potentiometers.
 
-
+### Camera
+OV7670 
