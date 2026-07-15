@@ -76,9 +76,9 @@ void pid_balance(double setpoint_x, double setpoint_y, double cam_x, double cam_
       current_ball_x = cam_x;
       current_ball_y = cam_y;
     } else {
-      detected = (p.z > 0);
-      current_ball_x = p.x_mm;
-      current_ball_y = p.y_mm;
+      // Camera is disconnected or Python script is not running.
+      // We completely disable the touchpad fallback so it doesn't interfere!
+      detected = false;
     }
     ball_detected = detected;
 
@@ -248,7 +248,6 @@ void pid_balance(double setpoint_x, double setpoint_y, double cam_x, double cam_
       }
     }
     t_prev = t;  // resets value of t_prev
-  }
 }
 
 //uses the PID controller to move the ball to a point for a specified amount of time (in milliseconds)

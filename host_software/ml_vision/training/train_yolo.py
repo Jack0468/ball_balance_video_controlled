@@ -16,9 +16,9 @@ def main():
         print(f"ERROR: {dataset_yaml_path} not found. Ensure you are pointing to the synthetic dataset directory.")
         return
     
-    # 2. Load a pre-trained YOLOv8 nano model (fastest inference for edge)
-    print("Loading pre-trained YOLOv8n model...")
-    model = YOLO("yolov8n.pt")  # It will download automatically if not present
+    # 2. Load a pre-trained YOLOv8-Pose nano model (fastest inference for edge)
+    print("Loading pre-trained YOLOv8n-Pose model...")
+    model = YOLO("yolov8n-pose.pt")  # It will download automatically if not present
     
     # 3. Train the model
     print(f"Starting training for {args.epochs} epochs...")
@@ -34,11 +34,11 @@ def main():
         imgsz=640,
         workers=0,
         project="../models",
-        name="yolov8_marker_and_ball_detector",
+        name="unified_pose_model",
         device=device_str
     )
     
-    print("Training complete! Model saved in ../models/yolov8_marker_and_ball_detector/weights/best.pt")
+    print("Training complete! Model saved in ../models/unified_pose_model/weights/best.pt")
 
 if __name__ == '__main__':
     main()

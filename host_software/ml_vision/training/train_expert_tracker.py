@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, Subset
-from torchvision import models
+from torchvision import models, transforms
 
 import argparse
 from ball_dataset import BallDataset
@@ -45,25 +45,45 @@ def main():
     
     print(f"Loading dataset from: {csv_path}")
     
+    # Define Transforms
+    train_transform = transforms.Compose([
+        transforms.Resize((240, 320)),
+        transforms.ColorJitter(brightness=0.3, contrast=0.3, saturation=0.3, hue=0.1),
+        transforms.RandomAffine(degrees=5, translate=(0.2, 0.2), scale=(0.8, 1.2)),
+        transforms.RandomPerspective(distortion_scale=0.2, p=0.5),
+        transforms.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 5.0)),
+        transforms.ToTensor(),
+        transforms.RandomErasing(p=0.2, scale=(0.02, 0.1)),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+    
+    test_transform = transforms.Compose([
+        transforms.Resize((240, 320)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+    
     # 3. Create Dataset and DataLoader
-    full_dataset = BallDataset(csv_file=csv_path, root_dir=images_dir)
+    full_dataset_train = BallDataset(csv_file=csv_path, root_dir=images_dir, transform=train_transform)
+    full_dataset_test = BallDataset(csv_file=csv_path, root_dir=images_dir, transform=test_transform)
     
     # Split strictly sequentially: Train on first 80%, Test on strictly subsequent 20%
     # This prevents temporal data leakage across video frames.
-    indices = list(range(len(full_dataset)))
+    indices = list(range(len(full_dataset_train)))
     train_size = int(0.8 * len(indices))
     
-    train_dataset = Subset(full_dataset, indices[:train_size])
-    test_dataset = Subset(full_dataset, indices[train_size:])
+    train_dataset = Subset(full_dataset_train, indices[:train_size])
+    test_dataset = Subset(full_dataset_test, indices[train_size:])
     
     train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=4, pin_memory=True)
     test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False, num_workers=4, pin_memory=True)
     
-    print(f"Found {len(full_dataset)} total images -> {len(train_dataset)} Train | {len(test_dataset)} Test.")
+    print(f"Found {len(full_dataset_train)} total images -> {len(train_dataset)} Train | {len(test_dataset)} Test.")
     
     # 4. Training loop setup
-    criterion = nn.MSELoss()
+    criterion = nn.HuberLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=2, factor=0.5, verbose=True)
     
     num_epochs = 10
     best_loss = float('inf')
@@ -109,6 +129,9 @@ def main():
                 running_test_loss += test_loss.item() * inputs.size(0)
                 
         epoch_test_loss = running_test_loss / len(test_dataset)
+        
+        # Step the scheduler
+        scheduler.step(epoch_test_loss)
         
         print(f"--- Epoch [{epoch+1}/{num_epochs}] Train Loss: {epoch_train_loss:.4f} | Test Loss: {epoch_test_loss:.4f} ---")
         

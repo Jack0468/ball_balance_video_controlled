@@ -3,13 +3,8 @@
 unsigned long last_packet_time = 0;
 
 void check_serial_commands(double &cam_x, double &cam_y, bool &cam_active) {
-    // 1. Failsafe logic:
-    // If we lose connection for >100ms, consider the camera stream dead.
-    if (millis() - last_packet_time > 100) {
-        cam_active = false;
-    } else {
-        cam_active = true;
-    }
+    // 1. Force camera to ALWAYS be active (No failsafe)
+    cam_active = true;
     
     // 2. Read Serial buffer
     // Expected Payload: '<' (1 byte) + cam_x (2 bytes) + cam_y (2 bytes) = 5 bytes total

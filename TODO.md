@@ -97,3 +97,5 @@ Failsafe: Add a timeout. If the STM32 hasn't received a valid serial packet from
 
 refactor the audio section to align with our project standards.
 write the script to integrate the audio model with the video inference in order to control the ball
+
+is there  any way to salvage the resnet model? through tweaking our physical variables or augmenting our dataset to make it more robust to the physical uncertainities?

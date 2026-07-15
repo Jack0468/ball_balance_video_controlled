@@ -32,18 +32,9 @@ void loop() {
   // 1. Read Serial for coordinates (updates cam_x, cam_y, cam_active)
   check_serial_commands(cam_x, cam_y, cam_active);
   
-  // 2. Generate target using the state machine
-  bool is_done = false;
-  state_machine.getNextTarget(target_x, target_y, is_done);
-
-  // If data collection is done, lock the motors in a dump position
-  if (is_done) {
-    move_to_angle(12, 0, 80);
-    motorA.run();
-    motorB.run();
-    motorC.run();
-    return;
-  }
+  // 2. Center balance mode
+  target_x = 0;
+  target_y = 0;
   
   // 3. The PID controller handles its own 30Hz (33ms) timer internally.
   // It will also automatically send the binary telemetry packet when it runs.
