@@ -83,7 +83,7 @@ def main():
     # 4. Training loop setup
     criterion = nn.HuberLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=2, factor=0.5, verbose=True)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=2, factor=0.5)
     
     num_epochs = 10
     best_loss = float('inf')
