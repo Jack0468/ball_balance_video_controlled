@@ -51,3 +51,4 @@ logs/
 host_software/ml_vision/models/platform_pose_model/
 host_software/ml_vision/models/weights/
 runs/
+host_software/ml_vision/data/02_silver_unified_pose.zip
