@@ -35,7 +35,10 @@ def main():
         workers=0,
         project="../models",
         name="unified_pose_model",
-        device=device_str
+        device=device_str,
+        fliplr=0.0,  # Disable horizontal flip to preserve Top-Left/Top-Right semantic order
+        flipud=0.0   # Disable vertical flip
+
     )
     
     print("Training complete! Model saved in ../models/unified_pose_model/weights/best.pt")

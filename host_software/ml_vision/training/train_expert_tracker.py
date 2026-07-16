@@ -46,10 +46,15 @@ def main():
     print(f"Loading dataset from: {csv_path}")
     
     # Define Transforms
+    # We apply RandomAffine (Shift, Scale, Rotate) and RandomPerspective (Tilt) to simulate camera movement.
+    # Because the model predicts the ball's *intrinsic* physical coordinate on the board (touch_x, touch_y),
+    # moving the camera does NOT change the physical label! This brilliantly forces the model to learn 
+    # camera-invariance by locating the purple shape of the platform's outline rather than memorizing absolute pixel locations.
+    # Note: RandomHorizontalFlip is strictly forbidden as it creates a physically impossible mirrored board.
     train_transform = transforms.Compose([
         transforms.Resize((240, 320)),
         transforms.ColorJitter(brightness=0.3, contrast=0.3, saturation=0.3, hue=0.1),
-        transforms.RandomAffine(degrees=5, translate=(0.2, 0.2), scale=(0.8, 1.2)),
+        transforms.RandomAffine(degrees=10, translate=(0.1, 0.1), scale=(0.9, 1.1)),
         transforms.RandomPerspective(distortion_scale=0.2, p=0.5),
         transforms.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 5.0)),
         transforms.ToTensor(),

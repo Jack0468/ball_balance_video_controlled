@@ -7,8 +7,9 @@ import argparse
 from ultralytics import YOLO
 
 # Physical dimensions of the purple board (in mm)
-PLATFORM_W = 187.5
-PLATFORM_H = 142.0
+PLATFORM_W = 200.0
+PLATFORM_H = 146.93
+
 
 # The physical corners of the board (Top-Left origin)
 BOARD_CORNERS_MM = np.array([
@@ -18,13 +19,21 @@ BOARD_CORNERS_MM = np.array([
     [0.0, PLATFORM_H]               # Bottom-Left
 ], dtype=np.float32)
 
-# Physical coordinates of the 4 target markers (Top-Left origin)
+# Physical coordinates of the 4 target markers (Relative to Top-Left of the Resistive Touchpad)
+# The touchpad is 187.5 x 142.0
+TOUCHPAD_W = 187.5
+TOUCHPAD_H = 142.0
+
 TARGETS_PHYSICAL_MM = np.array([
-    [33.0, 26.0],                   # Target 1 (Green, Top-Left)
-    [187.5 - 41.0, 53.0],           # Target 2 (Red, Top-Right)
-    [187.5 - 13.0, 142.0 - 8.0],    # Target 3 (Black, Bottom-Right)
-    [69.0, 142.0 - 58.0]            # Target 4 (Grey, Bottom-Left)
+    [33.0, 26.0],                           # Target 1 (Green, Top-Left)
+    [TOUCHPAD_W - 41.0, 53.0],              # Target 2 (Red, Top-Right)
+    [TOUCHPAD_W - 13.0, TOUCHPAD_H - 8.0],  # Target 3 (Black, Bottom-Right)
+    [69.0, TOUCHPAD_H - 58.0]               # Target 4 (Grey, Bottom-Left)
 ], dtype=np.float32)
+
+# Calculate the offset of the touchpad relative to the outer purple plate
+PAD_OFFSET_X = (PLATFORM_W - TOUCHPAD_W) / 2.0
+PAD_OFFSET_Y = (PLATFORM_H - TOUCHPAD_H) / 2.0
 
 def order_corners(pts):
     # Sorts 4 points into: Top-Left, Top-Right, Bottom-Right, Bottom-Left
@@ -40,6 +49,7 @@ def order_corners(pts):
     return np.array([tl, tr, br, bl], dtype=np.float32)
 
 def generate_random_warp(img_w, img_h):
+    # 1. Perspective jitter
     pts1 = np.float32([[0,0], [img_w,0], [img_w,img_h], [0,img_h]])
     jitter_x = int(img_w * 0.15)
     jitter_y = int(img_h * 0.15)
@@ -51,7 +61,18 @@ def generate_random_warp(img_w, img_h):
         [random.randint(-jitter_x, jitter_x), img_h + random.randint(-jitter_x, jitter_x)]
     ])
     
-    matrix = cv2.getPerspectiveTransform(pts1, pts2)
+    H_persp = cv2.getPerspectiveTransform(pts1, pts2)
+    
+    # 2. 360-degree rotation (Random arbitrary yaw)
+    angle = random.uniform(0, 360)
+    center = (img_w / 2, img_h / 2)
+    M_rot = cv2.getRotationMatrix2D(center, angle, 1.0)
+    
+    H_rot = np.eye(3)
+    H_rot[0:2, :] = M_rot
+    
+    # Combine: Perspective then Rotation
+    matrix = H_rot @ H_persp
     return matrix
 
 def format_pose_label(class_id, cx, cy, w, h, keypoints=None, img_w=640, img_h=480):
@@ -151,7 +172,11 @@ def main():
             continue
             
         # 3. Project true target markers from MM to Pixels
+        # Shift targets from Touchpad Space to Plate Space
         target_pts_mm = np.array([TARGETS_PHYSICAL_MM], dtype=np.float32)
+        target_pts_mm[0, :, 0] += PAD_OFFSET_X
+        target_pts_mm[0, :, 1] += PAD_OFFSET_Y
+        
         target_pts_pixel = cv2.perspectiveTransform(target_pts_mm, M)[0]
         
         # 4. Project true ball from MM to Pixels
