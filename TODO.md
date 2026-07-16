@@ -99,3 +99,10 @@ refactor the audio section to align with our project standards.
 write the script to integrate the audio model with the video inference in order to control the ball
 
 is there  any way to salvage the resnet model? through tweaking our physical variables or augmenting our dataset to make it more robust to the physical uncertainities?
+
+16/07/2026
+
+IDEA:
+RATHER THAN USING PHYSICAL MARKERS, USE THE AUDIO MODEL TO PICK WHERE THEY ARE ON THE SCREEN AND THEN ALLOW THE USER TO DYNAMICALLY CHANGE THEM AND MOVE THE BALL TO THOSE POSITIONS ON THE PLATFORM??
+
+DOES THIS SATIISFY OUR ORIGNAL SPECIFICATION FOR THE PROJECT?

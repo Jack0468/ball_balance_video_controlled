@@ -34,8 +34,8 @@ def train_model():
     train_dataset = Subset(full_dataset_train, indices[:train_size])
     test_dataset = Subset(full_dataset_test, indices[train_size:])
     
-    train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=4, pin_memory=True)
-    test_loader = DataLoader(test_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True)
+    train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=2, pin_memory=True)
+    test_loader = DataLoader(test_dataset, batch_size=16, shuffle=False, num_workers=2, pin_memory=True)
     
     print(f"Total Sequences: {len(full_dataset_train)}. Train: {len(train_dataset)} | Test: {len(test_dataset)}")
     
@@ -46,7 +46,7 @@ def train_model():
     # 3. Training setup
     criterion = nn.HuberLoss()
     optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-5)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3, verbose=True)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3)
     
     num_epochs = 30
     best_test_loss = float('inf')
