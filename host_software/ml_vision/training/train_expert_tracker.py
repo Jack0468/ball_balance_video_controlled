@@ -36,7 +36,7 @@ def main():
     else:
         data_dir = os.path.abspath(os.path.join(script_dir, args.data_dir))
         
-    csv_path = os.path.join(data_dir, 'labels.csv')
+    csv_path = os.path.join(data_dir, 'labels_sequential.csv')
     images_dir = os.path.join(data_dir, 'images')
     project_dir = os.path.abspath(os.path.join(script_dir, '../models'))
     
@@ -80,8 +80,8 @@ def main():
     train_dataset = Subset(full_dataset_train, indices[:train_size])
     test_dataset = Subset(full_dataset_test, indices[train_size:])
     
-    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=4, pin_memory=True)
-    test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False, num_workers=4, pin_memory=True)
+    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=2, pin_memory=True)
+    test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False, num_workers=2, pin_memory=True)
     
     print(f"Found {len(full_dataset_train)} total images -> {len(train_dataset)} Train | {len(test_dataset)} Test.")
     
