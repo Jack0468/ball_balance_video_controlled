@@ -17,6 +17,7 @@ module camera_top
         input wire [7:0]   p_data,
 	
         // to OV7670
+        output wire        v_sup,
         output wire        xclk,
 	    inout  wire        siod,
         output wire        sioc,
@@ -112,9 +113,10 @@ module camera_top
 	// wire fifo_rst = rst_s[1] | frame_start;
 	//old logic
 
-	//insert gemini attempt number 500000000
+	// 0. Hardwire camera PWDN low to keep it awake
+	assign v_sup = 1'b0;
 
-		// 1. Detect Host Arm Request
+	// 1. Detect Host Arm Request
 	
 	reg [2:0] arm_s = 0;
 	always @(posedge pclk) arm_s <= {arm_s[1:0], arm_wire[0]};

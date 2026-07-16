@@ -53,7 +53,7 @@ double ball_vel[2] = {0,0}, p_prev[2] = {0,0};
 double predict_time = 0.3; 
 
 //Runs X and Y PID Controllers to balance ball at a specific point
-void pid_balance(double setpoint_x, double setpoint_y, double cam_x, double cam_y, bool cam_active) {
+void pid_balance(double setpoint_x, double setpoint_y) {
 
   static unsigned long t_prev = 0;              // Records previous time (uses static so the variable gets remembered through each loop iteration)
   static unsigned long last_detected_time = 0;  // Track when ball was last detected
@@ -67,17 +67,20 @@ void pid_balance(double setpoint_x, double setpoint_y, double cam_x, double cam_
     return;  // Ends function
   }
 
-  // Only runs if minimum sample time has passed (0.033 seconds or 33 milliseconds for 30Hz)
+  // Only runs if minimum sample time has passed (0.020 seconds or 20 milliseconds for 50Hz)
+  if (dt < 0.020) {
+    return;
+  }
+
     coords p = get_coords();           // retrieves ball's position from touchscreen
     bool detected = false;
     
-    if (cam_active) {
+    // Pure data collection: Use the touchpad as the primary input!
+    if (p.z > 0.5) {
       detected = true;
-      current_ball_x = cam_x;
-      current_ball_y = cam_y;
+      current_ball_x = p.x_mm;
+      current_ball_y = p.y_mm;
     } else {
-      // Camera is disconnected or Python script is not running.
-      // We completely disable the touchpad fallback so it doesn't interfere!
       detected = false;
     }
     ball_detected = detected;
@@ -141,13 +144,11 @@ void pid_balance(double setpoint_x, double setpoint_y, double cam_x, double cam_
         double error_raw = (i == 0) ? (current_ball_y - internal_setpoint_y) : (current_ball_x - internal_setpoint_x);  // Calculates error based on ball position
         double error_current = error_raw;
 
-        // Deadband: If the ball is within 3.0mm of the center, consider the error to be 0 to let it settle
-        // This instantly silences the P and D terms, completely removing touchscreen ADC noise so the motors freeze quietly!
-        if (abs(error_current) < 3.0) {
-            error_current = 0;
-            // Note: We DO NOT clear integ[i] here! The I-term must remain active to continuously 
-            // compensate for any physical miscalibration in the motor offsets (steady-state tilt).
-        }
+        // REMOVED 3.0mm DEADBAND
+        // The deadband was causing a fight with the State Machine!
+        // If the PID goes to sleep at 2.9mm error, the State Machine EWMA
+        // will never mathematically hit strictly < 3.0mm, causing a permanent stall!
+        // We must let the PID controller constantly fight to hit exactly 0.0.
 
         error[i] = error_current; 
         
@@ -254,7 +255,7 @@ void pid_balance(double setpoint_x, double setpoint_y, double cam_x, double cam_
 void move_to_point(double setpoint_x, double setpoint_y, unsigned long delay) {
   unsigned long t_prev = millis();
   while (millis() - t_prev < delay) {
-    pid_balance(setpoint_x, setpoint_y, 0, 0, false);
+    pid_balance(setpoint_x, setpoint_y);
   }
 }
 

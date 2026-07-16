@@ -3,14 +3,10 @@
 #include "MotorControl.h"
 #include "Screen.h"
 #include "PIDControllers.h"
-#include "SerialControl.h"
 #include "DataCollectionStateMachine.h"
 
 double target_x = 0;
 double target_y = 0;
-double cam_x = 0;
-double cam_y = 0;
-bool cam_active = false;
 
 DataCollectionStateMachine state_machine;
 
@@ -29,10 +25,7 @@ void setup() {
 }
 
 void loop() {
-  // 1. Read Serial for coordinates (updates cam_x, cam_y, cam_active)
-  check_serial_commands(cam_x, cam_y, cam_active);
-  
-  // 2. Data Collection State Machine
+  // 1. Data Collection State Machine
   bool is_done = false;
   state_machine.getNextTarget(target_x, target_y, is_done);
 
@@ -48,7 +41,7 @@ void loop() {
   
   // 3. The PID controller handles its own 30Hz (33ms) timer internally.
   // It will also automatically send the binary telemetry packet when it runs.
-  pid_balance(target_x, target_y, cam_x, cam_y, cam_active);
+  pid_balance(target_x, target_y);
   
   // 4. Must be called as fast as possible to actually step the motors
   motorA.run();

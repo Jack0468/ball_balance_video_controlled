@@ -1,3 +1,5 @@
+11/07/2026
+
 Video1
 Selected Crop Box (x, y, w, h): 82,435,915,762
 timestamp: 1783662365300
@@ -13,6 +15,18 @@ video3
 Selected Crop Box (x, y, w, h): 130,485,812,710
 timestamp: 1783665248539
 frame index: 154
+
+NEW DATA on 16/07/2026
+
+video4
+Selected Crop Box (x, y, w, h): 132,255,712,585
+timestamp: 1784184295854
+frame index: 1028
+
+video5
+Selected Crop Box (x, y, w, h): 152,267,672,560
+timestamp: 1784185262060
+frame index: 209
 
 
 COLOURS

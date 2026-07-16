@@ -93,7 +93,8 @@ void DataCollectionStateMachine::getNextTarget(double &out_x, double &out_y, boo
                 state = state_before_recovery;
                 in_recovery = false;
             } else {
-                state = PHASE_1_RANDOM;
+                // TEMP: Skip straight to Edges for data collection!
+                state = PHASE_4_EDGES;
             }
             state_start_time_ms = now;
             
@@ -120,8 +121,8 @@ void DataCollectionStateMachine::getNextTarget(double &out_x, double &out_y, boo
             double new_tx = random(-600, 600) / 10.0;
             double new_ty = random(-450, 450) / 10.0;
             
-            // Final constraint to keep it within safe target bounds
-            target_x = constrain(new_tx, -80.0, 80.0);
+            // Final constraint to keep it within the PID physical guardrails
+            target_x = constrain(new_tx, -70.0, 70.0);
             target_y = constrain(new_ty, -60.0, 60.0);
             
             // Reset EWMA for the next target
@@ -259,12 +260,12 @@ void DataCollectionStateMachine::getNextTarget(double &out_x, double &out_y, boo
         }
     }
     else if (state == PHASE_4_EDGES) {
-        // Trace the perimeter of the safe zone: (-80, -60) to (80, -60) to (80, 60) to (-80, 60) and back
+        // Trace the perimeter of the physical PID guardrail: (-70, -60) to (70, -60) to (70, 60) to (-70, 60) and back
         Point2D edge_points[4] = {
-            {-80.0, -60.0},
-            {80.0, -60.0},
-            {80.0, 60.0},
-            {-80.0, 60.0}
+            {-70.0, -60.0},
+            {70.0, -60.0},
+            {70.0, 60.0},
+            {-70.0, 60.0}
         };
 
         if (waiting_at_start) {
@@ -331,7 +332,7 @@ void DataCollectionStateMachine::getNextTarget(double &out_x, double &out_y, boo
             target_x += jump_x;
             target_y += jump_y;
             
-            target_x = constrain(target_x, -80.0, 80.0);
+            target_x = constrain(target_x, -70.0, 70.0);
             target_y = constrain(target_y, -60.0, 60.0);
             
             last_brownian_update_ms = now;
