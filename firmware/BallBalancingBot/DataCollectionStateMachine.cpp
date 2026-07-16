@@ -6,10 +6,12 @@ DataCollectionStateMachine::DataCollectionStateMachine() {
     state_start_time_ms = millis();
     last_random_update_ms = millis();
     last_sweep_update_ms = millis();
+    last_brownian_update_ms = millis();
     
     phase0_duration_ms = 10000;  // 10 seconds for centering
-    phase1_duration_ms = 100000; // 100 seconds
+    phase1_duration_ms = 300000; // 300 seconds
     phase2_duration_per_pattern_ms = 50000; // 50 seconds
+    phase5_duration_ms = 200000; // 200 seconds
     
     ewma_err_x = 100.0;
     ewma_err_y = 100.0;
@@ -40,6 +42,7 @@ DataCollectionStateMachine::DataCollectionStateMachine() {
     }
     current_dir_idx = 0;
     sweep_distance = 0;
+    current_edge_idx = 0;
     
     target_x = 0.0;
     target_y = 0.0;
@@ -111,14 +114,15 @@ void DataCollectionStateMachine::getNextTarget(double &out_x, double &out_y, boo
             ewma_err_y = 0.015 * err_y + 0.985 * ewma_err_y;
         }
         
-        if (ewma_err_x < 3.0 && ewma_err_y < 3.0) {
-            // EWMA has settled! Pick a new target.
+        // Change target as soon as the raw error is within 15mm, to keep it moving continuously!
+        if (err_x < 15.0 && err_y < 15.0) {
+            // Pick a new target.
             double new_tx = random(-600, 600) / 10.0;
             double new_ty = random(-450, 450) / 10.0;
             
             // Final constraint to keep it within safe target bounds
-            target_x = constrain(new_tx, -60.0, 60.0);
-            target_y = constrain(new_ty, -45.0, 45.0);
+            target_x = constrain(new_tx, -80.0, 80.0);
+            target_y = constrain(new_ty, -60.0, 60.0);
             
             // Reset EWMA for the next target
             ewma_err_x = 100.0;
@@ -188,10 +192,12 @@ void DataCollectionStateMachine::getNextTarget(double &out_x, double &out_y, boo
     }
     else if (state == PHASE_3_SWEEPS) {
         if (current_start_idx >= 9) {
-            state = PHASE_DONE;
-            is_done = true;
-            out_x = target_x;
-            out_y = target_y;
+            state = PHASE_4_EDGES;
+            state_start_time_ms = now;
+            waiting_at_start = true;
+            ewma_err_x = 100.0;
+            ewma_err_y = 100.0;
+            current_edge_idx = 0;
             return;
         }
         
@@ -239,7 +245,7 @@ void DataCollectionStateMachine::getNextTarget(double &out_x, double &out_y, boo
         target_x = start_x + dir_dx * sweep_distance;
         target_y = start_y + dir_dy * sweep_distance;
         
-        if (abs(target_x) > 65.0 || abs(target_y) > 50.0 || sweep_distance >= 100.0) {
+        if (abs(target_x) > 85.0 || abs(target_y) > 65.0 || sweep_distance >= 100.0) {
             sweep_distance = 0.0;
             current_dir_idx++;
             waiting_at_start = true; // Wait for ball to return to start point!
@@ -250,6 +256,90 @@ void DataCollectionStateMachine::getNextTarget(double &out_x, double &out_y, boo
                 current_dir_idx = 0;
                 current_start_idx++;
             }
+        }
+    }
+    else if (state == PHASE_4_EDGES) {
+        // Trace the perimeter of the safe zone: (-80, -60) to (80, -60) to (80, 60) to (-80, 60) and back
+        Point2D edge_points[4] = {
+            {-80.0, -60.0},
+            {80.0, -60.0},
+            {80.0, 60.0},
+            {-80.0, 60.0}
+        };
+
+        if (waiting_at_start) {
+            target_x = edge_points[0].x;
+            target_y = edge_points[0].y;
+            
+            extern double current_ball_x;
+            extern double current_ball_y;
+            double err_x = abs(current_ball_x - target_x);
+            double err_y = abs(current_ball_y - target_y);
+            
+            if (ball_detected) {
+                ewma_err_x = 0.015 * err_x + 0.985 * ewma_err_x;
+                ewma_err_y = 0.015 * err_y + 0.985 * ewma_err_y;
+            }
+            
+            if (ewma_err_x < 5.0 && ewma_err_y < 5.0) {
+                waiting_at_start = false;
+                current_edge_idx = 1; // start moving to next point
+                last_sweep_update_ms = now;
+                sweep_distance = 0.0;
+            }
+            return;
+        }
+        
+        int prev_idx = (current_edge_idx - 1 + 4) % 4;
+        double start_x = edge_points[prev_idx].x;
+        double start_y = edge_points[prev_idx].y;
+        double end_x = edge_points[current_edge_idx].x;
+        double end_y = edge_points[current_edge_idx].y;
+        
+        double dir_dx = end_x - start_x;
+        double dir_dy = end_y - start_y;
+        double edge_len = sqrt(dir_dx*dir_dx + dir_dy*dir_dy);
+        dir_dx /= edge_len;
+        dir_dy /= edge_len;
+        
+        // Every 30 frames (~1000ms), move 10mm -> 10mm/s for a slower, thorough trace
+        if (now - last_sweep_update_ms >= 100) {
+            sweep_distance += 1.0;
+            last_sweep_update_ms = now;
+        }
+        
+        target_x = start_x + dir_dx * sweep_distance;
+        target_y = start_y + dir_dy * sweep_distance;
+        
+        if (sweep_distance >= edge_len) {
+            sweep_distance = 0.0;
+            current_edge_idx++;
+            // Do 3 full laps (12 edges) to spend "quite some time" here
+            if (current_edge_idx >= 12) {
+                // If we completed 3 full laps, finish!
+                state = PHASE_5_BROWNIAN;
+                state_start_time_ms = now;
+                last_brownian_update_ms = now;
+            }
+        }
+    }
+    else if (state == PHASE_5_BROWNIAN) {
+        if (now - last_brownian_update_ms >= 50) { // Update every 50ms (20Hz)
+            double jump_x = random(-60, 61) / 10.0; // -6.0 to 6.0 mm jump
+            double jump_y = random(-60, 61) / 10.0;
+            
+            target_x += jump_x;
+            target_y += jump_y;
+            
+            target_x = constrain(target_x, -80.0, 80.0);
+            target_y = constrain(target_y, -60.0, 60.0);
+            
+            last_brownian_update_ms = now;
+        }
+        
+        if (elapsed_in_state > phase5_duration_ms) {
+            state = PHASE_DONE;
+            is_done = true;
         }
     }
     else if (state == PHASE_DONE) {

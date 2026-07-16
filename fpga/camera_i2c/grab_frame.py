@@ -90,7 +90,26 @@ def main():
         fp.SetWireInValue(WI_ARM, 0x0)
         fp.UpdateWireIns()
 
-        n = fp.ReadFromBlockPipeOut(PIPE_OUT, BLOCK_SIZE, buf)
+        # Poll WO_FRAME to wait for the SDRAM to capture a full frame
+        timeout = time.time() + 2.0
+        frame_ready = False
+        while time.time() < timeout:
+            fp.UpdateWireOuts()
+            if fp.GetWireOutValue(WO_FRAME) & 0x1:
+                frame_ready = True
+                break
+            time.sleep(0.01)
+            
+        if not frame_ready:
+            print("Timeout waiting for frame to buffer in SDRAM!", flush=True)
+            fp.SetWireInValue(WI_RESET, 0x01)
+            fp.UpdateWireIns()
+            fp.SetWireInValue(WI_RESET, 0x00)
+            fp.UpdateWireIns()
+            time.sleep(0.05)
+            continue
+
+        n = fp.ReadFromPipeOut(PIPE_OUT, buf)
         
         if n != FRAME_BYTES:
             print(f"Short read: {n} bytes.", flush=True)

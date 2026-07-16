@@ -1,9 +1,9 @@
 {
-    "MAE_X_mm": 3.532578468322754,
-    "MAE_Y_mm": 3.7566494941711426,
-    "RMSE_X_mm": 5.54265832901001,
-    "RMSE_Y_mm": 5.372961044311523,
-    "Mean_Euclidean_Error_mm": 5.60267972946167,
-    "Max_Euclidean_Error_mm": 114.44036102294922,
-    "95th_Percentile_Error_mm": 14.797237396240234
+    "MAE_X_mm": 1.9857512712478638,
+    "MAE_Y_mm": 2.8716342449188232,
+    "RMSE_X_mm": 4.055389881134033,
+    "RMSE_Y_mm": 4.857287883758545,
+    "Mean_Euclidean_Error_mm": 3.789029598236084,
+    "Max_Euclidean_Error_mm": 109.44359588623047,
+    "95th_Percentile_Error_mm": 11.817586898803711
 }

@@ -3,7 +3,7 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Subset
-from torchvision import models
+from torchvision import models, transforms
 import matplotlib.pyplot as plt
 import numpy as np
 import json
@@ -56,11 +56,17 @@ def main():
     else:
         data_dir = os.path.abspath(os.path.join(script_dir, args.data_dir))
         
-    csv_path = os.path.join(data_dir, 'labels.csv')
+    csv_path = os.path.join(data_dir, 'labels_sequential.csv')
     images_dir = os.path.join(data_dir, 'images')
     
     print(f"Loading dataset from: {csv_path}")
-    full_dataset = BallDataset(csv_file=csv_path, root_dir=images_dir)
+    test_transform = transforms.Compose([
+        transforms.Resize((240, 320)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+    
+    full_dataset = BallDataset(csv_file=csv_path, root_dir=images_dir, transform=test_transform)
     
     # We want to test on the last 20% of the dataset
     indices = list(range(len(full_dataset)))

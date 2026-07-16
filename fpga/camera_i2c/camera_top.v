@@ -60,7 +60,7 @@ module camera_top
 	 wire wr_en;
 	 wire rd_en;
 	 wire empty;
-	 wire full = 1'b0; // SDRAM acts as an infinite buffer for a single frame
+	 wire full; // SDRAM acts as an infinite buffer for a single frame
 	 
 	 wire overflow;
 	 wire [10:0] rd_data_count;
@@ -131,6 +131,8 @@ module camera_top
 	reg [3:0] rst_cnt = 0;
 	reg armed = 0;
 	reg fifo_rst_r = 0;
+	
+	assign full = (state == S_IDLE);
 
 	always @(posedge pclk) begin
 		case (state)
@@ -270,9 +272,10 @@ module camera_top
 	
 
 
-	okBTPipeOut epA0(.ok1(ok1), .ok2(ok2x[7*17 +: 17]), .ep_addr(8'ha0), 
-						  .ep_read(pipe_out_read),  .ep_blockstrobe(), 
-						  .ep_datain(pipe_out_data), .ep_ready(pipe_out_ready));
+	okPipeOut epA0(.ok1(ok1), .ok2(ok2x[7*17 +: 17]), .ep_addr(8'ha0), 
+						  .ep_read(pipe_out_read), 
+						  .ep_datain(pipe_out_data));
+
 						  
 
 endmodule
