@@ -65,13 +65,16 @@ module camera_top
 	assign i2c_sda   = 1'bz;   // release the I2C bus as it's irrelevant 
 	assign i2c_scl   = 1'bz;
 
-    assign xclk = clk2;  // clk from fpga to camera
+    assign xclk = clk2;  	// 6. Camera I2C Configuration
+	
+	wire start_config;
+	wire f_config_done;
 
-
-    // xclk 
-    camera_config #(.CLK_FREQ(100000000)) writer(
+	assign start_config = 1'b0; // DISABLED FOR DIAGNOSTICS: See if camera outputs PCLK without I2C config
+	
+	camera_config #(.CLK_FREQ(100000000)) writer(
         .clk(clk1),
-        .start(start[0]),
+        .start(start_config),
         .sioc(sioc),
         .siod(siod),
         .done(done)

@@ -40,8 +40,10 @@ The single occurrence of a **red stripe at the top** is extremely diagnostic —
 | 9 | 15 Jul | `2f23cbf` | USB FIFO overflow: 640×480 RGB565 at 24MHz overwhelmed 4KB Block RAM FIFO. Workaround: CLKRC divide-by-4 (`0x03`), ~7.5 FPS. | ⚠️ Workaround |
 | 10 | 15 Jul | `2f23cbf` | PLL physical mapping: Output 1 (`N9`)=100MHz SDRAM, Output 2 (`P9`)=24MHz camera. CY22393 VCO recalculated: 240MHz÷10=24MHz. UCF constraints updated. | ✅ Critical fix |
 | 11 | 16 Jul | `93a82c0` | **SDRAM buffering implemented**. `okBTPipeOut` (block-throttled) returned 614,400 bytes of **zeros** — switched to unthrottled `okPipeOut`. Full frame buffered in SDRAM. Python polls `WO_FRAME` before reading. | ⚠️ **Black frame persists** |
-| 12 | 16 Jul | `93a82c0` | `grab_frame.py` captures 5 frames, saves 5th. Script runs without timeouts/errors, but output is all-black. One occurrence of red stripe at top. | ❌ **Current state** |
-| 13 | 17 Jul | — | This analysis session. | 📋 |
+| 12 | 16 Jul | `93a82c0` | `grab_frame.py` captures 5 frames, saves 5th. Script runs without timeouts/errors, but output is all-black. One occurrence of red stripe at top. | ❌ **Pre-Fix State** |
+| 13 | 17 Jul | — | **SDRAM Bug fixed in code:** Modified SDRAM controller to assert `busy` on all non-IDLE states. Added `sdram_init_done` and acceptance verification to arbiter. Replaced `full` with `frame_captured`. Fixed OV7670 RGB565 color matrix. | 📋 **Code patched, pending hardware flash** |
+| 14 | 17 Jul | — | **Hardware Test Run:** User ran updated `check_status.py` and `grab_frame.py` without flashing the updated bitstream. Resulted in Configuration Timeouts and "SDRAM failed to initialize" errors. | ❌ **Failed (Old Bitstream)** |
+| 15 | 17 Jul | — | **Critical Discovery:** SDRAM initialization only succeeds after a cold restart of the FPGA. Soft resets (`WI_RESET`) or Python `ConfigureFPGA()` calls cause the I2C configuration to timeout and SDRAM to freeze. `check_status.py` shows camera counters (`PCLK`, `HREF`, `VSYNC`) are stopped, though they reached ~59,000 at one point before halting. | ⚠️ **Reset/Clocking Issue** |
 
 ---
 

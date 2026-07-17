@@ -26,24 +26,15 @@ def main():
     dev.ConfigureFPGA("bitfiles/camera_top.bit")
 
     pll = ok.PLL22393()
-    pll.SetReference(48.0)
+    dev.GetEepromPLL22393Configuration(pll)
     
-    # Camera Clock (clk2) - 24MHz (FPGA P9)
-    # VCO = 48MHz * (5/1) = 240MHz (Valid: 100-400MHz)
-    pll.SetPLLParameters(0, 5, 1, True)
-    pll.SetOutputSource(2, ok.PLL22393.ClkSrc_PLL0_0)
-    pll.SetOutputDivider(2, 10)
-    pll.SetOutputEnable(2, True)
-
-    # SDRAM Clock (clk1) - 100MHz (Hardwired to SDRAM on XEM3010 N9!)
-    # VCO = 48MHz * (25/3) = 400MHz (Valid: 100-400MHz)
-    pll.SetPLLParameters(1, 25, 3, True)
-    pll.SetOutputSource(1, ok.PLL22393.ClkSrc_PLL1_0)
-    pll.SetOutputDivider(1, 4)
-    pll.SetOutputEnable(1, True)
-
+    # Do not modify any PLL parameters. Just load the factory EEPROM configuration.
+    # This guarantees we aren't accidentally killing the camera clock or internal FPGA clocks
+    # by misconfiguring the CY22393.
+    
     dev.SetPLL22393Configuration(pll)
-    time.sleep(0.05) 
+    # Wait for the CY22393 VCOs and outputs to fully lock and stabilize before asserting reset
+    time.sleep(0.1) 
 
     fp = dev.GetFPGADataPortClassic()
    
