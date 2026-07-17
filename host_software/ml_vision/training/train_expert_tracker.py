@@ -11,6 +11,7 @@ from ball_dataset import BallDataset
 def main():
     parser = argparse.ArgumentParser(description="Train ResNet18 Expert Tracker")
     parser.add_argument("--data_dir", default="../data/02_silver", help="Path to data directory")
+    parser.add_argument("--csv_name", default="labels_normalized.csv", help="Name of the labels CSV file")
     args = parser.parse_args()
 
     print("Initializing PyTorch Expert Tracker Model (ResNet18)...")
@@ -36,7 +37,7 @@ def main():
     else:
         data_dir = os.path.abspath(os.path.join(script_dir, args.data_dir))
         
-    csv_path = os.path.join(data_dir, 'labels_sequential.csv')
+    csv_path = os.path.join(data_dir, args.csv_name)
     images_dir = os.path.join(data_dir, 'images')
     project_dir = os.path.abspath(os.path.join(script_dir, '../models'))
     

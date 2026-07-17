@@ -31,16 +31,20 @@ module sdram_arbiter (
     output wire        init_complete
 );
 
-    // Synchronizers for 100MHz domain
+    // =========================================================================
+    // CDC Synchronizers for 100MHz domain
+    // =========================================================================
     reg [1:0] frame_rst_sync = 0;
     always @(posedge clk_100mhz) frame_rst_sync <= {frame_rst_sync[0], frame_rst};
     wire frame_rst_100 = frame_rst_sync[1];
 
-    reg [1:0] rst_n_sync = 2'b11; // Active low
+    reg [1:0] rst_n_sync = 2'b11; // Active low, default: not in reset
     always @(posedge clk_100mhz) rst_n_sync <= {rst_n_sync[0], rst_n};
     wire rst_n_100 = rst_n_sync[1];
 
+    // =========================================================================
     // Camera Write FIFO (Crosses pclk -> clk_100mhz)
+    // =========================================================================
     wire        cam_fifo_empty;
     wire [15:0] cam_fifo_dout;
     reg         cam_fifo_rd_en;
@@ -50,7 +54,7 @@ module sdram_arbiter (
         .wr_clk (pclk),
         .wr_en  (cam_wr_en),
         .din    (cam_wr_data),
-        .full   (), // Ignore full, we assume SDRAM keeps up
+        .full   (), // SDRAM is effectively infinite for a single frame
         
         .rd_clk (clk_100mhz),
         .rd_en  (cam_fifo_rd_en),
@@ -58,7 +62,9 @@ module sdram_arbiter (
         .empty  (cam_fifo_empty)
     );
 
+    // =========================================================================
     // USB Read FIFO (Crosses clk_100mhz -> ti_clk)
+    // =========================================================================
     wire        usb_fifo_full;
     wire        usb_fifo_wr_en;
     wire [15:0] usb_fifo_din;
@@ -76,7 +82,9 @@ module sdram_arbiter (
         .empty  (usb_empty)
     );
 
-    // SDRAM Controller instantiation
+    // =========================================================================
+    // SDRAM Controller Instantiation
+    // =========================================================================
     wire        sdram_busy;
     
     reg  [23:0] sdr_wr_addr_cmd;
@@ -113,76 +121,142 @@ module sdram_arbiter (
         .data_mask_low (sdram_dqm[0]),
         .data_mask_high(sdram_dqm[1])
     );
-    
-    assign init_complete = ~sdram_busy;
 
+    // =========================================================================
+    // SDRAM Initialization Tracking
+    // =========================================================================
+    // The SDRAM controller runs an init sequence after rst_n deasserts.
+    // With the fixed busy signal, busy stays HIGH throughout init.
+    // We latch init_done on the first busy LOW after reset.
+    reg sdram_init_done = 0;
+    always @(posedge clk_100mhz) begin
+        if (!rst_n_100)
+            sdram_init_done <= 1'b0;
+        else if (!sdram_busy && !sdram_init_done)
+            sdram_init_done <= 1'b1;  // First idle after init = init complete
+    end
+
+    assign init_complete = sdram_init_done;
+
+    // =========================================================================
     // SDRAM Pointers
+    // =========================================================================
     reg [23:0] sdram_write_ptr = 0;
-    reg [23:0] sdram_read_ptr = 0;
+    reg [23:0] sdram_read_ptr  = 0;
     
-    // State Machine for Arbitration
-    localparam STATE_IDLE = 3'd0,
-               STATE_WRITE_FETCH = 3'd1,
-               STATE_WRITE_CMD = 3'd2,
-               STATE_WRITE_WAIT = 3'd3,
-               STATE_READ_CMD = 3'd4,
-               STATE_READ_WAIT = 3'd5;
+    // =========================================================================
+    // Arbitration State Machine
+    // =========================================================================
+    //
+    // Design principles:
+    //   1. Never issue a command when sdram_busy is HIGH
+    //   2. Never issue a command before init is complete
+    //   3. After issuing wr/rd_enable, wait for busy to go HIGH (acceptance)
+    //      then wait for busy to go LOW (completion)
+    //   4. Writes have priority over reads (camera data is real-time)
+    //
+    localparam STATE_IDLE        = 3'd0,
+               STATE_WRITE_FETCH = 3'd1,  // Wait 1 cycle for FIFO read latency
+               STATE_WRITE_CMD   = 3'd2,  // Present write data + assert wr_enable
+               STATE_WRITE_WAIT  = 3'd3,  // Wait for busy HIGH then LOW
+               STATE_READ_CMD    = 3'd4,  // Present read address + assert rd_enable
+               STATE_READ_WAIT   = 3'd5;  // Wait for busy HIGH then LOW
                
     reg [2:0] state = STATE_IDLE;
+
+    // Track whether the controller accepted our command (busy went HIGH)
+    reg cmd_accepted = 0;
     
     always @(posedge clk_100mhz) begin
         if (frame_rst_100) begin
+            // Frame reset: zero pointers, stop all commands, return to idle.
+            // Does NOT re-trigger SDRAM init (only rst_n does that).
             sdram_write_ptr <= 0;
-            sdram_read_ptr <= 0;
-            sdr_wr_en_cmd <= 0;
-            sdr_rd_en_cmd <= 0;
-            cam_fifo_rd_en <= 0;
-            state <= STATE_IDLE;
+            sdram_read_ptr  <= 0;
+            sdr_wr_en_cmd   <= 0;
+            sdr_rd_en_cmd   <= 0;
+            cam_fifo_rd_en  <= 0;
+            cmd_accepted    <= 0;
+            state           <= STATE_IDLE;
         end else begin
-            sdr_wr_en_cmd <= 0;
-            sdr_rd_en_cmd <= 0;
+            // Default: deassert single-cycle strobes
+            sdr_wr_en_cmd  <= 0;
+            sdr_rd_en_cmd  <= 0;
             cam_fifo_rd_en <= 0;
             
             case (state)
+                // ---------------------------------------------------------
+                // IDLE: Check for pending work. Writes have priority.
+                // Gate on: init done AND controller not busy.
+                // ---------------------------------------------------------
                 STATE_IDLE: begin
-                    if (!sdram_busy) begin
+                    cmd_accepted <= 0;
+                    if (sdram_init_done && !sdram_busy) begin
                         if (!cam_fifo_empty) begin
+                            // Camera data waiting — start write sequence
                             cam_fifo_rd_en <= 1'b1;
                             state <= STATE_WRITE_FETCH;
                         end else if (!usb_fifo_full && (sdram_read_ptr < sdram_write_ptr)) begin
+                            // SDRAM has data to send to USB — start read sequence
                             sdr_rd_addr_cmd <= sdram_read_ptr;
-                            sdr_rd_en_cmd <= 1'b1;
-                            sdram_read_ptr <= sdram_read_ptr + 1'b1;
-                            state <= STATE_READ_WAIT;
+                            sdr_rd_en_cmd   <= 1'b1;
+                            state <= STATE_READ_CMD;
                         end
                     end
                 end
-                
+
+                // ---------------------------------------------------------
+                // WRITE: Fetch data from FIFO (1-cycle read latency)
+                // ---------------------------------------------------------
                 STATE_WRITE_FETCH: begin
                     state <= STATE_WRITE_CMD;
                 end
                 
+                // ---------------------------------------------------------
+                // WRITE: Present data to SDRAM controller
+                // ---------------------------------------------------------
                 STATE_WRITE_CMD: begin
                     sdr_wr_addr_cmd <= sdram_write_ptr;
                     sdr_wr_data_cmd <= cam_fifo_dout;
-                    sdr_wr_en_cmd <= 1'b1;
+                    sdr_wr_en_cmd   <= 1'b1;
                     sdram_write_ptr <= sdram_write_ptr + 1'b1;
+                    cmd_accepted    <= 0;
                     state <= STATE_WRITE_WAIT;
                 end
                 
+                // ---------------------------------------------------------
+                // WRITE: Wait for controller to accept (busy HIGH) then 
+                //        complete (busy LOW). With the fixed busy signal,
+                //        busy goes HIGH on the cycle after wr_enable and
+                //        stays HIGH until the write sequence finishes.
+                // ---------------------------------------------------------
                 STATE_WRITE_WAIT: begin
-                    // Wait for sdram_busy to assert then deassert
-                    // Actually, since we assert wr_en_cmd on previous cycle,
-                    // busy might go high on this cycle or next.
-                    // To be safe, wait until !busy if we know it must pulse.
-                    // stffrdhrn SDRAM asserts busy immediately when wr_enable is asserted.
-                    if (!sdram_busy && !sdr_wr_en_cmd) begin
+                    if (sdram_busy)
+                        cmd_accepted <= 1'b1;
+                    
+                    if (cmd_accepted && !sdram_busy)
                         state <= STATE_IDLE;
-                    end
+                end
+
+                // ---------------------------------------------------------
+                // READ: Hold rd_enable for 1 cycle (already asserted in IDLE),
+                //       then wait for acceptance + completion.
+                // ---------------------------------------------------------
+                STATE_READ_CMD: begin
+                    cmd_accepted <= 0;
+                    state <= STATE_READ_WAIT;
                 end
                 
+                // ---------------------------------------------------------
+                // READ: Wait for busy HIGH (acceptance) then LOW (completion).
+                //       rd_ready will pulse when data is available.
+                // ---------------------------------------------------------
                 STATE_READ_WAIT: begin
-                    if (!sdram_busy && !sdr_rd_en_cmd) begin
+                    if (sdram_busy)
+                        cmd_accepted <= 1'b1;
+                    
+                    if (cmd_accepted && !sdram_busy) begin
+                        sdram_read_ptr <= sdram_read_ptr + 1'b1;
                         state <= STATE_IDLE;
                     end
                 end
@@ -190,6 +264,9 @@ module sdram_arbiter (
         end
     end
     
+    // =========================================================================
+    // Read data path: SDRAM rd_ready -> USB read FIFO
+    // =========================================================================
     assign usb_fifo_wr_en = sdr_rd_ready;
     assign usb_fifo_din   = sdr_rd_data_out;
 

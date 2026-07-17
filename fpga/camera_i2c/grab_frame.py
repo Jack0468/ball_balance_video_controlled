@@ -79,6 +79,16 @@ def main():
     WI_ARM = 0x04
     buf = bytearray(FRAME_BYTES)
     
+    # Wait for SDRAM to initialize (takes ~40 clock cycles after reset deasserts, which we gave it in line 77)
+    fp.UpdateWireOuts()
+    sdram_stat = fp.GetWireOutValue(WO_FRAME)
+    sdram_init = (sdram_stat >> 1) & 1
+    if not sdram_init:
+        print("ERROR: SDRAM failed to initialize! Controller might be stuck.", flush=True)
+        # We'll continue anyway to see if it works, but this is a red flag
+    else:
+        print("SDRAM Initialized successfully.", flush=True)
+    
     # Grab 5 frames to let it stabilize, then save the 5th
     frames_captured = 0
     max_frames = 5

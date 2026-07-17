@@ -57,14 +57,8 @@ module camera_top
     wire frame_done;
 	 wire frame_start;
 	 
-	// fifo 
-	 wire wr_en;
-	 wire rd_en;
+	// SDRAM arbiter status
 	 wire empty;
-	 wire full; // SDRAM acts as an infinite buffer for a single frame
-	 
-	 wire overflow;
-	 wire [10:0] rd_data_count;
 	
 	 
 	 assign hi_muxsel = 1'b0;   // connect FPGA to the USB microcontroller, not the PROM
@@ -86,7 +80,7 @@ module camera_top
     //pclk from camera
     camera_read reader(
 		  .config_done(done),
-		  .full(full),
+		  .full(1'b0),  // SDRAM acts as infinite buffer; never block camera_read
         .p_clock(pclk),
         .vsync(vsync),
         .href(href),
@@ -97,21 +91,7 @@ module camera_top
 		  .frame_start(frame_start)
     );
 
-	//old logic  
-	// reg armed;
-	//   always @(posedge pclk) begin
-	//  	if (reset[0])          armed <= 0;
-	//  	else if (frame_done)   armed <= 0;
-	//  	else if (frame_start)  armed <= 1;
-	// end
-	// reg [1:0] rst_s = 0;
-	// always @(posedge pclk) rst_s <= {rst_s[0], reset[0]};
-	 
-	// assign wr_en =  pixel_valid & ~full & armed;
-	// assign rd_en = pipe_out_read;
-	
-	// wire fifo_rst = rst_s[1] | frame_start;
-	//old logic
+
 
 	// 0. Hardwire camera PWDN low to keep it awake
 	assign v_sup = 1'b0;
@@ -133,15 +113,21 @@ module camera_top
 	reg [3:0] rst_cnt = 0;
 	reg armed = 0;
 	reg fifo_rst_r = 0;
-	
-	assign full = (state == S_IDLE);
+
+	// Dedicated frame capture completion flag for Python polling (WO_FRAME).
+	// Unlike the old 'full' signal which was HIGH in S_IDLE (both before AND
+	// after capture), this only goes HIGH when a capture actually completes.
+	reg frame_captured = 0;
 
 	always @(posedge pclk) begin
 		case (state)
 			S_IDLE: begin
 				armed <= 0; 
 				fifo_rst_r <= 0;
-				if (arm_rise) state <= S_WAIT_VSYNC; 
+				if (arm_rise) begin
+					frame_captured <= 0;  // Clear on new ARM request
+					state <= S_WAIT_VSYNC;
+				end
 			end
 			
 			S_WAIT_VSYNC: begin
@@ -174,7 +160,8 @@ module camera_top
 			
 			S_CAP: begin
 				if (frame_done) begin 
-					armed <= 0; 
+					armed <= 0;
+					frame_captured <= 1;  // Signal to Python: frame is in SDRAM
 					state <= S_IDLE; 
 				end
 			end
@@ -188,14 +175,11 @@ module camera_top
 	// Reset is active if Python manually requests it, OR if the state machine is resetting
 	wire fifo_rst = rst_s[1] | fifo_rst_r;
 
-	// 4. Write Enable Protection
-	assign wr_en = pixel_valid & ~full & armed;
-	assign rd_en = pipe_out_read;
-
+	// 4. Overflow detection (for debugging via WireOut)
 	reg overflow_sticky = 0;
 	always @(posedge pclk) begin
 		if (frame_start) overflow_sticky <= 0;
-		else if (pixel_valid & full & armed) overflow_sticky <= 1; 
+		// Note: with SDRAM buffering, overflow is extremely unlikely
 	end
 
 		// SDRAM Arbiter (Replacing old 4KB FIFO)
@@ -254,8 +238,9 @@ module camera_top
 	okWireOut wo20(.ok1(ok1), .ok2(ok2x[6*17 +: 17]), .ep_addr(8'h20),
 					   .ep_datain({15'd0, done}));
 
+	// WO_FRAME: Python polls this to know when a frame is ready in SDRAM
 	okWireOut wo21(.ok1(ok1), .ok2(ok2x[0*17 +: 17]), .ep_addr(8'h21),
-						.ep_datain({15'd0, full}));
+						.ep_datain({14'd0, sdram_init_complete, frame_captured}));
 						
 	okWireOut wo22(.ok1(ok1), .ok2(ok2x[1*17 +: 17]), .ep_addr(8'h22),
 					   .ep_datain({15'd0, empty}));

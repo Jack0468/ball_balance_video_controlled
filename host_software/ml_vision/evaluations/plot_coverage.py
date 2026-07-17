@@ -69,7 +69,7 @@ def plot_coverage(csv_path):
     plt.xlabel(x_col)
     plt.ylabel(y_col)
     plt.grid(True, linestyle=':', alpha=0.6)
-    plt.legend()
+    plt.legend(loc='upper right')
     plt.gca().set_aspect('equal', adjustable='box')
     
     # 2. 2D Histogram (Heatmap of Time Spent)
@@ -82,7 +82,7 @@ def plot_coverage(csv_path):
     plt.xlabel(x_col)
     plt.ylabel(y_col)
     plt.gca().set_aspect('equal', adjustable='box')
-    plt.legend()
+    plt.legend(loc='upper right')
 
     plt.tight_layout()
     
