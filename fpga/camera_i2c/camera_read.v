@@ -27,8 +27,8 @@ module camera_read(
 	always @(posedge p_clock) 
 		{r2_vsync, r1_vsync} <= {r1_vsync, vsync};
 	
-	assign frame_start = (r1_vsync == 0) && (r2_vsync == 1);  // Negative Edge of vsync
-   assign frame_done  = (r1_vsync == 1) && (r2_vsync == 0);  // Positive Edge of vsync 
+	assign frame_start = (r1_vsync == 1) && (r2_vsync == 0);  // Positive Edge (Start of Active Frame)
+   assign frame_done  = (r1_vsync == 0) && (r2_vsync == 1);  // Negative Edge (End of Active Frame) 
 	
 
 	//AGAIN NEW STUFF THAT IS BROKEN!!!

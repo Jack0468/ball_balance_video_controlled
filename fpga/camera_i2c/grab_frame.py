@@ -27,11 +27,17 @@ def main():
 
     pll = ok.PLL22393()
     dev.GetEepromPLL22393Configuration(pll)
-    
-    # Do not modify any PLL parameters. Just load the factory EEPROM configuration.
-    # This guarantees we aren't accidentally killing the camera clock or internal FPGA clocks
-    # by misconfiguring the CY22393.
-    
+    pll.SetReference(48.0)
+
+    # Only one PLL output is needed: clk1 (100MHz) for SDRAM on FPGA pin N9.
+    # The camera XCLK (24MHz) is now generated INSIDE the FPGA via DCM_SP
+    # dividing 100MHz by 25/6, forwarded to pin K5 via ODDR2.
+    # We no longer route any PLL output to P9 (clk2 port removed from design).
+    pll.SetPLLParameters(1, 25, 3, True)      # VCO = 48*(25/3) = 400MHz
+    pll.SetOutputSource(1, ok.PLL22393.ClkSrc_PLL1_0)
+    pll.SetOutputDivider(1, 4)                # 400MHz / 4 = 100MHz
+    pll.SetOutputEnable(1, True)
+
     dev.SetPLL22393Configuration(pll)
     # Wait for the CY22393 VCOs and outputs to fully lock and stabilize before asserting reset
     time.sleep(0.1) 

@@ -8,7 +8,6 @@ module camera_top
         inout  wire        i2c_sda,
         inout  wire        i2c_scl,
 	    input wire         clk1,
-        input wire         clk2,
 
         // from OV7670
         input wire         pclk,
@@ -62,15 +61,33 @@ module camera_top
 	
 	 
 	 assign hi_muxsel = 1'b0;   // connect FPGA to the USB microcontroller, not the PROM
-	assign i2c_sda   = 1'bz;   // release the I2C bus as it's irrelevant 
+	assign i2c_sda   = 1'bz;   // release the I2C bus as it's irrelevant
 	assign i2c_scl   = 1'bz;
 
-    assign xclk = clk2;  	// 6. Camera I2C Configuration
+	// -----------------------------------------------------------------------
+	// XCLK Generation: Counter-based divide-by-4 from clk1
+	// 100MHz / 4 = 25MHz — OV7670 accepts 10-48MHz, so 25MHz is within spec.
+	//
+	// WHY NOT assign xclk = clk2:
+	//   clk2 (pin P9) is a dedicated GCLK input, routed through a BUFG by ISE.
+	//   Spartan-3 forbids BUFG-driven nets from driving I/O output pins. The
+	//   router silently leaves xclk (pin K5) completely undriven (floating).
+	//
+	// WHY NOT DCM_SP / ODDR2:
+	//   These are Spartan-3E/3A primitives. The XC3S1000 (basic Spartan-3)
+	//   does not support them. ISE reports NGDBuild:604.
+	//
+	// SOLUTION: A counter flip-flop output is a normal fabric signal that ISE
+	//   legally routes to any output pin without restriction.
+	// -----------------------------------------------------------------------
+	reg [1:0] xclk_cnt = 2'd0;
+	always @(posedge clk1) xclk_cnt <= xclk_cnt + 1'b1;
+	assign xclk = xclk_cnt[1];  // 100MHz / 4 = 25MHz, 50% duty cycle → pin K5
 	
 	wire start_config;
 	wire f_config_done;
 
-	assign start_config = 1'b0; // DISABLED FOR DIAGNOSTICS: See if camera outputs PCLK without I2C config
+	assign start_config = start[0]; // Re-enable normal I2C config
 	
 	camera_config #(.CLK_FREQ(100000000)) writer(
         .clk(clk1),

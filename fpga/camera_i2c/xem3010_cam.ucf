@@ -67,9 +67,6 @@ NET "clk1" LOC = "N9";
 NET "clk1" TNM_NET = "clk1";
 TIMESPEC "TS_clk1" = PERIOD "clk1" 10.0 ns HIGH 50%;   # 100MHz
 
-NET "clk2" LOC = "P9";
-NET "clk2" TNM_NET = "clk2";
-TIMESPEC "TS_clk2" = PERIOD "clk2" 41.667 ns HIGH 50%;   # 24MHz
 
 
 NET "v_sup" LOC = "T1" | IOSTANDARD = LVCMOS33;       # JP3-17 (PWDN)

@@ -5,9 +5,15 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, Subset
 
 from temporal_ball_dataset import SequenceBallDataset, TemporalTrainTransform, TemporalTestTransform
+import argparse
 from resnet18_lstm import TemporalExpertTracker
 
 def train_model():
+    parser = argparse.ArgumentParser(description="Train Temporal Expert Tracker")
+    parser.add_argument("--save_dir", default="../models/temporal_expert_tracker", help="Directory to save the trained models")
+    parser.add_argument("--resume", type=str, default=None, help="Path to checkpoint (.pth) to resume training from")
+    args = parser.parse_args()
+
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(f"Starting training on {device}...")
     
@@ -16,7 +22,11 @@ def train_model():
     
     csv_path = os.path.join(data_dir, 'labels_sequential.csv')
     images_dir = os.path.join(data_dir, 'images')
-    project_dir = os.path.abspath(os.path.join(script_dir, '../models/temporal_expert_tracker'))
+
+    if os.path.isabs(args.save_dir):
+        project_dir = args.save_dir
+    else:
+        project_dir = os.path.abspath(os.path.join(script_dir, args.save_dir))
     os.makedirs(project_dir, exist_ok=True)
     
     # 1. Datasets
@@ -49,9 +59,23 @@ def train_model():
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3)
     
     num_epochs = 30
+    start_epoch = 0
     best_test_loss = float('inf')
     
-    for epoch in range(num_epochs):
+    if args.resume and os.path.exists(args.resume):
+        print(f"Resuming training from checkpoint: {args.resume}")
+        checkpoint = torch.load(args.resume, map_location=device, weights_only=False)
+        if 'model_state_dict' in checkpoint:
+            model.load_state_dict(checkpoint['model_state_dict'])
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            if 'scheduler_state_dict' in checkpoint:
+                scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+            start_epoch = checkpoint['epoch'] + 1
+            best_test_loss = checkpoint.get('best_test_loss', float('inf'))
+        else:
+            model.load_state_dict(checkpoint)
+            
+    for epoch in range(start_epoch, num_epochs):
         model.train()
         running_loss = 0.0
         
@@ -92,10 +116,21 @@ def train_model():
         print(f"=== Epoch {epoch+1} Summary ===")
         print(f"Train Loss: {avg_train_loss:.4f} | Test Loss: {avg_test_loss:.4f}")
         
+        checkpoint = {
+            'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'scheduler_state_dict': scheduler.state_dict(),
+            'best_test_loss': best_test_loss if avg_test_loss >= best_test_loss else avg_test_loss
+        }
+        
+        latest_path = os.path.join(project_dir, 'latest_temporal_tracker.pth')
+        torch.save(checkpoint, latest_path)
+        
         if avg_test_loss < best_test_loss:
             best_test_loss = avg_test_loss
             save_path = os.path.join(project_dir, 'best_temporal_tracker.pth')
-            torch.save(model.state_dict(), save_path)
+            torch.save(checkpoint, save_path)
             print(f"Saved new best model to {save_path}")
 
 if __name__ == '__main__':

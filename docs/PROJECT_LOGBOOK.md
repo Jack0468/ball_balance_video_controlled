@@ -1,4 +1,14 @@
 # VRI 2026 Project Logbook
+
+## 17/07/2026
+### FPGA Camera Breakthroughs (XCLK & SDRAM) — First Non-Black Frame Achieved
+- **XCLK Architectural Routing Fix**: Discovered why the camera was receiving no stable clock regardless of PLL settings. The design used `assign xclk = clk2;` where `clk2` (pin P9) is a dedicated GCLK input routed through a BUFG by ISE. Xilinx Spartan-3 silicon rules forbid BUFG-driven nets from directly driving output pins — the router silently left pin K5 completely undriven (floating antenna, reading as 60–120mV noise on the DSO). The fix removes `clk2` from the design entirely.
+- **Spartan-3 Primitive Limitation**: Initial fix attempted `DCM_SP` + `ODDR2` to generate 24MHz internally and forward it via a DDR output register. ISE reported `NGDBuild:604` — these primitives are Spartan-3E/3A only. The XC3S1000 (basic Spartan-3) does not support them.
+- **Counter-Based XCLK (Final Solution)**: Replaced with a 2-bit counter driven by `clk1` (100MHz SDRAM clock). `assign xclk = xclk_cnt[1]` produces a 25MHz, 50% duty-cycle clock from a normal fabric flip-flop, which ISE legally routes to pin K5 without restriction. OV7670 XCLK spec is 10–48MHz; 25MHz is within range.
+- **SDRAM Controller INIT/REFRESH Collision**: Identified the root cause of the persistent black frames. The `sdram_controller.v` `busy` signal was only asserted during `READ`/`WRITE` states — not during `INIT` or `REFRESH` cycles. The arbiter therefore issued write commands during these forbidden windows, which the controller silently dropped. Fixed by asserting `busy` on all non-IDLE states (`busy <= (next != IDLE)`).
+- **First Non-Black Frame**: After a power cycle and flashing the new bitstream, `grab_frame.py` successfully captured 5 frames back-to-back. `check_status.py` confirmed all counters (`PCLK`, `HREF`, `VSYNC`) are alive. `test_frame.png` shows full-frame noisy/garbled content (magenta banding) — **not black** — confirming the camera is alive and producing real pixel data for the first time on the FPGA path.
+- **Remaining XCLK Signal Integrity**: DSO on pin K5 (JP3-41) shows max 1.88V (expected 3.3V LVCMOS33) and ~120mV amplitude at variable frequency. This is consistent with weak I/O drive strength or capacitive loading on the wire. Subsequent runs without a power cycle show intermittent frame timeouts and frozen PCLK counters, directly correlated with the unstable XCLK. Image corruption (garbled pixels, horizontal banding) is also consistent with XCLK instability causing the OV7670 to lose pixel sync.
+
 ## 15/07/2026
 ### Opal Kelly OV7670 FPGA Camera Stabilization & Clocking
 - **Camera Blackout & Clock Domain Synchronization**: Diagnosed an issue where `camera_top.v` would lock up completely after reading a single frame. Discovered that the asynchronous software `reset` trigger (from Python) was causing metastability in the 100MHz SDRAM arbiter state machine. Implemented dual-rank flip-flop synchronizers (CDC) on the SDRAM arbiter inputs, and added a safe 10-clock cycle synchronous reset recovery delay before allowing write-enables.
@@ -83,8 +93,7 @@ To synchronize a new raw video dataset:
 
 ## 03/07/2026
 ### FPGA Architecture & Motor Control Debugging (Opal Kelly XEM3010)
-- **Directory Restructuring**: Renamed the outdated `fpga/camera_i2c` directory to `fpga/main_controller` to accurately reflect its role as the unified top-level Verilog architecture (handling camera streaming, ADC touchscreens, and 3-axis hardware PID motor control). Updated `README.md` with synthesis instructions for Xilinx ISE 14.7.
-- **PLL Clock Migration**: Migrated the Verilog architecture away from the unstable USB-derived `ti_clk`. Configured the onboard `PLL22393` via Python to generate a rock-solid 48MHz `clk1` hardware clock. Implemented proper Clock Domain Crossing (CDC) synchronizers to safely pass atomic triggers and 32-bit target angles from the USB domain into the isolated `clk1` motor domain.
+
 - **Single Motor Test Sequence**: Created `single_motor_test_top.v` and `single_motor_sequence.py` to isolate motor testing. This test perfectly replicates the legacy Arduino diagnostic sequence (commanding +90, +180, +270, +360, and 0 degree rotations) using the new hardware P-controller.
 - **Solved "10-20 Degree" Stalling Bug**: Diagnosed a critical physical bug where commanded 90-degree rotations were only resulting in 10-20 degree physical movements. Discovered that the P-controller was instantly accelerating the TMC2208 to a 93kHz step rate (1750 RPM), causing the physical rotor to stall due to inertia. The motor was only catching grip during the final deceleration phase.
 - **Motor Speed Clamping**: Patched `stepper_motor_controller.v` by firmly clamping the maximum P-controller speed to `700`, which strictly limits the step rate to a perfectly safe `~2 kHz`. This guarantees the physical motors never stall and successfully track all generated steps.

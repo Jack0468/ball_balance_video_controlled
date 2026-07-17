@@ -13,6 +13,7 @@ def main():
     parser.add_argument("--data_dir", default="../data/02_silver", help="Path to data directory")
     parser.add_argument("--csv_name", default="labels_normalized.csv", help="Name of the labels CSV file")
     parser.add_argument("--save_dir", default="../models", help="Directory to save the trained models")
+    parser.add_argument("--resume", type=str, default=None, help="Path to checkpoint (.pth) to resume training from")
     args = parser.parse_args()
 
     print("Initializing PyTorch Expert Tracker Model (ResNet18)...")
@@ -98,13 +99,28 @@ def main():
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=2, factor=0.5)
     
     num_epochs = 10
+    start_epoch = 0
     best_loss = float('inf')
+    
+    if args.resume and os.path.exists(args.resume):
+        print(f"Resuming training from checkpoint: {args.resume}")
+        checkpoint = torch.load(args.resume, map_location=device, weights_only=False)
+        if 'model_state_dict' in checkpoint:
+            model.load_state_dict(checkpoint['model_state_dict'])
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            if 'scheduler_state_dict' in checkpoint:
+                scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+            start_epoch = checkpoint['epoch'] + 1
+            best_loss = checkpoint.get('best_loss', float('inf'))
+        else:
+            model.load_state_dict(checkpoint)
+            
     save_path = os.path.join(project_dir, 'resnet18_expert_tracker/expert_tracker_best.pth')
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     
     print(f"Starting training on {device}...")
     
-    for epoch in range(num_epochs):
+    for epoch in range(start_epoch, num_epochs):
         model.train()
         running_loss = 0.0
         
@@ -147,15 +163,23 @@ def main():
         
         print(f"--- Epoch [{epoch+1}/{num_epochs}] Train Loss: {epoch_train_loss:.4f} | Test Loss: {epoch_test_loss:.4f} ---")
         
+        checkpoint = {
+            'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'scheduler_state_dict': scheduler.state_dict(),
+            'best_loss': best_loss if epoch_test_loss >= best_loss else epoch_test_loss
+        }
+        
         # Save the best model based on TEST loss
         if epoch_test_loss < best_loss:
             best_loss = epoch_test_loss
-            torch.save(model.state_dict(), save_path)
+            torch.save(checkpoint, save_path)
             print(f"Saved new best model to {save_path}")
             
         # Save the latest model at the end of every epoch just in case Colab crashes!
         latest_path = os.path.join(project_dir, 'resnet18_expert_tracker/expert_tracker_latest.pth')
-        torch.save(model.state_dict(), latest_path)
+        torch.save(checkpoint, latest_path)
 
     print("Training complete!")
 

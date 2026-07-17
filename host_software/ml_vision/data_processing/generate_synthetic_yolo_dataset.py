@@ -104,7 +104,18 @@ def main():
     for f in glob.glob(os.path.join(out_labels_dir, "*")):
         os.remove(f)
     
-    image_paths = glob.glob(os.path.join(input_dir, "*.jpg")) + glob.glob(os.path.join(input_dir, "*.png"))
+    import pandas as pd
+    
+    csv_path = os.path.join(script_dir, "../data/02_silver/labels_normalized.csv")
+    if os.path.exists(csv_path):
+        print(f"Reading images from {csv_path}...")
+        df = pd.read_csv(csv_path)
+        # Assuming the CSV has an 'image' column with the filename
+        image_paths = [os.path.join(input_dir, str(f)) for f in df['image_file'].values]
+    else:
+        print("labels_normalized.csv not found, falling back to globbing all images...")
+        image_paths = glob.glob(os.path.join(input_dir, "*.jpg")) + glob.glob(os.path.join(input_dir, "*.png"))
+        
     if not image_paths:
         print(f"ERROR: No images found in {input_dir}")
         return
@@ -120,10 +131,9 @@ def main():
         (128, 128, 128)   # Grey
     ]
     
-    # For testing/Colab speed, generate 2000 images
-    NUM_SYNTHETIC = 2000
-    images_to_process = image_paths[:NUM_SYNTHETIC]
-    print(f"Generating {min(NUM_SYNTHETIC, len(images_to_process))} synthetic images...")
+    # Process all available images (from the normalized dataset)
+    images_to_process = image_paths
+    print(f"Generating {len(images_to_process)} synthetic images...")
     
     success_count = 0
     for idx, img_path in enumerate(images_to_process):
@@ -186,7 +196,7 @@ def main():
             
         success_count += 1
         if success_count % 100 == 0:
-            print(f"Generated {success_count} / {NUM_SYNTHETIC}")
+            print(f"Generated {success_count} / {len(images_to_process)}")
             
     print(f"Finished! Successfully generated {success_count} synthetic images.")
     

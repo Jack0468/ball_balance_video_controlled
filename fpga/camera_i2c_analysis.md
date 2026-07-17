@@ -44,13 +44,17 @@ The single occurrence of a **red stripe at the top** is extremely diagnostic —
 | 13 | 17 Jul | — | **SDRAM Bug fixed in code:** Modified SDRAM controller to assert `busy` on all non-IDLE states. Added `sdram_init_done` and acceptance verification to arbiter. Replaced `full` with `frame_captured`. Fixed OV7670 RGB565 color matrix. | 📋 **Code patched, pending hardware flash** |
 | 14 | 17 Jul | — | **Hardware Test Run:** User ran updated `check_status.py` and `grab_frame.py` without flashing the updated bitstream. Resulted in Configuration Timeouts and "SDRAM failed to initialize" errors. | ❌ **Failed (Old Bitstream)** |
 | 15 | 17 Jul | — | **Critical Discovery:** SDRAM initialization only succeeds after a cold restart of the FPGA. Soft resets (`WI_RESET`) or Python `ConfigureFPGA()` calls cause the I2C configuration to timeout and SDRAM to freeze. `check_status.py` shows camera counters (`PCLK`, `HREF`, `VSYNC`) are stopped, though they reached ~59,000 at one point before halting. | ⚠️ **Reset/Clocking Issue** |
+| 16 | 17 Jul | — | **ISE Compilation Failure:** `NGDBuild:604` errors for `DCM_SP` and `ODDR2`. Discovered XEM3010 uses the basic Spartan-3 (XC3S1000) which lacks these Spartan-3E/3A primitives. | ❌ **Build Failed** |
+| 17 | 17 Jul | — | **XCLK Generation Fixed:** Replaced `DCM_SP`/`ODDR2` with a simple 2-bit counter on the 100MHz `clk1`. `assign xclk = xclk_cnt[1]` generates a valid 25MHz clock using normal fabric flip-flops, bypassing the GCLK/BUFG I/O routing restrictions entirely. | ✅ **Bitstream Ready** |
+| 18 | 17 Jul | — | **First Non-Black Frame Captured:** After a power cycle + new bitstream flash, `grab_frame.py` successfully captured 5 frames without any timeouts. `check_status.py` confirmed `PCLK changed=True`, `HREF changed=True`, `VSYNC changed=True`, `SDRAM Init Complete=1`, `Frame Captured=1`. `test_frame.png` shows full-frame noise/corruption (not black) — camera is alive and producing real pixel data. | ✅ **Major Breakthrough** |
+| 19 | 17 Jul | — | **Intermittent Stability:** Subsequent runs (without power cycle) show intermittent timeouts. `check_status.py` shows PCLK/HREF sometimes frozen. DSO reads XCLK (pin K5) at max 1.88V (expected 3.3V LVCMOS33), amplitude ~120mV, frequency jumping around — consistent with a weak drive or signal integrity issue on the counter output path. Image content is noisy/garbled (magenta horizontal banding), consistent with XCLK instability causing pixel sync errors. Root cause: XCLK drive strength and/or signal integrity on JP3-41. | ⚠️ **Current State** |
 
 ---
 
 ## 3. Architecture
 
 ```mermaid
-graph TD
+graph TD;
     subgraph "Python Host (grab_frame.py)"
         GF["grab_frame.py<br/>Polls WO_FRAME, reads okPipeOut"]
     end
@@ -127,11 +131,13 @@ busy <= state[4];
 ```
 
 `state[4]` is only set during **READ** and **WRITE** states (see the state encoding: `READ_ACT=5'b10000`, `WRIT_ACT=5'b11000`). Crucially, `busy` is **LOW** during:
+
 - `INIT_NOP1` through `INIT_NOP4` (the entire initialization sequence!)
 - `REF_PRE` through `REF_NOP2` (refresh cycles)
 - `IDLE`
 
 The SDRAM arbiter uses `busy` as its gate:
+
 ```verilog
 // sdram_arbiter.v line 148:
 if (!sdram_busy) begin
@@ -160,6 +166,7 @@ if (state == IDLE)
 ### 🔴 BUG 2 (CRITICAL): SDRAM Init Reset Behavior
 
 When `rst_n` goes low, the SDRAM controller sets:
+
 ```verilog
 // sdram_controller.v line 174-181:
 state <= INIT_NOP1;
@@ -171,6 +178,7 @@ busy <= 1'b0;         // ← BUSY IS LOW DURING INIT!
 After reset deasserts, the controller begins a 15-cycle NOP delay (`state_cnt=4'hf`), then progresses through `INIT_PRE1→INIT_REF1→INIT_NOP2→INIT_REF2→INIT_NOP3→INIT_LOAD→INIT_NOP4→IDLE`. This entire sequence takes approximately **35-40 clock cycles** at 100MHz = 350-400ns.
 
 In `grab_frame.py`, the sequence is:
+
 ```python
 # Reset pulse (lines 73-77)
 fp.SetWireInValue(WI_RESET, 0x1)   # rst_n=0 → SDRAM init starts
@@ -237,11 +245,13 @@ If this happens frequently enough during the frame write phase, a significant po
 ### 🟡 BUG 5 (MODERATE): `full` Signal Dual Purpose Creates WO_FRAME Race
 
 In `camera_top.v`:
+
 ```verilog
 assign full = (state == S_IDLE);  // line 137
 ```
 
 `WO_FRAME` (WireOut `0x21`) reports `full`:
+
 ```verilog
 okWireOut wo21(.ep_datain({15'd0, full}));  // line 257-258
 ```
