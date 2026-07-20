@@ -89,11 +89,17 @@ module camera_top
 
 	assign start_config = start[0]; // Re-enable normal I2C config
 	
+	wire sccb_sioc_oe;
+	wire sccb_siod_oe;
+
+	assign sioc = sccb_sioc_oe ? 1'b0 : 1'bZ; // Guaranteed open-drain OBUFT inference
+	assign siod = sccb_siod_oe ? 1'b0 : 1'bZ;
+
 	camera_config #(.CLK_FREQ(100000000)) writer(
         .clk(clk1),
         .start(start_config),
-        .sioc(sioc),
-        .siod(siod),
+        .sioc_oe(sccb_sioc_oe),
+        .siod_oe(sccb_siod_oe),
         .done(done)
         );
     

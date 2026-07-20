@@ -73,14 +73,14 @@ module OV7670_config_rom(
 
     0:  dout <= 16'h12_80; //reset
     1:  dout <= 16'hFF_F0; //delay
-    2:  dout <= 16'h12_04; // COM7,     set RGB color output
-    3:  dout <= 16'h11_03; // CLKRC     divide input clock by 4 to avoid USB overflow
+    2:  dout <= 16'h12_06; // COM7,     set RGB color output + Enable Color Bar
+    3:  dout <= 16'h11_01; // CLKRC     divide input clock by 2 for 30fps
     4:  dout <= 16'h0C_00; // COM3,     default settings 
     5:  dout <= 16'h3E_00; // COM14,    no scaling, normal pclock 
     6:  dout <= 16'h04_00; // COM1,     disable CCIR656
     7:  dout <= 16'h40_D0; //COM15,     RGB565, full output range [00-FF]
-    8:  dout <= 16'h3a_00; //TSLB       byte swap off — correct order for RGB565 (was 0x04 = YUYV order, caused pink/yellow artefacts)
-    9:  dout <= 16'h0c_00; // COM3: disable scaling 
+    8:  dout <= 16'h3a_04; //TSLB       set correct output data sequence (magic)
+    9:  dout <= 16'h3b_0a; // COM11:    Night mode, banding filter (50Hz)
     10: dout <= 16'h3e_00; // COM14: no PCLK scaling, normal
     11: dout <= 16'h14_18; //COM9       MAX AGC value x4
     12: dout <= 16'h4F_B3; //MTX1       RGB565 color matrix (from Linux kernel driver)
@@ -91,7 +91,7 @@ module OV7670_config_rom(
     17: dout <= 16'h54_E4; //MTX6       RGB565
     18: dout <= 16'h58_9E; //MTXS
     19: dout <= 16'h3D_C0; //COM13      sets gamma enable, does not preserve reserved bits
-    20: dout <= 16'h15_00; //COM10      VSYNC positive (default), PCLK does not toggle on HBLANK — matches camera_read.v positive-edge frame_start detector
+    20: dout <= 16'h15_12; //COM10      VSYNC negative, PCLK INVERTED, PCLK does not toggle on HBLANK
     21: dout <= 16'h17_13; //HSTART     standard VGA
     22: dout <= 16'h18_01; //HSTOP      standard VGA
     23: dout <= 16'h32_B6; //HREF       standard VGA
@@ -151,6 +151,7 @@ module OV7670_config_rom(
     74: dout <= 16'ha9_90; //HAECC6
     75: dout <= 16'haa_94; //HAECC7
     76: dout <= 16'h13_e7; //COM8, enable AGC / AEC / AWB
+    77: dout <= 16'h42_08; //COM17, Enable DSP Color Bar
     default: dout <= 16'hFF_FF;         //mark end of ROM
     endcase
     

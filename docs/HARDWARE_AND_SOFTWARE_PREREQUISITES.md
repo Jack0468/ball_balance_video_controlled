@@ -2,36 +2,23 @@
 
 Before we transition into Phase 2 (Hardware Integration), you need to ensure the correct toolchains are installed on the Host PC and keep several physical constraints in mind when fabricating the robot.
 
-## 1. Required Software Installations (Hybrid Toolchain)
+## 1. Required Software Installations (Unified Toolchain)
 
-Because you are using the **Opal Kelly XEM3010**, you are working with an older **Xilinx Spartan-3** FPGA. This significantly complicates the software toolchain, as modern tools don't support this chip, but ancient tools don't support C++ to Verilog compilation (HLS). 
+We are using the **ZedBoard (Xilinx Zynq-7000 EPP)** for this project. Unlike legacy Spartan-3 boards, the Zynq-7000 is fully supported by modern toolchains, allowing us to use a single, unified environment for all tasks.
 
-You will need a **hybrid toolchain** utilizing two different Xilinx suites:
+You will need the following installed:
 
-### A. Vitis HLS (from Vivado ML Edition)
-- **Purpose**: You must use Vitis HLS as a standalone tool to compile our `hls_hardware/` C++ code into raw Verilog (RTL). 
-- **Why?**: Xilinx ISE is officially discontinued (last release in 2013) and does not support the modern Vitis HLS compiler we need to synthesize our `ap_fixed` C++ code into Verilog.
-- **Note**: Do NOT try to use the full Vivado suite to generate the bitstream, as Vivado completely dropped support for the Spartan-3 family years ago. You are only using the HLS engine to get the Verilog files.
+### A. Xilinx Vitis / Vivado 2025.2 (ML Edition)
+- **Purpose**: We use the modern Vitis 2025.2 suite for the entire FPGA workflow:
+  1. **High-Level Synthesis (HLS)**: Compiling our `hls_hardware/` C++ code into raw Verilog (RTL).
+  2. **Simulation (`xsim`)**: All testbenches are simulated natively using Vivado Simulator.
+  3. **Synthesis & Implementation**: Vivado handles the entire synthesis, placement, routing, and bitstream (`.bit`) generation natively for the Zynq XC7Z020 silicon.
 
-### B. Xilinx ISE 14.7
-- **Purpose**: Once you have the Verilog files from Vitis HLS, you will import them into Xilinx ISE along with the Opal Kelly FrontPanel endpoints. 
-- **Why?**: ISE 14.7 is the ONLY software capable of mapping Verilog to the Spartan-3 silicon and synthesizing a `.bit` bitstream file for the XEM3010.
-
-### C. Opal Kelly FrontPanel SDK
-- **Purpose**: Provides the USB drivers and the Python API (`import ok`) used in the `fpga_bridge.py` script.
-- **Python Bindings**: Copy the `ok.py` and `_ok` binaries from the SDK installation folder into your project root directory.
-
-> [!WARNING]
-> **Microcontroller vs. FPGA (The Spartan-3 Space Problem)**
-> A common misconception is that an FPGA has "more compute power" or "more SRAM" than a microcontroller like the STM32F407. 
-> - A **Microcontroller (STM32F407G-DISC1)** has a dedicated Hardware Floating Point Unit (Cortex-M4F). You can run a complex trig function like `acos()` a million times sequentially, and it doesn't take up any extra "physical space" on the chip.
-> - An **FPGA** doesn't run code sequentially; it builds physical circuits out of logic gates. Synthesizing hardware for `acos()` or `sqrt()` requires wiring together thousands of logic cells and DSP slices. If your IK calculates `acos()` for 3 arms simultaneously, the FPGA must physically construct three separate `acos()` circuits on the silicon.
+> [!NOTE]
+> **Microcontroller vs. FPGA (The Zynq Advantage)**
+> A common constraint on older FPGAs (like the Spartan-3) was a lack of physical DSP slices to implement complex math (like trigonometry for Inverse Kinematics). 
 > 
-> The older **Spartan-3** on the XEM3010 only has ~32 DSP slices. Because we are physically limited by silicon real estate (not memory/SRAM), synthesizing trigonometric IK math directly into hardware might exceed the physical capacity of the chip. 
-> 
-> **Backup Plan**: If Vitis HLS generates an IP core that is too large to fit on the Spartan-3, we will move the IK/PID math out of the C++ hardware block and into the Python Host PC script. We will then purely use the FPGA to generate the raw high-frequency step pulses for the motors.
-
-
+> The **Zynq-7000 (XC7Z020)** completely eliminates this problem. Not only does it have 220 dedicated DSP slices (plenty for hardware math), but it also contains a hardened **Dual-Core ARM Cortex-A9 Processing System (PS)**. If an IK algorithm is too complex for raw logic gates, we can effortlessly run it in C++ on the embedded ARM core and pass the results to the programmable logic (PL) over the high-speed AXI bus.
 
 ---
 

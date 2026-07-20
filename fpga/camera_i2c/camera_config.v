@@ -7,8 +7,8 @@ module camera_config
     (
     input wire clk,
     input wire start,
-    output wire sioc,
-    output wire siod,
+    output wire sioc_oe,
+    output wire siod_oe,
     output wire done
     );
     
@@ -21,8 +21,8 @@ module camera_config
     wire SCCB_SIOC_oe;
     wire SCCB_SIOD_oe;
     
-    assign sioc = SCCB_SIOC_oe ? 1'b0 : 1'bZ;
-    assign siod = SCCB_SIOD_oe ? 1'b0 : 1'bZ;
+    assign sioc_oe = SCCB_SIOC_oe;
+    assign siod_oe = SCCB_SIOD_oe;
     
     OV7670_config_rom rom1(
         .clk(clk),

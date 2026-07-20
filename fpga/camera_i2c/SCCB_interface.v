@@ -116,7 +116,7 @@ module SCCB_interface
                 FSM_state <= FSM_TIMER;
                 FSM_return_state <= FSM_TX_BYTE_3;
                 timer <= (CLK_FREQ/(4*SCCB_FREQ)); //delay for SIOD to stabilize
-                SIOD_oe <= (byte_index == 8) ? 0 : ~tx_byte[7]; //allow for 9 cycle ack, output enable signal is inverting
+                SIOD_oe <= (byte_index == 8) ? 1 : ~tx_byte[7]; //drive low for ACK (OV7670 quirk)
             end
             
             FSM_TX_BYTE_3: begin // bring SIOC high 

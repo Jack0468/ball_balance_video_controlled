@@ -33,7 +33,7 @@ module tb_camera_read;
 
     integer i, j;
     integer pixel_count = 0;
-    integer expected_pixels = 640 * 480; // 307,200
+    integer expected_pixels = (640 * 480) - 1; // 307,199 (Row 10 drops a byte!)
 
     always @(posedge p_clock) begin
         if (pixel_valid) begin
@@ -45,18 +45,20 @@ module tb_camera_read;
         $dumpfile("tb_camera_read.vcd");
         $dumpvars(0, tb_camera_read);
 
-        $display("Starting camera_read simulation (Positive VSYNC polarity)...");
+        $display("Starting camera_read simulation (Negative VSYNC polarity to match COM10=0x02)...");
 
-        // Initial state: VSYNC low, HREF low
-        vsync = 0;
+        // Initial state
+        vsync = 1;
         href = 0;
         p_data = 0;
         #1000;
 
-        // VSYNC HIGH for 3 lines (blanking)
-        vsync = 1;
-        #5000; 
+        // VSYNC LOW for 3 lines (vertical blanking)
         vsync = 0;
+        #5000; 
+        
+        // VSYNC HIGH (Start of active frame!)
+        vsync = 1;
         #1000;
 
         $display("Active frame started. Simulating exactly 480 rows, 1280 p_clock pulses per row...");
@@ -65,11 +67,21 @@ module tb_camera_read;
         for (i = 0; i < 480; i = i + 1) begin
             // active row
             href = 1;
-            for (j = 0; j < 1280; j = j + 1) begin
-                p_data = (i + j) & 8'hFF; // some test data
-                @(posedge p_clock);
+            
+            // INJECT STRESS TEST: Drop one byte on row 10 (simulate an odd number of bytes/lost clock)
+            if (i == 10) begin
+                for (j = 0; j < 1279; j = j + 1) begin
+                    @(negedge p_clock); // STRESS TEST: Drive data exactly on the falling edge
+                    p_data = (i + j) & 8'hFF;
+                end
+            end else begin
+                for (j = 0; j < 1280; j = j + 1) begin
+                    @(negedge p_clock); // STRESS TEST: Drive data exactly on the falling edge
+                    p_data = (i + j) & 8'hFF;
+                end
             end
             
+            @(negedge p_clock); // Wait for the final falling edge of the row
             href = 0;
             
             // horizontal blanking
@@ -81,8 +93,8 @@ module tb_camera_read;
         // Wait a bit to see frame_done
         #5000;
         
-        // Assert VSYNC high again for next frame
-        vsync = 1;
+        // Assert VSYNC LOW again to enter VBLANK and trigger frame_done!
+        vsync = 0;
         #5000;
 
         if (pixel_count == expected_pixels) begin

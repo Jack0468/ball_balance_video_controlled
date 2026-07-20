@@ -29,10 +29,7 @@ def main():
     
     script_dir = os.path.dirname(os.path.abspath(__file__))
     
-    if os.path.isabs(args.model_path):
-        model_path = args.model_path
-    else:
-        model_path = os.path.abspath(os.path.join(script_dir, args.model_path))
+    model_path = os.path.abspath(args.model_path)
         
     project_dir = os.path.dirname(model_path)
     
@@ -46,15 +43,16 @@ def main():
     model.fc = nn.Linear(num_ftrs, 2)
     
     # Load weights safely
-    model.load_state_dict(torch.load(model_path, map_location=device, weights_only=True))
+    checkpoint = torch.load(model_path, map_location=device, weights_only=False)
+    if 'model_state_dict' in checkpoint:
+        model.load_state_dict(checkpoint['model_state_dict'])
+    else:
+        model.load_state_dict(checkpoint)
     model = model.to(device)
     model.eval()
     
     # 2. Load the test subset data
-    if os.path.isabs(args.data_dir):
-        data_dir = args.data_dir
-    else:
-        data_dir = os.path.abspath(os.path.join(script_dir, args.data_dir))
+    data_dir = os.path.abspath(args.data_dir)
         
     csv_path = os.path.join(data_dir, 'labels_sequential.csv')
     images_dir = os.path.join(data_dir, 'images')

@@ -11,7 +11,7 @@ from ball_dataset import BallDataset
 def main():
     parser = argparse.ArgumentParser(description="Train ResNet18 Expert Tracker")
     parser.add_argument("--data_dir", default="../data/02_silver", help="Path to data directory")
-    parser.add_argument("--csv_name", default="labels_sequential.csv", help="Name of the labels CSV file")
+    parser.add_argument("--csv_name", default="labels_normalized.csv", help="Name of the labels CSV file")
     parser.add_argument("--save_dir", default="../models", help="Directory to save the trained models")
     parser.add_argument("--resume", type=str, default=None, help="Path to checkpoint (.pth) to resume training from")
     args = parser.parse_args()
@@ -43,19 +43,13 @@ def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     
     # Handle absolute vs relative data_dir
-    if os.path.isabs(args.data_dir):
-        data_dir = args.data_dir
-    else:
-        data_dir = os.path.abspath(os.path.join(script_dir, args.data_dir))
+    data_dir = os.path.abspath(args.data_dir)
         
     csv_path = os.path.join(data_dir, args.csv_name)
     images_dir = os.path.join(data_dir, 'images')
     
     # Handle absolute vs relative save_dir
-    if os.path.isabs(args.save_dir):
-        project_dir = args.save_dir
-    else:
-        project_dir = os.path.abspath(os.path.join(script_dir, args.save_dir))
+    project_dir = os.path.abspath(args.save_dir)
     
     # Ensure models directory exists
     os.makedirs(project_dir, exist_ok=True)
@@ -111,7 +105,7 @@ def main():
     best_loss = float('inf')
     
     if args.resume and os.path.exists(args.resume):
-        print(f"Resuming training from checkpoint: {args.resume}")
+        print(f"\n[DIAGNOSTIC] Resuming training from checkpoint: {args.resume}")
         checkpoint = torch.load(args.resume, map_location=device, weights_only=False)
         if 'model_state_dict' in checkpoint:
             model.load_state_dict(checkpoint['model_state_dict'])
@@ -120,8 +114,15 @@ def main():
                 scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
             start_epoch = checkpoint['epoch'] + 1
             best_loss = checkpoint.get('best_loss', float('inf'))
+            print(f"[DIAGNOSTIC] Successfully loaded state! Resuming from Epoch {start_epoch + 1}")
         else:
             model.load_state_dict(checkpoint)
+            print("[DIAGNOSTIC] Loaded bare model weights. Resuming from Epoch 1")
+    else:
+        if args.resume:
+            print(f"\n[DIAGNOSTIC] WARNING: Checkpoint '{args.resume}' not found. Starting from SCRATCH!")
+        else:
+            print("\n[DIAGNOSTIC] No resume checkpoint provided. Starting from SCRATCH!")
             
     save_path = os.path.join(project_dir, 'resnet18_expert_tracker/expert_tracker_best.pth')
     os.makedirs(os.path.dirname(save_path), exist_ok=True)

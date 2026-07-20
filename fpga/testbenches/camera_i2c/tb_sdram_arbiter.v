@@ -3,14 +3,23 @@
 module tb_sdram_arbiter;
 
     // Clocks
-    reg clk_100mhz = 0;
-    always #5 clk_100mhz = ~clk_100mhz; // 100MHz
+    reg clk_100mhz;
+    initial begin
+        clk_100mhz = 0;
+        forever #5 clk_100mhz = ~clk_100mhz; // 100MHz
+    end
 
-    reg pclk = 0;
-    always #20 pclk = ~pclk; // 25MHz
+    reg pclk;
+    initial begin
+        #3 pclk = 0;
+        forever #20 pclk = ~pclk; // 25MHz
+    end
 
-    reg ti_clk = 0;
-    always #10 ti_clk = ~ti_clk; // 50MHz
+    reg ti_clk;
+    initial begin
+        #2 ti_clk = 0;
+        forever #10 ti_clk = ~ti_clk; // 50MHz
+    end
 
     // Reset signals
     reg rst_n = 1;
