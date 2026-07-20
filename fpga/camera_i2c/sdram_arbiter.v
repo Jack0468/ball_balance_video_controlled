@@ -28,7 +28,8 @@ module sdram_arbiter (
     output wire [ 1:0] sdram_dqm,
     
     // Status
-    output wire        init_complete
+    output wire        init_complete,
+    output wire        cam_fifo_full_out  // Bug E: write FIFO full flag for overflow detection
 );
 
     // =========================================================================
@@ -54,7 +55,7 @@ module sdram_arbiter (
         .wr_clk (pclk),
         .wr_en  (cam_wr_en),
         .din    (cam_wr_data),
-        .full   (), // SDRAM is effectively infinite for a single frame
+        .full   (cam_fifo_full_out), // Bug E: expose full flag for overflow detection
         
         .rd_clk (clk_100mhz),
         .rd_en  (cam_fifo_rd_en),
@@ -70,7 +71,7 @@ module sdram_arbiter (
     wire [15:0] usb_fifo_din;
     
     fifo read_fifo (
-        .rst    (frame_rst),
+        .rst    (frame_rst_100),   // Bug C fix: use synchronized reset to avoid CDC hazard on 100MHz write clock
         .wr_clk (clk_100mhz),
         .wr_en  (usb_fifo_wr_en),
         .din    (usb_fifo_din),
@@ -219,7 +220,10 @@ module sdram_arbiter (
                     sdr_wr_addr_cmd <= sdram_write_ptr;
                     sdr_wr_data_cmd <= cam_fifo_dout;
                     sdr_wr_en_cmd   <= 1'b1;
-                    sdram_write_ptr <= sdram_write_ptr + 1'b1;
+                    // Bug B fix: clamp at one full frame boundary. In normal operation frame_done
+                    // stops armed=1 before this guard is reached; this is a failsafe only.
+                    if (sdram_write_ptr < 24'd307200)
+                        sdram_write_ptr <= sdram_write_ptr + 1'b1;
                     cmd_accepted    <= 0;
                     state <= STATE_WRITE_WAIT;
                 end

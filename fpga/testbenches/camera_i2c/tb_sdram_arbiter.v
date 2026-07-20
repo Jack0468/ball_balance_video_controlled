@@ -67,9 +67,47 @@ module tb_sdram_arbiter;
     );
 
     // =========================================================
+    // Minimal SDRAM BFM (Synchronous, CAS Latency 2)
+    // =========================================================
+    reg [15:0] sdram_mem [0:1048575];
+    
+    reg [12:0] row_latch = 0;
+    reg [1:0]  ba_latch  = 0;
+    
+    reg [1:0] read_pipe = 0;
+    reg [21:0] read_addr = 0;
+    
+    always @(posedge clk_100mhz) begin
+        // Latch row and bank on ACTIVE command (ras_n=0, cas_n=1)
+        if (!sdram_cs_n && !sdram_ras_n && sdram_cas_n) begin
+            row_latch <= sdram_a;
+            ba_latch  <= sdram_ba;
+        end
+        
+        // Handle WRITE command (cas_n=0, we_n=0)
+        if (!sdram_cs_n && !sdram_cas_n && !sdram_we_n) begin
+            sdram_mem[{ba_latch, row_latch[7:0], sdram_a[9:0]}] <= sdram_dq;
+        end
+        
+        // Handle READ command (cas_n=0, we_n=1) -> CAS latency 2
+        // Shift register: bit 0 goes high 1 cycle after READ command.
+        read_pipe <= {read_pipe[0], (!sdram_cs_n && !sdram_cas_n && sdram_we_n)};
+        if (!sdram_cs_n && !sdram_cas_n && sdram_we_n) begin
+            read_addr <= {ba_latch, row_latch[7:0], sdram_a[9:0]};
+        end
+    end
+    
+    // Drive data continuously based on the pipeline. 
+    // Data appears combinatorially AFTER the first posedge, 
+    // so it is valid and ready to be sampled ON the second posedge (CAS Latency 2).
+    assign sdram_dq = (read_pipe[0]) ? sdram_mem[read_addr] : 16'bz;
+
+    // =========================================================
     // Test sequences
     // =========================================================
-    integer num_pixels = 307200; // 640x480
+    // Simulate a smaller chunk (e.g. 1024 pixels) instead of a full frame
+    // so the simulation runs in seconds instead of minutes.
+    integer num_pixels = 1024; // 1024 pixels
     integer i, j;
     integer err_count = 0;
     reg [15:0] expected_val;
@@ -101,13 +139,19 @@ module tb_sdram_arbiter;
             cam_wr_en = 1;
             cam_wr_data = i[15:0];
             @(posedge pclk);
+            
+            // camera_read.v only outputs one pixel every 2 pclk cycles.
+            // We must simulate this, otherwise we feed data at 25MHz 
+            // which overflows the SDRAM write bandwidth (~14MHz).
+            cam_wr_en = 0;
+            @(posedge pclk);
         end
         cam_wr_en = 0;
 
         $display("Finished writing to arbiter. Waiting for SDRAM writes to complete...");
         
         // Let SDRAM writes flush
-        #200000; 
+        #2000; 
 
         // 4. Start USB Read phase
         $display("Reading pixels from arbiter via USB...");

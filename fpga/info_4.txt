@@ -1,0 +1,16 @@
+# run all
+Finished writing to arbiter. Waiting for SDRAM writes to complete...
+Reading pixels from arbiter via USB...
+ERROR at pixel 0: Expected 0, Got zzzz
+ERROR at pixel 1: Expected 1, Got zzzz
+ERROR at pixel 2: Expected 2, Got zzzz
+ERROR at pixel 3: Expected 3, Got zzzz
+ERROR at pixel 4: Expected 4, Got zzzz
+ERROR at pixel 5: Expected 5, Got zzzz
+ERROR at pixel 6: Expected 6, Got zzzz
+ERROR at pixel 7: Expected 7, Got zzzz
+ERROR at pixel 8: Expected 8, Got zzzz
+ERROR at pixel 9: Expected 9, Got zzzz
+ERROR at pixel 10: Expected a, Got zzzz
+Too many errors. Aborting.
+Stopped at time : 283490 ns : File "/home/ise/fpga/testbenches/camera_i2c/tb_sdram_arbiter.v" Line 172

@@ -11,7 +11,7 @@ from ball_dataset import BallDataset
 def main():
     parser = argparse.ArgumentParser(description="Train ResNet18 Expert Tracker")
     parser.add_argument("--data_dir", default="../data/02_silver", help="Path to data directory")
-    parser.add_argument("--csv_name", default="labels_normalized.csv", help="Name of the labels CSV file")
+    parser.add_argument("--csv_name", default="labels_sequential.csv", help="Name of the labels CSV file")
     parser.add_argument("--save_dir", default="../models", help="Directory to save the trained models")
     parser.add_argument("--resume", type=str, default=None, help="Path to checkpoint (.pth) to resume training from")
     args = parser.parse_args()
@@ -23,11 +23,20 @@ def main():
     # multi-task heads in the future (e.g., finding coloured markers, or predicting control signals)
     model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
     
+    # Freeze the early layers of ResNet18 to significantly speed up training 
+    # and reduce VRAM usage, since the backbone is already pretrained.
+    for name, param in model.named_parameters():
+        if "layer4" not in name and "fc" not in name:
+            param.requires_grad = False
+    
+    
     # Replace the classification head with a regression head for (x, y)
     num_ftrs = model.fc.in_features
     model.fc = nn.Linear(num_ftrs, 2)
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    if device.type == 'cuda':
+        torch.backends.cudnn.benchmark = True # Speeds up fixed-size batch training
     model = model.to(device)
     
     # 2. Set absolute paths for dataset
@@ -54,16 +63,14 @@ def main():
     print(f"Loading dataset from: {csv_path}")
     
     # Define Transforms
-    # We apply RandomAffine (Shift, Scale, Rotate) and RandomPerspective (Tilt) to simulate camera movement.
-    # Because the model predicts the ball's *intrinsic* physical coordinate on the board (touch_x, touch_y),
-    # moving the camera does NOT change the physical label! This brilliantly forces the model to learn 
-    # camera-invariance by locating the purple shape of the platform's outline rather than memorizing absolute pixel locations.
+    # We removed RandomAffine and RandomPerspective. In a fixed-camera setup, applying geometric
+    # augmentations to the image while keeping the physical labels (touch_x, touch_y) unchanged
+    # forces the model to dynamically estimate the camera homography relative to the board boundaries.
+    # This destroys the highly accurate absolute pixel-to-mm mapping and degrades tracking accuracy.
     # Note: RandomHorizontalFlip is strictly forbidden as it creates a physically impossible mirrored board.
     train_transform = transforms.Compose([
         transforms.Resize((240, 320)),
         transforms.ColorJitter(brightness=0.3, contrast=0.3, saturation=0.3, hue=0.1),
-        transforms.RandomAffine(degrees=10, translate=(0.1, 0.1), scale=(0.9, 1.1)),
-        transforms.RandomPerspective(distortion_scale=0.2, p=0.5),
         transforms.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 5.0)),
         transforms.ToTensor(),
         transforms.RandomErasing(p=0.2, scale=(0.02, 0.1)),
@@ -88,8 +95,9 @@ def main():
     train_dataset = Subset(full_dataset_train, indices[:train_size])
     test_dataset = Subset(full_dataset_test, indices[train_size:])
     
-    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=2, pin_memory=True)
-    test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False, num_workers=2, pin_memory=True)
+    # Increased batch size from 32 to 128 to maximize Colab GPU utilization
+    train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=2, pin_memory=True)
+    test_loader = DataLoader(test_dataset, batch_size=128, shuffle=False, num_workers=2, pin_memory=True)
     
     print(f"Found {len(full_dataset_train)} total images -> {len(train_dataset)} Train | {len(test_dataset)} Test.")
     
@@ -120,6 +128,9 @@ def main():
     
     print(f"Starting training on {device}...")
     
+    # Initialize Mixed Precision Scaler for faster training
+    scaler = torch.amp.GradScaler('cuda') if device.type == 'cuda' else None
+    
     for epoch in range(start_epoch, num_epochs):
         model.train()
         running_loss = 0.0
@@ -131,13 +142,21 @@ def main():
             # Zero the parameter gradients
             optimizer.zero_grad()
             
-            # Forward pass
-            outputs = model(inputs)
-            loss = criterion(outputs, targets)
-            
-            # Backward and optimize
-            loss.backward()
-            optimizer.step()
+            # Forward pass with AMP
+            if scaler is not None:
+                with torch.amp.autocast('cuda'):
+                    outputs = model(inputs)
+                    loss = criterion(outputs, targets)
+                
+                # Backward and optimize with scaler
+                scaler.scale(loss).backward()
+                scaler.step(optimizer)
+                scaler.update()
+            else:
+                outputs = model(inputs)
+                loss = criterion(outputs, targets)
+                loss.backward()
+                optimizer.step()
             
             running_loss += loss.item() * inputs.size(0)
             

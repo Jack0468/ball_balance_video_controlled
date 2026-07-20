@@ -196,10 +196,12 @@ module camera_top
 	wire fifo_rst = rst_s[1] | fifo_rst_r;
 
 	// 4. Overflow detection (for debugging via WireOut)
+	// Bug E fix: cam_fifo_full is now wired through; overflow_sticky SET when FIFO fills, CLEARED on frame_start.
+	wire cam_fifo_full;   // driven by write FIFO inside sdram_arbiter (see below)
 	reg overflow_sticky = 0;
 	always @(posedge pclk) begin
-		if (frame_start) overflow_sticky <= 0;
-		// Note: with SDRAM buffering, overflow is extremely unlikely
+		if (frame_start)   overflow_sticky <= 0;
+		if (cam_fifo_full) overflow_sticky <= 1;
 	end
 
 		// SDRAM Arbiter (Replacing old 4KB FIFO)
@@ -229,7 +231,8 @@ module camera_top
 		.sdram_we_n(sdram_we_n),
 		.sdram_dqm(sdram_dqm),
 
-		.init_complete(sdram_init_complete)
+		.init_complete(sdram_init_complete),
+		.cam_fifo_full_out(cam_fifo_full)  // Bug E: connect for overflow detection
 	);		
 	 
 	 assign pipe_out_ready = ~empty;

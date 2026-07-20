@@ -45,10 +45,13 @@ logs/
 
 # Neural Network Weights and Logs
 *.pt
+*.pth
 *.onnx
 *.xml
 *.bin
 host_software/ml_vision/models/platform_pose_model/
 host_software/ml_vision/models/weights/
 runs/
+*.zip
+fpga/camera_i2c/old_images/
 host_software/ml_vision/data/02_silver_unified_pose.zip

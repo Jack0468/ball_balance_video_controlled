@@ -1,5 +1,11 @@
 # VRI 2026 Project Logbook
 
+## 20/07/2026
+### ISim Simulator Freeze & Testbench Architecture
+- **ISim Zero-Delay Loop Bug**: Diagnosed a total simulator lockup where Xilinx ISim (14.7) would freeze at exactly 1.28 us and report reaching the iteration limit (zero-delay loop). The cause was a continuous intra-assignment delay (`dq_drive <= #1 16'bz;`) inside a clocked `always` block that drove an `inout` net. Executing this delay on every single clock cycle caused ISim's event scheduler to get trapped in an infinite loop. 
+- **Combinational BFM Data Driving**: Fixed the ISim lockup by rewriting the SDRAM Bus Functional Model (BFM) to drive data strictly via continuous combinational assignments (`assign sdram_dq = (read_pipe) ? mem : 16'bz;`), avoiding `#` delays inside clocked blocks entirely. 
+- **CAS Latency Synchronization**: Discovered that the previous BFM was mistakenly driving data at CAS Latency 3. Corrected the read pipeline to exactly match CAS Latency 2, which eliminated the `Got zzzz` hold-time errors by perfectly aligning valid data with the SDRAM controller's sample edge.
+
 ## 17/07/2026
 ### FPGA Camera Breakthroughs (XCLK & SDRAM) — First Non-Black Frame Achieved
 - **XCLK Architectural Routing Fix**: Discovered why the camera was receiving no stable clock regardless of PLL settings. The design used `assign xclk = clk2;` where `clk2` (pin P9) is a dedicated GCLK input routed through a BUFG by ISE. Xilinx Spartan-3 silicon rules forbid BUFG-driven nets from directly driving output pins — the router silently left pin K5 completely undriven (floating antenna, reading as 60–120mV noise on the DSO). The fix removes `clk2` from the design entirely.

@@ -79,7 +79,7 @@ module OV7670_config_rom(
     5:  dout <= 16'h3E_00; // COM14,    no scaling, normal pclock 
     6:  dout <= 16'h04_00; // COM1,     disable CCIR656
     7:  dout <= 16'h40_D0; //COM15,     RGB565, full output range [00-FF]
-    8:  dout <= 16'h3a_04; //TSLB       set correct output data sequence (magic)
+    8:  dout <= 16'h3a_00; //TSLB       byte swap off — correct order for RGB565 (was 0x04 = YUYV order, caused pink/yellow artefacts)
     9:  dout <= 16'h0c_00; // COM3: disable scaling 
     10: dout <= 16'h3e_00; // COM14: no PCLK scaling, normal
     11: dout <= 16'h14_18; //COM9       MAX AGC value x4
@@ -91,7 +91,7 @@ module OV7670_config_rom(
     17: dout <= 16'h54_E4; //MTX6       RGB565
     18: dout <= 16'h58_9E; //MTXS
     19: dout <= 16'h3D_C0; //COM13      sets gamma enable, does not preserve reserved bits
-    20: dout <= 16'h15_02; //COM10      VSYNC negative, PCLK does not toggle on HBLANK
+    20: dout <= 16'h15_00; //COM10      VSYNC positive (default), PCLK does not toggle on HBLANK — matches camera_read.v positive-edge frame_start detector
     21: dout <= 16'h17_13; //HSTART     standard VGA
     22: dout <= 16'h18_01; //HSTOP      standard VGA
     23: dout <= 16'h32_B6; //HREF       standard VGA

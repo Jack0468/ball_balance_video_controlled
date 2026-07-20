@@ -60,7 +60,7 @@ module OV7670_config
                         if (SCCB_interface_ready) begin
                             FSM_state <= FSM_TIMER;
                             FSM_return_state <= FSM_SEND_CMD;
-                            timer <= 0; //one cycle delay gives ready chance to deassert
+                            timer <= 2; //two cycle hold: gives SCCB_interface time to deassert ready before we re-check (Bug A fix)
                             rom_addr <= rom_addr + 1;
                             SCCB_interface_addr <= rom_data[15:8];
                             SCCB_interface_data <= rom_data[7:0];
