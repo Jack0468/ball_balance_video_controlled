@@ -6,10 +6,10 @@
 #include "lwip/udp.h"
 #include "lwip/init.h"
 #include "netif/xadapter.h"
-// Removed platform.h inclusions
-
+#include "platform.h"
+#include "platform_config.h"
 // Hardware settings
-#define VDMA_ID          XPAR_AXI_VDMA_0_DEVICE_ID
+#define VDMA_ID          XPAR_XAXIVDMA_0_BASEADDR
 #define FRAME_BUFFER_ADDR 0x10000000 // DDR3 Address for Video Frame
 #define WIDTH 640
 #define HEIGHT 480
@@ -99,14 +99,10 @@ void send_frame_udp(struct udp_pcb *pcb, ip_addr_t *dest_ip, uint32_t frame_id) 
 }
 
 int main() {
-    Xil_ICacheEnable();
-    Xil_DCacheEnable();
+    init_platform();
     xil_printf("ZedBoard OV7670 Video Streamer\r\n");
     
-    // Init VDMA
-    init_vdma();
-    
-    // Init Network (lwIP)
+    // Init Network (lwIP) first! If VDMA freezes, network will at least ping!
     lwip_init();
     
     ip_addr_t ipaddr, netmask, gw;
@@ -118,10 +114,20 @@ int main() {
     // Mac Address (Random local MAC)
     unsigned char mac_ethernet_address[] = { 0x00, 0x0a, 0x35, 0x00, 0x01, 0x02 };
     
-    xemac_add(&server_netif, &ipaddr, &netmask, &gw, mac_ethernet_address, PLATFORM_EMAC_BASEADDR);
+    if (!xemac_add(&server_netif, &ipaddr, &netmask, &gw, mac_ethernet_address, PLATFORM_EMAC_BASEADDR)) {
+        xil_printf("MAC INIT FAILED\r\n");
+    }
     netif_set_default(&server_netif);
     netif_set_up(&server_netif);
+    
+    // Explicitly enable interrupts on ARM just in case SDT didn't
+    #include "xil_exception.h"
+    Xil_ExceptionEnable();
+    
     xil_printf("Network Ready. IP: 192.168.1.10\r\n");
+    
+    // Now init VDMA
+    init_vdma();
     
     struct udp_pcb *pcb = udp_new();
     ip_addr_t pc_ip;
@@ -130,17 +136,19 @@ int main() {
     uint32_t frame_id = 0;
     xil_printf("Starting UDP Video Stream to PC...\r\n");
     
+    uint32_t delay_count = 0;
     while (1) {
-        // Send a frame
-        send_frame_udp(pcb, &pc_ip, frame_id);
-        frame_id++;
+        // CRITICAL: We must constantly poll the Ethernet RX buffer to process incoming ARP and PING packets!
+        xemacif_input(&server_netif);
         
-        // Call lwIP periodic tasks (if required by the port, though usually in a timer interrupt)
-        // Delay to hit ~30 FPS. At 667MHz, 10 million loop iterations is roughly a few dozen ms.
-        for(volatile int i=0; i<5000000; i++); 
+        // Send a frame roughly every ~30ms to avoid flooding the network before ARP resolves
+        if (delay_count++ > 200000) {
+            send_frame_udp(pcb, &pc_ip, frame_id);
+            frame_id++;
+            delay_count = 0;
+        }
     }
     
-    Xil_DCacheDisable();
-    Xil_ICacheDisable();
+    cleanup_platform();
     return 0;
 }

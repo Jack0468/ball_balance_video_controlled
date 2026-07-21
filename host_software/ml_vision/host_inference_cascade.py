@@ -5,6 +5,7 @@ import serial
 import struct
 import threading
 import queue
+import socket
 import os
 import sys
 from ultralytics import YOLO
@@ -12,37 +13,85 @@ from ultralytics import YOLO
 SERIAL_PORT = 'COM3'
 SERIAL_BAUD = 115200
 
-class USBReceiver:
-    def __init__(self, camera_id=0):
-        self.cap = cv2.VideoCapture(camera_id, cv2.CAP_DSHOW)
-        if not self.cap.isOpened():
-            self.cap = cv2.VideoCapture(camera_id)
-            
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
-        self.cap.set(cv2.CAP_PROP_FPS, 30)
+class UDPReceiver:
+    def __init__(self, port=8080):
+        self.port = port
+        self.width = 640
+        self.height = 480
+        self.pixel_bytes = 2
+        self.frame_size = self.width * self.height * self.pixel_bytes
+        self.packet_payload = 1024
+        self.packets_per_frame = (self.frame_size + self.packet_payload - 1) // self.packet_payload
+        
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1024 * 1024 * 5)
+        self.sock.bind(("0.0.0.0", self.port))
             
         self.frame_queue = queue.Queue(maxsize=1)
         self.running = True
         self.thread = threading.Thread(target=self._receive_loop, daemon=True)
-        if self.cap.isOpened():
-            self.thread.start()
-            print(f"USB Camera {camera_id} initialized.")
-        else:
-            print(f"ERROR: Could not open USB Camera {camera_id}")
+        self.thread.start()
+        print(f"UDP Receiver initialized on port {self.port}.")
             
     def _receive_loop(self):
-        while self.running and self.cap.isOpened():
-            ret, frame = self.cap.read()
-            if ret and frame is not None:
-                if self.frame_queue.full():
-                    try:
-                        self.frame_queue.get_nowait()
-                    except queue.Empty:
-                        pass
-                self.frame_queue.put(frame)
-            else:
-                time.sleep(0.01)
+        current_frame_id = -1
+        frame_buffer = bytearray(self.frame_size)
+        packets_received = 0
+        
+        while self.running:
+            try:
+                # Use a timeout so we can exit cleanly
+                self.sock.settimeout(1.0)
+                try:
+                    data, addr = self.sock.recvfrom(2048)
+                except socket.timeout:
+                    continue
+                
+                if len(data) < 8:
+                    continue
+                    
+                frame_id, packet_id = struct.unpack("<II", data[:8])
+                payload = data[8:]
+                
+                if frame_id != current_frame_id:
+                    if current_frame_id != -1 and packets_received > self.packets_per_frame * 0.8:
+                        self._process_and_queue_frame(frame_buffer)
+                    
+                    current_frame_id = frame_id
+                    packets_received = 0
+                    
+                offset = packet_id * self.packet_payload
+                length = len(payload)
+                
+                if offset + length <= self.frame_size:
+                    frame_buffer[offset:offset+length] = payload
+                    packets_received += 1
+                    
+            except Exception as e:
+                if self.running:
+                    print(f"UDP Rx Error: {e}")
+                    
+    def _process_and_queue_frame(self, frame_bytes):
+        try:
+            img16 = np.frombuffer(frame_bytes, dtype=np.uint16).reshape((self.height, self.width))
+            r = (img16 >> 11) & 0x1F
+            g = (img16 >> 5) & 0x3F
+            b = img16 & 0x1F
+            
+            r = (r * 255) // 31
+            g = (g * 255) // 63
+            b = (b * 255) // 31
+            
+            img_bgr = np.dstack((b, g, r)).astype(np.uint8)
+            
+            if self.frame_queue.full():
+                try:
+                    self.frame_queue.get_nowait()
+                except queue.Empty:
+                    pass
+            self.frame_queue.put(img_bgr)
+        except Exception as e:
+            pass
 
     def get_latest_frame(self):
         try:
@@ -52,7 +101,7 @@ class USBReceiver:
 
     def stop(self):
         self.running = False
-        self.cap.release()
+        self.sock.close()
 
 def get_platform_corners_and_ball(results):
     corners = None
@@ -107,7 +156,7 @@ def main():
         ser = None
 
     # 3. Stream Init
-    receiver = USBReceiver(args.cam_id)
+    receiver = UDPReceiver(port=8080)
     
     # Physical dimensions of the board in mm
     # Coordinate system: (0,0) is center.
