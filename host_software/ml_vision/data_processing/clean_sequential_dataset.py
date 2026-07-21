@@ -18,11 +18,23 @@ def clean_dataset(data_dir):
     
     # Drop duplicates based on 'image_file', keeping the first occurrence
     # This guarantees exactly 1 row per video frame, maintaining chronological order
-    df_cleaned = df.drop_duplicates(subset=['image_file'], keep='first')
+    df_cleaned = df.drop_duplicates(subset=['image_file'], keep='first').copy()
     
+    unique_count = len(df_cleaned)
+    print(f"Removed {initial_count - unique_count} duplicate image rows.")
+    
+    # Identify and drop "frozen" telemetry frames (where the 1.5s debouncer kicked in because the ball fell off/bounced)
+    # Since real physical balls always have ADC noise > 0.1mm, perfectly identical coordinates mean the ball is missing.
+    if 'touch_x' in df_cleaned.columns and 'touch_y' in df_cleaned.columns:
+        # Check if current row is identical to previous row
+        is_frozen = (df_cleaned['touch_x'] == df_cleaned['touch_x'].shift(1)) & (df_cleaned['touch_y'] == df_cleaned['touch_y'].shift(1))
+        
+        frozen_count = is_frozen.sum()
+        df_cleaned = df_cleaned[~is_frozen]
+        print(f"Removed {frozen_count} frozen telemetry frames (ball off-board or bouncing).")
+        
     final_count = len(df_cleaned)
-    print(f"Cleaned rows (Unique frames): {final_count}")
-    print(f"Removed {initial_count - final_count} duplicate telemetry rows.")
+    print(f"Final Cleaned rows: {final_count}")
     
     df_cleaned.to_csv(out_path, index=False)
     print(f"Saved cleaned dataset to {out_path}")

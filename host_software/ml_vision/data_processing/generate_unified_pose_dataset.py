@@ -101,12 +101,13 @@ def format_pose_label(class_id, cx, cy, w, h, keypoints=None, img_w=640, img_h=4
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input_dataset", type=str, default="03_gold", help="Name of dataset in data/ directory")
+    parser.add_argument("--input_dataset", type=str, default="02_silver", help="Name of dataset in data/ directory")
+    parser.add_argument("--csv_name", type=str, default="labels_sequential.csv", help="Name of the telemetry CSV file")
     args = parser.parse_args()
     
     script_dir = os.path.dirname(os.path.abspath(__file__))
     input_dir = os.path.abspath(os.path.join(script_dir, f"../data/{args.input_dataset}/images"))
-    telemetry_path = os.path.abspath(os.path.join(script_dir, f"../data/{args.input_dataset}/labels.csv"))
+    telemetry_path = os.path.abspath(os.path.join(script_dir, f"../data/{args.input_dataset}/{args.csv_name}"))
     
     output_dir = os.path.abspath(os.path.join(script_dir, f"../data/{args.input_dataset}_unified_pose"))
     out_images_dir = os.path.join(output_dir, "images")
@@ -115,14 +116,13 @@ def main():
     os.makedirs(out_images_dir, exist_ok=True)
     os.makedirs(out_labels_dir, exist_ok=True)
     
-    pose_model_path = os.path.abspath(os.path.join(script_dir, "../models/platform_pose_model/weights/best.pt"))
-    if not os.path.exists(pose_model_path):
-        print(f"Error: Could not find pose model at {pose_model_path}")
+    print("Loading pre-trained YOLO-Pose platform model...")
+    try:
+        pose_model = YOLO(os.path.abspath(os.path.join(script_dir, "../models/platform_pose_model/weights/best.pt")))
+    except Exception as e:
+        print(f"Failed to load platform pose model: {e}")
         return
         
-    print("Loading pre-trained YOLO-Pose platform model...")
-    pose_model = YOLO(pose_model_path)
-    
     print(f"Loading telemetry from {telemetry_path}...")
     if not os.path.exists(telemetry_path):
         print(f"ERROR: Telemetry file {telemetry_path} not found!")

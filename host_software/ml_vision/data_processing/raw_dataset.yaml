@@ -1,0 +1,11 @@
+path: C:/Users/Admin/Documents/Windows_codespace/VRI_2026/host_software/ml_vision/data/yolo_raw_dataset
+train: images
+val: images
+
+# Classes
+names:
+  0: platform
+  1: ball
+
+# Keypoints (required for YOLOv8 Pose)
+kpt_shape: [4, 3] # [number of keypoints, number of dim (x,y,visibility)]

@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.so
+*.cache
 .Python
 build/
 develop-eggs/
@@ -35,6 +36,7 @@ host_software/ml_vision/data/02_silver/
 host_software/ml_vision/data/03_gold/
 host_software/ml_vision/data/03_synthetic_yolo/
 host_software/ml_vision/data/*_unified_pose/
+host_software/ml_vision/data/yolo_raw_dataset/
 host_software/data_collection/data/
 host_software/ml_audio/data/
 *.csv
@@ -48,6 +50,7 @@ logs/
 *.pth
 *.onnx
 *.xml
+models/
 *.bin
 host_software/ml_vision/models/platform_pose_model/
 host_software/ml_vision/models/weights/
@@ -55,3 +58,7 @@ runs/
 *.zip
 fpga/camera_i2c/old_images/
 host_software/ml_vision/data/02_silver_unified_pose.zip
+dataset_playback.mp4
+
+fpga/zynq_camera_sys/
+fpga/camera_vivado/
