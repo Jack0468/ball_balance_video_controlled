@@ -1,4 +1,7 @@
-{
+import json
+import os
+
+notebook = {
   "cells": [
     {
       "cell_type": "markdown",
@@ -11,7 +14,7 @@
     },
     {
       "cell_type": "code",
-      "execution_count": null,
+      "execution_count": None,
       "metadata": {},
       "outputs": [],
       "source": [
@@ -22,7 +25,7 @@
     },
     {
       "cell_type": "code",
-      "execution_count": null,
+      "execution_count": None,
       "metadata": {},
       "outputs": [],
       "source": [
@@ -35,7 +38,7 @@
     },
     {
       "cell_type": "code",
-      "execution_count": null,
+      "execution_count": None,
       "metadata": {},
       "outputs": [],
       "source": [
@@ -85,3 +88,6 @@
   "nbformat": 4,
   "nbformat_minor": 4
 }
+
+with open("c:/Users/Admin/Documents/Windows_codespace/VRI_2026/host_software/ml_vision/training/colab_train_yolo.ipynb", "w") as f:
+    json.dump(notebook, f, indent=2)

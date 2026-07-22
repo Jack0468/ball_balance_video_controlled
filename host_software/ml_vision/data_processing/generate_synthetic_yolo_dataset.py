@@ -3,54 +3,6 @@ import cv2
 import numpy as np
 import random
 import glob
-from pathlib import Path
-
-def find_red_ball(image):
-    """Find the red ball using HSV masking and return its YOLO bounding box (cx, cy, w, h)."""
-    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    
-    # Red has two ranges in HSV
-    lower_red1 = np.array([0, 120, 70])
-    upper_red1 = np.array([10, 255, 255])
-    lower_red2 = np.array([170, 120, 70])
-    upper_red2 = np.array([180, 255, 255])
-    
-    mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
-    mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
-    mask = mask1 + mask2
-    
-    # Optional morphological operations
-    kernel = np.ones((5, 5), np.uint8)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
-    
-    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    
-    if not contours:
-        return None
-        
-    largest_contour = max(contours, key=cv2.contourArea)
-    area = cv2.contourArea(largest_contour)
-    if area < 50: # too small
-        return None
-        
-    x, y, w, h = cv2.boundingRect(largest_contour)
-    
-    # Add a slight padding to the bounding box
-    pad = 5
-    x = max(0, x - pad)
-    y = max(0, y - pad)
-    w = min(image.shape[1] - x, w + 2*pad)
-    h = min(image.shape[0] - y, h + 2*pad)
-    
-    # Normalize
-    img_h, img_w = image.shape[:2]
-    cx = (x + w/2) / img_w
-    cy = (y + h/2) / img_h
-    nw = w / img_w
-    nh = h / img_h
-    
-    return (cx, cy, nw, nh)
 
 def draw_marker_with_glare(img, pt, color_bgr):
     """Draw a marker with alpha blending and simulated glare."""
@@ -88,133 +40,163 @@ def draw_marker_with_glare(img, pt, color_bgr):
             
     return img
 
+def random_point_in_quad(pts, existing_points=None, min_dist=45):
+    # pts: numpy array of 4 points [TL, TR, BR, BL]
+    if existing_points is None:
+        existing_points = []
+        
+    for _ in range(100): # max 100 attempts to find a non-overlapping point
+        u = random.uniform(0.1, 0.9)
+        v = random.uniform(0.1, 0.9)
+        
+        top = (1 - u) * pts[0] + u * pts[1]
+        bottom = (1 - u) * pts[3] + u * pts[2]
+        p = (1 - v) * top + v * bottom
+        pt = (int(p[0]), int(p[1]))
+        
+        # Check distance to existing points
+        valid = True
+        for ep in existing_points:
+            dist = np.sqrt((pt[0] - ep[0])**2 + (pt[1] - ep[1])**2)
+            if dist < min_dist:
+                valid = False
+                break
+                
+        if valid:
+            return pt
+            
+    return None # Return None if no valid spot found
+
 def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    input_dir = os.path.abspath(os.path.join(script_dir, "../data/02_silver/images"))
+    input_dir = os.path.abspath(os.path.join(script_dir, "../data/yolo_raw_dataset"))
     output_dir = os.path.abspath(os.path.join(script_dir, "../data/03_synthetic_yolo"))
+    
+    in_images_dir = os.path.join(input_dir, "images")
+    in_labels_dir = os.path.join(input_dir, "labels")
     
     out_images_dir = os.path.join(output_dir, "images")
     out_labels_dir = os.path.join(output_dir, "labels")
     os.makedirs(out_images_dir, exist_ok=True)
     os.makedirs(out_labels_dir, exist_ok=True)
     
-    # Clear old generated files to prevent duplicates when re-running
+    # Clear old generated files
     for f in glob.glob(os.path.join(out_images_dir, "*")):
         os.remove(f)
     for f in glob.glob(os.path.join(out_labels_dir, "*")):
         os.remove(f)
-    
-    import pandas as pd
-    
-    csv_path = os.path.join(script_dir, "../data/02_silver/labels_normalized.csv")
-    if os.path.exists(csv_path):
-        print(f"Reading images from {csv_path}...")
-        df = pd.read_csv(csv_path)
-        # Assuming the CSV has an 'image' column with the filename
-        image_paths = [os.path.join(input_dir, str(f)) for f in df['image_file'].values]
-    else:
-        print("labels_normalized.csv not found, falling back to globbing all images...")
-        image_paths = glob.glob(os.path.join(input_dir, "*.jpg")) + glob.glob(os.path.join(input_dir, "*.png"))
         
+    image_paths = glob.glob(os.path.join(in_images_dir, "*.jpg"))
     if not image_paths:
-        print(f"ERROR: No images found in {input_dir}")
+        print(f"ERROR: No images found in {in_images_dir}")
         return
         
-    random.shuffle(image_paths)
-    
-    # Marker colors in BGR
-    # Classes: 1:Green, 2:Red, 3:Black, 4:Grey
-    marker_colors = [
-        (0, 200, 0),      # Green
-        (0, 0, 200),      # Red
-        (30, 30, 30),     # Black
-        (128, 128, 128)   # Grey
+    # Marker classes and colors in BGR
+    markers_config = [
+        (2, (255, 0, 0)),      # Blue
+        (3, (128, 128, 128)),  # Grey
+        (4, (30, 30, 30)),     # Black
+        (5, (0, 0, 200)),      # Red
+        (6, (0, 200, 0)),      # Green
+        (7, (0, 255, 255)),    # Yellow
+        (8, (255, 255, 0)),    # Cyan
+        (9, (255, 0, 255)),    # Purple
+        (10, (0, 165, 255)),   # Orange
+        (11, (203, 192, 255)), # Pink
+        (12, (42, 42, 165))    # Brown
     ]
     
-    # Process all available images (from the normalized dataset)
-    images_to_process = image_paths
-    print(f"Generating {len(images_to_process)} synthetic images...")
+    augmentations_per_image = 20
+    print(f"Generating {augmentations_per_image} synthetic variations for {len(image_paths)} images...")
     
     success_count = 0
-    for idx, img_path in enumerate(images_to_process):
-        img = cv2.imread(img_path)
-        if img is None:
+    for img_path in image_paths:
+        basename = os.path.basename(img_path)
+        label_path = os.path.join(in_labels_dir, basename.replace(".jpg", ".txt"))
+        
+        if not os.path.exists(label_path):
             continue
             
-        img_h, img_w = img.shape[:2]
+        # Parse ground truth
+        platform_keypoints = None
+        base_labels = []
+        with open(label_path, "r") as f:
+            for line in f:
+                parts = line.strip().split()
+                if not parts: continue
+                c_id = int(parts[0])
+                # Retain all original labels, including the real markers that the user manually labeled!
+                base_labels.append(line.strip())
+                
+                # If platform, extract keypoints
+                if c_id == 0 and len(parts) >= 17:
+                    # keypoints start at index 5: x1 y1 v1 x2 y2 v2 ...
+                    platform_keypoints = []
+                    for i in range(4):
+                        kx = float(parts[5 + i*3])
+                        ky = float(parts[6 + i*3])
+                        platform_keypoints.append([kx, ky])
         
-        # 1. Find real ball bounding box
-        ball_bbox = find_red_ball(img)
-        labels = []
-        if ball_bbox is not None:
-            labels.append(f"0 {ball_bbox[0]:.6f} {ball_bbox[1]:.6f} {ball_bbox[2]:.6f} {ball_bbox[3]:.6f}")
+        if not platform_keypoints:
+            continue # Skip images without platform keypoints
             
-        # 2. Pick 4 random points forming a perspective rectangle
-        # Constrain strictly to the center of the image (on the physical platform)
-        min_w, max_w = 120, 250
-        min_h, max_h = 100, 200
-        
-        # Center of a 640x480 image is 320x240. The platform is roughly in the middle.
-        cx = random.randint(img_w//2 - 40, img_w//2 + 40)
-        cy = random.randint(img_h//2 - 40, img_h//2 + 40)
-        
-        w, h = random.randint(min_w, max_w), random.randint(min_h, max_h)
-        
-        pts = [
-            [cx - w//2, cy - h//2], # TL
-            [cx + w//2, cy - h//2], # TR
-            [cx + w//2, cy + h//2], # BR
-            [cx - w//2, cy + h//2]  # BL
-        ]
-        
-        jitter_x = int(w * 0.1)
-        jitter_y = int(h * 0.1)
-        for pt in pts:
-            pt[0] += random.randint(-jitter_x, jitter_x)
-            pt[1] += random.randint(-jitter_y, jitter_y)
-            # Ensure they don't clip off the screen at all
-            pt[0] = max(10, min(img_w - 10, pt[0]))
-            pt[1] = max(10, min(img_h - 10, pt[1]))
+        base_img = cv2.imread(img_path)
+        if base_img is None:
+            continue
             
-        # 3. Draw markers and create labels
-        for i, pt in enumerate(pts):
-            class_id = i + 1
-            img = draw_marker_with_glare(img, tuple(pt), marker_colors[i])
-            mcx = pt[0] / img_w
-            mcy = pt[1] / img_h
-            mw = random.uniform(30, 45) / img_w
-            mh = random.uniform(30, 45) / img_h
-            labels.append(f"{class_id} {mcx:.6f} {mcy:.6f} {mw:.6f} {mh:.6f}")
-            
-        # 4. Save
-        basename = os.path.basename(img_path)
-        out_name = f"synth_{idx:05d}_{basename}"
+        img_h, img_w = base_img.shape[:2]
+        pts = np.array(platform_keypoints)
+        pts[:, 0] *= img_w
+        pts[:, 1] *= img_h
         
-        cv2.imwrite(os.path.join(out_images_dir, out_name), img)
-        with open(os.path.join(out_labels_dir, out_name.replace(".jpg", ".txt").replace(".png", ".txt")), "w") as f:
-            f.write("\n".join(labels) + "\n")
+        for aug_idx in range(augmentations_per_image):
+            img = base_img.copy()
+            labels = list(base_labels) # Start with base labels (platform + ball)
             
-        success_count += 1
+            # Keep track of existing points to avoid overlap
+            current_points = []
+            for lbl in base_labels:
+                parts = lbl.strip().split()
+                if not parts: continue
+                # if class is not platform (0), track its center
+                if int(parts[0]) != 0:
+                    cx = float(parts[1]) * img_w
+                    cy = float(parts[2]) * img_h
+                    current_points.append((cx, cy))
+            
+            # Place each marker
+            for class_id, color_bgr in markers_config:
+                pt = random_point_in_quad(pts, current_points, min_dist=45)
+                if pt is None:
+                    print(f"Warning: Could not find valid spot for class {class_id} in {basename}")
+                    continue
+                    
+                current_points.append(pt)
+                img = draw_marker_with_glare(img, pt, color_bgr)
+                
+                # Create label (assume 20x20 bounding box roughly, relative to img size)
+                mcx = pt[0] / img_w
+                mcy = pt[1] / img_h
+                mw = random.uniform(30, 45) / img_w
+                mh = random.uniform(30, 45) / img_h
+                
+                # YOLO format: class_id cx cy w h (and pad 0s for keypoints if pose model)
+                m_label = f"{class_id} {mcx:.6f} {mcy:.6f} {mw:.6f} {mh:.6f}"
+                for _ in range(4):
+                    m_label += " 0.000000 0.000000 0"
+                labels.append(m_label)
+                
+            out_name = f"synth_{aug_idx:03d}_{basename}"
+            cv2.imwrite(os.path.join(out_images_dir, out_name), img)
+            with open(os.path.join(out_labels_dir, out_name.replace(".jpg", ".txt")), "w") as f:
+                f.write("\n".join(labels) + "\n")
+                
+            success_count += 1
+            
         if success_count % 100 == 0:
-            print(f"Generated {success_count} / {len(images_to_process)}")
+            print(f"Generated {success_count} synthetic images...")
             
     print(f"Finished! Successfully generated {success_count} synthetic images.")
-    
-    # create dataset.yaml for YOLO
-    yaml_content = f"""path: /content/ball_balance_video_controlled/host_software/ml_vision/data/03_synthetic_yolo
-train: images
-val: images
-
-names:
-  0: ball
-  1: green_marker
-  2: red_marker
-  3: black_marker
-  4: grey_marker
-"""
-    with open(os.path.join(output_dir, "dataset.yaml"), "w") as f:
-        f.write(yaml_content)
-    print("Created dataset.yaml for YOLO.")
 
 if __name__ == "__main__":
     main()
