@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 import sys
+import time
 
 # Ensure training module is in path to import BallDataset
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -65,7 +66,11 @@ def main():
     inputs = inputs.to(device)
     
     with torch.no_grad():
+        t0 = time.perf_counter()
         outputs = model(inputs)
+        t1 = time.perf_counter()
+        
+    print(f"Inference completed in {(t1-t0)*1000.0:.2f} ms for {args.num_images} images.")
 
     # Convert to numpy and de-normalize coordinates
     preds_mm = outputs.cpu().numpy() * MAX_BOUND

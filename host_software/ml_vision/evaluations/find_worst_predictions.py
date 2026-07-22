@@ -7,8 +7,10 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import argparse
-
 import sys
+import json
+import time
+
 script_dir = os.path.dirname(os.path.abspath(__file__))
 training_dir = os.path.abspath(os.path.join(script_dir, '../training'))
 if training_dir not in sys.path:
@@ -67,7 +69,12 @@ def find_worst_predictions(model_path, data_dir, output_path):
         global_idx = 0
         for inputs, targets in test_loader:
             inputs = inputs.to(device)
+            
+            t0 = time.perf_counter()
             outputs = model(inputs)
+            t1 = time.perf_counter()
+            
+            time_per_frame_ms = ((t1 - t0) / inputs.size(0)) * 1000.0
             
             out_np = outputs.cpu().numpy() * MAX_BOUND
             targ_np = targets.cpu().numpy() * MAX_BOUND
@@ -86,7 +93,8 @@ def find_worst_predictions(model_path, data_dir, output_path):
                     'pred_x': out_np[b, 0],
                     'pred_y': out_np[b, 1],
                     'targ_x': targ_np[b, 0],
-                    'targ_y': targ_np[b, 1]
+                    'targ_y': targ_np[b, 1],
+                    'inference_time_ms': time_per_frame_ms
                 })
                 global_idx += 1
             
@@ -123,7 +131,7 @@ def find_worst_predictions(model_path, data_dir, output_path):
                 
                 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                 ax.imshow(img)
-                ax.set_title(f"Err: {item['error']:.1f}mm\nTarget: ({item['targ_x']:.1f}, {item['targ_y']:.1f})")
+                ax.set_title(f"Err: {item['error']:.1f}mm | {item['inference_time_ms']:.1f}ms\nTarget: ({item['targ_x']:.1f}, {item['targ_y']:.1f})")
         else:
             ax.set_title("Image missing")
             

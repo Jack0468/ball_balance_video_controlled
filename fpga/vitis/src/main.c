@@ -2,18 +2,32 @@
 #include <string.h>
 #include "xparameters.h"
 #include "xaxivdma.h"
-#include "xil_cache.h"
 #include "lwip/udp.h"
 #include "lwip/init.h"
+#include "lwip/timeouts.h"
 #include "netif/xadapter.h"
+#include "xil_printf.h"
+#include "xil_cache.h"
 #include "platform.h"
+#include "xstatus.h"
 #include "platform_config.h"
+#include "netif/xemacpsif.h"
+
+// Define MAC/IP Addresses
+#define PC_IP_1 192
+#define PC_IP_2 168
+#define PC_IP_3 1
+#define PC_IP_4 100
+#define PC_UDP_PORT 8080
 
 extern volatile int TcpFastTmrFlag;
 extern volatile int TcpSlowTmrFlag;
 
 void tcp_fasttmr(void);
 void tcp_slowtmr(void);
+
+// Global LWIP struct
+static struct netif server_netif;
 
 // Hardware settings
 #define VDMA_ID          XPAR_XAXIVDMA_0_BASEADDR
@@ -35,7 +49,6 @@ void tcp_slowtmr(void);
 #define PACKET_PAYLOAD_SIZE 1024
 
 XAxiVdma vdma;
-struct netif server_netif;
 
 // Simple Header for UDP Packets
 struct PacketHeader {
@@ -130,6 +143,15 @@ int main() {
     // FORCING LINK UP: If eth_link_detect is removed, lwIP might drop all outgoing packets
     // thinking the cable is disconnected! This forces lwIP to respond to ARP.
     netif_set_link_up(&server_netif);
+
+    // FIX: Force the MAC speed to 1000 Mbps.
+    // Sometimes the Marvell PHY takes longer to negotiate than the lwIP driver timeout allows,
+    // so lwIP leaves the MAC unconfigured (or at 10Mbps), even though the physical link establishes at 1Gbps.
+    struct xemac_s *emac = (struct xemac_s *)(server_netif.state);
+    xemacpsif_s *xemacpsif = (xemacpsif_s *)(emac->state);
+    XEmacPs *xemacpsp = &(xemacpsif->emacps);
+    XEmacPs_SetOperatingSpeed(xemacpsp, 1000);
+    xil_printf("Forced MAC Speed to 1000 Mbps!\r\n");
     
     // Explicitly enable interrupts on ARM (Required in SDT after all handlers are registered)
     #include "xil_exception.h"
@@ -137,8 +159,8 @@ int main() {
     
     xil_printf("Network Ready. IP: 192.168.1.10\r\n");
     
-    // Now init VDMA
-    init_vdma();
+    // Now init VDMA (COMMENTED OUT FOR PING TEST)
+    // init_vdma();
     
     struct udp_pcb *pcb = udp_new();
     ip_addr_t pc_ip;
@@ -164,7 +186,7 @@ int main() {
         
         // Send a frame roughly every ~30ms to avoid flooding the network before ARP resolves
         if (delay_count++ > 200000) {
-            // send_frame_udp(pcb, &pc_ip, frame_id); // COMMENTED OUT FOR PING TEST
+            send_frame_udp(pcb, &pc_ip, frame_id); // Restore video streaming
             frame_id++;
             delay_count = 0;
         }

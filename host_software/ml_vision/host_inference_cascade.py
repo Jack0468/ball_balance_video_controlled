@@ -10,6 +10,9 @@ import os
 import sys
 from ultralytics import YOLO
 
+# Import modular homography projector
+from core.coordinate_math import HomographyProjector
+
 SERIAL_PORT = 'COM3'
 SERIAL_BAUD = 115200
 
@@ -137,7 +140,7 @@ def main():
 
     # 1. Model Init
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    model_path = os.path.abspath(os.path.join(script_dir, 'models/new_platform_pose_model/weights/best.pt'))
+    model_path = os.path.abspath(os.path.join(script_dir, 'models/platform_and_markers_model/weights/best.pt'))
     
     print(f"Loading YOLOv8-Pose Model from {model_path}...")
     if not os.path.exists(model_path):
@@ -171,6 +174,8 @@ def main():
         [-70, -55]
     ], dtype=np.float32)
     
+    projector = HomographyProjector(dst_pts)
+    
     print(f"Starting Main Inference Cascade Loop...")
     try:
         while True:
@@ -188,17 +193,16 @@ def main():
             cam_x, cam_y = 0.0, 0.0
             
             if corners is not None and ball_center is not None:
-                # Compute Homography
-                src_pts = np.array(corners, dtype=np.float32)
-                M, status = cv2.findHomography(src_pts, dst_pts)
-                
-                if M is not None:
+                # Compute Homography via modular projector
+                if projector.update_homography(corners):
                     # Transform ball center to mm
-                    ball_pt = np.array([[[ball_center[0], ball_center[1]]]], dtype=np.float32)
-                    ball_mm = cv2.perspectiveTransform(ball_pt, M)
-                    cam_x, cam_y = ball_mm[0][0][0], ball_mm[0][0][1]
+                    px, py = ball_center
+                    mm_x, mm_y = projector.project_point(px, py)
                     
-                    # Serial Transmission Phase
+                    if mm_x is not None and mm_y is not None:
+                        cam_x, cam_y = mm_x, mm_y
+                    
+                        # Serial Transmission Phase
                     try:
                         cam_x_int = int(max(min(cam_x, 32767), -32768))
                         cam_y_int = int(max(min(cam_y, 32767), -32768))

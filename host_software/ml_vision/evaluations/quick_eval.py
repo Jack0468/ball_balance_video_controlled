@@ -7,6 +7,7 @@ from torch.utils.data import DataLoader, Subset
 import numpy as np
 import random
 import json
+import time
 import sys
 
 # Ensure training module is in path to import BallDataset
@@ -71,13 +72,22 @@ def main():
     all_preds_y = []
     all_targets_x = []
     all_targets_y = []
+    inference_times_ms = []
 
     print(f"Running fast inference on {total_samples} random frames...")
     
     with torch.no_grad():
         for inputs, targets in loader:
             inputs = inputs.to(device)
+            
+            t0 = time.perf_counter()
             outputs = model(inputs)
+            t1 = time.perf_counter()
+            
+            batch_size = inputs.size(0)
+            time_per_frame_ms = ((t1 - t0) / batch_size) * 1000.0
+            for _ in range(batch_size):
+                inference_times_ms.append(time_per_frame_ms)
             
             # De-normalize coordinates
             preds_mm = outputs.cpu().numpy() * MAX_BOUND
@@ -97,6 +107,7 @@ def main():
     error_x = preds_x - targs_x
     error_y = preds_y - targs_y
     euclidean_error = np.sqrt(error_x**2 + error_y**2)
+    inference_times_ms = np.array(inference_times_ms)
     
     # Match the exact format of evaluation_metrics.json
     metrics = {
@@ -106,7 +117,10 @@ def main():
         "RMSE_Y_mm": float(np.sqrt(np.mean(error_y**2))),
         "Mean_Euclidean_Error_mm": float(np.mean(euclidean_error)),
         "Max_Euclidean_Error_mm": float(np.max(euclidean_error)),
-        "95th_Percentile_Error_mm": float(np.percentile(euclidean_error, 95))
+        "95th_Percentile_Error_mm": float(np.percentile(euclidean_error, 95)),
+        "Mean_Inference_Time_ms": float(np.mean(inference_times_ms)),
+        "Max_Inference_Time_ms": float(np.max(inference_times_ms)),
+        "FPS_Estimate": float(1000.0 / np.mean(inference_times_ms))
     }
     
     print("\n--- Quick Evaluation Metrics (Millimeters) ---")
