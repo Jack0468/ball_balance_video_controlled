@@ -62,3 +62,5 @@ dataset_playback.mp4
 
 fpga/zynq_camera_sys/
 fpga/camera_vivado/
+
+hardware/cad/Parts

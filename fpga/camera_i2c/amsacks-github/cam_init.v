@@ -19,7 +19,7 @@ module cam_init
     (   input wire      i_clk,
         input wire      i_rstn,      
         input wire      i_cam_init_start,
-        output wire     o_siod,
+        inout wire      o_siod,
         output wire     o_sioc,
         output wire     o_cam_init_done,        
         

@@ -19,12 +19,13 @@ import argparse
 from ball_dataset import BallDataset
 
 def main():
-    parser = argparse.ArgumentParser(description="Evaluate ResNet18 Expert Tracker")
+    parser = argparse.ArgumentParser(description="Evaluate ResNet Expert Tracker")
     parser.add_argument("--data_dir", default="../data/02_silver", help="Path to data directory")
     parser.add_argument("--model_path", required=True, help="Path to the trained .pth file (e.g. models/resnet18_expert_tracker/expert_tracker_best.pth)")
+    parser.add_argument("--arch", type=str, default="resnet18", choices=["resnet18", "resnet50"], help="Architecture to use")
     args = parser.parse_args()
 
-    print("Initializing Evaluation Script for Expert Tracker...")
+    print(f"Initializing Evaluation Script for Expert Tracker ({args.arch})...")
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     
@@ -39,7 +40,13 @@ def main():
         return
         
     # 1. Initialize model
-    model = models.resnet18(weights=None)
+    if args.arch == "resnet18":
+        model = models.resnet18(weights=None)
+        img_size = (240, 320)
+    elif args.arch == "resnet50":
+        model = models.resnet50(weights=None)
+        img_size = (480, 640)
+        
     num_ftrs = model.fc.in_features
     model.fc = nn.Linear(num_ftrs, 2)
     
@@ -60,7 +67,7 @@ def main():
     
     print(f"Loading dataset from: {csv_path}")
     test_transform = transforms.Compose([
-        transforms.Resize((240, 320)),
+        transforms.Resize(img_size),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])

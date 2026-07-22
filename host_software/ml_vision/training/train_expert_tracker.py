@@ -9,19 +9,25 @@ import argparse
 from ball_dataset import BallDataset
 
 def main():
-    parser = argparse.ArgumentParser(description="Train ResNet18 Expert Tracker")
+    parser = argparse.ArgumentParser(description="Train ResNet Expert Tracker")
     parser.add_argument("--data_dir", default="../data/02_silver", help="Path to data directory")
     parser.add_argument("--csv_name", default="labels_normalized.csv", help="Name of the labels CSV file")
     parser.add_argument("--save_dir", default="../models", help="Directory to save the trained models")
     parser.add_argument("--resume", type=str, default=None, help="Path to checkpoint (.pth) to resume training from")
+    parser.add_argument("--arch", type=str, default="resnet18", choices=["resnet18", "resnet50"], help="Architecture to use")
     args = parser.parse_args()
 
-    print("Initializing PyTorch Expert Tracker Model (ResNet18)...")
+    print(f"Initializing PyTorch Expert Tracker Model ({args.arch})...")
     
-    # 1. Initialize pre-trained ResNet18
+    # 1. Initialize pre-trained ResNet
     # We use a standard CNN backbone which will easily allow us to add
     # multi-task heads in the future (e.g., finding coloured markers, or predicting control signals)
-    model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
+    if args.arch == "resnet18":
+        model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
+        img_size = (240, 320)
+    elif args.arch == "resnet50":
+        model = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
+        img_size = (480, 640)
     
     # Freeze the early layers of ResNet18 to significantly speed up training 
     # and reduce VRAM usage, since the backbone is already pretrained.
@@ -49,6 +55,9 @@ def main():
     images_dir = os.path.join(data_dir, 'images')
     
     # Handle absolute vs relative save_dir
+    # Dynamically update the save_dir to ensure models are kept organized by architecture
+    if os.path.basename(args.save_dir) == "models" or os.path.basename(args.save_dir) == "models/":
+        args.save_dir = os.path.join(args.save_dir, f"{args.arch}_expert_tracker")
     project_dir = os.path.abspath(args.save_dir)
     
     # Ensure models directory exists
@@ -63,7 +72,7 @@ def main():
     # This destroys the highly accurate absolute pixel-to-mm mapping and degrades tracking accuracy.
     # Note: RandomHorizontalFlip is strictly forbidden as it creates a physically impossible mirrored board.
     train_transform = transforms.Compose([
-        transforms.Resize((240, 320)),
+        transforms.Resize(img_size),
         transforms.ColorJitter(brightness=0.3, contrast=0.3, saturation=0.3, hue=0.1),
         transforms.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 5.0)),
         transforms.ToTensor(),
@@ -72,7 +81,7 @@ def main():
     ])
     
     test_transform = transforms.Compose([
-        transforms.Resize((240, 320)),
+        transforms.Resize(img_size),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])

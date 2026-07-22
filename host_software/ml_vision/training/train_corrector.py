@@ -1,4 +1,5 @@
 import os
+import json
 import pandas as pd
 import torch
 import torch.nn as nn
@@ -66,7 +67,7 @@ def train():
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = CorrectorMLP().to(device)
-    criterion = nn.MSELoss()
+    criterion = nn.HuberLoss(delta=1.0)
     optimizer = optim.Adam(model.parameters(), lr=0.005, weight_decay=1e-4)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
     
@@ -119,10 +120,10 @@ def train():
             torch.save(model.state_dict(), model_save_path)
             
         if (epoch + 1) % 10 == 0:
-            print(f"Epoch [{epoch+1}/{args.epochs}] Train Loss (MSE mm^2): {avg_train_loss:.2f} | Test Loss: {avg_test_loss:.2f}")
+            print(f"Epoch [{epoch+1}/{args.epochs}] Train Loss (Huber): {avg_train_loss:.2f} | Test Loss: {avg_test_loss:.2f}")
             
     print(f"Training complete! Best model saved to {model_save_path}")
-    print(f"Best Test Loss (MSE): {best_test_loss:.2f} (Approx RMSE = {best_test_loss**0.5:.2f} mm)")
+    print(f"Best Test Loss (Huber): {best_test_loss:.2f} (Note: RMSE cannot be directly calculated from Huber Loss)")
     
     plt.figure(figsize=(10, 5))
     plt.plot(train_losses, label='Train Loss')
@@ -134,6 +135,18 @@ def train():
     plt.grid(True)
     plt.savefig(os.path.join(save_dir, 'training_curve.png'))
     print("Saved training_curve.png")
+    
+    # Save metrics to JSON for evaluation later
+    metrics = {
+        "best_test_loss": best_test_loss,
+        "epochs": args.epochs,
+        "train_losses": train_losses,
+        "test_losses": test_losses
+    }
+    metrics_path = os.path.join(save_dir, 'corrector_training_metrics.json')
+    with open(metrics_path, 'w') as f:
+        json.dump(metrics, f, indent=4)
+    print(f"Saved training metrics to {metrics_path}")
 
 if __name__ == '__main__':
     train()

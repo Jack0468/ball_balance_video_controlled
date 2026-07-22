@@ -59,7 +59,7 @@ void init_vdma() {
     setup.EnableCircularBuf = 1; // Continuous capture
     setup.EnableSync = 0;
     setup.PointNum = 0;
-    setup.EnableFrameCounter = 0;
+    setup.EnableFrameCounter = 1;
     setup.FixedFrameStoreAddr = 0; // Use index 0
 
     XAxiVdma_DmaConfig(&vdma, XAXIVDMA_WRITE, &setup);
@@ -68,6 +68,17 @@ void init_vdma() {
     XAxiVdma_DmaSetBufferAddr(&vdma, XAXIVDMA_WRITE, &addr);
 
     XAxiVdma_DmaStart(&vdma, XAXIVDMA_WRITE);
+    
+    // Enable frame count interrupt bit (so we can poll the status register)
+    XAxiVdma_IntrEnable(&vdma, XAXIVDMA_IXR_FRMCNT_MASK, XAXIVDMA_WRITE);
+    // Tell VDMA to trigger the interrupt every 1 frame
+    XAxiVdma_FrameCounter FrameCfg;
+    FrameCfg.ReadFrameCount = 1;
+    FrameCfg.WriteFrameCount = 1;
+    FrameCfg.ReadDelayTimerCount = 0;
+    FrameCfg.WriteDelayTimerCount = 0;
+    XAxiVdma_SetFrameCounter(&vdma, &FrameCfg);
+    
     xil_printf("VDMA Started!\r\n");
 }
 
@@ -145,9 +156,9 @@ int main() {
     IP4_ADDR(&pc_ip, PC_IP_1, PC_IP_2, PC_IP_3, PC_IP_4);
     
     uint32_t frame_id = 0;
+    uint32_t delay_count = 0;
     xil_printf("Starting UDP Video Stream to PC...\r\n");
     
-    uint32_t delay_count = 0;
     while (1) {
         // Check timers for lwIP
         if (TcpFastTmrFlag) {
@@ -162,11 +173,22 @@ int main() {
         // CRITICAL: We must constantly poll the Ethernet RX buffer to process incoming ARP and PING packets!
         xemacif_input(&server_netif);
         
-        // Send a frame roughly every ~30ms to avoid flooding the network before ARP resolves
-        if (delay_count++ > 200000) {
-            // send_frame_udp(pcb, &pc_ip, frame_id); // COMMENTED OUT FOR PING TEST
-            frame_id++;
+        // Poll VDMA status to see if a frame finished
+        u32 vdma_status = XAxiVdma_IntrGetPending(&vdma, XAXIVDMA_WRITE);
+        
+        if (delay_count++ > 5000000) {
+            u32 raw_status = XAxiVdma_GetStatus(&vdma, XAXIVDMA_WRITE);
+            xil_printf("DEBUG: VDMA Pending Intr: %08x, Raw Status: %08x\r\n", vdma_status, raw_status);
             delay_count = 0;
+        }
+        
+        if (vdma_status & XAXIVDMA_IXR_FRMCNT_MASK) {
+            // Clear the interrupt status bit so we can catch the next frame
+            XAxiVdma_IntrClear(&vdma, XAXIVDMA_IXR_FRMCNT_MASK, XAXIVDMA_WRITE);
+            
+            // Send the freshly captured frame perfectly synced to 30 FPS!
+            send_frame_udp(pcb, &pc_ip, frame_id);
+            frame_id++;
         }
     }
     

@@ -31,7 +31,7 @@ module cam_rom
             4:  o_dout <= 16'h0C_00;  // COM3,        *Leave as default.
             5:  o_dout <= 16'h3E_00;  // COM14,       *Leave as default. No scaling, normal pclock
             6:  o_dout <= 16'h04_00;  // COM1,        *Leave as default. Disable CCIR656
-            7:  o_dout <= 16'h8C_02;  // RGB444       Enable RGB444 mode with xR GB.
+            7:  o_dout <= 16'h8C_00;  // RGB444       Disable RGB444 mode.
             8:  o_dout <= 16'h40_D0;  // COM15,       Output full range for RGB 444. 
             9:  o_dout <= 16'h3a_04;  // TSLB         set correct output data sequence (magic)
             10: o_dout <= 16'h14_18;  // COM9         MAX AGC value x4

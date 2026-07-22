@@ -40,9 +40,9 @@ def extract_features():
     test_df = df.iloc[split_idx:]
     
     # Randomly sample to save time
-    if len(train_df) > args.num_train:
+    if args.num_train != -1 and len(train_df) > args.num_train:
         train_df = train_df.sample(n=args.num_train, random_state=42)
-    if len(test_df) > args.num_test:
+    if args.num_test != -1 and len(test_df) > args.num_test:
         test_df = test_df.sample(n=args.num_test, random_state=42)
         
     print(f"Extracting features for {len(train_df)} train frames and {len(test_df)} test frames.")
