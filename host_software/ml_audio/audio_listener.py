@@ -10,9 +10,9 @@ CLIP_SECONDS = 1.25
 OUTPUT_SEQUENCE_LENGTH = int(SAMPLE_RATE * CLIP_SECONDS)
 
 COMMANDS = [
-    "go_red",
     "go_blue",
     "go_green",
+    "go_red",
     "go_yellow",
     "hold",
     "stop",
