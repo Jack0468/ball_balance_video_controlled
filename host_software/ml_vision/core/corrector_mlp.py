@@ -17,7 +17,7 @@ class ResidualBlock(nn.Module):
         return x + self.block(x)
 
 class CorrectorMLP(nn.Module):
-    def __init__(self, input_dim=14, hidden_dim=128, output_dim=2, num_blocks=2, dropout_p=0.2):
+    def __init__(self, input_dim=14, hidden_dim=128, output_dim=2, num_blocks=2, dropout_p=0.4):
         super(CorrectorMLP, self).__init__()
         
         self.input_layer = nn.Sequential(

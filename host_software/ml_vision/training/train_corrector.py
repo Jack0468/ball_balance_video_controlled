@@ -16,9 +16,8 @@ if parent_dir not in sys.path:
 from core.corrector_mlp import CorrectorMLP
 
 class YoloFeatureDataset(Dataset):
-    def __init__(self, csv_file, split='train'):
-        df = pd.read_csv(csv_file)
-        self.df = df[df['split'] == split].reset_index(drop=True)
+    def __init__(self, df):
+        self.df = df.reset_index(drop=True)
         
         # 14 features: ball_x, ball_y, ball_w, ball_h, kpt0_x... kpt3_y, homography_x, homography_y
         self.X = self.df[[
@@ -57,8 +56,14 @@ def train():
         print(f"ERROR: {csv_path} not found. Please run extract_yolo_features.py first!")
         return
         
-    train_dataset = YoloFeatureDataset(csv_path, split='train')
-    test_dataset = YoloFeatureDataset(csv_path, split='test')
+    df = pd.read_csv(csv_path)
+    
+    # Shuffle the dataset to mix lighting and background variations
+    df = df.sample(frac=1, random_state=42).reset_index(drop=True)
+    
+    split_idx = int(0.8 * len(df))
+    train_dataset = YoloFeatureDataset(df.iloc[:split_idx])
+    test_dataset = YoloFeatureDataset(df.iloc[split_idx:])
     
     print(f"Loaded {len(train_dataset)} training and {len(test_dataset)} testing samples.")
     
@@ -68,7 +73,7 @@ def train():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = CorrectorMLP().to(device)
     criterion = nn.HuberLoss(delta=1.0)
-    optimizer = optim.Adam(model.parameters(), lr=0.005, weight_decay=1e-4)
+    optimizer = optim.Adam(model.parameters(), lr=0.005, weight_decay=1e-3)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
     
     train_losses = []
@@ -79,6 +84,10 @@ def train():
     os.makedirs(save_dir, exist_ok=True)
     model_save_path = os.path.join(save_dir, 'best_corrector.pth')
     
+    test_frames_path = os.path.join(save_dir, 'test_frames.txt')
+    df.iloc[split_idx:]['image_file'].to_csv(test_frames_path, index=False, header=False)
+    print(f"Saved test split frame names to {test_frames_path}")
+    
     print("Starting training...")
     for epoch in range(args.epochs):
         model.train()
@@ -87,7 +96,7 @@ def train():
             X, y = X.to(device), y.to(device)
             
             # Jitter Augmentation: Add small Gaussian noise to input features during training
-            noise = torch.randn_like(X) * 0.005
+            noise = torch.randn_like(X) * 0.01
             X_noisy = X + noise
             
             optimizer.zero_grad()

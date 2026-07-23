@@ -18,8 +18,8 @@ void tcp_slowtmr(void);
 // Hardware settings
 #define VDMA_ID          XPAR_XAXIVDMA_0_BASEADDR
 #define FRAME_BUFFER_ADDR 0x10000000 // DDR3 Address for Video Frame
-#define WIDTH 320
-#define HEIGHT 240
+#define WIDTH 640
+#define HEIGHT 480
 #define PIXEL_BYTES 2
 #define FRAME_SIZE (WIDTH * HEIGHT * PIXEL_BYTES)
 
@@ -31,7 +31,7 @@ void tcp_slowtmr(void);
 #define PC_IP_2 168
 #define PC_IP_3 1
 #define PC_IP_4 100
-#define PC_UDP_PORT 8080
+#define PC_UDP_PORT 5001
 #define PACKET_PAYLOAD_SIZE 1024
 
 XAxiVdma vdma;
@@ -52,9 +52,9 @@ void init_vdma() {
     XAxiVdma_CfgInitialize(&vdma, config, config->BaseAddress);
 
     XAxiVdma_DmaSetup setup;
-    setup.HoriSizeInput = 320 * 2; // 640 bytes (320 pixels * 2 bytes/pixel)
-    setup.VertSizeInput = 240;     // 240 lines
-    setup.Stride = 320 * 2;        // 640 bytes per line
+    setup.HoriSizeInput = WIDTH * PIXEL_BYTES;
+    setup.VertSizeInput = HEIGHT;
+    setup.Stride = WIDTH * PIXEL_BYTES;
     setup.FrameDelay = 0;
     setup.EnableCircularBuf = 1; // Continuous capture
     setup.EnableSync = 0;
@@ -64,8 +64,12 @@ void init_vdma() {
 
     XAxiVdma_DmaConfig(&vdma, XAXIVDMA_WRITE, &setup);
 
-    UINTPTR addr = FRAME_BUFFER_ADDR;
-    XAxiVdma_DmaSetBufferAddr(&vdma, XAXIVDMA_WRITE, &addr);
+    UINTPTR addr[3] = {
+        FRAME_BUFFER_ADDR, 
+        FRAME_BUFFER_ADDR + FRAME_SIZE, 
+        FRAME_BUFFER_ADDR + 2 * FRAME_SIZE
+    };
+    XAxiVdma_DmaSetBufferAddr(&vdma, XAXIVDMA_WRITE, addr);
 
     XAxiVdma_DmaStart(&vdma, XAXIVDMA_WRITE);
     

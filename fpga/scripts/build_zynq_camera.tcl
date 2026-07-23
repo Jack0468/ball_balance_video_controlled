@@ -14,10 +14,10 @@ set_property board_part digilentinc.com:zedboard:part0:1.1 [current_project]
 # 2. Add our hardware source files
 add_files "$src_dir/ov7670_axi_stream.v"
 add_files "$src_dir/camera_read.v"
-add_files "$src_dir/camera_config.v"
-add_files "$src_dir/OV7670_config.v"
-add_files "$src_dir/OV7670_config_rom.v"
-add_files "$src_dir/SCCB_interface.v"
+add_files "$src_dir/cam_init.v"
+add_files "$src_dir/cam_config.v"
+add_files "$src_dir/cam_rom.v"
+add_files "$src_dir/sccb_master.v"
 add_files -fileset constrs_1 "$src_dir/zedboard_ov7670.xdc"
 
 # 3. Create the Block Design
@@ -52,7 +52,8 @@ apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {Auto} Cl
 
 # 10. Add our custom Camera Logic (RTL Modules)
 create_bd_cell -type module -reference ov7670_axi_stream ov7670_axi_stream_0
-create_bd_cell -type module -reference camera_config camera_config_0
+create_bd_cell -type module -reference cam_init cam_init_0
+set_property -dict [list CONFIG.CLK_F {24000000}] [get_bd_cells cam_init_0]
 
 # 11. Create External Ports for the Camera (matching the XDC file)
 create_bd_port -dir I pclk
@@ -61,7 +62,7 @@ create_bd_port -dir I vsync
 create_bd_port -dir I href
 create_bd_port -dir I -from 7 -to 0 p_data
 create_bd_port -dir O sioc
-create_bd_port -dir O siod
+create_bd_port -dir IO siod
 
 # 12. Wire the camera inputs to our wrapper
 connect_bd_net [get_bd_ports pclk] [get_bd_pins ov7670_axi_stream_0/pclk]
@@ -70,14 +71,15 @@ connect_bd_net [get_bd_ports href] [get_bd_pins ov7670_axi_stream_0/href]
 connect_bd_net [get_bd_ports p_data] [get_bd_pins ov7670_axi_stream_0/p_data]
 
 # 13. Wire the I2C Config module
-connect_bd_net [get_bd_ports sioc] [get_bd_pins camera_config_0/sioc_oe]
-connect_bd_net [get_bd_ports siod] [get_bd_pins camera_config_0/siod_oe]
-connect_bd_net [get_bd_pins camera_config_0/done] [get_bd_pins ov7670_axi_stream_0/config_done]
+connect_bd_net [get_bd_ports sioc] [get_bd_pins cam_init_0/o_sioc]
+connect_bd_net [get_bd_ports siod] [get_bd_pins cam_init_0/o_siod]
+connect_bd_net [get_bd_pins cam_init_0/o_cam_init_done] [get_bd_pins ov7670_axi_stream_0/config_done]
 
 # 14. Configure Zynq to output a 24MHz clock (FCLK_CLK1) for the Camera XCLK
 set_property -dict [list CONFIG.PCW_EN_CLK1_PORT {1} CONFIG.PCW_FPGA1_PERIPHERAL_FREQMHZ {24}] [get_bd_cells processing_system7_0]
 connect_bd_net [get_bd_pins processing_system7_0/FCLK_CLK1] [get_bd_ports xclk]
-connect_bd_net [get_bd_pins processing_system7_0/FCLK_CLK1] [get_bd_pins camera_config_0/clk]
+connect_bd_net [get_bd_pins processing_system7_0/FCLK_CLK1] [get_bd_pins cam_init_0/i_clk]
+connect_bd_net [get_bd_pins processing_system7_0/FCLK_RESET0_N] [get_bd_pins cam_init_0/i_rstn]
 
 # 15. Connect the AXI-Stream Video feed from our wrapper to the VDMA
 connect_bd_intf_net [get_bd_intf_pins ov7670_axi_stream_0/m_axis] [get_bd_intf_pins axi_vdma_0/S_AXIS_S2MM]
@@ -87,7 +89,7 @@ connect_bd_net [get_bd_ports pclk] [get_bd_pins axi_vdma_0/s_axis_s2mm_aclk]
 
 # 17. Ensure I2C config starts automatically
 create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant xlconstant_1
-connect_bd_net [get_bd_pins xlconstant_1/dout] [get_bd_pins camera_config_0/start]
+connect_bd_net [get_bd_pins xlconstant_1/dout] [get_bd_pins cam_init_0/i_cam_init_start]
 
 # 18. Save Design
 save_bd_design

@@ -7,7 +7,7 @@
 #include "xaxidma.h"
 
 // --- Configuration ---
-#define DMA_DEV_ID          XPAR_AXIDMA_0_DEVICE_ID
+#define DMA_DEV_ID          XPAR_XAXIVDMA_0_BASEADDR
 #define RX_BUFFER_BASEADDR  0x01000000 // A safe spot in DDR memory
 #define ROW_BYTES           1280       // 640 pixels * 2 bytes
 #define UDP_TARGET_PORT     5005

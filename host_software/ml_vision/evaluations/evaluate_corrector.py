@@ -47,9 +47,16 @@ def main():
     print(f"Loading Telemetry from {csv_path}...")
     df = pd.read_csv(csv_path)
     
-    # Evaluate only on test set (last 20%)
-    split_idx = int(0.8 * len(df))
-    test_df = df.iloc[split_idx:]
+    test_frames_path = os.path.join(os.path.dirname(corrector_path), 'test_frames.txt')
+    if os.path.exists(test_frames_path):
+        with open(test_frames_path, 'r') as f:
+            test_frames = set(f.read().splitlines())
+        test_df = df[df['image_file'].isin(test_frames)]
+        print(f"Loaded {len(test_df)} test frames from {test_frames_path}")
+    else:
+        # Fallback to sequential 20%
+        split_idx = int(0.8 * len(df))
+        test_df = df.iloc[split_idx:]
     
     # Initialize Homography Projector
     dst_pts = np.array([

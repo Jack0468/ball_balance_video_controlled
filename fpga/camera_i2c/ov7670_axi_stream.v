@@ -50,11 +50,13 @@ module ov7670_axi_stream (
     // -------------------------------------------------------------------------
     // AXI-Stream TLAST (End of Line)
     // VDMA expects TLAST to pulse HIGH on the last pixel of every horizontal row.
-    // Assuming standard 640x480 VGA (640 pixels per row).
+    // The camera is configured for VGA (640x480).
     // -------------------------------------------------------------------------
     reg [9:0] pixel_cnt = 0;
     always @(posedge pclk) begin
         if (frame_start) begin
+            pixel_cnt <= 0;
+        end else if (!href) begin
             pixel_cnt <= 0;
         end else if (pixel_valid) begin
             if (pixel_cnt == 10'd639)
@@ -68,6 +70,6 @@ module ov7670_axi_stream (
     assign m_axis_tdata  = pixel_data;
     assign m_axis_tvalid = pixel_valid;
     assign m_axis_tuser  = (sof & pixel_valid);
-    assign m_axis_tlast  = (pixel_valid && (pixel_cnt == 10'd639));
+    assign m_axis_tlast  = (pixel_valid && (pixel_cnt == 10'd639)); // VGA (640 pixels)
 
 endmodule
