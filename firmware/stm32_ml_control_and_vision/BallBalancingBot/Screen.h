@@ -15,4 +15,8 @@ void screen_init();
 bool check_detected();
 coords get_coords();
 
+// New functions for serial coords
+void serial_coords_poll();
+bool coords_available();
+
 #endif

@@ -41,7 +41,7 @@ void loop() {
   
   // 3. The PID controller handles its own 30Hz (33ms) timer internally.
   // It will also automatically send the binary telemetry packet when it runs.
-  pid_balance(target_x, target_y);
+  pid_balance(0, 0);
   
   // 4. Must be called as fast as possible to actually step the motors
   motorA.run();

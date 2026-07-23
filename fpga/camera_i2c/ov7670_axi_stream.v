@@ -59,17 +59,20 @@ module ov7670_axi_stream (
         end else if (!href) begin
             pixel_cnt <= 0;
         end else if (pixel_valid) begin
-            if (pixel_cnt == 10'd639)
-                pixel_cnt <= 0;
-            else
+            if (pixel_cnt < 10'd1023)
                 pixel_cnt <= pixel_cnt + 1'b1;
         end
     end
 
-    // Assign AXI outputs
+    // Drop any extra jitter pixels beyond 640
+    wire valid_pixel = pixel_valid && (pixel_cnt < 10'd640);
+
+    // -------------------------------------------------------------------------
+    // AXI-Stream Outputs
+    // -------------------------------------------------------------------------
     assign m_axis_tdata  = pixel_data;
-    assign m_axis_tvalid = pixel_valid;
-    assign m_axis_tuser  = (sof & pixel_valid);
-    assign m_axis_tlast  = (pixel_valid && (pixel_cnt == 10'd639)); // VGA (640 pixels)
+    assign m_axis_tvalid = valid_pixel;
+    assign m_axis_tuser  = (sof & valid_pixel);
+    assign m_axis_tlast  = (valid_pixel && (pixel_cnt == 10'd639)); // Exactly 640 pixels
 
 endmodule

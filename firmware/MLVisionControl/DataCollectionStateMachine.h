@@ -8,8 +8,6 @@ enum DataCollectionState {
     PHASE_1_RANDOM,
     PHASE_2_PATTERNS,
     PHASE_3_SWEEPS,
-    PHASE_4_EDGES,
-    PHASE_5_BROWNIAN,
     PHASE_DONE
 };
 
@@ -29,7 +27,6 @@ private:
     unsigned long phase0_duration_ms;
     unsigned long phase1_duration_ms;
     unsigned long phase2_duration_per_pattern_ms;
-    unsigned long phase5_duration_ms;
     
     double ewma_err_x;
     double ewma_err_y;
@@ -45,14 +42,12 @@ private:
     Point2D directions[8];
     int current_dir_idx;
     double sweep_distance;
-    int current_edge_idx;
     
     double target_x;
     double target_y;
     
     unsigned long last_random_update_ms;
     unsigned long last_sweep_update_ms;
-    unsigned long last_brownian_update_ms;
     unsigned long last_ball_detected_ms;
     
     bool waiting_at_start;
