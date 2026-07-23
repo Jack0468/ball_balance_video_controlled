@@ -6,7 +6,7 @@ import time
 import os
 
 UDP_IP = "0.0.0.0" # Listen on all interfaces
-UDP_PORT = 8080
+UDP_PORT = 5001
 
 WIDTH = 640
 HEIGHT = 480
@@ -76,24 +76,26 @@ def main():
 
 def render_frame(frame_bytes):
     try:
-        # 1. Convert raw bytes to 16-bit array
-        img16 = np.frombuffer(frame_bytes, dtype=np.uint16).reshape((HEIGHT, WIDTH))
+        # Since the camera is unconfigured, it defaults to YUV422 (YUYV or UYVY).
+        # Convert raw bytes to uint8 array
+        img8 = np.frombuffer(frame_bytes, dtype=np.uint8).reshape((HEIGHT, WIDTH, 2))
         
-        # 2. Extract RGB565 channels
-        r = (img16 >> 11) & 0x1F
-        g = (img16 >> 5) & 0x3F
-        b = img16 & 0x1F
+        # Try extracting just the Y (Luminance/Brightness) channel to get a grayscale image.
+        # This is a foolproof way to see if we have valid camera data even if the colors are wrong.
+        # In YUYV, Y is the 0th byte. In UYVY, Y is the 1st byte. Let's try 0th byte first.
+        y_channel_0 = img8[:, :, 0]
+        y_channel_1 = img8[:, :, 1]
         
-        # 3. Scale to 8-bit (0-255)
-        r = (r * 255) // 31
-        g = (g * 255) // 63
-        b = (b * 255) // 31
+        # Also try full color conversion (assuming YUYV)
+        try:
+            img_bgr = cv2.cvtColor(img8, cv2.COLOR_YUV2BGR_YUYV)
+        except Exception as e:
+            img_bgr = np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8)
         
-        # 4. Stack for OpenCV (BGR order)
-        img_bgr = np.dstack((b, g, r)).astype(np.uint8)
-        
-        # 5. Display!
+        # Display!
         cv2.imshow("ZedBoard Live Camera Feed", img_bgr)
+        cv2.imshow("Grayscale (Y0)", y_channel_0)
+        cv2.imshow("Grayscale (Y1)", y_channel_1)
         cv2.waitKey(1)
             
     except Exception as e:

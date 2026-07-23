@@ -55,10 +55,26 @@ def extract_features():
     ], dtype=np.float32)
     projector = HomographyProjector(dst_pts)
     
+    out_csv = os.path.join(data_dir, "yolo_features.csv")
+    processed_images = set()
+    if os.path.exists(out_csv):
+        existing_df = pd.read_csv(out_csv)
+        if 'image_file' in existing_df.columns:
+            processed_images = set(existing_df['image_file'].values)
+            print(f"Found {len(processed_images)} already processed frames in {out_csv}. Resuming...")
+
     def process_subset(subset_df, split_name):
         features = []
         count = 0
+        total = len(subset_df)
         for idx, row in subset_df.iterrows():
+            count += 1
+            
+            if row['image_file'] in processed_images:
+                if count % 500 == 0:
+                    print(f"Skipped {count}/{total} {split_name} frames (already processed)...")
+                continue
+                
             img_path = os.path.join(images_dir, row['image_file'])
             if not os.path.exists(img_path):
                 continue
@@ -114,20 +130,22 @@ def extract_features():
                     'touch_y': row['touch_y']
                 })
             
-            count += 1
-            if count % 500 == 0:
-                print(f"Processed {count}/{len(subset_df)} {split_name} frames...")
+            if len(features) >= 500:
+                out_df = pd.DataFrame(features)
+                header = not os.path.exists(out_csv)
+                out_df.to_csv(out_csv, mode='a', header=header, index=False)
+                features = []
+                print(f"Processed {count}/{total} {split_name} frames...")
                 
-        return features
+        if len(features) > 0:
+            out_df = pd.DataFrame(features)
+            header = not os.path.exists(out_csv)
+            out_df.to_csv(out_csv, mode='a', header=header, index=False)
 
-    all_features = []
-    all_features.extend(process_subset(train_df, 'train'))
-    all_features.extend(process_subset(test_df, 'test'))
+    process_subset(train_df, 'train')
+    process_subset(test_df, 'test')
     
-    out_df = pd.DataFrame(all_features)
-    out_csv = os.path.join(data_dir, "yolo_features.csv")
-    out_df.to_csv(out_csv, index=False)
-    print(f"Saved {len(out_df)} feature vectors to {out_csv}")
+    print(f"Finished extracting all feature vectors to {out_csv}")
 
 if __name__ == '__main__':
     extract_features()

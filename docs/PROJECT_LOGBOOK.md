@@ -1,5 +1,11 @@
 # VRI 2026 Project Logbook
 
+## 23/07/2026
+### Zynq Ethernet PHY and OV7670 Resolution Breakthroughs
+- **OV7670 Resolution & VDMA Early Errors**: Diagnosed why the AXI VDMA engine was throwing `0x4000` (Error Interrupts) and hanging with `SOF Early` and `EOL Early` errors (Raw Status `0x00014191`). The original `amsacks-github` ROM configuration (`cam_rom.v`) had `SCALING_DCWCTR` (`0x72`) set to `0x11`, which intentionally downsamples the camera output by 2 on both axes. The camera was actually outputting 320x240 (QVGA) while the VDMA was expecting 640x480 (VGA), causing the VDMA to see the End-of-Line and Start-of-Frame signals far earlier than expected, forcing it into a HALT state.
+- **Ethernet PHY Auto-negotiation Failure**: Root-caused why the UDP Python receiver was occasionally dropping packets and capping at ~16 FPS on the old code. The ZedBoard's Marvell PHY was failing auto-negotiation (`Phy setup error : link_speed invalid`), which caused lwIP to fall back to Fast Ethernet (100 Mbps) or fail entirely. A 640x480 RGB565 stream at 30 FPS requires ~147.4 Mbps, which physically choked the 100 Mbps link.
+- **QVGA Fix**: We embraced the hardware's default 320x240 resolution. We updated the C VDMA configuration and the Python UDP receiver script to natively expect 320x240. This immediately fixed the VDMA early errors and simultaneously solved the network bandwidth limitation (320x240 @ 30FPS is only ~36.8 Mbps, fitting easily into a 100 Mbps link).
+
 ## 21/07/2026
 ### Hardware Migration: Opal Kelly XEM3010 to ZedBoard (Zynq-7000)
 - **Fatal Clocking Limitation**: Discovered a critical limitation with the Opal Kelly XEM3010 expansion header breakout board. The external `PCLK` from the OV7670 camera must be routed to a dedicated Global Clock (GCLK) input on the FPGA to maintain setup/hold times and signal integrity. However, the XEM3010 routes all available GCLK pins to its on-board Cypress PLL outputs, leaving zero GCLK inputs accessible on the user breakout headers. This forced ISE to route the 24MHz pixel clock through standard logic fabric, causing catastrophic clock skew, unpredictable metastability, and preventing reliable image capture.

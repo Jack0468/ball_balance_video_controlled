@@ -18,8 +18,8 @@ void tcp_slowtmr(void);
 // Hardware settings
 #define VDMA_ID          XPAR_XAXIVDMA_0_BASEADDR
 #define FRAME_BUFFER_ADDR 0x10000000 // DDR3 Address for Video Frame
-#define WIDTH 640
-#define HEIGHT 480
+#define WIDTH 320
+#define HEIGHT 240
 #define PIXEL_BYTES 2
 #define FRAME_SIZE (WIDTH * HEIGHT * PIXEL_BYTES)
 
@@ -52,9 +52,9 @@ void init_vdma() {
     XAxiVdma_CfgInitialize(&vdma, config, config->BaseAddress);
 
     XAxiVdma_DmaSetup setup;
-    setup.VertSizeInput = HEIGHT;
-    setup.HoriSizeInput = WIDTH * PIXEL_BYTES;
-    setup.Stride = WIDTH * PIXEL_BYTES;
+    setup.HoriSizeInput = 320 * 2; // 640 bytes (320 pixels * 2 bytes/pixel)
+    setup.VertSizeInput = 240;     // 240 lines
+    setup.Stride = 320 * 2;        // 640 bytes per line
     setup.FrameDelay = 0;
     setup.EnableCircularBuf = 1; // Continuous capture
     setup.EnableSync = 0;
