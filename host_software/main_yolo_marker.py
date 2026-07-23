@@ -41,7 +41,7 @@ def main():
     # 1. Hardware/Model Init
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    yolo_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/new_platform_pose_model/weights/best.pt'))
+    yolo_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/platform_and_markers_model/weights/best.pt'))
     corrector_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/corrector/best_corrector.pth'))
     
     yolo_model = load_yolo_model(yolo_path, device)
@@ -104,15 +104,20 @@ def main():
             
             corners = None
             ball_box = None
+            detected_markers = {}
             
             for i, cls in enumerate(classes):
-                if int(cls) == 0: # Platform
+                c = int(cls)
+                if c == 0: # Platform
                     if res.keypoints is not None and len(res.keypoints.xy) > i:
                         kpts = res.keypoints.xy[i].cpu().numpy()
                         if len(kpts) == 4:
                             corners = kpts
-                elif int(cls) == 1: # Ball
+                elif c == 1: # Ball
                     ball_box = boxes[i]
+                elif c >= 2: # Marker
+                    name = yolo_model.names[c]
+                    detected_markers[name] = boxes[i]
             
             if corners is None or ball_box is None:
                 end_t = time.perf_counter()
@@ -122,10 +127,16 @@ def main():
                 continue
             
             homography_x, homography_y = 0.0, 0.0
+            marker_coords = {}
             if projector.update_homography(corners):
                 hx, hy = projector.project_point(ball_box[0], ball_box[1])
                 if hx is not None and hy is not None:
                     homography_x, homography_y = hx, hy
+                    
+                for name, box in detected_markers.items():
+                    mx, my = projector.project_point(box[0], box[1])
+                    if mx is not None and my is not None:
+                        marker_coords[name] = (mx, my)
                     
             features = np.array([
                 ball_box[0], ball_box[1], ball_box[2], ball_box[3],
@@ -162,7 +173,10 @@ def main():
             mlp_latency_ms = (mlp_t - yolo_t) * 1000.0
             fps = 1.0 / (end_t - start_t)
             
-            print(f"Target: X={cam_x:.1f} Y={cam_y:.1f} mm | FPS: {fps:.1f} | Latency: Total={total_latency_ms:.1f}ms (YOLO={yolo_latency_ms:.1f}ms, MLP+Rest={mlp_latency_ms:.1f}ms)")
+            marker_str = ", ".join([f"{name.replace('_marker', '')}=({x:.1f},{y:.1f})" for name, (x, y) in marker_coords.items()])
+            marker_out = f" | Markers: {marker_str}" if marker_str else ""
+            
+            print(f"Target: X={cam_x:.1f} Y={cam_y:.1f} mm | FPS: {fps:.1f} | Latency: Total={total_latency_ms:.1f}ms (YOLO={yolo_latency_ms:.1f}ms, MLP+Rest={mlp_latency_ms:.1f}ms){marker_out}")
                 
     except KeyboardInterrupt:
         pass

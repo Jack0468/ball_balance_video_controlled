@@ -42,7 +42,7 @@ void loop() {
   }
 
 
-  rl_balance(target_x, target_y);
+  rl_balance(0, 0);
 
   serial_coords_poll();  
 
