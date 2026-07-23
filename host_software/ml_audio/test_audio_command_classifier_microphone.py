@@ -4,7 +4,7 @@ import sounddevice as sd
 import tensorflow as tf
 
 SAMPLE_RATE = 16_000
-CLIP_SECONDS = 4
+CLIP_SECONDS = 2
 # Model was trained on short utterances; keep analysis window short for sequence decoding.
 MODEL_WINDOW_SECONDS = 1.25
 OUTPUT_SEQUENCE_LENGTH = int(SAMPLE_RATE * MODEL_WINDOW_SECONDS)

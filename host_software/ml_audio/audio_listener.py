@@ -96,7 +96,7 @@ class AudioListener:
         # Load model
         if model_path is None:
             script_dir = os.path.dirname(os.path.abspath(__file__))
-            model_path = os.path.join(os.path.dirname(script_dir), "models", "audio_command_classifier", "best_classifier.keras")
+            model_path = os.path.join(script_dir, "models", "audio_command_classifier", "best_classifier.keras")
         
         print("Loading audio model from:", model_path)
         self.model = tf.keras.models.load_model(model_path)
