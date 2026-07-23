@@ -7,6 +7,8 @@
 struct coords {
   double x_mm;
   double y_mm;
+  double target_x_mm;
+  double target_y_mm;
   double z;
 };
 
