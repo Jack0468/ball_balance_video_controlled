@@ -1,0 +1,24 @@
+path: /content/dataset
+train:
+  - yolo_raw_dataset/images
+  - 03_synthetic_yolo/images
+val:
+  - yolo_raw_dataset/images
+
+names:
+  0: platform
+  1: ball
+  2: blue_marker
+  3: grey_marker
+  4: black_marker
+  5: red_marker
+  6: green_marker
+  7: yellow_marker
+  8: cyan_marker
+  9: purple_marker
+  10: orange_marker
+  11: pink_marker
+  12: brown_marker
+
+# Keypoints (required for YOLOv8 Pose)
+kpt_shape: [4, 3]

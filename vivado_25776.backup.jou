@@ -1,0 +1,24 @@
+#-----------------------------------------------------------
+# Vivado v2025.2 (64-bit)
+# SW Build 6299465 on Fri Nov 14 19:35:11 GMT 2025
+# IP Build 6300035 on Fri Nov 14 10:48:45 MST 2025
+# SharedData Build 6298862 on Thu Nov 13 04:50:51 MST 2025
+# Start of session at: Wed Jul 22 15:03:24 2026
+# Process ID         : 25776
+# Current directory  : C:/Users/Admin/Documents/Windows_codespace/VRI_2026
+# Command line       : vivado.exe -mode batch -source C:\Users\Admin\.gemini\antigravity-ide\brain\7d858bfa-b10d-4629-b2ee-7082342be92a\update_bd.tcl
+# Log file           : C:/Users/Admin/Documents/Windows_codespace/VRI_2026/vivado.log
+# Journal file       : C:/Users/Admin/Documents/Windows_codespace/VRI_2026\vivado.jou
+# Running On         : DESKTOP-F41313D
+# Platform           : Windows Server 2016 or Windows 10
+# Operating System   : 26200
+# Processor Detail   : 12th Gen Intel(R) Core(TM) i7-1265U
+# CPU Frequency      : 2688 MHz
+# CPU Physical cores : 10
+# CPU Logical cores  : 12
+# Host memory        : 33973 MB
+# Swap memory        : 9889 MB
+# Total Virtual      : 43863 MB
+# Available Virtual  : 2211 MB
+#-----------------------------------------------------------
+source {C:\Users\Admin\.gemini\antigravity-ide\brain\7d858bfa-b10d-4629-b2ee-7082342be92a\update_bd.tcl}

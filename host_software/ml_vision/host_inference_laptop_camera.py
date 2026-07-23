@@ -12,7 +12,7 @@ import serial
 import csv
 
 # --- Configuration ---
-SERIAL_PORT = "COM7"
+SERIAL_PORT = "COM8"
 SERIAL_BAUD = 2000000 # Increased to 2Mbaud to match firmware
 MAX_BOUND = 200.0 # Denormalization constant
 LOG_FILE = "laptop_camera_telemetry.csv"
@@ -210,6 +210,31 @@ def main():
     receiver = USBReceiver(args.cam_id)
     logger = TelemetryLogger(ser)
     
+    print("\n--- ROI Selection ---")
+    print("1. Click and drag to draw a bounding box around the platform.")
+    print("2. Press SPACE or ENTER to confirm your selection.")
+    print("---------------------\n")
+    
+    # Wait for the first frame
+    frame = None
+    for _ in range(30):
+        frame = receiver.get_latest_frame()
+        if frame is not None:
+            break
+        time.sleep(0.1)
+        
+    if frame is not None:
+        roi = cv2.selectROI("Select Platform Bounds", frame, showCrosshair=True, fromCenter=False)
+        cv2.destroyAllWindows()
+    else:
+        roi = (0, 0, 0, 0)
+        
+    if roi == (0, 0, 0, 0):
+        print("No ROI selected, using full frame.")
+        roi = None
+    else:
+        print(f"Selected ROI: {roi}")
+    
     print(f"Starting Main Inference Loop...")
     try:
         while True:
@@ -219,8 +244,15 @@ def main():
                 
             start_t = time.perf_counter()
             
+            # Crop frame if ROI is selected
+            if roi is not None:
+                x, y, w, h = roi
+                crop_frame = frame[y:y+h, x:x+w]
+            else:
+                crop_frame = frame.copy()
+            
             # Inference Phase
-            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            rgb_frame = cv2.cvtColor(crop_frame, cv2.COLOR_BGR2RGB)
             input_tensor = preprocess(rgb_frame).unsqueeze(0).to(device)
             
             with torch.no_grad():
@@ -235,6 +267,7 @@ def main():
             
             # Serial Transmission Phase
             try:
+                
                 cam_x_int = int(max(min(cam_x, 32767), -32768))
                 cam_y_int = int(max(min(cam_y, 32767), -32768))
                 
@@ -248,12 +281,12 @@ def main():
             fps = 1.0 / (end_t - start_t)
             
             # Visualization Phase
-            cv2.putText(frame, f"Cam: X={cam_x:.1f} Y={cam_y:.1f} mm", (20, 50), 
+            cv2.putText(crop_frame, f"Cam: X={cam_x:.1f} Y={cam_y:.1f} mm", (20, 50), 
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-            cv2.putText(frame, f"FPS: {fps:.1f}", (20, 100), 
+            cv2.putText(crop_frame, f"FPS: {fps:.1f}", (20, 100), 
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 200, 0), 2)
                         
-            cv2.imshow("Live Inference (Press 'q' to quit)", frame)
+            cv2.imshow("Live Inference (Press 'q' to quit)", crop_frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
                 

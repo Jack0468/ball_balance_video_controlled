@@ -3,10 +3,11 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Subset
-from torchvision import models
+from torchvision import models, transforms
 import matplotlib.pyplot as plt
 import numpy as np
 import json
+import time
 
 import sys
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -18,21 +19,19 @@ import argparse
 from ball_dataset import BallDataset
 
 def main():
-    parser = argparse.ArgumentParser(description="Evaluate ResNet18 Expert Tracker")
+    parser = argparse.ArgumentParser(description="Evaluate ResNet Expert Tracker")
     parser.add_argument("--data_dir", default="../data/02_silver", help="Path to data directory")
     parser.add_argument("--model_path", required=True, help="Path to the trained .pth file (e.g. models/resnet18_expert_tracker/expert_tracker_best.pth)")
+    parser.add_argument("--arch", type=str, default="resnet18", choices=["resnet18", "resnet50"], help="Architecture to use")
     args = parser.parse_args()
 
-    print("Initializing Evaluation Script for Expert Tracker...")
+    print(f"Initializing Evaluation Script for Expert Tracker ({args.arch})...")
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     
     script_dir = os.path.dirname(os.path.abspath(__file__))
     
-    if os.path.isabs(args.model_path):
-        model_path = args.model_path
-    else:
-        model_path = os.path.abspath(os.path.join(script_dir, args.model_path))
+    model_path = os.path.abspath(args.model_path)
         
     project_dir = os.path.dirname(model_path)
     
@@ -41,26 +40,39 @@ def main():
         return
         
     # 1. Initialize model
-    model = models.resnet18(weights=None)
+    if args.arch == "resnet18":
+        model = models.resnet18(weights=None)
+        img_size = (240, 320)
+    elif args.arch == "resnet50":
+        model = models.resnet50(weights=None)
+        img_size = (480, 640)
+        
     num_ftrs = model.fc.in_features
     model.fc = nn.Linear(num_ftrs, 2)
     
     # Load weights safely
-    model.load_state_dict(torch.load(model_path, map_location=device, weights_only=True))
+    checkpoint = torch.load(model_path, map_location=device, weights_only=False)
+    if 'model_state_dict' in checkpoint:
+        model.load_state_dict(checkpoint['model_state_dict'])
+    else:
+        model.load_state_dict(checkpoint)
     model = model.to(device)
     model.eval()
     
     # 2. Load the test subset data
-    if os.path.isabs(args.data_dir):
-        data_dir = args.data_dir
-    else:
-        data_dir = os.path.abspath(os.path.join(script_dir, args.data_dir))
+    data_dir = os.path.abspath(args.data_dir)
         
-    csv_path = os.path.join(data_dir, 'labels.csv')
+    csv_path = os.path.join(data_dir, 'labels_sequential.csv')
     images_dir = os.path.join(data_dir, 'images')
     
     print(f"Loading dataset from: {csv_path}")
-    full_dataset = BallDataset(csv_file=csv_path, root_dir=images_dir)
+    test_transform = transforms.Compose([
+        transforms.Resize(img_size),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+    
+    full_dataset = BallDataset(csv_file=csv_path, root_dir=images_dir, transform=test_transform)
     
     # We want to test on the last 20% of the dataset
     indices = list(range(len(full_dataset)))
@@ -77,12 +89,21 @@ def main():
     all_preds_y = []
     all_targets_x = []
     all_targets_y = []
+    inference_times_ms = []
     
     print("Running inference...")
     with torch.no_grad():
         for inputs, targets in test_loader:
             inputs = inputs.to(device)
+            
+            t0 = time.perf_counter()
             outputs = model(inputs)
+            t1 = time.perf_counter()
+            
+            batch_size = inputs.size(0)
+            time_per_frame_ms = ((t1 - t0) / batch_size) * 1000.0
+            for _ in range(batch_size):
+                inference_times_ms.append(time_per_frame_ms)
             
             # De-normalize
             outputs_mm = outputs.cpu().numpy() * MAX_BOUND
@@ -102,6 +123,7 @@ def main():
     error_x = preds_x - targs_x
     error_y = preds_y - targs_y
     euclidean_error = np.sqrt(error_x**2 + error_y**2)
+    inference_times_ms = np.array(inference_times_ms)
     
     metrics = {
         "MAE_X_mm": float(np.mean(np.abs(error_x))),
@@ -110,7 +132,10 @@ def main():
         "RMSE_Y_mm": float(np.sqrt(np.mean(error_y**2))),
         "Mean_Euclidean_Error_mm": float(np.mean(euclidean_error)),
         "Max_Euclidean_Error_mm": float(np.max(euclidean_error)),
-        "95th_Percentile_Error_mm": float(np.percentile(euclidean_error, 95))
+        "95th_Percentile_Error_mm": float(np.percentile(euclidean_error, 95)),
+        "Mean_Inference_Time_ms": float(np.mean(inference_times_ms)),
+        "Max_Inference_Time_ms": float(np.max(inference_times_ms)),
+        "FPS_Estimate": float(1000.0 / np.mean(inference_times_ms))
     }
     
     print("\n--- Evaluation Metrics (Millimeters) ---")

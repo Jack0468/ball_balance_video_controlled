@@ -1,0 +1,48 @@
+/content/ball_balance_video_controlled/host_software/ml_vision/training
+Starting training on cuda:0...
+Total Sequences: 22209. Train: 17767 | Test: 4442
+Epoch [1/30] Batch 0/1111 Loss: 0.0230
+Epoch [1/30] Batch 50/1111 Loss: 0.0019
+Epoch [1/30] Batch 100/1111 Loss: 0.0024
+Epoch [1/30] Batch 150/1111 Loss: 0.0051
+Epoch [1/30] Batch 200/1111 Loss: 0.0004
+Epoch [1/30] Batch 250/1111 Loss: 0.0007
+Epoch [1/30] Batch 300/1111 Loss: 0.0038
+Epoch [1/30] Batch 350/1111 Loss: 0.0006
+Epoch [1/30] Batch 400/1111 Loss: 0.0006
+Epoch [1/30] Batch 450/1111 Loss: 0.0004
+Epoch [1/30] Batch 500/1111 Loss: 0.0014
+Epoch [1/30] Batch 550/1111 Loss: 0.0007
+Epoch [1/30] Batch 600/1111 Loss: 0.0005
+Epoch [1/30] Batch 650/1111 Loss: 0.0003
+Epoch [1/30] Batch 700/1111 Loss: 0.0005
+Epoch [1/30] Batch 750/1111 Loss: 0.0006
+Epoch [1/30] Batch 800/1111 Loss: 0.0003
+Epoch [1/30] Batch 850/1111 Loss: 0.0004
+Epoch [1/30] Batch 900/1111 Loss: 0.0003
+Epoch [1/30] Batch 950/1111 Loss: 0.0007
+Epoch [1/30] Batch 1000/1111 Loss: 0.0002
+Epoch [1/30] Batch 1050/1111 Loss: 0.0003
+Epoch [1/30] Batch 1100/1111 Loss: 0.0001
+=== Epoch 1 Summary ===
+Train Loss: 0.0010 | Test Loss: 0.0003
+Saved new best model to /content/ball_balance_video_controlled/host_software/ml_vision/models/temporal_expert_tracker/best_temporal_tracker.pth
+Epoch [2/30] Batch 0/1111 Loss: 0.0003
+Epoch [2/30] Batch 50/1111 Loss: 0.0001
+Epoch [2/30] Batch 100/1111 Loss: 0.0002
+Epoch [2/30] Batch 150/1111 Loss: 0.0001
+Epoch [2/30] Batch 200/1111 Loss: 0.0001
+Epoch [2/30] Batch 250/1111 Loss: 0.0002
+Epoch [2/30] Batch 300/1111 Loss: 0.0001
+Epoch [2/30] Batch 350/1111 Loss: 0.0001
+Epoch [2/30] Batch 400/1111 Loss: 0.0002
+Epoch [2/30] Batch 450/1111 Loss: 0.0002
+Epoch [2/30] Batch 500/1111 Loss: 0.0002
+Epoch [2/30] Batch 550/1111 Loss: 0.0001
+Epoch [2/30] Batch 600/1111 Loss: 0.0002
+Epoch [2/30] Batch 650/1111 Loss: 0.0001
+Epoch [2/30] Batch 700/1111 Loss: 0.0003
+Epoch [2/30] Batch 750/1111 Loss: 0.0002
+Epoch [2/30] Batch 800/1111 Loss: 0.0000
+Epoch [2/30] Batch 850/1111 Loss: 0.0002
+Epoch [2/30] Batch 900/1111 Loss: 0.0001

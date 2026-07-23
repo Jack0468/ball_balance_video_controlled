@@ -29,6 +29,8 @@ def main():
     print("Write down the 'Frame Index' and the 'Green Timestamp'!")
     print("=======================================================\n")
     
+    cv2.namedWindow("Interactive Timestamp Finder", cv2.WINDOW_NORMAL)
+    
     while True:
         cap.set(cv2.CAP_PROP_POS_FRAMES, current_frame)
         ret, frame = cap.read()
@@ -44,7 +46,7 @@ def main():
         display_frame = cv2.resize(frame, (int(fw * scale), int(fh * scale)))
         
         # Draw frame index on screen
-        cv2.putText(display_frame, f"Frame Index: {current_frame}", (20, 50), 
+        cv2.putText(display_frame, f"Frame Index: {current_frame}", (20, display_frame.shape[0] - 150), 
                     cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 255), 3)
                     
         cv2.imshow("Interactive Timestamp Finder", display_frame)

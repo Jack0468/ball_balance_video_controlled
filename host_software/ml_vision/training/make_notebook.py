@@ -1,0 +1,93 @@
+import json
+import os
+
+notebook = {
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "# VRI 2026 - YOLO Platform & Markers Tracker\n",
+        "\n",
+        "This notebook unzips the `colab_dataset.zip` from your Google Drive, installs Ultralytics, and trains the YOLOv8-Pose model on the combined manual and synthetic datasets."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": None,
+      "metadata": {},
+      "outputs": [],
+      "source": [
+        "# Mount Google Drive so we can access the dataset and save the .pt weights\n",
+        "from google.colab import drive\n",
+        "drive.mount('/content/drive')"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": None,
+      "metadata": {},
+      "outputs": [],
+      "source": [
+        "# Unzip the dataset and install Ultralytics\n",
+        "!unzip -q -o /content/drive/MyDrive/colab_dataset.zip -d /content/\n",
+        "!pip install ultralytics\n",
+        "import torch\n",
+        "print(f\"Setup complete. Using torch {torch.__version__} ({torch.cuda.get_device_properties(0).name if torch.cuda.is_available() else 'CPU'})\")"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": None,
+      "metadata": {},
+      "outputs": [],
+      "source": [
+        "# Train the model natively in Python\n",
+        "from ultralytics import YOLO\n",
+        "import os\n",
+        "\n",
+        "yaml_path = '/content/dataset/colab_dataset.yaml'\n",
+        "if not os.path.exists(yaml_path):\n",
+        "    print(f\"ERROR: Could not find {yaml_path}. Make sure the dataset was unzipped correctly!\")\n",
+        "else:\n",
+        "    model = YOLO('yolov8n-pose.pt')\n",
+        "    \n",
+        "    project_dir = '/content/drive/MyDrive/YOLO_Models'\n",
+        "    os.makedirs(project_dir, exist_ok=True)\n",
+        "    \n",
+        "    results = model.train(\n",
+        "        data=yaml_path,\n",
+        "        epochs=100,\n",
+        "        imgsz=640,\n",
+        "        batch=16,\n",
+        "        project=project_dir,\n",
+        "        name='platform_and_markers_model',\n",
+        "        exist_ok=True,\n",
+        "        perspective=0.001,\n",
+        "        degrees=15.0,\n",
+        "        scale=0.5,\n",
+        "        mosaic=1.0,\n",
+        "        hsv_h=0.015,\n",
+        "        hsv_s=0.7,\n",
+        "        hsv_v=0.4\n",
+        "    )\n",
+        "    print(f\"Training complete! Model saved in {project_dir}/platform_and_markers_model/weights/best.pt\")\n"
+      ]
+    }
+  ],
+  "metadata": {
+    "kernelspec": {
+      "display_name": "Python 3",
+      "language": "python",
+      "name": "python3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 4
+}
+
+with open("c:/Users/Admin/Documents/Windows_codespace/VRI_2026/host_software/ml_vision/training/colab_train_yolo.ipynb", "w") as f:
+    json.dump(notebook, f, indent=2)

@@ -56,3 +56,56 @@ if __name__ == "__main__":
     
     # Test bottom-right (should be 150, 150)
     print(f"Bottom-Right (500, 500) -> {mapper.pixels_to_mm(500, 500)} mm")
+
+import cv2
+import numpy as np
+
+class HomographyProjector:
+    def __init__(self, dst_pts_mm):
+        """
+        Initializes the homography projector with the physical destination points.
+        
+        Args:
+            dst_pts_mm (np.ndarray): Physical corners of the platform in mm.
+                                     Typically a 4x2 array of [x, y].
+        """
+        self.dst_pts = np.array(dst_pts_mm, dtype=np.float32)
+        self.M = None
+        
+    def update_homography(self, src_pts_px):
+        """
+        Updates the internal Homography matrix given 4 pixel coordinates.
+        
+        Args:
+            src_pts_px (list or np.ndarray): 4 corner points in pixel space [x, y].
+            
+        Returns:
+            bool: True if homography was successfully calculated, False otherwise.
+        """
+        src = np.array(src_pts_px, dtype=np.float32)
+        if len(src) != 4:
+            return False
+            
+        M, status = cv2.findHomography(src, self.dst_pts)
+        if M is not None:
+            self.M = M
+            return True
+        return False
+        
+    def project_point(self, px, py):
+        """
+        Projects a 2D pixel coordinate into physical mm space using the active Homography.
+        
+        Args:
+            px (float): X pixel coordinate
+            py (float): Y pixel coordinate
+            
+        Returns:
+            tuple: (mm_x, mm_y) or (None, None) if Homography isn't set.
+        """
+        if self.M is None:
+            return None, None
+            
+        pt = np.array([[[px, py]]], dtype=np.float32)
+        mm_pt = cv2.perspectiveTransform(pt, self.M)
+        return float(mm_pt[0][0][0]), float(mm_pt[0][0][1])
