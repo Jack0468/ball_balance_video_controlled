@@ -1,62 +1,39 @@
 import threading
 import queue
 import time
-import numpy as np
+import argparse
 import sounddevice as sd
-import tensorflow as tf
+import numpy as np
+import torch
 
-SAMPLE_RATE = 16_000
-MODEL_WINDOW_SECONDS = 1.25
-OUTPUT_SEQUENCE_LENGTH = int(SAMPLE_RATE * MODEL_WINDOW_SECONDS)
-N_FFT = 255
-HOP_LENGTH = 128
-
-LABEL_NAMES = ["go_blue", "go_green", "go_red", "go_yellow", "hold", "stop"]
-
-def align_speech_to_fixed_length(audio, target_samples=OUTPUT_SEQUENCE_LENGTH):
-    audio = np.asarray(audio, dtype=np.float32)
-    if audio.ndim > 1:
-        audio = np.mean(audio, axis=1)
-
-    peak = np.max(np.abs(audio))
-    rms = np.sqrt(np.mean(audio ** 2))
-
-    if peak < 0.03 or rms < 0.003:
-        return None
-
-    threshold = max(0.015, peak * 0.08)
-    active = np.where(np.abs(audio) > threshold)[0]
-    if len(active) == 0:
-        return None
-
-    start = max(0, active[0] - int(0.08 * SAMPLE_RATE))
-    end = min(len(audio), active[-1] + int(0.12 * SAMPLE_RATE))
-    audio = audio[start:end]
-
-    if len(audio) > target_samples:
-        audio = audio[:target_samples]
-    if len(audio) < target_samples:
-        audio = np.pad(audio, (0, target_samples - len(audio)))
-
-    peak = np.max(np.abs(audio))
-    if peak > 1e-6:
-        audio = audio / peak * 0.95
-
-    return audio.astype(np.float32)
-
-def waveform_to_spectrogram(waveform):
-    waveform_tf = tf.convert_to_tensor(waveform[np.newaxis, :], dtype=tf.float32)
-    spec = tf.signal.stft(waveform_tf, frame_length=N_FFT, frame_step=HOP_LENGTH)
-    spec = tf.abs(spec)
-    spec = tf.math.log(spec + 1e-6)
-    spec = spec[..., tf.newaxis]
-    return spec
+try:
+    from .audio_pytorch_runtime import (
+        LABEL_NAMES,
+        OUTPUT_SEQUENCE_LENGTH,
+        SAMPLE_RATE,
+        align_speech_to_fixed_length,
+        default_model_path,
+        load_pytorch_audio_model,
+        predict_probabilities,
+    )
+except ImportError:
+    from audio_pytorch_runtime import (
+        LABEL_NAMES,
+        OUTPUT_SEQUENCE_LENGTH,
+        SAMPLE_RATE,
+        align_speech_to_fixed_length,
+        default_model_path,
+        load_pytorch_audio_model,
+        predict_probabilities,
+    )
 
 class AudioCommandReceiver:
-    def __init__(self, model_path, step_seconds=0.2):
-        print(f"Loading Audio Model from {model_path}...")
-        self.model = tf.keras.models.load_model(model_path, compile=False)
+    def __init__(self, model_path=None, step_seconds=0.2, command_cooldown_seconds=5.0):
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.model, resolved_model_path = load_pytorch_audio_model(model_path=model_path, device=self.device)
+        print(f"Loading Audio Model from {resolved_model_path}...")
         self.step_seconds = step_seconds
+        self.command_cooldown_seconds = command_cooldown_seconds
         
         self.window_samples = OUTPUT_SEQUENCE_LENGTH
         self.step_samples = int(SAMPLE_RATE * self.step_seconds)
@@ -64,6 +41,16 @@ class AudioCommandReceiver:
         
         self.command_queue = queue.Queue(maxsize=1)
         self.running = True
+        self.last_command_time = -float("inf")
+        self.ready_for_new_command = True
+        self.latest_status = {
+            "timestamp": time.time(),
+            "top_label": None,
+            "top_confidence": 0.0,
+            "margin": 0.0,
+            "accepted": False,
+            "reason": "starting",
+        }
         
         # We need a small queue to pass chunks from the audio callback to the processing thread
         self.chunk_queue = queue.Queue()
@@ -103,13 +90,20 @@ class AudioCommandReceiver:
             self.audio_buffer = np.roll(self.audio_buffer, -len(new_chunk))
             self.audio_buffer[-len(new_chunk):] = new_chunk
             
-            aligned = align_speech_to_fixed_length(self.audio_buffer)
+            aligned, meta = align_speech_to_fixed_length(self.audio_buffer)
             if aligned is None:
+                self.ready_for_new_command = True
+                self.latest_status = {
+                    "timestamp": time.time(),
+                    "top_label": None,
+                    "top_confidence": 0.0,
+                    "margin": 0.0,
+                    "accepted": False,
+                    "reason": meta.get("reason", "unclassified"),
+                }
                 self.recent_predictions.append(None)
             else:
-                spec = waveform_to_spectrogram(aligned)
-                logits = self.model(spec, training=False)
-                probs = tf.nn.softmax(logits, axis=-1).numpy()[0]
+                probs = predict_probabilities(self.model, aligned, device=self.device)
                 
                 top_id = int(np.argmax(probs))
                 top_label = LABEL_NAMES[top_id]
@@ -117,8 +111,21 @@ class AudioCommandReceiver:
                 
                 top_two = np.partition(probs, -2)[-2:]
                 margin = float(top_two[-1] - top_two[-2])
+                accepted = top_conf >= self.min_confidence and margin >= self.min_margin
+                now = time.time()
+                cooldown_remaining = max(0.0, self.command_cooldown_seconds - (now - self.last_command_time))
+                self.latest_status = {
+                    "timestamp": now,
+                    "top_label": top_label,
+                    "top_confidence": top_conf,
+                    "margin": margin,
+                    "accepted": accepted,
+                    "reason": "accepted" if accepted else "below_threshold",
+                    "cooldown_remaining": cooldown_remaining,
+                    "ready_for_new_command": self.ready_for_new_command,
+                }
                 
-                if top_conf >= self.min_confidence and margin >= self.min_margin:
+                if accepted:
                     self.recent_predictions.append(top_label)
                 else:
                     self.recent_predictions.append(None)
@@ -129,7 +136,15 @@ class AudioCommandReceiver:
                 
             if len(self.recent_predictions) == 3:
                 p1, p2, p3 = self.recent_predictions
-                if p2 is not None and p2 == p3 and p1 != p2: # Rising edge
+                now = time.time()
+                cooldown_elapsed = (now - self.last_command_time) >= self.command_cooldown_seconds
+                if (
+                    p2 is not None
+                    and p2 == p3
+                    and p1 != p2
+                    and self.ready_for_new_command
+                    and cooldown_elapsed
+                ):
                     # Output command!
                     if self.command_queue.full():
                         try:
@@ -137,6 +152,8 @@ class AudioCommandReceiver:
                         except queue.Empty:
                             pass
                     self.command_queue.put(p2)
+                    self.last_command_time = now
+                    self.ready_for_new_command = False
 
     def get_latest_command(self):
         try:
@@ -144,7 +161,88 @@ class AudioCommandReceiver:
         except queue.Empty:
             return None
 
+    def get_latest_status(self):
+        return dict(self.latest_status)
+
     def stop(self):
         self.running = False
         self.stream.stop()
         self.stream.close()
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Realtime microphone test for the PyTorch audio command receiver.")
+    parser.add_argument(
+        "--model-path",
+        default=str(default_model_path()),
+        help="Path to the exported PyTorch checkpoint (.pth).",
+    )
+    parser.add_argument(
+        "--duration",
+        type=float,
+        default=0.0,
+        help="How many seconds to listen before stopping. Use 0 for continuous mode.",
+    )
+    parser.add_argument(
+        "--poll-seconds",
+        type=float,
+        default=0.2,
+        help="How often to poll the receiver internally.",
+    )
+    parser.add_argument(
+        "--report-seconds",
+        type=float,
+        default=2.0,
+        help="How often to print one command/status result while the mic stays on.",
+    )
+    parser.add_argument(
+        "--command-gap-seconds",
+        type=float,
+        default=5.0,
+        help="Minimum time gap between accepted commands.",
+    )
+    args = parser.parse_args()
+
+    receiver = AudioCommandReceiver(
+        model_path=args.model_path,
+        command_cooldown_seconds=args.command_gap_seconds,
+    )
+    if args.duration > 0:
+        print(f"Listening for {args.duration:.1f}s. Reporting every {args.report_seconds:.1f}s.")
+    else:
+        print(f"Listening continuously. Reporting every {args.report_seconds:.1f}s. Press Ctrl+C to stop.")
+
+    start = time.time()
+    next_report_time = start + args.report_seconds
+    detected_in_window = []
+    last_status = receiver.get_latest_status()
+    try:
+        while True:
+            now = time.time()
+            elapsed = now - start
+            if args.duration > 0 and elapsed >= args.duration:
+                break
+
+            latest = receiver.get_latest_command()
+            status = receiver.get_latest_status()
+            last_status = status
+            if latest is not None:
+                detected_in_window.append(latest)
+
+            if now >= next_report_time:
+                if detected_in_window:
+                    reported_command = detected_in_window[-1]
+                    print(f"predicted {reported_command}")
+                detected_in_window.clear()
+                next_report_time += args.report_seconds
+
+            time.sleep(args.poll_seconds)
+    except KeyboardInterrupt:
+        print("Stopping microphone listener...")
+    finally:
+        receiver.stop()
+        print("Audio receiver stopped.")
+
+
+if __name__ == "__main__":
+    main()
