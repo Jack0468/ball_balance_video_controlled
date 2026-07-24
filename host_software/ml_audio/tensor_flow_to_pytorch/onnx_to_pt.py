@@ -1,23 +1,27 @@
+from pathlib import Path
+
 import torch
 from onnx2torch import convert
 
-# 1. Convert the ONNX model to a PyTorch nn.Module
-onnx_model_path = 'converted_model.onnx'
-pytorch_model = convert(onnx_model_path)
 
-# 2. Put the model in evaluation mode
-pytorch_model.eval()
+SCRIPT_DIR = Path(__file__).resolve().parent
+ONNX_MODEL_PATH = (SCRIPT_DIR / "audio_command_classifier.onnx").resolve()
+STATE_DICT_PATH = (SCRIPT_DIR / "audio_command_classifier_from_onnx.pth").resolve()
 
-# 3. Save the PyTorch model (saving the state_dict is best practice)
-torch.save(pytorch_model.state_dict(), 'pytorch_weights.pth')
-print("ONNX model successfully converted to PyTorch!")
 
-# --- Optional: Test the conversion ---
-# Create a dummy tensor matching your model's expected input shape
-# Note: PyTorch expects channels-first format (N, C, H, W) 
-# whereas Keras usually uses channels-last (N, H, W, C). 
-# The conversion process usually handles this transposition internally, 
-# but pass your dummy input in the format Keras originally expected.
-dummy_input = torch.randn(1, 224, 224, 3) 
-output = pytorch_model(dummy_input)
-print("Test inference successful. Output shape:", output.shape)
+def main():
+	pytorch_model = convert(str(ONNX_MODEL_PATH))
+	pytorch_model.eval()
+
+	torch.save(pytorch_model.state_dict(), STATE_DICT_PATH)
+	print(f"Loaded ONNX model from: {ONNX_MODEL_PATH}")
+	print(f"Saved PyTorch state_dict to: {STATE_DICT_PATH}")
+
+	# Keras input shape is (1, 155, 129, 1) before any internal transposition.
+	dummy_input = torch.randn(1, 155, 129, 1)
+	output = pytorch_model(dummy_input)
+	print("Test inference successful. Output shape:", tuple(output.shape))
+
+
+if __name__ == "__main__":
+	main()
