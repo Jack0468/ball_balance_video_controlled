@@ -1,4 +1,4 @@
-﻿import cv2
+import cv2
 import threading
 import queue
 import time
@@ -10,7 +10,7 @@ import torch.nn as nn
 import serial
 import argparse
 from ml_vision.core.coordinate_math import HomographyProjector
-from ml_audio.audio_receiver import AudioCommandReceiver
+from ml_audio.audio_receiver_pytorch import AudioCommandReceiver
 
 from src.receivers import USBReceiver, UDPReceiver
 from src.utils import find_stm32_port
@@ -59,7 +59,7 @@ def main():
     projector = HomographyProjector(dst_pts)
     
     # 2. Audio & State Init
-    audio_model_path = os.path.abspath(os.path.join(script_dir, 'ml_audio/models/audio_command_classifier/best_classifier.keras'))
+    audio_model_path = os.path.abspath(os.path.join(script_dir, 'ml_audio/models/audio_command_classifier/pytorch/audio_command_classifier_state_dict.pth'))
     audio_receiver = AudioCommandReceiver(audio_model_path)
     state_machine = TargetStateMachine()
     
@@ -167,6 +167,8 @@ def main():
             
             # Process Audio Commands
             command = audio_receiver.get_latest_command()
+            if command:
+                print(f"\n[AUDIO] Heard command: {command}\n")
             state_machine.process_command(command)
             target_x, target_y = state_machine.get_target_coords(marker_coords)
             

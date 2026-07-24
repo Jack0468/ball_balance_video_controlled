@@ -2,6 +2,7 @@ import argparse
 import numpy as np
 import sounddevice as sd
 import tensorflow as tf
+import os
 
 SAMPLE_RATE = 16_000
 CLIP_SECONDS = 2
@@ -221,9 +222,11 @@ def predict_sequence_from_microphone(
 
 def main():
     parser = argparse.ArgumentParser(description="Test the trained Keras audio classifier with microphone input.")
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    default_model_path = os.path.join(script_dir, 'models', 'audio_command_classifier', 'best_classifier.keras')
     parser.add_argument(
         "--model",
-        default=r"c:\Users\aritr\Downloads\ball_balance_video_controlled\host_software\ml_audio\models\audio_command_classifier\best_classifier.keras",
+        default=default_model_path,
         help="Path to trained Keras model (.keras).",
     )
     parser.add_argument(
