@@ -10,10 +10,12 @@ import torch.nn as nn
 import serial
 import argparse
 from ml_vision.core.coordinate_math import HomographyProjector
+from ml_audio.audio_receiver import AudioCommandReceiver
 
 from src.receivers import USBReceiver, UDPReceiver
 from src.utils import find_stm32_port
 from src.models import load_yolo_model, load_corrector_model
+from src.state_machine import TargetStateMachine
 
 # --- Configuration ---
 SERIAL_PORT = "COM3"
@@ -41,7 +43,7 @@ def main():
     # 1. Hardware/Model Init
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    yolo_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/new_platform_pose_model/weights/best.pt'))
+    yolo_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/platform_and_markers_model/weights/best.pt'))
     corrector_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/corrector/best_corrector.pth'))
     
     yolo_model = load_yolo_model(yolo_path, device)
@@ -56,7 +58,12 @@ def main():
     ], dtype=np.float32)
     projector = HomographyProjector(dst_pts)
     
-    # 2. Serial Port Init
+    # 2. Audio & State Init
+    audio_model_path = os.path.abspath(os.path.join(script_dir, 'ml_audio/models/audio_command_classifier/best_classifier.keras'))
+    audio_receiver = AudioCommandReceiver(audio_model_path)
+    state_machine = TargetStateMachine()
+    
+    # 3. Serial Port Init
     try:
         ser = serial.Serial(args.port, SERIAL_BAUD, timeout=0)
         print(f"Connected to STM32 on {args.port} at {SERIAL_BAUD} baud.")
@@ -104,15 +111,20 @@ def main():
             
             corners = None
             ball_box = None
+            detected_markers = {}
             
             for i, cls in enumerate(classes):
-                if int(cls) == 0: # Platform
+                c = int(cls)
+                if c == 0: # Platform
                     if res.keypoints is not None and len(res.keypoints.xy) > i:
                         kpts = res.keypoints.xy[i].cpu().numpy()
                         if len(kpts) == 4:
                             corners = kpts
-                elif int(cls) == 1: # Ball
+                elif c == 1: # Ball
                     ball_box = boxes[i]
+                elif c >= 2: # Marker
+                    name = yolo_model.names[c].replace('_marker', '')
+                    detected_markers[name] = boxes[i]
             
             if corners is None or ball_box is None:
                 end_t = time.perf_counter()
@@ -122,10 +134,16 @@ def main():
                 continue
             
             homography_x, homography_y = 0.0, 0.0
+            marker_coords = {}
             if projector.update_homography(corners):
                 hx, hy = projector.project_point(ball_box[0], ball_box[1])
                 if hx is not None and hy is not None:
                     homography_x, homography_y = hx, hy
+                    
+                for name, box in detected_markers.items():
+                    mx, my = projector.project_point(box[0], box[1])
+                    if mx is not None and my is not None:
+                        marker_coords[name] = (mx, my)
                     
             features = np.array([
                 ball_box[0], ball_box[1], ball_box[2], ball_box[3],
@@ -147,9 +165,16 @@ def main():
             
             cam_x, cam_y = output[0].cpu().numpy()
             
+            # Process Audio Commands
+            command = audio_receiver.get_latest_command()
+            state_machine.process_command(command)
+            target_x, target_y = state_machine.get_target_coords(marker_coords)
+            
             # Serial Transmission Phase
+            # We send cam_x, cam_y, target_x, target_y so the RL policy gets true absolute coords
+            # and target coords, keeping tilt dynamics perfectly aligned.
             try:
-                payload = f"{cam_x:.2f},{cam_y:.2f}\n".encode('ascii')
+                payload = f"{cam_x:.2f},{cam_y:.2f},{target_x:.2f},{target_y:.2f}\n".encode('ascii')
                 if ser is not None:
                     ser.write(payload)
             except Exception as e:
@@ -162,12 +187,16 @@ def main():
             mlp_latency_ms = (mlp_t - yolo_t) * 1000.0
             fps = 1.0 / (end_t - start_t)
             
-            print(f"Target: X={cam_x:.1f} Y={cam_y:.1f} mm | FPS: {fps:.1f} | Latency: Total={total_latency_ms:.1f}ms (YOLO={yolo_latency_ms:.1f}ms, MLP+Rest={mlp_latency_ms:.1f}ms)")
+            marker_str = ", ".join([f"{name}=({x:.1f},{y:.1f})" for name, (x, y) in marker_coords.items()])
+            marker_out = f" | Markers: {marker_str}" if marker_str else ""
+            
+            print(f"Targeting '{state_machine.current_target_name}' at X={target_x:.1f} Y={target_y:.1f} | Ball: X={cam_x:.1f} Y={cam_y:.1f} mm | FPS: {fps:.1f} {marker_out}")
                 
     except KeyboardInterrupt:
         pass
     finally:
         receiver.stop()
+        audio_receiver.stop()
         if ser:
             ser.close()
         cv2.destroyAllWindows()

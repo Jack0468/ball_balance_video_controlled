@@ -2,7 +2,7 @@
 #include <Arduino.h>
 #include "MotorControl.h"
 #include "RLControl.h"
-#include "weights_best_so_far1.h"
+#include "weights_old1.h"
 
 #define CONTROL_DT       0.0333f   // 30 Hz control period (seconds)
 #define VEL_FILTER_ALPHA 0.35f

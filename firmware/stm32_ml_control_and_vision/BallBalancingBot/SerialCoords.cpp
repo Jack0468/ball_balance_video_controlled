@@ -61,6 +61,8 @@ static bool          discarding = false;   // true while flushing an over-long l
 
 static double        last_x     = 0.0;
 static double        last_y     = 0.0;
+static double        last_tx    = 0.0;
+static double        last_ty    = 0.0;
 static bool          has_ball   = false;
 static bool          has_new    = false;   // a fresh line arrived since last check
 static unsigned long last_good_ms = 0;
@@ -100,7 +102,28 @@ static void handle_line(char *line) {
   if (end == p) return;                                // incomplete pair
   p = end;
 
-  // Optional third field: <= 0 means the host saw nothing.
+  // Parse Target X
+  while (is_sep(*p)) p++;
+  end = p;
+  double tx = strtod(p, &end);
+  if (end == p) {
+      // If only 2 floats were sent, assume target is (0,0) and there is no Z
+      tx = 0.0;
+  } else {
+      p = end;
+  }
+
+  // Parse Target Y
+  while (is_sep(*p)) p++;
+  end = p;
+  double ty = strtod(p, &end);
+  if (end == p) {
+      ty = 0.0;
+  } else {
+      p = end;
+  }
+
+  // Optional fifth field: <= 0 means the host saw nothing.
   while (is_sep(*p)) p++;
   end = p;
   double z = strtod(p, &end);
@@ -127,6 +150,8 @@ static void handle_line(char *line) {
 
   last_x       = x;
   last_y       = y;
+  last_tx      = tx;
+  last_ty      = ty;
   has_ball     = true;
   has_new      = true;
   last_good_ms = millis();
@@ -186,6 +211,8 @@ void screen_init() {
   has_new      = false;
   last_x       = 0.0;
   last_y       = 0.0;
+  last_tx      = 0.0;
+  last_ty      = 0.0;
   last_good_ms = millis();
 }
 
@@ -202,6 +229,8 @@ coords get_coords() {
   coords p;
   p.x_mm = last_x;                 // last known good position either way
   p.y_mm = last_y;
+  p.target_x_mm = last_tx;
+  p.target_y_mm = last_ty;
   p.z    = has_ball ? 1.0 : 0.0;   // 0 signals NO BALL to the controller
   return p;
 }
