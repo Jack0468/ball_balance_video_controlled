@@ -1842,6 +1842,12 @@ DENSE_WEIGHT = DENSE_KERNEL.view(DENSE_OUT, DENSE_IN)
 class AudioCommandClassifier(nn.Module):
     def __init__(self):
         super().__init__()
+        self.norm_epsilon = float(NORMALIZATION_EPSILON)
+        self.bn1_eps = float(BATCH_NORMALIZATION_EPS)
+        self.bn2_eps = float(BATCH_NORMALIZATION_1_EPS)
+        self.bn3_eps = float(BATCH_NORMALIZATION_2_EPS)
+        self.register_buffer('norm_mean', NORMALIZATION_MEAN)
+        self.register_buffer('norm_variance', NORMALIZATION_VARIANCE)
         self.register_buffer('conv1_weight', CONV2D_KERNEL)
         self.register_buffer('conv1_bias', CONV2D_BIASES)
         self.register_buffer('bn1_gamma', BATCH_NORMALIZATION_GAMMA)
@@ -1870,21 +1876,21 @@ class AudioCommandClassifier(nn.Module):
         if x.shape[-2:] != (64, 64):
             x = F.interpolate(x, size=(64, 64), mode='bilinear', align_corners=False)
 
-        x = (x - NORMALIZATION_MEAN.view(1, -1, 1, 1)) / torch.sqrt(NORMALIZATION_VARIANCE.view(1, -1, 1, 1) + NORMALIZATION_EPSILON)
+        x = (x - self.norm_mean.view(1, -1, 1, 1)) / torch.sqrt(self.norm_variance.view(1, -1, 1, 1) + self.norm_epsilon)
 
         x = F.conv2d(x, self.conv1_weight, bias=self.conv1_bias, padding=1)
         x = F.relu(x)
-        x = F.batch_norm(x, self.bn1_mean, self.bn1_var, self.bn1_gamma, self.bn1_beta, training=False, eps=BATCH_NORMALIZATION_EPS)
+        x = F.batch_norm(x, self.bn1_mean, self.bn1_var, self.bn1_gamma, self.bn1_beta, training=False, eps=self.bn1_eps)
         x = F.max_pool2d(x, kernel_size=2, stride=2)
 
         x = F.conv2d(x, self.conv2_weight, bias=self.conv2_bias, padding=1)
         x = F.relu(x)
-        x = F.batch_norm(x, self.bn2_mean, self.bn2_var, self.bn2_gamma, self.bn2_beta, training=False, eps=BATCH_NORMALIZATION_1_EPS)
+        x = F.batch_norm(x, self.bn2_mean, self.bn2_var, self.bn2_gamma, self.bn2_beta, training=False, eps=self.bn2_eps)
         x = F.max_pool2d(x, kernel_size=2, stride=2)
 
         x = F.conv2d(x, self.conv3_weight, bias=self.conv3_bias, padding=1)
         x = F.relu(x)
-        x = F.batch_norm(x, self.bn3_mean, self.bn3_var, self.bn3_gamma, self.bn3_beta, training=False, eps=BATCH_NORMALIZATION_2_EPS)
+        x = F.batch_norm(x, self.bn3_mean, self.bn3_var, self.bn3_gamma, self.bn3_beta, training=False, eps=self.bn3_eps)
 
         x = x.mean(dim=(2, 3))
         x = F.linear(x, self.dense_weight, self.dense_bias)

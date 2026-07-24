@@ -6,8 +6,13 @@ import time
 import struct
 import numpy as np
 import os
+import sys
 import serial
 from ultralytics import YOLO
+
+# Add parent directory to path to import ml_audio
+sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from ml_audio.audio_listener import AudioListener
 
 # --- Configuration ---
 UDP_IP = "0.0.0.0"
@@ -17,6 +22,14 @@ SERIAL_BAUD = 115200
 
 TARGET_X = 0.0
 TARGET_Y = 0.0
+
+# Physical marker coordinates converted to center-origin (mm).
+TARGET_COORDS = {
+    "green": (-93.75 + 33.0, 71.0 - 26.0),
+    "red": (93.75 - 41.0, 71.0 - 53.0),
+    "yellow": (-93.75 + 69.0, -71.0 + 58.0),
+    "blue": (93.75 - 13.0, -71.0 + 8.0),
+}
 
 # Physical Marker Coordinates in Platform-Centric Millimeters (Top-Left origin)
 MARKERS_PHYSICAL_MM = np.array([
@@ -95,9 +108,15 @@ def main():
         ser = None
 
     receiver = UDPReceiver(UDP_IP, UDP_PORT)
+
+    # Start background audio listener for command-driven target updates.
+    audio = AudioListener()
+    audio.start()
     
     # 2. Main Inference Loop
-    print("Starting YOLO Inference Loop...")
+    print("Starting YOLO + Audio Inference Loop...")
+    target_x = TARGET_X
+    target_y = TARGET_Y
     try:
         while True:
             frame = receiver.get_latest_frame()
@@ -141,10 +160,21 @@ def main():
                     # Platform W=187.5, H=142.0
                     final_x = b_mm[0] - (187.5 / 2.0)
                     final_y = b_mm[1] - (142.0 / 2.0)
+
+                    # Update target from latest audio command state.
+                    audio_state = audio.get_latest_command()
+                    target_colour = audio_state.get("target_colour")
+                    mode = audio_state.get("mode")
+
+                    if mode == "colour_select" and target_colour in TARGET_COORDS:
+                        target_x, target_y = TARGET_COORDS[target_colour]
+                    elif mode == "hold":
+                        pass
+                    elif mode == "stop":
+                        pass
                     
-                    # Target X/Y are placeholders for eventual ML policy prediction, for now we just use 0,0
-                    err_x = TARGET_X - final_x
-                    err_y = TARGET_Y - final_y
+                    err_x = target_x - final_x
+                    err_y = target_y - final_y
                     
                     # Send to STM32
                     if ser:
@@ -152,7 +182,11 @@ def main():
                         ser.write(payload)
                         
                     inference_ms = (time.perf_counter() - start_t) * 1000.0
-                    print(f"Ball: ({final_x:.1f}mm, {final_y:.1f}mm) | Latency: {inference_ms:.1f}ms")
+                    print(
+                        f"Ball: ({final_x:.1f}mm, {final_y:.1f}mm) | "
+                        f"Target: ({target_x:.1f}, {target_y:.1f}) [{audio_state.get('command', 'hold')}] | "
+                        f"Latency: {inference_ms:.1f}ms"
+                    )
                     
             # (Optional) Display frame
             # annotated_frame = result.plot()
@@ -163,6 +197,7 @@ def main():
     except KeyboardInterrupt:
         print("Stopping...")
     finally:
+        audio.stop()
         receiver.stop()
         if ser:
             ser.close()
