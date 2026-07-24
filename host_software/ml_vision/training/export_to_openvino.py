@@ -1,29 +1,66 @@
-from ultralytics import YOLO
 import os
 import sys
-import subprocess
 
-def main():
-    print("--- YOLO to OpenVINO Exporter (Intel CPU Optimized) ---\n")
+# Ensure we can import our local modules
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+
+import torch
+import tensorflow as tf
+import openvino as ov
+from ultralytics import YOLO
+
+def export_yolo():
+    print("Exporting YOLO model to OpenVINO...")
+    yolo_path = os.path.join("..", "models", "yolo_platform_markers_v2", "weights", "best.pt")
+    if not os.path.exists(yolo_path):
+        print(f"YOLO model not found at {yolo_path}")
+        return
+    model = YOLO(yolo_path)
+    model.export(format="openvino")
+    print("YOLO export complete.")
+
+def export_corrector():
+    print("Exporting Corrector MLP to OpenVINO...")
+    corrector_path = os.path.join("..", "models", "corrector", "best_corrector.pth")
+    if not os.path.exists(corrector_path):
+        print(f"Corrector model not found at {corrector_path}")
+        return
     
-    pose_model_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../models/platform_pose_model/weights/best.pt'))
+    # We must import CorrectorMLP dynamically if src.models isn't enough, but it should be
+    # Actually wait, src.models loads from ml_vision.core.corrector_mlp
+    from ml_vision.core.corrector_mlp import CorrectorMLP as CMLP
+    model = CMLP(input_dim=14, hidden_dim=128, output_dim=2)
+    model.load_state_dict(torch.load(corrector_path, map_location="cpu"))
+    model.eval()
     
-    print(f"Loading Pose Model: {pose_model_path}...")
-    model = YOLO(pose_model_path)
+    # Convert to OpenVINO
+    example_input = torch.randn(1, 14)
+    ov_model = ov.convert_model(model, example_input=example_input)
     
-    print("Step 1/2: Exporting to ONNX format at 320x320 for ultra-low latency...")
-    # imgsz=320 reduces the pixel area by 4x compared to 640x640, massively speeding up CPU inference.
-    onnx_path = model.export(format='onnx', imgsz=320, dynamic=False)
+    output_path = os.path.join("..", "models", "corrector", "best_corrector.xml")
+    ov.save_model(ov_model, output_path)
+    print(f"Corrector export complete: {output_path}")
+
+def export_audio():
+    print("Exporting Audio Classifier to OpenVINO...")
+    audio_path = os.path.join("..", "..", "ml_audio", "models", "audio_command_classifier", "best_classifier.keras")
+    if not os.path.exists(audio_path):
+        print(f"Audio model not found at {audio_path}")
+        return
     
-    print("\nStep 2/2: Converting ONNX to OpenVINO using ovc CLI (bypassing DLL conflicts)...")
-    openvino_dir = os.path.join(os.path.dirname(onnx_path), "best_openvino_model")
+    # Load Keras model
+    tf_model = tf.keras.models.load_model(audio_path, compile=False)
     
-    ovc_exe = os.path.join(os.path.dirname(sys.executable), "Scripts", "ovc.exe")
+    # Convert to OpenVINO with input shape
+    ov_model = ov.convert_model(tf_model, input=[1, 155, 129, 1])
     
-    # Run the ovc CLI to generate the .xml and .bin
-    subprocess.run([ovc_exe, onnx_path, "--output_model", openvino_dir], check=True)
-    
-    print(f"\nSuccess! OpenVINO model saved to: {openvino_dir}")
+    output_path = os.path.join("..", "..", "ml_audio", "models", "audio_command_classifier", "best_classifier.xml")
+    ov.save_model(ov_model, output_path)
+    print(f"Audio export complete: {output_path}")
 
 if __name__ == "__main__":
-    main()
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    export_yolo()
+    export_corrector()
+    export_audio()
+    print("All exports finished successfully!")

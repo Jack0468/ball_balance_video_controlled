@@ -55,7 +55,7 @@ def waveform_to_spectrogram(waveform):
 class AudioCommandReceiver:
     def __init__(self, model_path, step_seconds=0.2):
         print(f"Loading Audio Model from {model_path}...")
-        self.model = tf.keras.models.load_model(model_path)
+        self.model = tf.keras.models.load_model(model_path, compile=False)
         self.step_seconds = step_seconds
         
         self.window_samples = OUTPUT_SEQUENCE_LENGTH

@@ -16,7 +16,7 @@ def load_yolo_model(model_path, device):
 def load_corrector_model(model_path, device):
     from ml_vision.core.corrector_mlp import CorrectorMLP
     print("Loading MLP Corrector Model...")
-    model = CorrectorMLP(input_dim=14, hidden_dim=64, output_dim=2)
+    model = CorrectorMLP(input_dim=14, hidden_dim=128, output_dim=2)
     if os.path.exists(model_path):
         model.load_state_dict(torch.load(model_path, map_location=device))
         print(f"Successfully loaded weights from {model_path}")
