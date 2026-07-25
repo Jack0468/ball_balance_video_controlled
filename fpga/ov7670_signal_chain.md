@@ -57,7 +57,7 @@ flowchart TD
     subgraph NETWORK ["🌐 Network & Host PC"]
         direction TB
         PHY[RTL8211E Gigabit PHY]
-        PC[Host PC <br> receive_udp_video.py]
+        PC[Host PC <br> host_software/tools/receive_udp_video.py]
         
         MAC --> |RGMII| PHY
         PHY ==> |Cat5e/Cat6 Cable <br> 1000 Mbps| PC
@@ -100,5 +100,5 @@ Once the VDMA writes exactly 480 rows (a full VGA frame) into DDR3, it fires a h
 * **Process:** The Zynq's internal Gigabit MAC takes the packets from `lwIP` and sends them via an RGMII interface to the physical PHY chip on the ZedBoard (RTL8211E). The PHY converts the digital signals into electrical pulses sent over the Cat5e/Cat6 Ethernet cable at 1000 Mbps to your Host PC.
 
 ### 7. Host PC Display
-* **File:** `receive_udp_video.py`.
+* **File:** `host_software/tools/receive_udp_video.py`.
 * **Process:** Your Python script listens on port `5000`. It receives the UDP packets out of order, uses the sequence numbers (frame ID and packet ID) you embedded in the C code to reassemble the frame, and then uses OpenCV to display the live video!

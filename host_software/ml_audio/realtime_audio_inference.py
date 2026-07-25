@@ -1,6 +1,7 @@
 import sys
 import os
 import time
+import numpy as np
 
 # Ensure we can import from ml_audio even if run from this directory directly
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -16,10 +17,10 @@ def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     model_path = os.path.join(
         script_dir, 
+        'synthetic', 
         'models', 
-        'audio_command_classifier', 
         'pytorch', 
-        'audio_command_classifier_state_dict.pth'
+        'audio_weights_with_synthetic.pth'
     )
     
     print("Initializing real-time audio receiver (PyTorch)...")
@@ -40,16 +41,30 @@ def main():
     
     print("\nListening for commands continuously... (Press Ctrl+C to quit)\n")
     
-    current_command = "hold"
+    command_history = ["hold"]
     
     try:
         while True:
             command = receiver.get_latest_command()
             if command:
-                current_command = command
+                # If the command is already in the history, remove it so it can be moved to the front
+                if command in command_history:
+                    command_history.remove(command)
+                
+                command_history.append(command)
+                
+                # Keep only the last 5 unique commands
+                if len(command_history) > 5:
+                    command_history.pop(0)
+            
+            # Grab current volume for diagnostic
+            vol = np.max(np.abs(receiver.audio_buffer))
+            
+            # Format the history for display
+            history_str = " <- ".join(reversed(command_history))
             
             # Print continuously with carriage return to update in place
-            sys.stdout.write(f"\r[AUDIO] Current command: {current_command:<15}")
+            sys.stdout.write(f"\r[AUDIO] Vol: {vol:.3f} | History: {history_str:<60}")
             sys.stdout.flush()
             
             # Poll at a high frequency so it feels instantaneous

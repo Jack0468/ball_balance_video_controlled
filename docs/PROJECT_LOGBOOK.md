@@ -1,5 +1,14 @@
 # VRI 2026 Project Logbook
 
+## 26/07/2026
+### Codebase Consolidation & Documentation Overhaul
+- **Primary Entry Point Unification**: Identified technical debt from multiple competing inference loops. Renamed the state-of-the-art PyTorch script (`main_yolo_marker_pytorch.py`) to `main.py` as the definitive, singular entry point for the robot. 
+- **Legacy Code Archiving**: Relocated older milestones (ResNet trackers, broken OpenVINO loops, alternative mains) into a newly created `host_software/tools/` structure (`legacy_mains/` and `legacy_inference/`). Injected `sys.path` adjustments into archived scripts to prevent their internal module imports from breaking.
+- **Repository Rule Adherence**: Cleaned up illegal directory structures (e.g., deleted `ml_vision/scripts/` and moved its contents to `tools/`) to comply with the established ML sub-directory rules.
+- **Graceful Audio Teardown**: Fixed a crashing stack trace in `audio_receiver_pytorch.py` on `Ctrl+C` by wrapping the `sounddevice` stream shutdown sequence in robust `try/except` checks.
+- **Architecture Documentation Synchronization**: Generated and updated 9 separate README files across the codebase to accurately reflect the current physical deployment. Clarified that the STM32 is the active edge controller running the `ml_control` policy and motor control loops over USB Serial, while the Zynq FPGA Gigabit UDP video pipeline is positioned as an experimental research track.
+
+
 ## 23/07/2026
 ### Zynq Ethernet PHY and OV7670 Resolution Breakthroughs
 - **OV7670 Resolution & VDMA Early Errors**: Diagnosed why the AXI VDMA engine was throwing `0x4000` (Error Interrupts) and hanging with `SOF Early` and `EOL Early` errors (Raw Status `0x00014191`). The original `amsacks-github` ROM configuration (`cam_rom.v`) had `SCALING_DCWCTR` (`0x72`) set to `0x11`, which intentionally downsamples the camera output by 2 on both axes. The camera was actually outputting 320x240 (QVGA) while the VDMA was expecting 640x480 (VGA), causing the VDMA to see the End-of-Line and Start-of-Frame signals far earlier than expected, forcing it into a HALT state.

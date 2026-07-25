@@ -59,7 +59,7 @@ def main():
     projector = HomographyProjector(dst_pts)
     
     # 2. Audio & State Init
-    audio_model_path = os.path.abspath(os.path.join(script_dir, 'ml_audio/models/audio_command_classifier/pytorch/audio_command_classifier_state_dict.pth'))
+    audio_model_path = os.path.abspath(os.path.join(script_dir, 'ml_audio/synthetic/models/pytorch/audio_weights_with_synthetic.pth'))
     audio_receiver = AudioCommandReceiver(audio_model_path)
     state_machine = TargetStateMachine()
     
@@ -130,7 +130,7 @@ def main():
                 end_t = time.perf_counter()
                 fps = 1.0 / (end_t - start_t)
                 yolo_latency_ms = (yolo_t - start_t) * 1000.0
-                print(f"Missing detections - Platform: {'Found' if corners is not None else 'Missing'}, Ball: {'Found' if ball_box is not None else 'Missing'} | FPS: {fps:.1f} | YOLO Latency: {yolo_latency_ms:.1f}ms")
+                # print(f"Missing detections - Platform: {'Found' if corners is not None else 'Missing'}, Ball: {'Found' if ball_box is not None else 'Missing'} | FPS: {fps:.1f} | YOLO Latency: {yolo_latency_ms:.1f}ms")
                 continue
             
             homography_x, homography_y = 0.0, 0.0
@@ -170,7 +170,8 @@ def main():
             if command:
                 print(f"\n[AUDIO] Heard command: {command}\n")
             state_machine.process_command(command)
-            target_x, target_y = state_machine.get_target_coords(marker_coords)
+            state_machine.update_markers(marker_coords)
+            target_x, target_y = state_machine.get_target_coords()
             
             # Serial Transmission Phase
             # We send cam_x, cam_y, target_x, target_y so the RL policy gets true absolute coords

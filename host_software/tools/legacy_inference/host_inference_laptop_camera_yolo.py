@@ -1,3 +1,9 @@
+import sys
+import os
+# Adjust path to find modules in host_software root
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '/../..'))
+if root_dir not in sys.path:
+    sys.path.append(root_dir)
 import cv2
 import threading
 import queue
@@ -160,7 +166,7 @@ def main():
     parser.add_argument("--cam_id", type=int, default=0, help="USB Camera ID")
     args = parser.parse_args()
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))
+    script_dir = root_dir
     
     # Load Unified YOLO-Pose Model
     model_path = os.path.join(script_dir, 'models/unified_pose_model/weights/best.pt')

@@ -1,3 +1,9 @@
+import sys
+import os
+# Adjust path to find modules in host_software root
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '/../..'))
+if root_dir not in sys.path:
+    sys.path.append(root_dir)
 import cv2
 import socket
 import threading
@@ -90,7 +96,7 @@ def order_markers(pts):
 
 def main():
     # 1. Model & Hardware Init
-    script_dir = os.path.dirname(os.path.abspath(__file__))
+    script_dir = root_dir
     model_path = os.path.join(script_dir, 'models/yolov8_marker_and_ball_detector/weights/best.pt')
     
     if not os.path.exists(model_path):

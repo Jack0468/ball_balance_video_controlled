@@ -9,6 +9,12 @@ import queue
 import sounddevice as sd
 
 from ultralytics import YOLO
+import sys
+import os
+# Adjust path to find modules in host_software root
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '/../..'))
+if root_dir not in sys.path:
+    sys.path.append(root_dir)
 from ml_vision.core.coordinate_math import HomographyProjector
 from src.receivers import USBReceiver, UDPReceiver
 from src.mock_receiver import MockReceiver
@@ -72,7 +78,7 @@ def main():
         args.port = detected_port if detected_port else SERIAL_PORT
         print(f"STM32 Port selected: {args.port}")
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))
+    script_dir = root_dir
     yolo_ov_dir = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/platform_and_markers_model/weights/best_openvino_model'))
     corrector_xml = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/corrector/best_corrector.xml'))
     audio_xml = os.path.abspath(os.path.join(script_dir, 'ml_audio/models/audio_command_classifier/best_classifier.xml'))

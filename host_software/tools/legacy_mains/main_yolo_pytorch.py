@@ -9,6 +9,12 @@ import torch
 import torch.nn as nn
 import serial
 import argparse
+import sys
+import os
+# Adjust path to find modules in host_software root
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '/../..'))
+if root_dir not in sys.path:
+    sys.path.append(root_dir)
 from ml_vision.core.coordinate_math import HomographyProjector
 
 from src.receivers import USBReceiver, UDPReceiver
@@ -40,7 +46,7 @@ def main():
 
     # 1. Hardware/Model Init
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    script_dir = os.path.dirname(os.path.abspath(__file__))
+    script_dir = root_dir
     yolo_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/new_platform_pose_model/weights/best.pt'))
     corrector_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/corrector/best_corrector.pth'))
     

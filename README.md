@@ -12,17 +12,13 @@ The "Brain" of the robot, written entirely in Python and running on the Host PC.
 - **Machine Learning Audio (`/ml_audio`)**: A voice command classifier that allows users to issue verbal instructions to the robot (e.g., "Balance", "Stop", "Move Left").
 - **Data Collection (`/data_collection`)**: Scripts designed to aggressively pull raw video frames and touchscreen coordinate data from the FPGA over USB to build robust training datasets.
 
-### 2. FPGA Hardware Bridge (`/fpga`)
-The "Spinal Cord", synthesized on an **Opal Kelly XEM3010 (Spartan-3)** FPGA.
-Instead of bottlenecking data through a standard microcontroller, the FPGA acts as a deterministic, high-bandwidth bridge to the physical world.
-- **Camera Pipeline**: Generates the 24MHz `XCLK`, reads the OV7670's 8-bit parallel bus, packages it into RGB565, and crosses clock domains using an asynchronous FIFO.
-- **Touchscreen ADC**: Drives a TI ADS1675 via SPI to sample the resistive touch panel's X/Y coordinates at extremely high frequencies.
-- **Motor Control**: Multi-channel 24-bit phase accumulators translate target velocities (sent from Python) into precision `STEP` and `DIR` pulses for the TMC2208 stepper motor drivers.
-- **USB Streaming**: Uses the Opal Kelly FrontPanel API to stream gigabytes of raw, perfectly synchronized sensor data (Video + Touch) directly to the Host PC via a single USB Bulk Pipe.
+### 2. Edge Control Firmware (`/firmware`)
+The active controller running on an **STM32 microcontroller**. 
+It runs the high-speed motor control loops and actively hosts the exported weights of the `ml_control` policy (e.g. Reinforcement Learning models) to perform edge inference for stabilization. It receives high-level states (Vision and Audio commands) from the Host PC via USB Serial.
 
-### 3. Firmware (`/firmware`)
-The legacy and utility microcontroller code (Teensy/Arduino). 
-Contains the original C++ PID controllers, inverse kinematics (IK) derivations, and sensor tests used during the prototyping phase before the system was upgraded to the FPGA-driven architecture.
+### 3. FPGA Hardware Research (`/fpga`)
+Experimental/Alternative architecture using a **Zynq-7000 (ZedBoard)** (and historically Opal Kelly XEM3010). 
+Designed to act as a deterministic, high-bandwidth bridge for streaming gigabit UDP video and high-frequency touch ADC data directly to the host.
 
 ### 4. Physical Hardware (`/hardware` & `/docs`)
 Contains all the mechanical and electrical blueprints.
@@ -31,14 +27,12 @@ Contains all the mechanical and electrical blueprints.
 
 ## 🚀 Getting Started
 
-### FPGA Synthesis
-To synthesize the Verilog code for the XEM3010:
-1. Open Xilinx ISE 14.7.
-2. Load the project in `/fpga/camera_i2c`.
-3. Import the `okLibrary.v` and `okCoreHarness.ngc` dependencies from your Opal Kelly SDK.
-4. Generate the `.bit` file.
+### 1. STM32 Firmware
+1. Open the `/firmware/stm32_ml_control_and_vision` project in PlatformIO or Arduino IDE.
+2. Compile and flash the code to your STM32. 
+3. Ensure the STM32 is connected to the Host PC via USB.
 
-### Python Environment
+### 2. Python Environment
 To install the necessary host software dependencies:
 ```bash
 conda env create -f environment.yml
@@ -46,9 +40,16 @@ conda env create -f environment.yml
 pip install -r requirements.txt
 ```
 
-### Running the Robot
-1. Flash the `.bit` file to the Opal Kelly FPGA via the FrontPanel GUI.
-2. Execute the data streaming and motor control pipeline:
+### 3. Running the Robot
+1. Ensure the USB Webcam and the STM32 are plugged into the Host PC.
+2. Execute the primary host software pipeline (handles Vision, Audio, and communication with the STM32):
 ```bash
-python host_software/data_collection/collect_training_data.py
+cd host_software
+python main.py
 ```
+
+### (Optional) FPGA Synthesis Research
+To synthesize the experimental Verilog code for the UDP streaming pipeline:
+1. Open Xilinx Vivado (or ISE 14.7 for legacy Spartan-3).
+2. Load the appropriate project in `/fpga/`.
+3. Generate the `.bit` file and program the FPGA.

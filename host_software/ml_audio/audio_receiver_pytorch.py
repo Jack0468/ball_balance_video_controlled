@@ -1,3 +1,4 @@
+import os
 import threading
 import queue
 import time
@@ -45,11 +46,20 @@ def align_speech_to_fixed_length(audio, target_samples=OUTPUT_SEQUENCE_LENGTH):
 
     return audio.astype(np.float32)
 
-def waveform_to_spectrogram(waveform):
+def waveform_to_spectrogram(waveform, noise_profile=None, noise_alpha=1.5):
     waveform_pt = torch.tensor(waveform, dtype=torch.float32).unsqueeze(0)
     window = torch.hann_window(N_FFT)
-    spec = torch.stft(waveform_pt, n_fft=N_FFT, hop_length=HOP_LENGTH, window=window, return_complex=True)
+    spec = torch.stft(waveform_pt, n_fft=N_FFT, hop_length=HOP_LENGTH, window=window, return_complex=True, center=False)
+    
+    # Convert to absolute magnitude spectrum
     spec = spec.abs()
+    
+    # Apply Spectral Subtraction if profile exists
+    if noise_profile is not None:
+        # noise_profile is [1, 128], we need [1, 128, 1] to broadcast over the time dimension
+        spec = spec - (noise_profile.unsqueeze(-1) * noise_alpha)
+        spec = torch.clamp(spec, min=0.0)
+        
     # PyTorch stft returns [batch, freqs, frames]. TF returns [batch, frames, freqs].
     spec = spec.transpose(1, 2)
     spec = torch.log(spec + 1e-6)
@@ -58,14 +68,33 @@ def waveform_to_spectrogram(waveform):
 class AudioCommandReceiver:
     def __init__(self, model_path, step_seconds=0.2):
         print(f"Loading Audio Model from {model_path}...")
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model = AudioCommandClassifier()
-        state_dict = torch.load(model_path, map_location=self.device, weights_only=True)
-        self.model.load_state_dict(state_dict)
+        self.device = torch.device('cpu')
+        
+        global LABEL_NAMES
+        if model_path:
+            state_dict = torch.load(model_path, map_location=self.device, weights_only=True)
+            num_classes = state_dict['dense_bias'].shape[0]
+            
+            if num_classes == 7:
+                LABEL_NAMES = ["_background_", "go_blue", "go_green", "go_red", "go_yellow", "hold", "stop"]
+                
+            self.model = AudioCommandClassifier(num_classes=num_classes)
+            self.model.load_state_dict(state_dict)
+        else:
+            self.model = AudioCommandClassifier()
+            
         self.model.to(self.device)
         self.model.eval()
         self.step_seconds = step_seconds
         
+        # Spectral Noise Subtraction
+        self.noise_profile = None
+        self.noise_alpha = 1.5 # Subtraction multiplier
+        noise_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models', 'noise_profile.pt')
+        if os.path.exists(noise_path):
+            print(f"Loading Spectral Noise Profile from {noise_path}...")
+            self.noise_profile = torch.load(noise_path, map_location=self.device, weights_only=True)
+            
         self.window_samples = OUTPUT_SEQUENCE_LENGTH
         self.step_samples = int(SAMPLE_RATE * self.step_seconds)
         self.audio_buffer = np.zeros(self.window_samples, dtype=np.float32)
@@ -75,9 +104,9 @@ class AudioCommandReceiver:
         
         self.chunk_queue = queue.Queue()
         
-        self.min_confidence = 0.6
-        self.min_margin = 0.10
-        self.recent_predictions = []
+        self.min_confidence = 0.7
+        self.min_margin = 0.15
+        self.last_pushed_command = None
         
         self.stream = sd.InputStream(
             samplerate=SAMPLE_RATE,
@@ -109,9 +138,9 @@ class AudioCommandReceiver:
             
             aligned = align_speech_to_fixed_length(self.audio_buffer)
             if aligned is None:
-                self.recent_predictions.append(None)
+                self.last_pushed_command = None
             else:
-                spec = waveform_to_spectrogram(aligned).to(self.device)
+                spec = waveform_to_spectrogram(aligned, noise_profile=self.noise_profile, noise_alpha=self.noise_alpha).to(self.device)
                 with torch.no_grad():
                     logits = self.model(spec)
                     probs = torch.nn.functional.softmax(logits, dim=-1).cpu().numpy()[0]
@@ -124,22 +153,16 @@ class AudioCommandReceiver:
                 margin = float(top_two[-1] - top_two[-2])
                 
                 if top_conf >= self.min_confidence and margin >= self.min_margin:
-                    self.recent_predictions.append(top_label)
+                    if top_label != self.last_pushed_command:
+                        if self.command_queue.full():
+                            try:
+                                self.command_queue.get_nowait()
+                            except queue.Empty:
+                                pass
+                        self.command_queue.put(top_label)
+                        self.last_pushed_command = top_label
                 else:
-                    self.recent_predictions.append(None)
-                    
-            if len(self.recent_predictions) > 3:
-                self.recent_predictions.pop(0)
-                
-            if len(self.recent_predictions) == 3:
-                p1, p2, p3 = self.recent_predictions
-                if p2 is not None and p2 == p3 and p1 != p2: 
-                    if self.command_queue.full():
-                        try:
-                            self.command_queue.get_nowait()
-                        except queue.Empty:
-                            pass
-                    self.command_queue.put(p2)
+                    self.last_pushed_command = None
 
     def get_latest_command(self):
         try:
@@ -149,5 +172,9 @@ class AudioCommandReceiver:
 
     def stop(self):
         self.running = False
-        self.stream.stop()
-        self.stream.close()
+        try:
+            if hasattr(self, 'stream') and self.stream is not None:
+                self.stream.stop()
+                self.stream.close()
+        except Exception as e:
+            print(f"Audio stream closed with exception: {e}")

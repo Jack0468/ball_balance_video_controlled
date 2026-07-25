@@ -1,3 +1,9 @@
+import sys
+import os
+# Adjust path to find modules in host_software root
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '/../..'))
+if root_dir not in sys.path:
+    sys.path.append(root_dir)
 import cv2
 import threading
 import queue
@@ -5,17 +11,33 @@ import time
 import struct
 import numpy as np
 import os
+import sys
 import torch
 import torch.nn as nn
 from torchvision import models, transforms
 import serial
 import csv
 
+# Add parent directory to path to import ml_audio
+sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from ml_audio.audio_listener import AudioListener
+
 # --- Configuration ---
-SERIAL_PORT = "COM8"
-SERIAL_BAUD = 2000000 # Increased to 2Mbaud to match firmware
-MAX_BOUND = 200.0 # Denormalization constant
-LOG_FILE = "laptop_camera_telemetry.csv"
+SERIAL_PORT = "COM7"
+SERIAL_BAUD = 2000000 
+MAX_BOUND = 200.0 
+LOG_FILE = "laptop_camera_audio_telemetry.csv"
+
+# Hardware target mapping based on bounding_boxes_for_data.md
+# Platform size: 187.5mm x 142mm. Center is (0,0).
+# Left edge: -93.75, Right edge: +93.75
+# Bottom edge: -71.0, Top edge: +71.0
+TARGET_COORDS = {
+    "green": (-93.75 + 33, 71.0 - 26),   # 33 from left, 26 from top
+    "red": (93.75 - 41, 71.0 - 53),      # 41 from right, 53 from top
+    "yellow": (-93.75 + 69, -71.0 + 58), # mapped to grey marker: 69 from left, 58 from bottom
+    "blue": (93.75 - 13, -71.0 + 8),     # mapped to black marker: 13 from right, 8 from bottom
+}
 # ---------------------
 
 class TelemetryLogger:
@@ -24,7 +46,6 @@ class TelemetryLogger:
         self.running = True
         self.log_queue = queue.Queue()
         
-        # Open CSV file and write header
         self.csv_file = open(LOG_FILE, 'w', newline='')
         self.csv_writer = csv.writer(self.csv_file)
         self.csv_writer.writerow([
@@ -34,12 +55,10 @@ class TelemetryLogger:
             "integral_x", "integral_y", "deriv_x", "deriv_y"
         ])
         
-        # Telemetry struct format: 2 uint32, 15 floats = 68 bytes
         self.struct_fmt = '<IIfffffffffffffff'
         self.struct_len = struct.calcsize(self.struct_fmt)
         self.sync_word = b'\xAA\xBB\xCC\xDD'
         
-        # Store the latest camera predictions so we can inject them into the log
         self.latest_cam_x = 0.0
         self.latest_cam_y = 0.0
         
@@ -55,7 +74,6 @@ class TelemetryLogger:
                     buffer.extend(self.ser.read(self.ser.in_waiting))
                     
                     while len(buffer) >= self.struct_len:
-                        # Find sync word
                         sync_idx = buffer.find(self.sync_word)
                         if sync_idx == -1:
                             buffer.clear()
@@ -66,7 +84,6 @@ class TelemetryLogger:
                             self._parse_packet(packet)
                             buffer = buffer[sync_idx + self.struct_len :]
                         else:
-                            # Wait for more data
                             buffer = buffer[sync_idx:]
                             break
                 else:
@@ -79,7 +96,6 @@ class TelemetryLogger:
     def _parse_packet(self, packet):
         try:
             unpacked = struct.unpack(self.struct_fmt, packet)
-            # unpacked[0] is sync_header
             mcu_micros = unpacked[1]
             target_x = unpacked[2]
             target_y = unpacked[3]
@@ -183,9 +199,9 @@ def main():
     parser.add_argument("--cam_id", type=int, default=0, help="Camera ID for USB mode")
     args = parser.parse_args()
 
-    # 1. Hardware/Model Init
+    # Hardware/Model Init
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    script_dir = os.path.dirname(os.path.abspath(__file__))
+    script_dir = root_dir
     model_path = os.path.abspath(os.path.join(script_dir, 'models/resnet18_expert_tracker_subset/expert_tracker_subset_best.pth'))
     
     model = load_expert_model(model_path, device)
@@ -197,7 +213,6 @@ def main():
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
     
-    # 2. Serial Port Init
     try:
         ser = serial.Serial(SERIAL_PORT, SERIAL_BAUD, timeout=0)
         print(f"Connected to STM32 on {SERIAL_PORT} at {SERIAL_BAUD} baud.")
@@ -206,36 +221,16 @@ def main():
         print("Continuing in dry-run mode (no serial transmission).")
         ser = None
 
-    # 3. Stream & Logger Init
     receiver = USBReceiver(args.cam_id)
     logger = TelemetryLogger(ser)
     
-    print("\n--- ROI Selection ---")
-    print("1. Click and drag to draw a bounding box around the platform.")
-    print("2. Press SPACE or ENTER to confirm your selection.")
-    print("---------------------\n")
+    # Initialize and start audio listener
+    audio = AudioListener()
+    audio.start()
     
-    # Wait for the first frame
-    frame = None
-    for _ in range(30):
-        frame = receiver.get_latest_frame()
-        if frame is not None:
-            break
-        time.sleep(0.1)
-        
-    if frame is not None:
-        roi = cv2.selectROI("Select Platform Bounds", frame, showCrosshair=True, fromCenter=False)
-        cv2.destroyAllWindows()
-    else:
-        roi = (0, 0, 0, 0)
-        
-    if roi == (0, 0, 0, 0):
-        print("No ROI selected, using full frame.")
-        roi = None
-    else:
-        print(f"Selected ROI: {roi}")
+    print(f"Starting Main Inference Loop with Audio Integration...")
+    target_x, target_y = 0.0, 0.0
     
-    print(f"Starting Main Inference Loop...")
     try:
         while True:
             frame = receiver.get_latest_frame()
@@ -244,15 +239,8 @@ def main():
                 
             start_t = time.perf_counter()
             
-            # Crop frame if ROI is selected
-            if roi is not None:
-                x, y, w, h = roi
-                crop_frame = frame[y:y+h, x:x+w]
-            else:
-                crop_frame = frame.copy()
-            
-            # Inference Phase
-            rgb_frame = cv2.cvtColor(crop_frame, cv2.COLOR_BGR2RGB)
+            # Vision Inference Phase
+            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             input_tensor = preprocess(rgb_frame).unsqueeze(0).to(device)
             
             with torch.no_grad():
@@ -261,17 +249,35 @@ def main():
             norm_x, norm_y = output[0].cpu().numpy()
             cam_x = float(norm_x * MAX_BOUND)
             cam_y = float(norm_y * MAX_BOUND)
-            
-            # Update logger
             logger.update_cam_pos(cam_x, cam_y)
             
-            # Serial Transmission Phase
+            # Audio Target Update Phase
+            audio_state = audio.get_latest_command()
+            target_colour = audio_state.get("target_colour")
+            mode = audio_state.get("mode")
+            
+            if mode == "colour_select" and target_colour in TARGET_COORDS:
+                target_x, target_y = TARGET_COORDS[target_colour]
+            elif mode == "stop":
+                # Emergency stop logic - optionally just hold current position
+                pass 
+            elif mode == "hold":
+                # Do not change target
+                pass
+            
+            # Compute Error and Transmit
+            # Since firmware is reverted, STM32 PID uses target_x as the setpoint and reads touch_x as ball pos.
+            # To trick the STM32 into using the camera, we send (target_x - cam_x) as the setpoint
+            # Assuming touch_x is 0, then error = touch_x - (target_x - cam_x) = cam_x - target_x.
+            # So the STM32's internal error becomes exactly what it should be.
+            error_x = target_x - cam_x
+            error_y = target_y - cam_y
+            
             try:
+                err_x_int = int(max(min(error_x, 32767), -32768))
+                err_y_int = int(max(min(error_y, 32767), -32768))
                 
-                cam_x_int = int(max(min(cam_x, 32767), -32768))
-                cam_y_int = int(max(min(cam_y, 32767), -32768))
-                
-                payload = struct.pack('<chh', b'<', cam_x_int, cam_y_int)
+                payload = struct.pack('<chh', b'<', err_x_int, err_y_int)
                 if ser is not None:
                     ser.write(payload)
             except Exception as e:
@@ -280,25 +286,33 @@ def main():
             end_t = time.perf_counter()
             fps = 1.0 / (end_t - start_t)
             
-            # Visualization Phase
-            cv2.putText(crop_frame, f"Cam: X={cam_x:.1f} Y={cam_y:.1f} mm", (20, 50), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-            cv2.putText(crop_frame, f"FPS: {fps:.1f}", (20, 100), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 200, 0), 2)
+            # Visualization
+            cv2.putText(frame, f"Cam: X={cam_x:.1f} Y={cam_y:.1f}", (20, 30), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+            cv2.putText(frame, f"Target ({target_colour}): X={target_x:.1f} Y={target_y:.1f}", (20, 60), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 165, 255), 2)
+            
+            audio_text = f"Audio: {audio_state.get('command')} ({audio_state.get('confidence', 0.0):.2f})"
+            cv2.putText(frame, audio_text, (20, 90), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 100, 255), 2)
                         
-            cv2.imshow("Live Inference (Press 'q' to quit)", crop_frame)
+            cv2.putText(frame, f"FPS: {fps:.1f}", (20, 120), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 200, 0), 2)
+                        
+            cv2.imshow("Audio-Vision Loop (Press 'q' to quit)", frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
                 
     except KeyboardInterrupt:
         pass
     finally:
+        audio.stop()
         receiver.stop()
         logger.stop()
         if ser:
             ser.close()
         cv2.destroyAllWindows()
-        print("Inference loop stopped. Telemetry saved to laptop_camera_telemetry.csv.")
+        print("Inference loop stopped.")
 
 if __name__ == '__main__':
     main()

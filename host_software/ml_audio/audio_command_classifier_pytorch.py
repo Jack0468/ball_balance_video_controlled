@@ -1,4 +1,4 @@
-﻿import torch
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -1840,7 +1840,7 @@ CONV2D_2_KERNEL = CONV2D_2_KERNEL.view(CONV2D_2_OUT_CH, CONV2D_2_IN_CH, CONV2D_2
 DENSE_WEIGHT = DENSE_KERNEL.view(DENSE_OUT, DENSE_IN)
 
 class AudioCommandClassifier(nn.Module):
-    def __init__(self):
+    def __init__(self, num_classes=6):
         super().__init__()
         self.norm_epsilon = float(NORMALIZATION_EPSILON)
         self.bn1_eps = float(BATCH_NORMALIZATION_EPS)
@@ -1866,8 +1866,12 @@ class AudioCommandClassifier(nn.Module):
         self.register_buffer('bn3_beta', BATCH_NORMALIZATION_2_BETA)
         self.register_buffer('bn3_mean', BATCH_NORMALIZATION_2_MOVING_MEAN)
         self.register_buffer('bn3_var', BATCH_NORMALIZATION_2_MOVING_VARIANCE)
-        self.register_buffer('dense_weight', DENSE_WEIGHT)
-        self.register_buffer('dense_bias', DENSE_BIASES)
+        if num_classes == 6:
+            self.register_buffer('dense_weight', DENSE_WEIGHT)
+            self.register_buffer('dense_bias', DENSE_BIASES)
+        else:
+            self.register_buffer('dense_weight', torch.zeros(num_classes, DENSE_IN))
+            self.register_buffer('dense_bias', torch.zeros(num_classes))
 
     def forward(self, x):
         if x.dim() == 3:

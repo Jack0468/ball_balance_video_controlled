@@ -1,3 +1,9 @@
+import sys
+import os
+# Adjust path to find modules in host_software root
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '/../..'))
+if root_dir not in sys.path:
+    sys.path.append(root_dir)
 import cv2
 import socket
 import threading
@@ -135,7 +141,7 @@ def main():
 
     # 1. Hardware/Model Init
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    script_dir = os.path.dirname(os.path.abspath(__file__))
+    script_dir = root_dir
     model_path = os.path.abspath(os.path.join(script_dir, 'models/resnet18_expert_tracker/expert_tracker_best.pth'))
     
     model = load_expert_model(model_path, device)
