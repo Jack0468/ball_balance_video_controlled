@@ -37,12 +37,12 @@ def main():
         print(f"STM32 Port selected: {args.port}")
 
     script_dir = root_dir
-    yolo_xml = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/yolo_platform_markers_v2/weights/best_openvino_model/best.xml'))
-    corrector_xml = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/corrector/best_corrector.xml'))
+    yolo_xml = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/yolov8_platform_markers_v2/weights/best_openvino_model/best.xml'))
+    mlp_corrector_v1_xml = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/mlp_corrector_v1/best_mlp_corrector_v1.xml'))
     audio_xml = os.path.abspath(os.path.join(script_dir, 'ml_audio/models/audio_command_classifier/best_classifier.xml'))
 
     # Initialize OpenVINO Pipeline (We still provide audio_xml to satisfy init, but won't feed it)
-    pipeline = OpenVINOPipeline(yolo_xml, audio_xml, corrector_xml, device="CPU")
+    pipeline = OpenVINOPipeline(yolo_xml, audio_xml, mlp_corrector_v1_xml, device="CPU")
     
     # Initialize Homography Projector
     dst_pts = np.array([[-70, 55], [70, 55], [70, -55], [-70, -55]], dtype=np.float32)
@@ -155,7 +155,7 @@ def main():
                         features[1:12:2] /= 480.0
                         features[12:] /= 100.0
                         
-                        pipeline.dispatch_corrector(features.reshape(1, 14))
+                        pipeline.dispatch_mlp_corrector_v1(features.reshape(1, 14))
                         
                         if display_frame is not None:
                             # Draw platform corners
@@ -170,10 +170,10 @@ def main():
                             cv2.rectangle(display_frame, (int(bx - bw/2), int(by - bh/2)), 
                                           (int(bx + bw/2), int(by + bh/2)), (0, 165, 255), 2)
 
-            # If corrector finished, send it to serial
-            cam_coords = pipeline.state.get("corrector_output")
+            # If mlp_corrector_v1 finished, send it to serial
+            cam_coords = pipeline.state.get("mlp_corrector_v1_output")
             if cam_coords is not None:
-                pipeline.state["corrector_output"] = None
+                pipeline.state["mlp_corrector_v1_output"] = None
                 cam_x, cam_y = cam_coords
                 
                 try:

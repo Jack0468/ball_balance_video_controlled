@@ -11,7 +11,7 @@ from ultralytics import YOLO
 
 def export_yolo():
     print("Exporting YOLO model to OpenVINO...")
-    yolo_path = os.path.join("..", "models", "yolo_platform_markers_v2", "weights", "best.pt")
+    yolo_path = os.path.join("..", "models", "yolov8_platform_markers_v2", "weights", "best.pt")
     if not os.path.exists(yolo_path):
         print(f"YOLO model not found at {yolo_path}")
         return
@@ -19,25 +19,25 @@ def export_yolo():
     model.export(format="openvino")
     print("YOLO export complete.")
 
-def export_corrector():
+def export_mlp_corrector_v1():
     print("Exporting Corrector MLP to OpenVINO...")
-    corrector_path = os.path.join("..", "models", "corrector", "best_corrector.pth")
-    if not os.path.exists(corrector_path):
-        print(f"Corrector model not found at {corrector_path}")
+    mlp_corrector_v1_path = os.path.join("..", "models", "mlp_corrector_v1", "best_mlp_corrector_v1.pth")
+    if not os.path.exists(mlp_corrector_v1_path):
+        print(f"Corrector model not found at {mlp_corrector_v1_path}")
         return
     
     # We must import CorrectorMLP dynamically if src.models isn't enough, but it should be
-    # Actually wait, src.models loads from ml_vision.core.corrector_mlp
-    from ml_vision.core.corrector_mlp import CorrectorMLP as CMLP
+    # Actually wait, src.models loads from ml_vision.core.mlp_corrector_v1_mlp
+    from ml_vision.core.mlp_corrector_v1_mlp import CorrectorMLP as CMLP
     model = CMLP(input_dim=14, hidden_dim=128, output_dim=2)
-    model.load_state_dict(torch.load(corrector_path, map_location="cpu"))
+    model.load_state_dict(torch.load(mlp_corrector_v1_path, map_location="cpu"))
     model.eval()
     
     # Convert to OpenVINO
     example_input = torch.randn(1, 14)
     ov_model = ov.convert_model(model, example_input=example_input)
     
-    output_path = os.path.join("..", "models", "corrector", "best_corrector.xml")
+    output_path = os.path.join("..", "models", "mlp_corrector_v1", "best_mlp_corrector_v1.xml")
     ov.save_model(ov_model, output_path)
     print(f"Corrector export complete: {output_path}")
 
@@ -61,6 +61,6 @@ def export_audio():
 if __name__ == "__main__":
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     export_yolo()
-    export_corrector()
+    export_mlp_corrector_v1()
     export_audio()
     print("All exports finished successfully!")

@@ -4,7 +4,7 @@ import os
 import openvino as ov
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
-yolo_xml = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/yolo_platform_markers_v2/weights/best_openvino_model/best.xml'))
+yolo_xml = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/yolov8_platform_markers_v2/weights/best_openvino_model/best.xml'))
 
 core = ov.Core()
 yolo_model = core.read_model(yolo_xml)

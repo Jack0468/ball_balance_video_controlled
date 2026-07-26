@@ -133,7 +133,7 @@ def main():
         else:
             print("\n[DIAGNOSTIC] No resume checkpoint provided. Starting from SCRATCH!")
             
-    save_path = os.path.join(project_dir, 'resnet18_expert_tracker/expert_tracker_best.pth')
+    save_path = os.path.join(project_dir, 'resnet18_expert_tracker_v1/expert_tracker_best.pth')
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     
     print(f"Starting training on {device}...")
@@ -207,7 +207,7 @@ def main():
             print(f"Saved new best model to {save_path}")
             
         # Save the latest model at the end of every epoch just in case Colab crashes!
-        latest_path = os.path.join(project_dir, 'resnet18_expert_tracker/expert_tracker_latest.pth')
+        latest_path = os.path.join(project_dir, 'resnet18_expert_tracker_v1/expert_tracker_latest.pth')
         torch.save(checkpoint, latest_path)
 
     print("Training complete!")

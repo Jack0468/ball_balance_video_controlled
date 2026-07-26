@@ -21,7 +21,7 @@ from ball_dataset import BallDataset
 def main():
     parser = argparse.ArgumentParser(description="Evaluate ResNet Expert Tracker")
     parser.add_argument("--data_dir", default="../data/02_silver", help="Path to data directory")
-    parser.add_argument("--model_path", required=True, help="Path to the trained .pth file (e.g. models/resnet18_expert_tracker/expert_tracker_best.pth)")
+    parser.add_argument("--model_path", required=True, help="Path to the trained .pth file (e.g. models/resnet18_expert_tracker_v1/expert_tracker_best.pth)")
     parser.add_argument("--arch", type=str, default="resnet18", choices=["resnet18", "resnet50"], help="Architecture to use")
     args = parser.parse_args()
 

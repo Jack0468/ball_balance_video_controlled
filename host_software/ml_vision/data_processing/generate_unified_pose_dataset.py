@@ -118,7 +118,7 @@ def main():
     
     print("Loading pre-trained YOLO-Pose platform model...")
     try:
-        pose_model = YOLO(os.path.abspath(os.path.join(script_dir, "../models/platform_pose_model/weights/best.pt")))
+        pose_model = YOLO(os.path.abspath(os.path.join(script_dir, "../models/yolov8_platform_pose_v2/weights/best.pt")))
     except Exception as e:
         print(f"Failed to load platform pose model: {e}")
         return

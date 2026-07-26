@@ -45,7 +45,7 @@ def main():
     # 1. Hardware/Model Init
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     script_dir = root_dir
-    model_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/resnet18_expert_tracker_B/expert_tracker_best.pth'))
+    model_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/resnet18_expert_tracker_v1_B/expert_tracker_best.pth'))
     
     model = load_expert_model(model_path, device)
     

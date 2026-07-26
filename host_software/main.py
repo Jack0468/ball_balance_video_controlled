@@ -14,8 +14,9 @@ from ml_audio.audio_receiver_pytorch import AudioCommandReceiver
 
 from src.receivers import USBReceiver, UDPReceiver
 from src.utils import find_stm32_port
-from src.models import load_yolo_model, load_corrector_model
+from src.models import load_yolo_model, load_mlp_corrector_v1_model
 from src.state_machine import TargetStateMachine
+from src.latency_monitor import RealtimeLatencyMonitor
 
 # --- Configuration ---
 SERIAL_PORT = "COM3"
@@ -43,11 +44,11 @@ def main():
     # 1. Hardware/Model Init
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    yolo_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/platform_and_markers_model/weights/best.pt'))
-    corrector_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/corrector/best_corrector.pth'))
+    yolo_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/yolov8_platform_markers_v1/weights/best.pt'))
+    mlp_corrector_v1_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/mlp_corrector_v1/best_mlp_corrector_v1.pth'))
     
     yolo_model = load_yolo_model(yolo_path, device)
-    corrector_model = load_corrector_model(corrector_path, device)
+    mlp_corrector_v1_model = load_mlp_corrector_v1_model(mlp_corrector_v1_path, device)
     
     # Initialize Homography Projector
     dst_pts = np.array([
@@ -62,6 +63,8 @@ def main():
     audio_model_path = os.path.abspath(os.path.join(script_dir, 'ml_audio/synthetic/models/pytorch/audio_weights_with_synthetic.pth'))
     audio_receiver = AudioCommandReceiver(audio_model_path)
     state_machine = TargetStateMachine()
+    
+    latency_monitor = RealtimeLatencyMonitor(log_interval=100, save_dir=os.path.join(script_dir, 'ml_vision/evaluations'))
     
     # 3. Serial Port Init
     try:
@@ -92,10 +95,12 @@ def main():
                 continue
                 
             start_t = time.perf_counter()
+            latency_monitor.start_frame()
             
             # Inference Phase
             results = yolo_model.predict(source=frame, imgsz=320, conf=0.5, verbose=False)
             yolo_t = time.perf_counter()
+            latency_monitor.end_vision()
             
             if not results or len(results) == 0:
                 print("No YOLO results")
@@ -159,9 +164,10 @@ def main():
             input_tensor = torch.tensor(features).unsqueeze(0).to(device)
             
             with torch.no_grad():
-                output = corrector_model(input_tensor)
+                output = mlp_corrector_v1_model(input_tensor)
             
             mlp_t = time.perf_counter()
+            latency_monitor.end_mlp()
             
             cam_x, cam_y = output[0].cpu().numpy()
             
@@ -172,6 +178,7 @@ def main():
             state_machine.process_command(command)
             state_machine.update_markers(marker_coords)
             target_x, target_y = state_machine.get_target_coords()
+            latency_monitor.end_audio()
             
             # Serial Transmission Phase
             # We send cam_x, cam_y, target_x, target_y so the RL policy gets true absolute coords
@@ -184,6 +191,7 @@ def main():
                 print(f"Serial Error: {e}")
                 
             end_t = time.perf_counter()
+            latency_monitor.end_frame(log_to_console=False)
             
             total_latency_ms = (end_t - start_t) * 1000.0
             yolo_latency_ms = (yolo_t - start_t) * 1000.0

@@ -10,7 +10,7 @@ from resnet18_lstm import TemporalExpertTracker
 
 def train_model():
     parser = argparse.ArgumentParser(description="Train Temporal Expert Tracker")
-    parser.add_argument("--save_dir", default="../models/temporal_expert_tracker", help="Directory to save the trained models")
+    parser.add_argument("--save_dir", default="../models/resnet18_temporal_tracker_v1", help="Directory to save the trained models")
     parser.add_argument("--resume", type=str, default=None, help="Path to checkpoint (.pth) to resume training from")
     args = parser.parse_args()
 

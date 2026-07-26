@@ -21,7 +21,7 @@ def main():
         imgsz=640,
         batch=16,
         project='models',
-        name='new_platform_pose_model',
+        name='yolov8_platform_pose_v1',
         exist_ok=True,
         # Heavy augmentations
         perspective=0.001, # Perspective warp
@@ -33,7 +33,7 @@ def main():
         hsv_v=0.4          # Color jitter (Val)
     )
     
-    print("Training complete! Model saved in models/new_platform_pose_model/weights/best.pt")
+    print("Training complete! Model saved in models/yolov8_platform_pose_v1/weights/best.pt")
 
 if __name__ == '__main__':
     main()

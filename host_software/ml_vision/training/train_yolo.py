@@ -42,14 +42,14 @@ def main():
         imgsz=640,
         workers=0,
         project=args.save_dir,
-        name="unified_pose_model",
+        name="yolov8_unified_pose_v1",
         device=device_str,
         fliplr=0.0,  # Disable horizontal flip to preserve Top-Left/Top-Right semantic order
         flipud=0.0,   # Disable vertical flip
         resume=resume_flag
     )
     
-    print("Training complete! Model saved in ../models/unified_pose_model/weights/best.pt")
+    print("Training complete! Model saved in ../models/yolov8_unified_pose_v1/weights/best.pt")
 
 if __name__ == '__main__':
     main()

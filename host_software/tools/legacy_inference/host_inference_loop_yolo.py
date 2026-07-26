@@ -97,7 +97,7 @@ def order_markers(pts):
 def main():
     # 1. Model & Hardware Init
     script_dir = root_dir
-    model_path = os.path.join(script_dir, 'models/yolov8_marker_and_ball_detector/weights/best.pt')
+    model_path = os.path.join(script_dir, 'models/yolov8_marker_ball_v1/weights/best.pt')
     
     if not os.path.exists(model_path):
         print(f"ERROR: YOLO model not found at {model_path}. Train the model first.")

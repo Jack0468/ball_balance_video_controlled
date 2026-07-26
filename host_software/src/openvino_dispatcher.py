@@ -5,7 +5,7 @@ import time
 LABEL_NAMES = ["go_blue", "go_green", "go_red", "go_yellow", "hold", "stop"]
 
 class OpenVINOPipeline:
-    def __init__(self, yolo_xml, audio_xml, corrector_xml, device="CPU", jobs=1):
+    def __init__(self, yolo_xml, audio_xml, mlp_corrector_v1_xml, device="CPU", jobs=1):
         self.core = ov.Core()
         
         print(f"Loading OpenVINO models for device {device}...")
@@ -21,15 +21,15 @@ class OpenVINOPipeline:
             self.audio_compiled = None
             self.audio_queue = None
             
-        if corrector_xml:
-            self.corrector_model = self.core.read_model(corrector_xml)
-            self.corrector_compiled = self.core.compile_model(self.corrector_model, device)
-            self.corrector_queue = ov.AsyncInferQueue(self.corrector_compiled, jobs)
-            self.corrector_queue.set_callback(self._corrector_callback)
+        if mlp_corrector_v1_xml:
+            self.mlp_corrector_v1_model = self.core.read_model(mlp_corrector_v1_xml)
+            self.mlp_corrector_v1_compiled = self.core.compile_model(self.mlp_corrector_v1_model, device)
+            self.mlp_corrector_v1_queue = ov.AsyncInferQueue(self.mlp_corrector_v1_compiled, jobs)
+            self.mlp_corrector_v1_queue.set_callback(self._mlp_corrector_v1_callback)
         else:
-            self.corrector_model = None
-            self.corrector_compiled = None
-            self.corrector_queue = None
+            self.mlp_corrector_v1_model = None
+            self.mlp_corrector_v1_compiled = None
+            self.mlp_corrector_v1_queue = None
 
         self.yolo_compiled = self.core.compile_model(self.yolo_model, device)
         self.yolo_queue = ov.AsyncInferQueue(self.yolo_compiled, jobs)
@@ -39,7 +39,7 @@ class OpenVINOPipeline:
         self.state = {
             "yolo_result": None,       # Raw output tensor
             "audio_command": None,     # String command (debounced)
-            "corrector_output": None   # Tuple of (x, y)
+            "mlp_corrector_v1_output": None   # Tuple of (x, y)
         }
         
         # Audio debouncing variables
@@ -105,10 +105,10 @@ class OpenVINOPipeline:
         except Exception as e:
             print(f"Audio Callback Error: {e}")
 
-    def _corrector_callback(self, infer_request, user_data):
+    def _mlp_corrector_v1_callback(self, infer_request, user_data):
         try:
             res = infer_request.get_output_tensor(0).data[0]
-            self.state["corrector_output"] = (float(res[0]), float(res[1]))
+            self.state["mlp_corrector_v1_output"] = (float(res[0]), float(res[1]))
         except Exception as e:
             print(f"Corrector Callback Error: {e}")
 
@@ -130,10 +130,10 @@ class OpenVINOPipeline:
         if self.silence_frames >= self.required_silence_frames:
             self.ready_for_new_command = True
             
-    def dispatch_corrector(self, features):
+    def dispatch_mlp_corrector_v1(self, features):
         """Features should be shape (1, 14)"""
-        if self.corrector_queue.is_ready():
-            self.corrector_queue.start_async({0: features})
+        if self.mlp_corrector_v1_queue.is_ready():
+            self.mlp_corrector_v1_queue.start_async({0: features})
 
     def get_and_clear_audio_command(self):
         cmd = self.state["audio_command"]

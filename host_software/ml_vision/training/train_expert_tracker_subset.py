@@ -73,7 +73,7 @@ def main():
     
     num_epochs = 10
     best_loss = float('inf')
-    save_path = os.path.join(project_dir, 'resnet18_expert_tracker_subset/expert_tracker_subset_best.pth')
+    save_path = os.path.join(project_dir, 'resnet18_expert_tracker_v1_subset/expert_tracker_subset_best.pth')
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     
     print(f"Starting training on {device}...")
@@ -120,7 +120,7 @@ def main():
             print(f"Saved new best model to {save_path}")
             
         # Save the latest model at the end of every epoch just in case Colab crashes
-        latest_path = os.path.join(project_dir, 'resnet18_expert_tracker_subset/expert_tracker_subset_latest.pth')
+        latest_path = os.path.join(project_dir, 'resnet18_expert_tracker_v1_subset/expert_tracker_subset_latest.pth')
         torch.save(model.state_dict(), latest_path)
 
     print("Training complete!")

@@ -5,11 +5,11 @@ import torch
 from ultralytics import YOLO
 
 # Load PyTorch model
-pt_model = YOLO('ml_vision/models/yolo_platform_markers_v2/weights/best.pt')
+pt_model = YOLO('ml_vision/models/yolov8_platform_markers_v2/weights/best.pt')
 
 # Load OpenVINO model
 core = ov.Core()
-ov_model = core.compile_model('ml_vision/models/yolo_platform_markers_v2/weights/best_openvino_model/best.xml', 'CPU')
+ov_model = core.compile_model('ml_vision/models/yolov8_platform_markers_v2/weights/best_openvino_model/best.xml', 'CPU')
 
 # Load image
 img = cv2.imread('ml_vision/data/yolo_raw_dataset/images/0000.jpg')

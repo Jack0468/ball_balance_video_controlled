@@ -21,11 +21,11 @@ def main():
         imgsz=160,
         batch=16,
         project=project_dir,
-        name='platform_bbox_model',
+        name='yolov8_platform_bbox_v1',
         device='cpu' # Assuming CPU training is required
     )
     
-    print("Training complete! Model saved to:", os.path.join(project_dir, 'platform_bbox_model'))
+    print("Training complete! Model saved to:", os.path.join(project_dir, 'yolov8_platform_bbox_v1'))
 
 if __name__ == "__main__":
     main()
