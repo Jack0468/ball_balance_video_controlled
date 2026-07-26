@@ -61,7 +61,7 @@ notebook = {
         "        imgsz=640,\n",
         "        batch=16,\n",
         "        project=project_dir,\n",
-        "        name='platform_and_markers_model',\n",
+        "        name='yolov8_platform_markers_v1',\n",
         "        exist_ok=True,\n",
         "        perspective=0.001,\n",
         "        degrees=15.0,\n",
@@ -71,7 +71,7 @@ notebook = {
         "        hsv_s=0.7,\n",
         "        hsv_v=0.4\n",
         "    )\n",
-        "    print(f\"Training complete! Model saved in {project_dir}/platform_and_markers_model/weights/best.pt\")\n"
+        "    print(f\"Training complete! Model saved in {project_dir}/yolov8_platform_markers_v1/weights/best.pt\")\n"
       ]
     }
   ],

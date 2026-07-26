@@ -65,7 +65,7 @@ def main():
     os.makedirs(out_images_dir, exist_ok=True)
     os.makedirs(out_labels_dir, exist_ok=True)
     
-    pose_model_path = os.path.abspath(os.path.join(script_dir, "models/platform_pose_model/weights/best.pt"))
+    pose_model_path = os.path.abspath(os.path.join(script_dir, "models/yolov8_platform_pose_v2/weights/best.pt"))
     if not os.path.exists(pose_model_path):
         print(f"Error: Could not find pose model at {pose_model_path}")
         return

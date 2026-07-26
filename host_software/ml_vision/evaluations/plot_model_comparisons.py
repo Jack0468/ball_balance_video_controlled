@@ -13,8 +13,7 @@ def main():
         'RMSE_X_mm',
         'RMSE_Y_mm',
         'Max_Euclidean_Error_mm',
-        '95th_Percentile_Error_mm',
-        'FPS_Estimate'
+        '95th_Percentile_Error_mm'
     ]
     
     model_names = []
@@ -29,6 +28,9 @@ def main():
             json_path = os.path.join(root, json_file)
             model_name = os.path.basename(root)
             
+            if 'trial_' in model_name:
+                continue
+                
             with open(json_path, 'r') as f:
                 try:
                     data = json.load(f)
@@ -49,38 +51,60 @@ def main():
         
     print(f"\nPlotting comparisons for {len(model_names)} models...")
     
-    # Create a large figure to hold subplots
-    fig, axes = plt.subplots(3, 2, figsize=(18, 16))
-    fig.suptitle('Model Evaluation Comparisons', fontsize=22, fontweight='bold', y=0.98)
+    # Create a large figure to hold subplots with plenty of white space
+    fig, axes = plt.subplots(3, 2, figsize=(18, 16), facecolor='white')
+    fig.suptitle('Model Evaluation Comparisons', fontsize=26, fontweight='bold', y=0.98, color='#424242', fontname='Arial')
     
     axes = axes.flatten()
     
-    colors = plt.cm.viridis(np.linspace(0.1, 0.9, len(model_names)))
+    # Sydney Uni Monochromatic Red/Grey Theme
+    sydney_colors = ['#E64626', '#FF7F50', '#808080', '#A9A9A9', '#C0C0C0', '#D3D3D3', '#E64626', '#8B0000', '#B22222', '#CD5C5C', '#696969']
     
-    for i, metric in enumerate(metric_keys):
-        ax = axes[i]
+    unique_models = sorted(list(set(model_names)))
+    model_colors = {model: sydney_colors[j % len(sydney_colors)] for j, model in enumerate(unique_models)}
+    
+    for i, ax in enumerate(axes):
+        if i >= len(metric_keys):
+            ax.set_visible(False)
+            continue
+            
+        metric = metric_keys[i]
         
         # Sort data for better visualization
-        # For FPS, higher is better, so we can sort ascending to keep the best at the top or bottom
         sorted_pairs = sorted(zip(model_names, model_metrics[metric]), key=lambda x: x[1])
         sorted_names, sorted_vals = zip(*sorted_pairs)
         
-        bars = ax.barh(sorted_names, sorted_vals, color=colors)
+        # Assign consistent colors based on model name
+        colors = [model_colors[name] for name in sorted_names]
+        
+        bars = ax.barh(sorted_names, sorted_vals, color=colors, edgecolor='none')
         
         # Add values to the end of bars
         for bar in bars:
             width = bar.get_width()
-            ax.text(width + (width * 0.02), bar.get_y() + bar.get_height()/2, 
-                    f'{width:.2f}', ha='left', va='center', fontsize=11, fontweight='bold')
+            ax.text(width + (max(sorted_vals) * 0.02), bar.get_y() + bar.get_height()/2, 
+                    f'{width:.2f}', ha='left', va='center', fontsize=12, fontweight='bold', color='#424242', fontname='Arial')
                     
         title = metric.replace('_', ' ')
-        ax.set_title(title, fontsize=16, fontweight='bold')
+        ax.set_title(title, fontsize=18, fontweight='bold', color='#E64626', fontname='Arial', pad=15)
         if 'FPS' in metric:
-            ax.set_xlabel('Frames Per Second (Higher is better)', fontsize=12)
+            ax.set_xlabel('Frames Per Second', fontsize=14, fontname='Arial', color='#424242')
         else:
-            ax.set_xlabel('Error in mm (Lower is better)', fontsize=12)
+            ax.set_xlabel('Error in mm', fontsize=14, fontname='Arial', color='#424242')
             
-        ax.grid(axis='x', linestyle='--', alpha=0.7)
+        ax.grid(axis='x', linestyle='-', alpha=0.3, color='#808080')
+        ax.set_axisbelow(True)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_color('#808080')
+        ax.spines['bottom'].set_color('#808080')
+        ax.tick_params(axis='y', labelsize=12, colors='#424242')
+        ax.tick_params(axis='x', labelsize=12, colors='#424242')
+        
+        # Filter out bbox models visually if they exist by fading them out
+        for label in ax.get_yticklabels():
+            if 'bbox' in label.get_text():
+                label.set_color('#C0C0C0')
         ax.set_xlim(0, max(sorted_vals) * 1.15) # Add 15% padding for text
         ax.tick_params(axis='y', labelsize=12)
         

@@ -19,7 +19,7 @@ from ml_vision.core.coordinate_math import HomographyProjector
 
 from src.receivers import USBReceiver, UDPReceiver
 from src.utils import find_stm32_port
-from src.models import load_yolo_model, load_corrector_model
+from src.models import load_yolo_model, load_mlp_corrector_v1_model
 
 # --- Configuration ---
 SERIAL_PORT = "COM3"
@@ -47,11 +47,11 @@ def main():
     # 1. Hardware/Model Init
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     script_dir = root_dir
-    yolo_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/new_platform_pose_model/weights/best.pt'))
-    corrector_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/corrector/best_corrector.pth'))
+    yolo_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/yolov8_platform_pose_v1/weights/best.pt'))
+    mlp_corrector_v1_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/mlp_corrector_v1/best_mlp_corrector_v1.pth'))
     
     yolo_model = load_yolo_model(yolo_path, device)
-    corrector_model = load_corrector_model(corrector_path, device)
+    mlp_corrector_v1_model = load_mlp_corrector_v1_model(mlp_corrector_v1_path, device)
     
     # Initialize Homography Projector
     dst_pts = np.array([
@@ -147,7 +147,7 @@ def main():
             input_tensor = torch.tensor(features).unsqueeze(0).to(device)
             
             with torch.no_grad():
-                output = corrector_model(input_tensor)
+                output = mlp_corrector_v1_model(input_tensor)
             
             mlp_t = time.perf_counter()
             

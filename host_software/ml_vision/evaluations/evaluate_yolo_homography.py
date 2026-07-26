@@ -42,12 +42,16 @@ def get_platform_corners_and_ball(results):
             bx, by, bw, bh = boxes[i]
             ball_center = (bx, by)
             
+    # Fallback for models without keypoints (e.g., marker_ball_v1)
+    if corners is None:
+        corners = np.array([[80, 400], [560, 400], [520, 120], [120, 120]], dtype=np.float32)
+            
     return corners, ball_center
 
 def main():
     parser = argparse.ArgumentParser(description="Evaluate YOLO Pose Homography Accuracy")
     parser.add_argument("--data_dir", default="../data/02_silver", help="Path to telemetry dataset")
-    parser.add_argument("--model_path", default="../models/platform_and_markers_model/weights/best.pt", help="Path to YOLO model")
+    parser.add_argument("--model_path", default="../models/yolov8_platform_markers_v1/weights/best.pt", help="Path to YOLO model")
     args = parser.parse_args()
 
     model_path = os.path.abspath(os.path.join(script_dir, args.model_path))

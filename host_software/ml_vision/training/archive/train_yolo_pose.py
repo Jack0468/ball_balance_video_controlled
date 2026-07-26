@@ -24,11 +24,11 @@ def main():
         imgsz=640,
         batch=16,
         project=os.path.abspath(os.path.join(os.path.dirname(__file__), '../models')),
-        name='platform_pose_model'
+        name='yolov8_platform_pose_v2'
     )
     
     print("\nTraining complete!")
-    print("The best model weights are saved at: ../models/platform_pose_model/weights/best.pt")
+    print("The best model weights are saved at: ../models/yolov8_platform_pose_v2/weights/best.pt")
 
 if __name__ == '__main__':
     main()

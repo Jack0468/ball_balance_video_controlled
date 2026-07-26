@@ -146,7 +146,7 @@ def main():
 
     # 1. Model Init
     script_dir = root_dir
-    model_path = os.path.abspath(os.path.join(script_dir, 'models/platform_and_markers_model/weights/best.pt'))
+    model_path = os.path.abspath(os.path.join(script_dir, 'models/yolov8_platform_markers_v1/weights/best.pt'))
     
     print(f"Loading YOLOv8-Pose Model from {model_path}...")
     if not os.path.exists(model_path):

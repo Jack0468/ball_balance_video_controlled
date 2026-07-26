@@ -169,7 +169,7 @@ def main():
     script_dir = root_dir
     
     # Load Unified YOLO-Pose Model
-    model_path = os.path.join(script_dir, 'models/unified_pose_model/weights/best.pt')
+    model_path = os.path.join(script_dir, 'models/yolov8_unified_pose_v1/weights/best.pt')
     if not os.path.exists(model_path):
         print(f"ERROR: Unified YOLO-Pose model not found at {model_path}. Train the model first.")
         return

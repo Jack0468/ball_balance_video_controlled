@@ -13,7 +13,7 @@ parent_dir = os.path.abspath(os.path.join(script_dir, '..'))
 if parent_dir not in sys.path:
     sys.path.append(parent_dir)
 
-from core.corrector_mlp import CorrectorMLP
+from core.mlp_corrector_v1_mlp import CorrectorMLP
 
 class YoloFeatureDataset(Dataset):
     def __init__(self, df):
@@ -80,9 +80,9 @@ def train():
     test_losses = []
     
     best_test_loss = float('inf')
-    save_dir = os.path.abspath(os.path.join(script_dir, '../models/corrector'))
+    save_dir = os.path.abspath(os.path.join(script_dir, '../models/mlp_corrector_v1'))
     os.makedirs(save_dir, exist_ok=True)
-    model_save_path = os.path.join(save_dir, 'best_corrector.pth')
+    model_save_path = os.path.join(save_dir, 'best_mlp_corrector_v1.pth')
     
     test_frames_path = os.path.join(save_dir, 'test_frames.txt')
     df.iloc[split_idx:]['image_file'].to_csv(test_frames_path, index=False, header=False)
@@ -152,7 +152,7 @@ def train():
         "train_losses": train_losses,
         "test_losses": test_losses
     }
-    metrics_path = os.path.join(save_dir, 'corrector_training_metrics.json')
+    metrics_path = os.path.join(save_dir, 'mlp_corrector_v1_training_metrics.json')
     with open(metrics_path, 'w') as f:
         json.dump(metrics, f, indent=4)
     print(f"Saved training metrics to {metrics_path}")

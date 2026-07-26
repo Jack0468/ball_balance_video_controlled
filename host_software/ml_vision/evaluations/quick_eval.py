@@ -21,7 +21,7 @@ from ball_dataset import BallDataset
 def main():
     parser = argparse.ArgumentParser(description="Quick Metric Evaluation for Partially Trained Model")
     parser.add_argument("--data_dir", default="../data/02_silver", help="Path to data directory")
-    parser.add_argument("--model_path", default="../models/resnet18_expert_tracker/expert_tracker_latest.pth", help="Path to the model checkpoint")
+    parser.add_argument("--model_path", default="../models/resnet18_expert_tracker_v1/expert_tracker_latest.pth", help="Path to the model checkpoint")
     parser.add_argument("--num_samples", type=int, default=500, help="Number of random samples to evaluate quickly")
     args = parser.parse_args()
 

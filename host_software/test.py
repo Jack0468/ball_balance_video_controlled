@@ -2,8 +2,8 @@ import sys
 from ultralytics import YOLO
 import cv2
 
-yolo_ov = YOLO('ml_vision/models/yolo_platform_markers_v2/weights/best_openvino_model/', task='pose')
-yolo_pt = YOLO('ml_vision/models/platform_and_markers_model/weights/best_openvino_model/', task='pose')
+yolo_ov = YOLO('ml_vision/models/yolov8_platform_markers_v2/weights/best_openvino_model/', task='pose')
+yolo_pt = YOLO('ml_vision/models/yolov8_platform_markers_v1/weights/best_openvino_model/', task='pose')
 
 img = cv2.imread('ml_vision/data/yolo_raw_dataset/images/0000.jpg')
 

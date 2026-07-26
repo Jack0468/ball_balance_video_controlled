@@ -7,6 +7,27 @@
 
 The system is a hybrid software/hardware architecture consisting of a Host PC running Machine Learning pipelines and an Opal Kelly FPGA driving the physical actuators.
 
+```mermaid
+graph TD
+    %% Inputs
+    C[Webcam Video Frame] -->|Pixels| V(Vision Expert Model)
+    M[Microphone Audio] -->|Waveform| A(Audio Expert Model)
+    
+    %% Host PC
+    subgraph Host PC [Host PC (Python)]
+        V -->|Predicts x, y| S{State Aggregator}
+        A -->|Predicts Target cmd| S
+    end
+    
+    %% Microcontroller / Hardware
+    subgraph Edge Controller [STM32 / FPGA Control Subsystem]
+        S -- USB Serial Telemetry --> PID(PID / ML Control Expert)
+        PID -->|Motor Targets theta_a,b,c| D[Motor Drivers]
+    end
+    
+    D -->|Step/Dir Pulses| Motors[Stepper Motors]
+```
+
 - **Host PC**: Captures webcam video and microphone audio. Runs Python-based ML models for inference.
 - **USB/PCIe Bridge**: Uses the Opal Kelly FrontPanel SDK (Python wrapper) to pass data seamlessly to the FPGA.
 - **Opal Kelly FPGA**: Runs hardware-synthesized Verilog (converted via Vitis HLS) to perform Inverse Kinematics (IK) and fast PID loop calculations in pure silicon.

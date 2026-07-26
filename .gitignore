@@ -64,3 +64,4 @@ fpga/zynq_camera_sys/
 fpga/camera_vivado/
 
 hardware/cad/Parts
+docs/poster_draft.md

@@ -23,7 +23,7 @@ def main():
         imgsz=640,
         batch=16,
         project='models',
-        name='yolo_platform_markers_v2',
+        name='yolov8_platform_markers_v2',
         exist_ok=True,
         # Heavy augmentations
         perspective=0.001, # Perspective warp
@@ -35,7 +35,7 @@ def main():
         hsv_v=0.4          # Color jitter (Val)
     )
     
-    print("Training complete! Model saved in models/yolo_platform_markers_v2/weights/best.pt")
+    print("Training complete! Model saved in models/yolov8_platform_markers_v2/weights/best.pt")
 
 if __name__ == '__main__':
     main()

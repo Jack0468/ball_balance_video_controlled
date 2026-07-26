@@ -30,7 +30,7 @@ def main():
     import os
     
     # Safely resolve the absolute paths so it doesn't matter what folder you run the script from
-    bbox_model_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../models/platform_bbox_model-4/weights/best.pt'))
+    bbox_model_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../models/yolov8_platform_bbox_v1-4/weights/best.pt'))
     
     # Load the trained YOLOv8 BBox model
     bbox_model = YOLO(bbox_model_path, task='detect')

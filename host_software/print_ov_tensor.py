@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 
 core = ov.Core()
-yolo_compiled = core.compile_model('ml_vision/models/yolo_platform_markers_v2/weights/best_openvino_model/best.xml', 'CPU')
+yolo_compiled = core.compile_model('ml_vision/models/yolov8_platform_markers_v2/weights/best_openvino_model/best.xml', 'CPU')
 
 img = cv2.imread('ml_vision/data/02_silver_unified_pose/images/train/frame_0000.jpg')
 if img is None:

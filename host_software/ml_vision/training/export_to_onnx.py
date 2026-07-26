@@ -27,7 +27,7 @@ def main():
     export_model('yolov8n.pt', is_local_path=False)
     
     # 2. Export our custom YOLO-Pose model
-    export_model('../models/platform_pose_model/weights/best.pt', is_local_path=True)
+    export_model('../models/yolov8_platform_pose_v2/weights/best.pt', is_local_path=True)
     
     print("All models exported successfully! They are ready to be used with onnxruntime or TensorRT.")
 
