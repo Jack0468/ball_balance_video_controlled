@@ -127,6 +127,7 @@ def main():
         time.sleep(0.1)
 
     print("Starting OpenVINO Asynchronous Inference Loop...")
+    latest_marker_coords = {}
     try:
         while True:
             start_t = time.perf_counter()
@@ -142,9 +143,8 @@ def main():
                     spec = numpy_stft(aligned)
                     pipeline.dispatch_audio(spec)
                 else:
-                    # Send dummy so callback fires with low confidence
-                    pipeline.audio_history.append(None)
-                    if len(pipeline.audio_history) > 3: pipeline.audio_history.pop(0)
+                    # Mark explicit silence so audio command gating can reset.
+                    pipeline.register_audio_silence()
 
             # --- 2. Vision Dispatch ---
             frame = receiver.get_latest_frame()
@@ -191,6 +191,8 @@ def main():
                                     mx, my = projector.project_point(box[0], box[1])
                                     if mx is not None and my is not None:
                                         marker_coords[name] = (mx, my)
+
+                                latest_marker_coords = marker_coords
                                         
                             features = np.array([
                                 ball_box[0], ball_box[1], ball_box[2], ball_box[3],
@@ -243,8 +245,9 @@ def main():
                     print(f"======================================\n")
                     
                 state_machine.process_command(cmd, cam_x, cam_y)
+                state_machine.maybe_auto_hold(cam_x, cam_y, latest_marker_coords)
                 
-                target_x, target_y = state_machine.get_target_coords({}) # Pass markers
+                target_x, target_y = state_machine.get_target_coords(latest_marker_coords)
                 
                 try:
                     payload = f"{cam_x:.2f},{cam_y:.2f},{target_x:.2f},{target_y:.2f}\n".encode('ascii')

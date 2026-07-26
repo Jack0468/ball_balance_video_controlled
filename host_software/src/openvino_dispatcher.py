@@ -1,5 +1,6 @@
 import openvino as ov
 import numpy as np
+import time
 
 LABEL_NAMES = ["go_blue", "go_green", "go_red", "go_yellow", "hold", "stop"]
 
@@ -43,8 +44,14 @@ class OpenVINOPipeline:
         
         # Audio debouncing variables
         self.audio_history = []
-        self.min_confidence = 0.6
-        self.min_margin = 0.10
+        # Conservative thresholds to reduce false motor-noise triggers.
+        self.min_confidence = 0.72
+        self.min_margin = 0.18
+        self.command_cooldown_seconds = 5.0
+        self.last_command_time = -float("inf")
+        self.ready_for_new_command = True
+        self.silence_frames = 0
+        self.required_silence_frames = 2
         
     def _yolo_callback(self, infer_request, user_data):
         try:
@@ -71,17 +78,30 @@ class OpenVINOPipeline:
             margin = float(top_two[-1] - top_two[-2])
             
             if top_conf >= self.min_confidence and margin >= self.min_margin:
+                self.silence_frames = 0
                 self.audio_history.append(top_label)
             else:
                 self.audio_history.append(None)
+                self.silence_frames += 1
+                if self.silence_frames >= self.required_silence_frames:
+                    self.ready_for_new_command = True
                 
             if len(self.audio_history) > 3:
                 self.audio_history.pop(0)
                 
             if len(self.audio_history) == 3:
                 p1, p2, p3 = self.audio_history
-                if p2 is not None and p2 == p3 and p1 != p2: # Rising edge
+                cooldown_elapsed = (time.time() - self.last_command_time) >= self.command_cooldown_seconds
+                if (
+                    p2 is not None
+                    and p2 == p3
+                    and p1 != p2
+                    and self.ready_for_new_command
+                    and cooldown_elapsed
+                ):
                     self.state["audio_command"] = p2
+                    self.last_command_time = time.time()
+                    self.ready_for_new_command = False
         except Exception as e:
             print(f"Audio Callback Error: {e}")
 
@@ -101,6 +121,14 @@ class OpenVINOPipeline:
     def dispatch_audio(self, spectrogram):
         if self.audio_queue.is_ready():
             self.audio_queue.start_async({0: spectrogram})
+
+    def register_audio_silence(self):
+        self.audio_history.append(None)
+        if len(self.audio_history) > 3:
+            self.audio_history.pop(0)
+        self.silence_frames += 1
+        if self.silence_frames >= self.required_silence_frames:
+            self.ready_for_new_command = True
             
     def dispatch_corrector(self, features):
         """Features should be shape (1, 14)"""
