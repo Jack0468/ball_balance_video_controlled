@@ -1,0 +1,8 @@
+{
+    "Total_Trials": 11651,
+    "Task_Success_Rate_Percent": 0.8926272422967986,
+    "Steady_State_Error_mm": 35.32510034127685,
+    "Average_Settling_Time_ms": 1306.0288461538462,
+    "Control_Effort_Per_Frame_deg": 0.9631820663219819,
+    "Total_Control_Effort_deg": 52232.40027457476
+}
