@@ -4,9 +4,18 @@ import queue
 import time
 import numpy as np
 import sounddevice as sd
-import soundfile as sf
 import torch
 from ml_audio.audio_command_classifier_pytorch import AudioCommandClassifier
+
+try:
+    import soundfile as sf
+    _HAS_SOUNDFILE = True
+except ImportError:
+    _HAS_SOUNDFILE = False
+    try:
+        from scipy.io import wavfile
+    except ImportError:
+        wavfile = None
 
 SAMPLE_RATE = 16_000
 MODEL_WINDOW_SECONDS = 1.25
@@ -132,9 +141,20 @@ class AudioCommandReceiver:
 
     def _file_reader_loop(self):
         try:
-            audio, sr = sf.read(self.source_file)
+            if _HAS_SOUNDFILE:
+                audio, sr = sf.read(self.source_file)
+            elif wavfile is not None:
+                sr, audio = wavfile.read(self.source_file)
+                audio = audio.astype(np.float32)
+            else:
+                raise RuntimeError("No supported audio file reader is installed. Install soundfile or scipy.")
+
             if audio.ndim > 1:
                 audio = np.mean(audio, axis=1)
+            
+            if sr != SAMPLE_RATE:
+                print(f"Resampling audio from {sr} Hz to {SAMPLE_RATE} Hz...")
+                audio = self._resample_audio(audio, sr, SAMPLE_RATE)
             
             idx = 0
             while self.running and idx < len(audio):
@@ -156,6 +176,19 @@ class AudioCommandReceiver:
             print("Audio file stream completed.")
         except Exception as e:
             print(f"Error in file reader loop: {e}")
+
+    def _resample_audio(self, audio, src_sr, dst_sr):
+        try:
+            import resampy
+            return resampy.resample(audio, src_sr, dst_sr)
+        except ImportError:
+            print("Warning: resampy not installed, attempting scipy.signal.resample")
+            try:
+                from scipy.signal import resample
+                num_samples = int(len(audio) * dst_sr / src_sr)
+                return resample(audio, num_samples).astype(np.float32)
+            except Exception as e:
+                raise RuntimeError(f"Audio resampling failed: {e}")
 
     def _audio_callback(self, indata, frames, time_info, status):
         if status:

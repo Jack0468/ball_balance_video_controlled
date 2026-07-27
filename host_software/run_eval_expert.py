@@ -22,6 +22,51 @@ SERIAL_BAUD = 2000000
 EVAL_DURATION = 120 # Total seconds
 # ---------------------
 
+COLOR_CANONICAL_MAP = {
+    "pink": "red",
+    "red": "red",
+    "cyan": "blue",
+    "blue": "blue",
+}
+
+
+def canonicalize_color(name):
+    return COLOR_CANONICAL_MAP.get(name, name)
+
+
+def canonicalize_command(command):
+    if command is None or not command.startswith("go_"):
+        return command
+    color = command.split("_", 1)[1]
+    color = canonicalize_color(color)
+    return f"go_{color}"
+
+
+def canonicalize_marker_coords(marker_coords):
+    if not marker_coords:
+        return marker_coords
+
+    grouped = {}
+    counts = {}
+
+    for name, coords in marker_coords.items():
+        canonical_name = canonicalize_color(name)
+        if canonical_name not in grouped:
+            grouped[canonical_name] = [0.0, 0.0]
+            counts[canonical_name] = 0
+
+        grouped[canonical_name][0] += float(coords[0])
+        grouped[canonical_name][1] += float(coords[1])
+        counts[canonical_name] += 1
+
+    averaged = {}
+    for name, total in grouped.items():
+        count = counts[name]
+        averaged[name] = (total[0] / count, total[1] / count)
+
+    return averaged
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--cam_id", type=int, default=0, help="Camera ID")
@@ -36,7 +81,7 @@ def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     
     # Paths
-    yolo_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/yolov8_platform_pose_marker_ball_v1/weights/best.pt'))
+    yolo_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/yolov8_platform_pose_markers_v1/weights/best.pt'))
     mlp_corrector_v1_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/mlp_corrector_v1/best_corrector.pth'))
     audio_model_path = os.path.abspath(os.path.join(script_dir, 'ml_audio/synthetic/models/pytorch/audio_weights_with_synthetic.pth'))
     master_audio_path = os.path.abspath(os.path.join(script_dir, 'ml_audio', 'data', '02_silver', 'master_evaluation_audio.wav'))
@@ -49,7 +94,8 @@ def main():
     # Output CSV
     out_dir = os.path.abspath(os.path.join(script_dir, 'data', '04_evaluation'))
     os.makedirs(out_dir, exist_ok=True)
-    csv_path = os.path.join(out_dir, 'expert_evaluation_run.csv')
+    timestamp = time.strftime("%Y%m%d_%H%M%S")
+    csv_path = os.path.join(out_dir, f'expert_evaluation_run_{timestamp}.csv')
     csv_file = open(csv_path, 'w', newline='')
     csv_writer = csv.writer(csv_file)
     csv_writer.writerow(["host_timestamp_ms", "mcu_micros", "target_x", "target_y", 
@@ -135,6 +181,7 @@ def main():
             # Pop commands from the streaming audio model exactly like live mode
             command = audio_receiver.get_latest_command()
             if command:
+                command = canonicalize_command(command)
                 print(f"[{elapsed:.1f}s] STREAM DETECTED COMMAND: {command}")
                 state_machine.process_command(command)
 
@@ -147,9 +194,11 @@ def main():
             if cam_x is None:
                 continue
             
+            marker_coords = canonicalize_marker_coords(marker_coords)
+
             # Target Calculation
             state_machine.update_markers(marker_coords)
-            target_x, target_y = state_machine.get_target_coords()
+            target_x, target_y = state_machine.get_target_coords(marker_coords)
             
             # Send Target to STM32 (ASCII)
             payload = f"{cam_x:.2f},{cam_y:.2f},{target_x:.2f},{target_y:.2f}\n".encode('ascii')
