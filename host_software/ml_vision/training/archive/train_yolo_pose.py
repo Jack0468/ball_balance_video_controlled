@@ -10,7 +10,7 @@ def main():
     model = YOLO('yolov8n-pose.pt')
 
     # Path to the dataset configuration file we just created
-    yaml_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../data/platform_pose.yaml'))
+    yaml_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../data/platform_pose.yaml'))
 
     print(f"Starting training using config: {yaml_path}")
     

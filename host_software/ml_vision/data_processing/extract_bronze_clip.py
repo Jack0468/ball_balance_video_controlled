@@ -4,7 +4,7 @@ import os
 
 def main():
     parser = argparse.ArgumentParser(description="Extract a 30s clip from bronze video.")
-    parser.add_argument("--input", default="../data/01_bronze/video1/20260710_054604000_iOS.MOV")
+    parser.add_argument("--input", default="../../data/01_bronze/video1/20260710_054604000_iOS.MOV")
     parser.add_argument("--output", default="../bronze_demo.mp4")
     parser.add_argument("--duration", type=int, default=30, help="Duration in seconds")
     args = parser.parse_args()

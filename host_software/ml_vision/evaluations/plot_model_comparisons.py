@@ -28,7 +28,7 @@ def main():
             json_path = os.path.join(root, json_file)
             model_name = os.path.basename(root)
             
-            if 'trial_' in model_name:
+            if 'trial_' in model_name or 'subset_' in model_name:
                 continue
                 
             with open(json_path, 'r') as f:

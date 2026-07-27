@@ -77,7 +77,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         video = sys.argv[1]
     else:
-        video = 'host_software/ml_vision/data/01_bronze/video1/20260710_054604000_iOS.MOV'
+        video = 'host_software/data/01_bronze/video1/20260710_054604000_iOS.MOV'
     
     roi = auto_detect_platform_via_ball(video)
     print("ROI:", roi)

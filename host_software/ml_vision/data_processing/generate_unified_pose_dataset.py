@@ -106,10 +106,10 @@ def main():
     args = parser.parse_args()
     
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    input_dir = os.path.abspath(os.path.join(script_dir, f"../data/{args.input_dataset}/images"))
-    telemetry_path = os.path.abspath(os.path.join(script_dir, f"../data/{args.input_dataset}/{args.csv_name}"))
+    input_dir = os.path.abspath(os.path.join(script_dir, f"../../data/{args.input_dataset}/images"))
+    telemetry_path = os.path.abspath(os.path.join(script_dir, f"../../data/{args.input_dataset}/{args.csv_name}"))
     
-    output_dir = os.path.abspath(os.path.join(script_dir, f"../data/{args.input_dataset}_unified_pose"))
+    output_dir = os.path.abspath(os.path.join(script_dir, f"../../data/{args.input_dataset}_unified_pose"))
     out_images_dir = os.path.join(output_dir, "images")
     out_labels_dir = os.path.join(output_dir, "labels")
     
@@ -238,7 +238,7 @@ def main():
             
     print(f"Done! Successfully generated {success_count} images.")
     
-    yaml_content = f"""path: /content/ball_balance_video_controlled/host_software/ml_vision/data/{args.input_dataset}_unified_pose
+    yaml_content = f"""path: /content/ball_balance_video_controlled/host_software/data/{args.input_dataset}_unified_pose
 train: images
 val: images
 

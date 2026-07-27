@@ -13,7 +13,7 @@ from core.vla_architecture import RT1LiteVLA
 
 def evaluate_vla():
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    dataset_path = os.path.abspath(os.path.join(script_dir, "../data/03_gold/vla_dataset.json"))
+    dataset_path = os.path.abspath(os.path.join(script_dir, "../../data/03_gold/vla_dataset.json"))
     model_path = os.path.abspath(os.path.join(script_dir, "../models/vla_v1/best_vla.pth"))
     
     if not os.path.exists(model_path):

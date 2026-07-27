@@ -18,7 +18,7 @@ def train_model():
     print(f"Starting training on {device}...")
     
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    data_dir = os.path.abspath(os.path.join(script_dir, '../data/02_silver'))
+    data_dir = os.path.abspath(os.path.join(script_dir, '../../data/02_silver'))
     
     csv_path = os.path.join(data_dir, 'labels_sequential.csv')
     images_dir = os.path.join(data_dir, 'images')

@@ -115,8 +115,8 @@ def generate_dataset(dataset, output_dir, total_images=1000):
 
 if __name__ == "__main__":
     # Assuming script is run from the ml_vision/scripts/ directory
-    input_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../data/02_silver/base_images"))
-    output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../data/03_gold/augmented_dataset"))
+    input_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../data/02_silver/base_images"))
+    output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../data/03_gold/augmented_dataset"))
     
     print(f"Loading dataset from {input_dir}")
     dataset = load_dataset(input_dir)

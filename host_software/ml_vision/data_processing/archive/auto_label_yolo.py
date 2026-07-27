@@ -141,7 +141,7 @@ def main():
     print(f"Done! Successfully generated {success_count} auto-labeled images.")
     
     # create dataset.yaml
-    yaml_content = f"""path: /content/ball_balance_video_controlled/host_software/ml_vision/data/04_auto_labeled
+    yaml_content = f"""path: /content/ball_balance_video_controlled/host_software/data/04_auto_labeled
 train: images
 val: images
 

@@ -5,7 +5,7 @@ import cv2
 core = ov.Core()
 yolo_compiled = core.compile_model('ml_vision/models/yolov8_platform_markers_v2/weights/best_openvino_model/best.xml', 'CPU')
 
-img = cv2.imread('ml_vision/data/02_silver_unified_pose/images/train/frame_0000.jpg')
+img = cv2.imread('data/02_silver_unified_pose/images/train/frame_0000.jpg')
 if img is None:
     print("Image not found. Creating random image.")
     img = np.random.randint(0, 255, (640, 640, 3), dtype=np.uint8)

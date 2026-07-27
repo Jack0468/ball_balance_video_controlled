@@ -14,7 +14,7 @@ def load_yolo_model(model_path, device):
     return model
 
 def load_mlp_corrector_v1_model(model_path, device):
-    from ml_vision.core.mlp_corrector_v1_mlp import CorrectorMLP
+    from ml_vision.core.corrector_mlp import CorrectorMLP
     print("Loading MLP Corrector Model...")
     model = CorrectorMLP(input_dim=14, hidden_dim=128, output_dim=2)
     if os.path.exists(model_path):

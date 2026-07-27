@@ -46,7 +46,7 @@ class YoloFeatureDataset(Dataset):
 def train():
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data_csv", default="../data/02_silver/yolo_features.csv", help="Path to yolo features CSV")
+    parser.add_argument("--data_csv", default="../../data/02_silver/yolo_features.csv", help="Path to yolo features CSV")
     parser.add_argument("--epochs", type=int, default=300, help="Number of training epochs")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size")
     args = parser.parse_args()

@@ -33,3 +33,21 @@ To ensure the end-to-end VLA model respects these criteria, we utilize a two-sta
    - **Reward:** Minimizing Euclidean Distance (Steady-State Error)
    - **Penalty:** High action variance (Control Effort / Jerk)
    - **Terminal Penalty:** Dropping the ball (Task Success Rate)
+
+## Standardized Evaluation Sequence
+To rigorously benchmark all systems (PID, Expert Vision+RL, VLA) under perfectly identical conditions, evaluations must be run against a pre-recorded audio sequence. 
+
+The evaluation script injects the following 12 commands with background continuously being fed inbetween commands (each spaced by exactly 10 seconds of evaluation time):
+1. `go_grey` (0s - 10s)
+2. `go_blue` (10s - 20s)
+3. `go_green` (20s - 30s)
+4. `go_yellow` (30s - 40s)
+5. `go_red` (40s - 50s)
+6. `FORWARD` (50s - 60s)
+7. `LEFT` (60s - 70s)
+8. `RIGHT` (70s - 80s)
+9. `BACKWARD` (80s - 90s)
+10. `HOLD` (90s - 100s)
+11. `STOP` (100s - 110s)
+
+The host script is responsible for aligning these logical commands to the equivalent 2D physical target coordinates depending on the robot's current configuration.

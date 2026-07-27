@@ -5,7 +5,7 @@ import cv2
 yolo_ov = YOLO('ml_vision/models/yolov8_platform_markers_v2/weights/best_openvino_model/', task='pose')
 yolo_pt = YOLO('ml_vision/models/yolov8_platform_markers_v1/weights/best_openvino_model/', task='pose')
 
-img = cv2.imread('ml_vision/data/yolo_raw_dataset/images/0000.jpg')
+img = cv2.imread('data/yolo_raw_dataset/images/0000.jpg')
 
 res_ov = yolo_ov.predict(source=img, imgsz=640, conf=0.5, verbose=False)[0]
 res_pt = yolo_pt.predict(source=img, imgsz=640, conf=0.5, verbose=False)[0]

@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 def test_detect():
-    cap = cv2.VideoCapture('host_software/ml_vision/data/01_bronze/video1/20260710_054604000_iOS.MOV')
+    cap = cv2.VideoCapture('host_software/data/01_bronze/video1/20260710_054604000_iOS.MOV')
     for _ in range(30):
         ret, frame = cap.read()
         

@@ -1,4 +1,4 @@
-%pip install --user -q tensorflow sounddevice soundfile
+# %pip install --user -q tensorflow sounddevice soundfile
 
 ---
 import json

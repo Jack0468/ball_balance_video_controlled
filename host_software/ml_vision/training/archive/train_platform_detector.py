@@ -9,7 +9,7 @@ def main():
     
     # 2. Set absolute paths
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    data_yaml = os.path.join(script_dir, '../data/platform_bbox.yaml')
+    data_yaml = os.path.join(script_dir, '../../data/platform_bbox.yaml')
     project_dir = os.path.join(script_dir, '../models')
     
     # 3. Train the model
