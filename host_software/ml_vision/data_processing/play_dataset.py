@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 def main():
     parser = argparse.ArgumentParser(description="Play through a cleaned dataset to visually verify telemetry.")
-    parser.add_argument('--data_dir', required=True, help="Path to dataset directory (e.g. ../data/02_silver)")
+    parser.add_argument('--data_dir', required=True, help="Path to dataset directory (e.g. ../../data/02_silver)")
     parser.add_argument('--csv_name', default='labels_sequential.csv', help="Name of the telemetry CSV file")
     parser.add_argument('--output', default='dataset_playback.mp4', help="Output mp4 path (default: dataset_playback.mp4)")
     parser.add_argument('--max_frames', type=int, default=1500, help="Max frames to play (default: 1500, roughly 50s)")

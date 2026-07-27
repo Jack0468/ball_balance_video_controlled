@@ -15,7 +15,7 @@ from core.coordinate_math import HomographyProjector
 
 def extract_features():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data_dir", default="../data/02_silver", help="Path to telemetry dataset")
+    parser.add_argument("--data_dir", default="../../data/02_silver", help="Path to telemetry dataset")
     parser.add_argument("--model_path", default="../models/yolov8_platform_markers_v1/weights/best.pt", help="Path to YOLO model")
     parser.add_argument("--num_train", type=int, default=5000, help="Number of training samples to extract")
     parser.add_argument("--num_test", type=int, default=1000, help="Number of test samples to extract")

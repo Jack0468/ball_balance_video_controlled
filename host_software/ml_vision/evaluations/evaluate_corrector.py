@@ -19,7 +19,7 @@ from core.coordinate_math import HomographyProjector
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data_dir", default="../data/02_silver", help="Path to telemetry dataset")
+    parser.add_argument("--data_dir", default="../../data/02_silver", help="Path to telemetry dataset")
     parser.add_argument("--yolo_path", default="../models/yolov8_platform_markers_v1/weights/best.pt")
     parser.add_argument("--mlp_corrector_v1_path", default="../models/mlp_corrector_v1/best_mlp_corrector_v1.pth")
     args = parser.parse_args()

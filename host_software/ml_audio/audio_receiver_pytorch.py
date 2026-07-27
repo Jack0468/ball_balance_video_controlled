@@ -4,6 +4,7 @@ import queue
 import time
 import numpy as np
 import sounddevice as sd
+import soundfile as sf
 import torch
 from ml_audio.audio_command_classifier_pytorch import AudioCommandClassifier
 
@@ -66,7 +67,7 @@ def waveform_to_spectrogram(waveform, noise_profile=None, noise_alpha=1.5):
     return spec
 
 class AudioCommandReceiver:
-    def __init__(self, model_path, step_seconds=0.2):
+    def __init__(self, model_path, step_seconds=0.2, source_file=None):
         print(f"Loading Audio Model from {model_path}...")
         self.device = torch.device('cpu')
         
@@ -108,18 +109,51 @@ class AudioCommandReceiver:
         self.min_margin = 0.15
         self.last_pushed_command = None
         
-        self.stream = sd.InputStream(
-            samplerate=SAMPLE_RATE,
-            channels=1,
-            dtype="float32",
-            blocksize=self.step_samples,
-            callback=self._audio_callback
-        )
-        self.stream.start()
+        self.source_file = source_file
+        if self.source_file:
+            print(f"Audio receiver initialized on File Stream: {self.source_file}")
+            self.thread_file = threading.Thread(target=self._file_reader_loop, daemon=True)
+            self.thread_file.start()
+        else:
+            self.stream = sd.InputStream(
+                samplerate=SAMPLE_RATE,
+                channels=1,
+                dtype="float32",
+                blocksize=self.step_samples,
+                callback=self._audio_callback
+            )
+            self.stream.start()
+            print("Audio receiver initialized on laptop microphone.")
         
         self.thread = threading.Thread(target=self._process_loop, daemon=True)
         self.thread.start()
-        print("Audio receiver initialized on laptop microphone.")
+
+    def _file_reader_loop(self):
+        try:
+            audio, sr = sf.read(self.source_file)
+            if audio.ndim > 1:
+                audio = np.mean(audio, axis=1)
+            
+            idx = 0
+            while self.running and idx < len(audio):
+                start_t = time.perf_counter()
+                end_idx = min(idx + self.step_samples, len(audio))
+                chunk = audio[idx:end_idx].astype(np.float32)
+                
+                if len(chunk) < self.step_samples:
+                    chunk = np.pad(chunk, (0, self.step_samples - len(chunk)))
+                    
+                self.chunk_queue.put(chunk)
+                idx += self.step_samples
+                
+                # Simulate real-time stream cadence
+                elapsed = time.perf_counter() - start_t
+                sleep_time = self.step_seconds - elapsed
+                if sleep_time > 0:
+                    time.sleep(sleep_time)
+            print("Audio file stream completed.")
+        except Exception as e:
+            print(f"Error in file reader loop: {e}")
 
     def _audio_callback(self, indata, frames, time_info, status):
         if status:

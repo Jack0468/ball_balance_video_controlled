@@ -5,7 +5,7 @@ import argparse
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset', default='host_software/ml_vision/data/03_synthetic_yolo')
+    parser.add_argument('--dataset', default='host_software/data/03_synthetic_yolo')
     args = parser.parse_args()
     
     images_dir = os.path.join(args.dataset, 'images')

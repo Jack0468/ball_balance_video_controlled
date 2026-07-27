@@ -129,8 +129,8 @@ def format_yolo_pose(class_id, cx, cy, w, h, img_w, img_h, keypoints=None):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--bronze-dir', default='host_software/ml_vision/data/01_bronze', help='Dir containing video folders')
-    parser.add_argument('--out-dir', default='host_software/ml_vision/data/yolo_raw_dataset', help='Output dataset dir')
+    parser.add_argument('--bronze-dir', default='host_software/data/01_bronze', help='Dir containing video folders')
+    parser.add_argument('--out-dir', default='host_software/data/yolo_raw_dataset', help='Output dataset dir')
     parser.add_argument('--frames-per-video', type=int, default=10, help='Frames to extract per video')
     args = parser.parse_args()
     

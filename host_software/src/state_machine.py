@@ -3,7 +3,11 @@ from collections import deque
 class TargetStateMachine:
     def __init__(self, history_size=10):
         self.current_target_name = "center"
-        self.valid_targets = ["center", "blue", "green", "red", "yellow", "hold"]
+        self.valid_targets = [
+            "center", "hold", 
+            "blue", "green", "red", "yellow", 
+            "grey", "black", "cyan", "purple", "orange", "pink", "brown"
+        ]
         self.hold_x = 0.0
         self.hold_y = 0.0
         self.history_size = history_size
@@ -18,6 +22,7 @@ class TargetStateMachine:
         self._on_target_frames = 0
         
     def process_command(self, command, cam_x=0.0, cam_y=0.0):
+
         if command is None:
             return
             

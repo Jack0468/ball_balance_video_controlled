@@ -92,7 +92,7 @@ def main():
     parser = argparse.ArgumentParser(description="Preprocess synchronized dataset (crop, resize, save).")
     parser.add_argument('--video', required=True, help="Path to raw .MOV video")
     parser.add_argument('--synced-csv', required=True, help="Path to intermediate synced telemetry mapping")
-    parser.add_argument('--output-dir', default="host_software/ml_vision/data/02_silver", help="Output directory")
+    parser.add_argument('--output-dir', default="host_software/data/02_silver", help="Output directory")
     parser.add_argument('--crop', required=True, help="Crop box as 'x,y,w,h' e.g. '82,435,915,762'")
     
     args = parser.parse_args()

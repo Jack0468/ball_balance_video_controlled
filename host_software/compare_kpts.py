@@ -12,7 +12,7 @@ core = ov.Core()
 ov_model = core.compile_model('ml_vision/models/yolov8_platform_markers_v2/weights/best_openvino_model/best.xml', 'CPU')
 
 # Load image
-img = cv2.imread('ml_vision/data/yolo_raw_dataset/images/0000.jpg')
+img = cv2.imread('data/yolo_raw_dataset/images/0000.jpg')
 if img is None:
     print("Cannot find image!")
     exit(1)

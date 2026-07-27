@@ -174,7 +174,7 @@ def main():
     print(f"Done! Successfully generated {success_count} images.")
     
     # create dataset.yaml
-    yaml_content = f"""path: /content/ball_balance_video_controlled/host_software/ml_vision/data/05_warped_dataset
+    yaml_content = f"""path: /content/ball_balance_video_controlled/host_software/data/05_warped_dataset
 train: images
 val: images
 

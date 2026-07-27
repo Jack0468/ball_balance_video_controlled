@@ -14,7 +14,7 @@ class IphoneDataLogger:
         self.baudrate = baudrate
         
         # Setup Medallion Architecture Directories
-        self.bronze_dir = os.path.join(os.path.dirname(__file__), "..", "..", "ml_vision", "data", "bronze")
+        self.bronze_dir = os.path.join(os.path.dirname(__file__), "..", "data", "01_bronze")
         self.telemetry_file = os.path.join(self.bronze_dir, "iphone_telemetry.csv")
         
         os.makedirs(self.bronze_dir, exist_ok=True)

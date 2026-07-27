@@ -50,7 +50,7 @@ def get_platform_corners_and_ball(results):
 
 def main():
     parser = argparse.ArgumentParser(description="Evaluate YOLO Pose Homography Accuracy")
-    parser.add_argument("--data_dir", default="../data/02_silver", help="Path to telemetry dataset")
+    parser.add_argument("--data_dir", default="../../data/02_silver", help="Path to telemetry dataset")
     parser.add_argument("--model_path", default="../models/yolov8_platform_markers_v1/weights/best.pt", help="Path to YOLO model")
     args = parser.parse_args()
 

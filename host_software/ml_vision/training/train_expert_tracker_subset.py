@@ -10,7 +10,7 @@ from ball_dataset import BallDataset
 
 def main():
     parser = argparse.ArgumentParser(description="Train ResNet18 Expert Tracker (Subset)")
-    parser.add_argument("--data_dir", default="../data/02_silver", help="Path to data directory")
+    parser.add_argument("--data_dir", default="../../data/02_silver", help="Path to data directory")
     args = parser.parse_args()
 
     print("Initializing PyTorch Expert Tracker Model (ResNet18) [SUBSET MODE]...")

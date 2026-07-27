@@ -7,7 +7,7 @@ import time
 def main():
     # 1. Configuration
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    image_path = os.path.abspath(os.path.join(script_dir, '../data/02_silver/images/1783662370840.jpg'))
+    image_path = os.path.abspath(os.path.join(script_dir, '../../data/02_silver/images/1783662370840.jpg'))
     output_path = os.path.abspath(os.path.join(script_dir, 'clustering_output.jpg'))
     
     print(f"Loading image from: {image_path}")

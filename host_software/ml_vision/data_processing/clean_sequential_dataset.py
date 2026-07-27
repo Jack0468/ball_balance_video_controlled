@@ -41,7 +41,7 @@ def clean_dataset(data_dir):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Deduplicate telemetry to 1 row per image")
-    parser.add_argument('--data_dir', type=str, required=True, help="Path to dataset directory (e.g. ../data/02_silver)")
+    parser.add_argument('--data_dir', type=str, required=True, help="Path to dataset directory (e.g. ../../data/02_silver)")
     
     args = parser.parse_args()
     clean_dataset(args.data_dir)

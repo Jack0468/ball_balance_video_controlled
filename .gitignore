@@ -31,14 +31,14 @@ env.bak/
 venv.bak/
 
 # Data and large files
-host_software/ml_vision/data/01_bronze/
-host_software/ml_vision/data/02_silver/
-host_software/ml_vision/data/03_gold/
-host_software/ml_vision/data/03_synthetic_yolo/
-host_software/ml_vision/data/*_unified_pose/
-host_software/ml_vision/data/yolo_raw_dataset/
+host_software/data/01_bronze/
+host_software/data/02_silver/
+host_software/data/03_gold/
+host_software/data/03_synthetic_yolo/
+host_software/data/*_unified_pose/
+host_software/data/yolo_raw_dataset/
 host_software/data_collection/data/
-host_software/ml_audio/data/
+host_software/data/
 *.csv
 evaluation_results/
 
@@ -57,7 +57,7 @@ host_software/ml_vision/models/weights/
 runs/
 *.zip
 fpga/camera_i2c/old_images/
-host_software/ml_vision/data/02_silver_unified_pose.zip
+host_software/data/02_silver_unified_pose.zip
 dataset_playback.mp4
 
 fpga/zynq_camera_sys/

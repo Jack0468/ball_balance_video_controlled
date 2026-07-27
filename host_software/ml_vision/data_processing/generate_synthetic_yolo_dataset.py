@@ -69,8 +69,8 @@ def random_point_in_quad(pts, existing_points=None, min_dist=45):
 
 def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    input_dir = os.path.abspath(os.path.join(script_dir, "../data/yolo_raw_dataset"))
-    output_dir = os.path.abspath(os.path.join(script_dir, "../data/03_synthetic_yolo"))
+    input_dir = os.path.abspath(os.path.join(script_dir, "../../data/yolo_raw_dataset"))
+    output_dir = os.path.abspath(os.path.join(script_dir, "../../data/03_synthetic_yolo"))
     
     in_images_dir = os.path.join(input_dir, "images")
     in_labels_dir = os.path.join(input_dir, "labels")

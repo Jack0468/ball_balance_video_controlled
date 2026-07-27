@@ -104,7 +104,7 @@ def main():
         ser = None
         
     if args.mock:
-        receiver = MockReceiver('ml_vision/data/yolo_raw_dataset/images/0000.jpg')
+        receiver = MockReceiver('data/yolo_raw_dataset/images/0000.jpg')
     else:
         receiver = UDPReceiver(port=args.udp_port, width=640, height=480) if args.udp else USBReceiver(camera_id=args.cam_id)
         

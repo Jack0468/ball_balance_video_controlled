@@ -14,12 +14,12 @@ from ml_audio.audio_receiver_pytorch import AudioCommandReceiver
 
 from src.receivers import USBReceiver, UDPReceiver
 from src.utils import find_stm32_port
-from src.models import load_yolo_model, load_mlp_corrector_v1_model
+from src.models import load_yolo_model, load_mlp_corrector_v1_model, process_vision_frame
 from src.state_machine import TargetStateMachine
 from src.latency_monitor import RealtimeLatencyMonitor
 
 # --- Configuration ---
-SERIAL_PORT = "COM3"
+SERIAL_PORT = "COM7"
 SERIAL_BAUD = 2000000 
 # ---------------------
 
@@ -44,8 +44,8 @@ def main():
     # 1. Hardware/Model Init
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    yolo_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/yolov8_platform_markers_v1/weights/best.pt'))
-    mlp_corrector_v1_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/mlp_corrector_v1/best_mlp_corrector_v1.pth'))
+    yolo_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/yolov8_platform_pose_markers_v2/weights/best.pt'))
+    mlp_corrector_v1_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/mlp_corrector_v1/best_corrector.pth'))
     
     yolo_model = load_yolo_model(yolo_path, device)
     mlp_corrector_v1_model = load_mlp_corrector_v1_model(mlp_corrector_v1_path, device)
@@ -98,84 +98,23 @@ def main():
             latency_monitor.start_frame()
             
             # Inference Phase
-            results = yolo_model.predict(source=frame, imgsz=320, conf=0.5, verbose=False)
+            cam_x, cam_y, marker_coords = process_vision_frame(frame, yolo_model, mlp_corrector_v1_model, projector, device)
             yolo_t = time.perf_counter()
             latency_monitor.end_vision()
             
-            if not results or len(results) == 0:
-                print("No YOLO results")
-                continue
-                
-            res = results[0]
-            if res.boxes is None:
-                print("No boxes detected")
-                continue
-                
-            classes = res.boxes.cls.cpu().numpy()
-            boxes = res.boxes.xywh.cpu().numpy()
-            
-            corners = None
-            ball_box = None
-            detected_markers = {}
-            
-            for i, cls in enumerate(classes):
-                c = int(cls)
-                if c == 0: # Platform
-                    if res.keypoints is not None and len(res.keypoints.xy) > i:
-                        kpts = res.keypoints.xy[i].cpu().numpy()
-                        if len(kpts) == 4:
-                            corners = kpts
-                elif c == 1: # Ball
-                    ball_box = boxes[i]
-                elif c >= 2: # Marker
-                    name = yolo_model.names[c].replace('_marker', '')
-                    detected_markers[name] = boxes[i]
-            
-            if corners is None or ball_box is None:
+            if cam_x is None:
                 end_t = time.perf_counter()
                 fps = 1.0 / (end_t - start_t)
-                yolo_latency_ms = (yolo_t - start_t) * 1000.0
-                # print(f"Missing detections - Platform: {'Found' if corners is not None else 'Missing'}, Ball: {'Found' if ball_box is not None else 'Missing'} | FPS: {fps:.1f} | YOLO Latency: {yolo_latency_ms:.1f}ms")
+                print(f"Missing detections - Ball/Platform not found | FPS: {fps:.1f}")
                 continue
-            
-            homography_x, homography_y = 0.0, 0.0
-            marker_coords = {}
-            if projector.update_homography(corners):
-                hx, hy = projector.project_point(ball_box[0], ball_box[1])
-                if hx is not None and hy is not None:
-                    homography_x, homography_y = hx, hy
-                    
-                for name, box in detected_markers.items():
-                    mx, my = projector.project_point(box[0], box[1])
-                    if mx is not None and my is not None:
-                        marker_coords[name] = (mx, my)
-                    
-            features = np.array([
-                ball_box[0], ball_box[1], ball_box[2], ball_box[3],
-                corners[0][0], corners[0][1], corners[1][0], corners[1][1],
-                corners[2][0], corners[2][1], corners[3][0], corners[3][1],
-                homography_x, homography_y
-            ], dtype=np.float32)
-            
-            features[0:12:2] /= 640.0
-            features[1:12:2] /= 480.0
-            features[12:] /= 100.0
-            
-            input_tensor = torch.tensor(features).unsqueeze(0).to(device)
-            
-            with torch.no_grad():
-                output = mlp_corrector_v1_model(input_tensor)
-            
             mlp_t = time.perf_counter()
             latency_monitor.end_mlp()
-            
-            cam_x, cam_y = output[0].cpu().numpy()
             
             # Process Audio Commands
             command = audio_receiver.get_latest_command()
             if command:
                 print(f"\n[AUDIO] Heard command: {command}\n")
-            state_machine.process_command(command)
+            state_machine.process_command(command, cam_x, cam_y)
             state_machine.update_markers(marker_coords)
             target_x, target_y = state_machine.get_target_coords()
             latency_monitor.end_audio()
