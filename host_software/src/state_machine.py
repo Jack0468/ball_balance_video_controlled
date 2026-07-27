@@ -38,6 +38,27 @@ class TargetStateMachine:
                 self.current_target_name = color
                 self._on_target_frames = 0
 
+        elif command in ["forward", "backward", "left", "right"]:
+            if self.current_target_name != "hold":
+                self.current_target_name = "hold"
+                self.hold_x = float(cam_x)
+                self.hold_y = float(cam_y)
+                
+            step = 5.0  # Nudge by 5mm
+            if command == "forward":
+                self.hold_y += step
+            elif command == "backward":
+                self.hold_y -= step
+            elif command == "left":
+                self.hold_x -= step
+            elif command == "right":
+                self.hold_x += step
+                
+            # Clamp to platform bounds
+            self.hold_x = max(-70.0, min(70.0, self.hold_x))
+            self.hold_y = max(-55.0, min(55.0, self.hold_y))
+            print(f"[{command.upper()}] Nudged target position to ({self.hold_x:.1f}, {self.hold_y:.1f})!")
+
     def maybe_auto_hold(self, cam_x, cam_y, marker_coords):
         if self.current_target_name in {"center", "hold"}:
             self._on_target_frames = 0

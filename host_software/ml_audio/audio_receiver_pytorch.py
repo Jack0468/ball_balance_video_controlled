@@ -14,7 +14,7 @@ OUTPUT_SEQUENCE_LENGTH = int(SAMPLE_RATE * MODEL_WINDOW_SECONDS)
 N_FFT = 255
 HOP_LENGTH = 128
 
-LABEL_NAMES = ["go_blue", "go_green", "go_red", "go_yellow", "hold", "stop"]
+LABEL_NAMES = ["go_blue", "go_green", "go_red", "go_yellow", "hold", "stop", "go_grey", "forward", "backward", "left", "right"]
 
 def align_speech_to_fixed_length(audio, target_samples=OUTPUT_SEQUENCE_LENGTH):
     audio = np.asarray(audio, dtype=np.float32)
@@ -78,6 +78,8 @@ class AudioCommandReceiver:
             
             if num_classes == 7:
                 LABEL_NAMES = ["_background_", "go_blue", "go_green", "go_red", "go_yellow", "hold", "stop"]
+            elif num_classes == 12:
+                LABEL_NAMES = ["_background_", "go_blue", "go_green", "go_red", "go_yellow", "hold", "stop", "go_grey", "forward", "backward", "left", "right"]
                 
             self.model = AudioCommandClassifier(num_classes=num_classes)
             self.model.load_state_dict(state_dict)
@@ -90,7 +92,7 @@ class AudioCommandReceiver:
         
         # Spectral Noise Subtraction
         self.noise_profile = None
-        self.noise_alpha = 1.5 # Subtraction multiplier
+        self.noise_alpha = 2.5 # Subtraction multiplier (increased for more attenuation)
         noise_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models', 'noise_profile.pt')
         if os.path.exists(noise_path):
             print(f"Loading Spectral Noise Profile from {noise_path}...")
@@ -105,7 +107,7 @@ class AudioCommandReceiver:
         
         self.chunk_queue = queue.Queue()
         
-        self.min_confidence = 0.7
+        self.min_confidence = 0.8
         self.min_margin = 0.15
         self.last_pushed_command = None
         

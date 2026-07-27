@@ -44,7 +44,7 @@ def main():
     # 1. Hardware/Model Init
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    yolo_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/yolov8_platform_pose_markers_v2/weights/best.pt'))
+    yolo_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/yolov8_platform_pose_markers_v1/weights/best.pt'))
     mlp_corrector_v1_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/mlp_corrector_v1/best_corrector.pth'))
     
     yolo_model = load_yolo_model(yolo_path, device)
@@ -60,7 +60,7 @@ def main():
     projector = HomographyProjector(dst_pts)
     
     # 2. Audio & State Init
-    audio_model_path = os.path.abspath(os.path.join(script_dir, 'ml_audio/synthetic/models/pytorch/audio_weights_with_synthetic.pth'))
+    audio_model_path = os.path.abspath(os.path.join(script_dir, 'ml_audio/audio_command_classifier_state_dict_v2.pth'))
     audio_receiver = AudioCommandReceiver(audio_model_path)
     state_machine = TargetStateMachine()
     
