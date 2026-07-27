@@ -3,18 +3,18 @@ from collections import deque
 class TargetStateMachine:
     def __init__(self, history_size=10):
         self.current_target_name = "center"
-        self.valid_targets = ["center", "blue", "green", "red", "yellow", "hold"]
+        self.valid_targets = [
+            "center", "hold", 
+            "blue", "green", "red", "yellow", 
+            "grey", "black", "cyan", "purple", "orange", "pink", "brown"
+        ]
         self.hold_x = 0.0
         self.hold_y = 0.0
         self.history_size = history_size
-        self.marker_history = {
-            "blue": deque(maxlen=history_size),
-            "green": deque(maxlen=history_size),
-            "red": deque(maxlen=history_size),
-            "yellow": deque(maxlen=history_size)
-        }
+        self.marker_history = {color: deque(maxlen=history_size) for color in self.valid_targets if color not in ["center", "hold"]}
         
     def process_command(self, command, cam_x=0.0, cam_y=0.0):
+
         if command is None:
             return
             

@@ -13,7 +13,7 @@ from ml_audio.audio_receiver_pytorch import AudioCommandReceiver
 
 from src.receivers import USBReceiver
 from src.utils import find_stm32_port
-from src.models import load_yolo_model, load_mlp_corrector_v1_model
+from src.models import load_yolo_model, load_mlp_corrector_v1_model, process_vision_frame
 from src.state_machine import TargetStateMachine
 
 # --- Configuration ---
@@ -36,8 +36,8 @@ def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     
     # Paths
-    yolo_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/yolov8_platform_markers_v1/weights/best.pt'))
-    mlp_corrector_v1_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/mlp_corrector_v1/best_mlp_corrector_v1.pth'))
+    yolo_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/yolov8_platform_pose_marker_ball_v1/weights/best.pt'))
+    mlp_corrector_v1_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/mlp_corrector_v1/best_corrector.pth'))
     audio_model_path = os.path.abspath(os.path.join(script_dir, 'ml_audio/synthetic/models/pytorch/audio_weights_with_synthetic.pth'))
     master_audio_path = os.path.abspath(os.path.join(script_dir, 'ml_audio', 'data', '02_silver', 'master_evaluation_audio.wav'))
     
@@ -73,99 +73,59 @@ def main():
         return
 
     receiver = USBReceiver(camera_id=args.cam_id)
-    
-    print("\nWaiting for camera feed...")
-    while receiver.get_latest_frame() is None:
-        time.sleep(0.1)
-        
-    print("\nWaiting for ball to be placed and balanced in the center...")
-    balanced_start_time = None
-    
-    while True:
-        frame = receiver.get_latest_frame()
-        if frame is None:
-            continue
-            
-        results = yolo_model.predict(source=frame, imgsz=320, conf=0.5, verbose=False)
-        if not results or len(results) == 0 or results[0].boxes is None:
-            balanced_start_time = None
-            continue
-            
-        res = results[0]
-        classes = res.boxes.cls.cpu().numpy()
-        boxes = res.boxes.xywh.cpu().numpy()
-        
-        corners = None
-        ball_box = None
-        
-        for i, c_id in enumerate(classes):
-            c = int(c_id)
-            if c == 0:
-                if res.keypoints is not None and len(res.keypoints.xy) > i:
-                    kpts = res.keypoints.xy[i].cpu().numpy()
-                    if len(kpts) == 4: corners = kpts
-            elif c == 1:
-                ball_box = boxes[i]
-                
-        if corners is None or ball_box is None:
-            balanced_start_time = None
-            continue
-            
-        homography_x, homography_y = 0.0, 0.0
-        if projector.update_homography(corners):
-            hx, hy = projector.project_point(ball_box[0], ball_box[1])
-            if hx is not None and hy is not None:
-                homography_x, homography_y = hx, hy
-                    
-        features = np.array([
-            ball_box[0], ball_box[1], ball_box[2], ball_box[3],
-            corners[0][0], corners[0][1], corners[1][0], corners[1][1],
-            corners[2][0], corners[2][1], corners[3][0], corners[3][1],
-            homography_x, homography_y
-        ], dtype=np.float32)
-        features[0:12:2] /= 640.0
-        features[1:12:2] /= 480.0
-        features[12:] /= 100.0
-        input_tensor = torch.tensor(features).unsqueeze(0).to(device)
-        
-        with torch.no_grad():
-            output = mlp_corrector_v1_model(input_tensor)
-        cam_x, cam_y = output[0].cpu().numpy()
-        
-        # Send center target to STM32 (ASCII)
-        payload = f"{cam_x:.2f},{cam_y:.2f},0.0,0.0\n".encode('ascii')
-        ser.write(payload)
-        
-        # Check if balanced (within 20mm radius)
-        dist = np.sqrt(cam_x**2 + cam_y**2)
-        if dist < 20.0:
-            if balanced_start_time is None:
-                balanced_start_time = time.time()
-            elif time.time() - balanced_start_time > 2.0:
-                print("\nBall successfully balanced in the center!")
-                break
-        else:
-            balanced_start_time = None
-            
-        # Drain serial buffer so we don't back up while waiting
-        while ser.in_waiting > 0:
-            ser.read(ser.in_waiting)
-    
-    # Initialize the audio receiver in FILE STREAMING mode ONLY AFTER ball is placed!
-    audio_receiver = AudioCommandReceiver(audio_model_path, source_file=master_audio_path)
-
-    print("\n===========================================")
-    print("STARTING TRUE STREAMING EXPERT EVALUATION!")
-    print("===========================================\n")
-    
-    start_time = time.time()
-    
-    # Binary struct format from ExpertEvaluationFirmware
-    struct_format = "<Ifffffffffffffff"
-    expected_size = struct.calcsize(struct_format) + 4 # +4 for sync header
-    sync_buf = bytearray()
+    audio_receiver = None
     
     try:
+        print("\nWaiting for camera feed...")
+        while receiver.get_latest_frame() is None:
+            time.sleep(0.1)
+        
+        print("\nWaiting for ball to be placed and balanced in the center...")
+        balanced_start_time = None
+        
+        while True:
+            frame = receiver.get_latest_frame()
+            if frame is None:
+                continue
+                
+            cam_x, cam_y, marker_coords = process_vision_frame(frame, yolo_model, mlp_corrector_v1_model, projector, device)
+            if cam_x is None:
+                balanced_start_time = None
+                continue
+            
+            # Send center target to STM32 (ASCII)
+            payload = f"{cam_x:.2f},{cam_y:.2f},0.0,0.0\n".encode('ascii')
+            ser.write(payload)
+            
+            # Check if balanced (within 20mm radius)
+            dist = np.sqrt(cam_x**2 + cam_y**2)
+            if dist < 20.0:
+                if balanced_start_time is None:
+                    balanced_start_time = time.time()
+                elif time.time() - balanced_start_time > 2.0:
+                    print("\nBall successfully balanced in the center!")
+                    break
+            else:
+                balanced_start_time = None
+                
+            # Drain serial buffer so we don't back up while waiting
+            while ser.in_waiting > 0:
+                ser.read(ser.in_waiting)
+        
+        # Initialize the audio receiver in FILE STREAMING mode ONLY AFTER ball is placed!
+        audio_receiver = AudioCommandReceiver(audio_model_path, source_file=master_audio_path)
+
+        print("\n===========================================")
+        print("STARTING TRUE STREAMING EXPERT EVALUATION!")
+        print("===========================================\n")
+        
+        start_time = time.time()
+        
+        # Binary struct format from ExpertEvaluationFirmware
+        struct_format = "<Ifffffffffffffff"
+        expected_size = struct.calcsize(struct_format) + 4 # +4 for sync header
+        sync_buf = bytearray()
+        
         while True:
             elapsed = time.time() - start_time
             if elapsed > EVAL_DURATION:
@@ -183,60 +143,9 @@ def main():
                 continue
                 
             # 1. Vision Inference
-            results = yolo_model.predict(source=frame, imgsz=320, conf=0.5, verbose=False)
-            if not results or len(results) == 0 or results[0].boxes is None:
+            cam_x, cam_y, marker_coords = process_vision_frame(frame, yolo_model, mlp_corrector_v1_model, projector, device)
+            if cam_x is None:
                 continue
-                
-            res = results[0]
-            classes = res.boxes.cls.cpu().numpy()
-            boxes = res.boxes.xywh.cpu().numpy()
-            
-            corners = None
-            ball_box = None
-            detected_markers = {}
-            
-            for i, c_id in enumerate(classes):
-                c = int(c_id)
-                if c == 0:
-                    if res.keypoints is not None and len(res.keypoints.xy) > i:
-                        kpts = res.keypoints.xy[i].cpu().numpy()
-                        if len(kpts) == 4: corners = kpts
-                elif c == 1:
-                    ball_box = boxes[i]
-                elif c >= 2:
-                    name = yolo_model.names[c].replace('_marker', '')
-                    detected_markers[name] = boxes[i]
-                    
-            if corners is None or ball_box is None:
-                continue
-                
-            # Homography & Target Extraction
-            homography_x, homography_y = 0.0, 0.0
-            marker_coords = {}
-            if projector.update_homography(corners):
-                hx, hy = projector.project_point(ball_box[0], ball_box[1])
-                if hx is not None and hy is not None:
-                    homography_x, homography_y = hx, hy
-                for name, box in detected_markers.items():
-                    mx, my = projector.project_point(box[0], box[1])
-                    if mx is not None and my is not None:
-                        marker_coords[name] = (mx, my)
-                        
-            # MLP Corrector
-            features = np.array([
-                ball_box[0], ball_box[1], ball_box[2], ball_box[3],
-                corners[0][0], corners[0][1], corners[1][0], corners[1][1],
-                corners[2][0], corners[2][1], corners[3][0], corners[3][1],
-                homography_x, homography_y
-            ], dtype=np.float32)
-            features[0:12:2] /= 640.0
-            features[1:12:2] /= 480.0
-            features[12:] /= 100.0
-            input_tensor = torch.tensor(features).unsqueeze(0).to(device)
-            
-            with torch.no_grad():
-                output = mlp_corrector_v1_model(input_tensor)
-            cam_x, cam_y = output[0].cpu().numpy()
             
             # Target Calculation
             state_machine.update_markers(marker_coords)
@@ -264,9 +173,12 @@ def main():
     except KeyboardInterrupt:
         print("\nEvaluation aborted by user.")
     finally:
-        audio_receiver.stop()
-        receiver.stop()
-        ser.close()
+        if audio_receiver:
+            audio_receiver.stop()
+        if receiver:
+            receiver.stop()
+        if ser:
+            ser.close()
         csv_file.close()
         cv2.destroyAllWindows()
         print(f"Data saved to {csv_path}")

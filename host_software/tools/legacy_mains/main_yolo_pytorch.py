@@ -1,4 +1,4 @@
-﻿import cv2
+import cv2
 import threading
 import queue
 import time
@@ -12,7 +12,7 @@ import argparse
 import sys
 import os
 # Adjust path to find modules in host_software root
-root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '/../..'))
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 if root_dir not in sys.path:
     sys.path.append(root_dir)
 from ml_vision.core.coordinate_math import HomographyProjector
@@ -48,7 +48,7 @@ def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     script_dir = root_dir
     yolo_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/yolov8_platform_pose_v1/weights/best.pt'))
-    mlp_corrector_v1_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/mlp_corrector_v1/best_mlp_corrector_v1.pth'))
+    mlp_corrector_v1_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/mlp_corrector_v1/best_corrector.pth'))
     
     yolo_model = load_yolo_model(yolo_path, device)
     mlp_corrector_v1_model = load_mlp_corrector_v1_model(mlp_corrector_v1_path, device)
