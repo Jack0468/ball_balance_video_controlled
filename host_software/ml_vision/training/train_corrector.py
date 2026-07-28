@@ -13,7 +13,7 @@ parent_dir = os.path.abspath(os.path.join(script_dir, '..'))
 if parent_dir not in sys.path:
     sys.path.append(parent_dir)
 
-from core.mlp_corrector_v1_mlp import CorrectorMLP
+from core.corrector_mlp import CorrectorMLP
 
 class YoloFeatureDataset(Dataset):
     def __init__(self, df):
@@ -46,17 +46,77 @@ class YoloFeatureDataset(Dataset):
 def train():
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data_csv", default="../../data/02_silver/yolo_features.csv", help="Path to yolo features CSV")
+    parser.add_argument("--data_csv", nargs='+', default=["../../data/02_silver/yolo_features.csv"], help="Path(s) to yolo features CSV or directories containing yolo_features.csv")
     parser.add_argument("--epochs", type=int, default=300, help="Number of training epochs")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size")
+    parser.add_argument("--version", type=str, default='2', help="Model version number (e.g. 1 or v2)")
     args = parser.parse_args()
     
-    csv_path = os.path.abspath(os.path.join(script_dir, args.data_csv))
-    if not os.path.exists(csv_path):
-        print(f"ERROR: {csv_path} not found. Please run extract_yolo_features.py first!")
-        return
-        
-    df = pd.read_csv(csv_path)
+    # Resolve multiple input paths (files or directories) and concatenate
+    input_items = args.data_csv
+    csv_paths = []
+    for item in input_items:
+        # Try direct/absolute path first, then script-relative path
+        abs_item = os.path.abspath(item)
+        if not os.path.exists(abs_item):
+            abs_item = os.path.abspath(os.path.join(script_dir, item))
+
+        if os.path.isdir(abs_item):
+            candidate = os.path.join(abs_item, 'yolo_features.csv')
+        else:
+            candidate = abs_item
+
+        if not os.path.exists(candidate):
+            print(f"ERROR: {candidate} not found. Please run extract_yolo_features.py for that input!")
+            return
+        csv_paths.append(candidate)
+
+    # Read and concatenate all CSV inputs
+    dfs = [pd.read_csv(p) for p in csv_paths]
+    df = pd.concat(dfs, ignore_index=True)
+
+    # Normalize and resolve `image_file` paths to handle new data/02_silver layout
+    # Possible image locations:
+    # - data/02_silver/images_iphone/images/<name>
+    # - data/02_silver/session_*/images/<name>
+    # - paths already absolute or relative in the CSV
+    import glob
+    data_base = os.path.abspath(os.path.join(script_dir, '..', 'data', '02_silver'))
+    iphone_dir = os.path.join(data_base, 'images_iphone', 'images')
+
+    def resolve_image_path(p):
+        if pd.isna(p):
+            return p
+        p = str(p)
+        # If already absolute and exists
+        if os.path.isabs(p) and os.path.exists(p):
+            return p
+        # Try as given relative to script_dir
+        candidate = os.path.abspath(os.path.join(script_dir, p))
+        if os.path.exists(candidate):
+            return candidate
+        # Try under images_iphone
+        candidate = os.path.join(iphone_dir, os.path.basename(p))
+        if os.path.exists(candidate):
+            return candidate
+        # Try under any session_*/images folder
+        pattern = os.path.join(data_base, 'session_*', 'images', os.path.basename(p))
+        matches = glob.glob(pattern)
+        if matches:
+            return os.path.abspath(matches[0])
+        # Fallback: search recursively for the basename under data_base
+        search_pattern = os.path.join(data_base, '**', os.path.basename(p))
+        matches = glob.glob(search_pattern, recursive=True)
+        if matches:
+            return os.path.abspath(matches[0])
+        # Not found: return original value (training may still work if CSV contains other features)
+        return p
+
+    if 'image_file' in df.columns:
+        df['image_file'] = df['image_file'].apply(resolve_image_path)
+        unresolved = df[~df['image_file'].apply(lambda x: os.path.exists(str(x)) if pd.notna(x) else False)]
+        if len(unresolved) > 0:
+            print(f"Warning: {len(unresolved)} image_file entries could not be resolved to existing files. First unresolved: {unresolved['image_file'].iloc[0]}")
     
     # Shuffle the dataset to mix lighting and background variations
     df = df.sample(frac=1, random_state=42).reset_index(drop=True)
@@ -80,9 +140,12 @@ def train():
     test_losses = []
     
     best_test_loss = float('inf')
-    save_dir = os.path.abspath(os.path.join(script_dir, '../models/mlp_corrector_v1'))
+    # normalize version input (allow 'v2' or '2')
+    version_raw = str(args.version)
+    version_num = version_raw[1:] if version_raw.startswith('v') else version_raw
+    save_dir = os.path.abspath(os.path.join(script_dir, f'../models/mlp_corrector_v{version_num}'))
     os.makedirs(save_dir, exist_ok=True)
-    model_save_path = os.path.join(save_dir, 'best_mlp_corrector_v1.pth')
+    model_save_path = os.path.join(save_dir, f'best_mlp_corrector_v{version_num}.pth')
     
     test_frames_path = os.path.join(save_dir, 'test_frames.txt')
     df.iloc[split_idx:]['image_file'].to_csv(test_frames_path, index=False, header=False)
@@ -150,9 +213,10 @@ def train():
         "best_test_loss": best_test_loss,
         "epochs": args.epochs,
         "train_losses": train_losses,
-        "test_losses": test_losses
+        "test_losses": test_losses,
+        "version": version_num
     }
-    metrics_path = os.path.join(save_dir, 'mlp_corrector_v1_training_metrics.json')
+    metrics_path = os.path.join(save_dir, f'mlp_corrector_v{version_num}_training_metrics.json')
     with open(metrics_path, 'w') as f:
         json.dump(metrics, f, indent=4)
     print(f"Saved training metrics to {metrics_path}")

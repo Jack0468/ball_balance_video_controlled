@@ -31,7 +31,8 @@ def main():
         exist_ok=True,
         # Heavy augmentations
         perspective=0.001, # Perspective warp
-        degrees=180.0,      # Rotations (increased for rotational invariance)
+        fliplr=0.5,
+        degrees=90.0,      # Rotations (increased for rotational invariance)
         translate=0.2,     # Horizontal/vertical shift to improve off-center platform center predictions
         scale=0.9,         # Zoom out/in by 90% (increased for distance invariance)
         mosaic=1.0,        # High mosaic for background variety

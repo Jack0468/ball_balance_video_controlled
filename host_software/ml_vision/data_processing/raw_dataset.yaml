@@ -24,4 +24,4 @@ names:
 
 # Keypoints (required for YOLOv8 Pose)
 kpt_shape: [4, 3] # [number of keypoints, number of dim (x,y,visibility)]
-
+flip_idx: [1, 0, 3, 2]
