@@ -7,6 +7,7 @@ import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import matplotlib.pyplot as plt
 import sys
+import glob
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.abspath(os.path.join(script_dir, '..'))
@@ -46,17 +47,125 @@ class YoloFeatureDataset(Dataset):
 def train():
     import argparse
     parser = argparse.ArgumentParser()
+<<<<<<< Updated upstream
     parser.add_argument("--data_csv", default="../../data/02_silver/yolo_features.csv", help="Path to yolo features CSV")
+=======
+    parser.add_argument("--data_csv", nargs='+', default=["../../data/02_silver/yolo_features.csv"], help="Path(s) to yolo features CSV, directories containing CSVs, or glob patterns")
+>>>>>>> Stashed changes
     parser.add_argument("--epochs", type=int, default=300, help="Number of training epochs")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size")
     args = parser.parse_args()
     
+<<<<<<< Updated upstream
     csv_path = os.path.abspath(os.path.join(script_dir, args.data_csv))
     if not os.path.exists(csv_path):
         print(f"ERROR: {csv_path} not found. Please run extract_yolo_features.py first!")
         return
         
     df = pd.read_csv(csv_path)
+=======
+    # Resolve multiple input paths (files, directories, or glob patterns)
+    input_items = args.data_csv
+    csv_paths = []
+    
+    for item in input_items:
+        # Attempt to expand glob patterns first (e.g., path/to/*)
+        matched_paths = glob.glob(item, recursive=True)
+        
+        # If no match, try relative to script_dir
+        if not matched_paths:
+            matched_paths = glob.glob(os.path.join(script_dir, item), recursive=True)
+            
+        if not matched_paths:
+            print(f"Warning: Could not resolve input path/pattern: {item}")
+            continue
+
+        for path in matched_paths:
+            abs_path = os.path.abspath(path)
+            if os.path.isdir(abs_path):
+                # Specific to the directory structure: ignore 'labels.csv' and explicitly target 'yolo_features.csv'
+                target_csv = os.path.join(abs_path, 'yolo_features.csv')
+                if os.path.exists(target_csv):
+                    csv_paths.append(target_csv)
+                else:
+                    print(f"Warning: yolo_features.csv not found in directory {abs_path}")
+            elif os.path.isfile(abs_path) and abs_path.endswith('.csv'):
+                # Catch if the user accidentally passes labels.csv directly
+                if os.path.basename(abs_path) == 'labels.csv':
+                    print(f"Warning: You are attempting to load '{abs_path}'. This will likely break concatenation.")
+                csv_paths.append(abs_path)
+
+    # Remove potential duplicates
+    csv_paths = list(set(csv_paths))
+
+    if not csv_paths:
+        print("ERROR: No valid CSV files found! Please check your input paths and run extract_yolo_features.py.")
+        return
+
+    print(f"Found {len(csv_paths)} CSV file(s) to process:")
+    for p in csv_paths:
+        print(f" - {p}")
+
+    # Read and concatenate all CSV inputs
+    dfs = [pd.read_csv(p, dtype=str, low_memory=False) for p in csv_paths]
+    df = pd.concat(dfs, ignore_index=True)
+
+    # Remove any repeated header rows that may have been appended during dataset concatenation.
+    expected_header = ['image_file', 'split', 'ball_x', 'ball_y', 'ball_w', 'ball_h',
+                       'kpt0_x', 'kpt0_y', 'kpt1_x', 'kpt1_y', 'kpt2_x', 'kpt2_y',
+                       'kpt3_x', 'kpt3_y', 'homography_x', 'homography_y',
+                       'touch_x', 'touch_y']
+    header_mask = df[['image_file', 'split', 'ball_x', 'ball_y', 'ball_w', 'ball_h',
+                      'kpt0_x', 'kpt0_y', 'kpt1_x', 'kpt1_y', 'kpt2_x', 'kpt2_y',
+                      'kpt3_x', 'kpt3_y', 'homography_x', 'homography_y',
+                      'touch_x', 'touch_y']].eq(expected_header).all(axis=1)
+    if header_mask.any():
+        header_count = header_mask.sum()
+        print(f"Removing {header_count} repeated header row(s) from concatenated CSV input.")
+        df = df[~header_mask].reset_index(drop=True)
+
+    # Normalize and resolve `image_file` paths to handle new data/02_silver layout
+    # Possible image locations:
+    # - data/02_silver/images_iphone/images/<name>
+    # - data/02_silver/session_*/images/<name>
+    # - paths already absolute or relative in the CSV
+    data_base = os.path.abspath(os.path.join(script_dir, '..', 'data', '02_silver'))
+    iphone_dir = os.path.join(data_base, 'images_iphone', 'images')
+
+    def resolve_image_path(p):
+        if pd.isna(p):
+            return p
+        p = str(p)
+        # If already absolute and exists
+        if os.path.isabs(p) and os.path.exists(p):
+            return p
+        # Try as given relative to script_dir
+        candidate = os.path.abspath(os.path.join(script_dir, p))
+        if os.path.exists(candidate):
+            return candidate
+        # Try under images_iphone
+        candidate = os.path.join(iphone_dir, os.path.basename(p))
+        if os.path.exists(candidate):
+            return candidate
+        # Try under any session_*/images folder
+        pattern = os.path.join(data_base, 'session_*', 'images', os.path.basename(p))
+        matches = glob.glob(pattern)
+        if matches:
+            return os.path.abspath(matches[0])
+        # Fallback: search recursively for the basename under data_base
+        search_pattern = os.path.join(data_base, '**', os.path.basename(p))
+        matches = glob.glob(search_pattern, recursive=True)
+        if matches:
+            return os.path.abspath(matches[0])
+        # Not found: return original value (training may still work if CSV contains other features)
+        return p
+
+    if 'image_file' in df.columns:
+        df['image_file'] = df['image_file'].apply(resolve_image_path)
+        unresolved = df[~df['image_file'].apply(lambda x: os.path.exists(str(x)) if pd.notna(x) else False)]
+        if len(unresolved) > 0:
+            print(f"Warning: {len(unresolved)} image_file entries could not be resolved to existing files. First unresolved: {unresolved['image_file'].iloc[0]}")
+>>>>>>> Stashed changes
     
     # Shuffle the dataset to mix lighting and background variations
     df = df.sample(frac=1, random_state=42).reset_index(drop=True)
