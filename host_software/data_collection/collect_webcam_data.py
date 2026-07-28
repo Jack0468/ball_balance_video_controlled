@@ -23,7 +23,7 @@ class WebcamDataCollector:
         self.height = height
         self.fps = fps
 
-        self.bronze_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'ml_vision', 'data', '01_bronze'))
+        self.bronze_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data', '01_bronze'))
         os.makedirs(self.bronze_dir, exist_ok=True)
 
         session_name = f"session_{datetime.now().strftime('%Y%m%d_%H%M%S')}"

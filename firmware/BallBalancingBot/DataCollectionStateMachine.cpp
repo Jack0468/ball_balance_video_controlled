@@ -290,11 +290,12 @@ void DataCollectionStateMachine::getNextTarget(double &out_x, double &out_y, boo
             return;
         }
         
-        int prev_idx = (current_edge_idx - 1 + 4) % 4;
+        int edge_index = current_edge_idx % 4;
+        int prev_idx = (edge_index - 1 + 4) % 4;
         double start_x = edge_points[prev_idx].x;
         double start_y = edge_points[prev_idx].y;
-        double end_x = edge_points[current_edge_idx].x;
-        double end_y = edge_points[current_edge_idx].y;
+        double end_x = edge_points[edge_index].x;
+        double end_y = edge_points[edge_index].y;
         
         double dir_dx = end_x - start_x;
         double dir_dy = end_y - start_y;
