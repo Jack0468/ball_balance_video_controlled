@@ -93,8 +93,7 @@ void DataCollectionStateMachine::getNextTarget(double &out_x, double &out_y, boo
                 state = state_before_recovery;
                 in_recovery = false;
             } else {
-                // TEMP: Skip straight to Edges for data collection!
-                state = PHASE_4_EDGES;
+                state = PHASE_1_RANDOM;
             }
             state_start_time_ms = now;
             
