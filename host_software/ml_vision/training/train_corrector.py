@@ -14,7 +14,7 @@ parent_dir = os.path.abspath(os.path.join(script_dir, '..'))
 if parent_dir not in sys.path:
     sys.path.append(parent_dir)
 
-from core.mlp_corrector_v1_mlp import CorrectorMLP
+from core.corrector_mlp import CorrectorMLP
 
 class YoloFeatureDataset(Dataset):
     def __init__(self, df):
@@ -47,35 +47,25 @@ class YoloFeatureDataset(Dataset):
 def train():
     import argparse
     parser = argparse.ArgumentParser()
-<<<<<<< Updated upstream
-    parser.add_argument("--data_csv", default="../../data/02_silver/yolo_features.csv", help="Path to yolo features CSV")
-=======
-    parser.add_argument("--data_csv", nargs='+', default=["../../data/02_silver/yolo_features.csv"], help="Path(s) to yolo features CSV, directories containing CSVs, or glob patterns")
->>>>>>> Stashed changes
+    parser.add_argument("--data_csv", nargs='+', default=["../../data/02_silver/yolo_features.csv"], help="Path(s) to yolo features CSVs, directories containing CSVs, or glob patterns")
     parser.add_argument("--epochs", type=int, default=300, help="Number of training epochs")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size")
+    parser.add_argument("--version", type=str, default='2', help="Model version number (e.g. 1 or v2)")
     args = parser.parse_args()
-    
-<<<<<<< Updated upstream
-    csv_path = os.path.abspath(os.path.join(script_dir, args.data_csv))
-    if not os.path.exists(csv_path):
-        print(f"ERROR: {csv_path} not found. Please run extract_yolo_features.py first!")
-        return
-        
-    df = pd.read_csv(csv_path)
-=======
-    # Resolve multiple input paths (files, directories, or glob patterns)
+
+    # Resolve input paths from absolute paths, cwd-relative paths, script-relative paths, directories, or glob patterns.
     input_items = args.data_csv
     csv_paths = []
-    
     for item in input_items:
-        # Attempt to expand glob patterns first (e.g., path/to/*)
+        if not item:
+            continue
+        # Expand glob patterns first
         matched_paths = glob.glob(item, recursive=True)
-        
-        # If no match, try relative to script_dir
         if not matched_paths:
             matched_paths = glob.glob(os.path.join(script_dir, item), recursive=True)
-            
+        if not matched_paths:
+            matched_paths = glob.glob(os.path.join(os.getcwd(), item), recursive=True)
+
         if not matched_paths:
             print(f"Warning: Could not resolve input path/pattern: {item}")
             continue
@@ -83,21 +73,17 @@ def train():
         for path in matched_paths:
             abs_path = os.path.abspath(path)
             if os.path.isdir(abs_path):
-                # Specific to the directory structure: ignore 'labels.csv' and explicitly target 'yolo_features.csv'
                 target_csv = os.path.join(abs_path, 'yolo_features.csv')
                 if os.path.exists(target_csv):
                     csv_paths.append(target_csv)
                 else:
                     print(f"Warning: yolo_features.csv not found in directory {abs_path}")
             elif os.path.isfile(abs_path) and abs_path.endswith('.csv'):
-                # Catch if the user accidentally passes labels.csv directly
-                if os.path.basename(abs_path) == 'labels.csv':
-                    print(f"Warning: You are attempting to load '{abs_path}'. This will likely break concatenation.")
+                if os.path.basename(abs_path).lower() == 'labels.csv':
+                    print(f"Warning: You are attempting to load '{abs_path}'. This may not be a feature CSV.")
                 csv_paths.append(abs_path)
 
-    # Remove potential duplicates
-    csv_paths = list(set(csv_paths))
-
+    csv_paths = sorted(set(csv_paths))
     if not csv_paths:
         print("ERROR: No valid CSV files found! Please check your input paths and run extract_yolo_features.py.")
         return
@@ -106,21 +92,16 @@ def train():
     for p in csv_paths:
         print(f" - {p}")
 
-    # Read and concatenate all CSV inputs
     dfs = [pd.read_csv(p, dtype=str, low_memory=False) for p in csv_paths]
     df = pd.concat(dfs, ignore_index=True)
 
-    # Remove any repeated header rows that may have been appended during dataset concatenation.
     expected_header = ['image_file', 'split', 'ball_x', 'ball_y', 'ball_w', 'ball_h',
                        'kpt0_x', 'kpt0_y', 'kpt1_x', 'kpt1_y', 'kpt2_x', 'kpt2_y',
                        'kpt3_x', 'kpt3_y', 'homography_x', 'homography_y',
                        'touch_x', 'touch_y']
-    header_mask = df[['image_file', 'split', 'ball_x', 'ball_y', 'ball_w', 'ball_h',
-                      'kpt0_x', 'kpt0_y', 'kpt1_x', 'kpt1_y', 'kpt2_x', 'kpt2_y',
-                      'kpt3_x', 'kpt3_y', 'homography_x', 'homography_y',
-                      'touch_x', 'touch_y']].eq(expected_header).all(axis=1)
+    header_mask = df[expected_header].eq(expected_header).all(axis=1)
     if header_mask.any():
-        header_count = header_mask.sum()
+        header_count = int(header_mask.sum())
         print(f"Removing {header_count} repeated header row(s) from concatenated CSV input.")
         df = df[~header_mask].reset_index(drop=True)
 
@@ -165,7 +146,6 @@ def train():
         unresolved = df[~df['image_file'].apply(lambda x: os.path.exists(str(x)) if pd.notna(x) else False)]
         if len(unresolved) > 0:
             print(f"Warning: {len(unresolved)} image_file entries could not be resolved to existing files. First unresolved: {unresolved['image_file'].iloc[0]}")
->>>>>>> Stashed changes
     
     # Shuffle the dataset to mix lighting and background variations
     df = df.sample(frac=1, random_state=42).reset_index(drop=True)
@@ -189,9 +169,12 @@ def train():
     test_losses = []
     
     best_test_loss = float('inf')
-    save_dir = os.path.abspath(os.path.join(script_dir, '../models/mlp_corrector_v1'))
+    # normalize version input (allow 'v2' or '2')
+    version_raw = str(args.version)
+    version_num = version_raw[1:] if version_raw.startswith('v') else version_raw
+    save_dir = os.path.abspath(os.path.join(script_dir, f'../models/mlp_corrector_v{version_num}'))
     os.makedirs(save_dir, exist_ok=True)
-    model_save_path = os.path.join(save_dir, 'best_mlp_corrector_v1.pth')
+    model_save_path = os.path.join(save_dir, f'best_mlp_corrector_v{version_num}.pth')
     
     test_frames_path = os.path.join(save_dir, 'test_frames.txt')
     df.iloc[split_idx:]['image_file'].to_csv(test_frames_path, index=False, header=False)
@@ -259,9 +242,10 @@ def train():
         "best_test_loss": best_test_loss,
         "epochs": args.epochs,
         "train_losses": train_losses,
-        "test_losses": test_losses
+        "test_losses": test_losses,
+        "version": version_num
     }
-    metrics_path = os.path.join(save_dir, 'mlp_corrector_v1_training_metrics.json')
+    metrics_path = os.path.join(save_dir, f'mlp_corrector_v{version_num}_training_metrics.json')
     with open(metrics_path, 'w') as f:
         json.dump(metrics, f, indent=4)
     print(f"Saved training metrics to {metrics_path}")

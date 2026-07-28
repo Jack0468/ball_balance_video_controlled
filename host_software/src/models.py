@@ -13,16 +13,27 @@ def load_yolo_model(model_path, device):
     model.to(device)
     return model
 
-def load_mlp_corrector_v1_model(model_path, device):
+def load_mlp_corrector_v1_model(model_path, device, input_dim=14, hidden_dim=128, output_dim=2):
+    """Load an MLP corrector model.
+
+    This is a generic loader that will instantiate `CorrectorMLP` with the
+    provided dimensions and attempt to load `model_path`. If loading fails,
+    the model is returned with random weights.
+
+    Kept the original function name for compatibility with existing callers.
+    """
     from ml_vision.core.corrector_mlp import CorrectorMLP
     print("Loading MLP Corrector Model...")
-    model = CorrectorMLP(input_dim=14, hidden_dim=128, output_dim=2)
+    model = CorrectorMLP(input_dim=input_dim, hidden_dim=hidden_dim, output_dim=output_dim)
     if os.path.exists(model_path):
-        model.load_state_dict(torch.load(model_path, map_location=device))
-        print(f"Successfully loaded weights from {model_path}")
+        try:
+            model.load_state_dict(torch.load(model_path, map_location=device))
+            print(f"Successfully loaded weights from {model_path}")
+        except Exception as e:
+            print(f"WARNING: Could not load weights from {model_path}: {e}. Using random weights.")
     else:
         print(f"WARNING: Weights {model_path} not found! Using random weights.")
-    
+
     model = model.to(device)
     model.eval()
     return model

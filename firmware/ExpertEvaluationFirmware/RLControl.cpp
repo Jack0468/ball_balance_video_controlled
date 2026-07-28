@@ -24,7 +24,9 @@ float steps_to_angle(long steps) {
 #pragma pack(push, 1)
 struct TelemetryPacket {
     uint32_t sync_header;
-    uint32_t mcu_micros;
+    uint32_t packet_seq;
+    uint32_t mcu_micros_sample;
+    uint32_t mcu_micros_send;
     float target_x;
     float target_y;
     float touch_x;
@@ -47,6 +49,7 @@ struct TelemetryPacket {
 static float prev_obs_pos[2] = {0.0f, 0.0f};
 static float filt_vel[2]     = {0.0f, 0.0f};
 static bool  have_prev_pos   = false;
+static uint32_t telemetry_packet_seq = 0;
 
 void rl_reset_state() {
     prev_obs_pos[0] = prev_obs_pos[1] = 0.0f;
@@ -158,6 +161,7 @@ void rl_balance(float target_x_mm, float target_y_mm) {
 
 
     coords p = get_coords();
+    uint32_t sample_time = micros();
     bool detected = (p.z > 0);
 
     if (!detected) {
@@ -199,7 +203,8 @@ void rl_balance(float target_x_mm, float target_y_mm) {
 
     TelemetryPacket pkt;
     pkt.sync_header = 0xDDCCBBAA; // 0xAABBCCDD packed little-endian
-    pkt.mcu_micros = micros();
+    pkt.packet_seq = telemetry_packet_seq++;
+    pkt.mcu_micros_sample = sample_time;
     pkt.target_x = target_x_mm;
     pkt.target_y = target_y_mm;
     pkt.touch_x = p.x_mm;
@@ -218,5 +223,6 @@ void rl_balance(float target_x_mm, float target_y_mm) {
     pkt.deriv_x = filt_vel[0];
     pkt.deriv_y = filt_vel[1];
     
+    pkt.mcu_micros_send = micros();
     Serial.write((uint8_t*)&pkt, sizeof(TelemetryPacket));
 }

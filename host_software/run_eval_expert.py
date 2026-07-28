@@ -98,10 +98,14 @@ def main():
     csv_path = os.path.join(out_dir, f'expert_evaluation_run_{timestamp}.csv')
     csv_file = open(csv_path, 'w', newline='')
     csv_writer = csv.writer(csv_file)
-    csv_writer.writerow(["host_timestamp_ms", "mcu_micros", "target_x", "target_y", 
-                         "touch_x", "touch_y", "error_x", "error_y", "pitch", "roll", 
-                         "theta_a", "theta_b", "theta_c", "integral_x", "integral_y", 
-                         "deriv_x", "deriv_y"])
+    csv_writer.writerow([
+        "host_command_sent_ms", "host_packet_received_ms", "packet_seq",
+        "mcu_micros_sample", "mcu_micros_send", "target_x", "target_y",
+        "touch_x", "touch_y", "error_x", "error_y", "pitch", "roll",
+        "theta_a", "theta_b", "theta_c", "integral_x", "integral_y",
+        "deriv_x", "deriv_y"
+    ])
+    host_command_sent_ms = int(time.time() * 1000)
 
     # Load Models
     yolo_model = load_yolo_model(yolo_path, device)
@@ -141,6 +145,7 @@ def main():
             
             # Send center target to STM32 (ASCII)
             payload = f"{cam_x:.2f},{cam_y:.2f},0.0,0.0\n".encode('ascii')
+            host_command_sent_ms = int(time.time() * 1000)
             ser.write(payload)
             
             # Check if balanced (within 20mm radius)
@@ -168,7 +173,7 @@ def main():
         start_time = time.time()
         
         # Binary struct format from ExpertEvaluationFirmware
-        struct_format = "<Ifffffffffffffff"
+        struct_format = "<IIIfffffffffffffff"
         expected_size = struct.calcsize(struct_format) + 4 # +4 for sync header
         sync_buf = bytearray()
         
@@ -202,6 +207,7 @@ def main():
             
             # Send Target to STM32 (ASCII)
             payload = f"{cam_x:.2f},{cam_y:.2f},{target_x:.2f},{target_y:.2f}\n".encode('ascii')
+            host_command_sent_ms = int(time.time() * 1000)
             ser.write(payload)
             
             # 2. Read Binary Telemetry from STM32
@@ -214,9 +220,9 @@ def main():
                 if bytes(sync_buf) == b'\xAA\xBB\xCC\xDD':
                     data = ser.read(expected_size - 4)
                     if len(data) == expected_size - 4:
-                        host_time_ms = int(time.time() * 1000)
+                        host_packet_received_ms = int(time.time() * 1000)
                         unpacked = struct.unpack(struct_format, data)
-                        csv_writer.writerow([host_time_ms] + list(unpacked))
+                        csv_writer.writerow([host_command_sent_ms, host_packet_received_ms] + list(unpacked))
                     sync_buf.clear()
                     
     except KeyboardInterrupt:
