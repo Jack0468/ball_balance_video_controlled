@@ -7,6 +7,8 @@
 - **Repository Rule Adherence**: Cleaned up illegal directory structures (e.g., deleted `ml_vision/scripts/` and moved its contents to `tools/`) to comply with the established ML sub-directory rules.
 - **Graceful Audio Teardown**: Fixed a crashing stack trace in `audio_receiver_pytorch.py` on `Ctrl+C` by wrapping the `sounddevice` stream shutdown sequence in robust `try/except` checks.
 - **Architecture Documentation Synchronization**: Generated and updated 9 separate README files across the codebase to accurately reflect the current physical deployment. Clarified that the STM32 is the active edge controller running the `ml_control` policy and motor control loops over USB Serial, while the Zynq FPGA Gigabit UDP video pipeline is positioned as an experimental research track.
+- **Working Data Collection Firmware**: Verified that the `BallBalancingBot` data collection firmware now runs correctly through the centering phase and transitions to random target generation, validating the firmware’s intended collection flow.
+- **Rejected Ball-Position Filtering Change**: Evaluated adding local outlier filtering for resistive touchscreen ball positions in firmware. Found that this change destabilized the control loop and prevented proper target cycling, so it was deliberately left unimplemented.
 
 
 ## 23/07/2026

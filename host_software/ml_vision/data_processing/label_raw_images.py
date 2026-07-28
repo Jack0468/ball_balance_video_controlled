@@ -130,8 +130,10 @@ def format_yolo_pose(class_id, cx, cy, w, h, img_w, img_h, keypoints=None):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--bronze-dir', default='host_software/data/01_bronze', help='Dir containing video folders')
+    parser.add_argument('--image-dir', required=False, help='Optional directory with existing JPG/PNG images')
     parser.add_argument('--out-dir', default='host_software/data/yolo_raw_dataset', help='Output dataset dir')
-    parser.add_argument('--frames-per-video', type=int, default=10, help='Frames to extract per video')
+    parser.add_argument('--frames-per-video', type=int, default=10, help='Frames to extract per video or number of images to sample')
+    parser.add_argument('--copy-images', action='store_true', help='Copy sampled images into output images directory instead of labeling in place')
     args = parser.parse_args()
     
     images_dir = os.path.join(args.out_dir, 'images')
@@ -139,33 +141,71 @@ def main():
     os.makedirs(images_dir, exist_ok=True)
     os.makedirs(labels_dir, exist_ok=True)
     
-    # 1. Extract frames if not already done
-    existing_images = glob.glob(os.path.join(images_dir, '*.jpg'))
-    if len(existing_images) == 0:
-        print("Extracting random frames from videos...")
-        video_paths = glob.glob(os.path.join(args.bronze_dir, '**', '*.MOV'), recursive=True)
-        if not video_paths:
-            print("No videos found!")
+    # 1. Extract or select frames if not already done
+    source_image_paths = []
+    if args.image_dir:
+        source_image_paths = sorted(glob.glob(os.path.join(args.image_dir, '**', '*.jpg'), recursive=True)) + \
+                             sorted(glob.glob(os.path.join(args.image_dir, '**', '*.png'), recursive=True))
+        if not source_image_paths:
+            print(f"No JPG/PNG images found in {args.image_dir}!")
             return
-            
-        img_id = 0
-        for vp in video_paths:
-            print(f"Extracting from {vp}...")
-            frames = get_random_frames(vp, args.frames_per_video)
-            for f in frames:
-                cv2.imwrite(os.path.join(images_dir, f"{img_id:04d}.jpg"), f)
-                img_id += 1
-                
-        existing_images = glob.glob(os.path.join(images_dir, '*.jpg'))
+        source_image_paths = random.sample(source_image_paths, min(args.frames_per_video, len(source_image_paths)))
+        if args.copy_images:
+            print(f"Copying {len(source_image_paths)} sampled images from {args.image_dir}...")
+            for img_id, ip in enumerate(source_image_paths):
+                img = cv2.imread(ip)
+                if img is None:
+                    continue
+                cv2.imwrite(os.path.join(images_dir, f"{img_id:04d}.jpg"), img)
+            existing_images = sorted(glob.glob(os.path.join(images_dir, '*.jpg')))
+        else:
+            existing_images = source_image_paths
     else:
-        print(f"Found {len(existing_images)} existing images in {images_dir}.")
+        existing_images = sorted(glob.glob(os.path.join(images_dir, '*.jpg')))
+        if len(existing_images) == 0:
+            print("Extracting random frames from videos or images...")
+            video_paths = glob.glob(os.path.join(args.bronze_dir, '**', '*.MOV'), recursive=True)
+            image_paths = sorted(glob.glob(os.path.join(args.bronze_dir, '**', '*.jpg'), recursive=True)) + \
+                          sorted(glob.glob(os.path.join(args.bronze_dir, '**', '*.png'), recursive=True))
+
+            if video_paths:
+                img_id = 0
+                for vp in video_paths:
+                    print(f"Extracting from {vp}...")
+                    frames = get_random_frames(vp, args.frames_per_video)
+                    for f in frames:
+                        cv2.imwrite(os.path.join(images_dir, f"{img_id:04d}.jpg"), f)
+                        img_id += 1
+                existing_images = sorted(glob.glob(os.path.join(images_dir, '*.jpg')))
+            elif image_paths:
+                print(f"Sampling {args.frames_per_video} existing images from {args.bronze_dir}...")
+                random.shuffle(image_paths)
+                image_paths = image_paths[:args.frames_per_video]
+                for img_id, ip in enumerate(image_paths):
+                    img = cv2.imread(ip)
+                    if img is None:
+                        continue
+                    if args.copy_images:
+                        cv2.imwrite(os.path.join(images_dir, f"{img_id:04d}.jpg"), img)
+                    else:
+                        source_image_paths.append(ip)
+                existing_images = sorted(glob.glob(os.path.join(images_dir, '*.jpg'))) if args.copy_images else source_image_paths
+            else:
+                print("No videos or images found!")
+                return
+        else:
+            print(f"Found {len(existing_images)} existing images in {images_dir}.")
+
+    def label_path_for_image(img_path):
+        base = os.path.basename(img_path)
+        return os.path.join(labels_dir, os.path.splitext(base)[0] + '.txt')
 
     # 2. Labeling Loop
     global display_image, clicked_points, marker_points, current_image, current_marker_class, existing_labels
     cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
     
     for img_path in sorted(existing_images):
-        txt_path = img_path.replace('images', 'labels').replace('.jpg', '.txt')
+        txt_path = label_path_for_image(img_path)
         
         existing_labels = []
         if os.path.exists(txt_path):

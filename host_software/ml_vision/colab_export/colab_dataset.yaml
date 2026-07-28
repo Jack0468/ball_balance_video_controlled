@@ -1,0 +1,24 @@
+path: /content/dataset
+train:
+- 03_yolo_raw_dataset/images
+- 03_synthetic_yolo/images
+- 03_gold/session_20260728_102908/images
+val:
+- 03_gold/session_20260728_102908/images
+names:
+  0: platform
+  1: ball
+  2: blue_marker
+  3: grey_marker
+  4: black_marker
+  5: red_marker
+  6: green_marker
+  7: yellow_marker
+  8: cyan_marker
+  9: purple_marker
+  10: orange_marker
+  11: pink_marker
+  12: brown_marker
+kpt_shape:
+- 4
+- 3
