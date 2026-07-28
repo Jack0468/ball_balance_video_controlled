@@ -1,11 +1,35 @@
 import os
 import json
+import subprocess
+import sys
+import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 
+def run_benchmark_script(script_dir: str) -> None:
+    benchmark_script = os.path.join(script_dir, 'benchmark_model_inference_times.py')
+    if not os.path.exists(benchmark_script):
+        raise FileNotFoundError(f"Benchmark script not found: {benchmark_script}")
+
+    cmd = [sys.executable, benchmark_script, '--update_metrics', '--sample_fraction', '0.1', '--max_samples', '200']
+    print(f"Running benchmark script: {' '.join(cmd)}")
+    result = subprocess.run(cmd, cwd=script_dir, capture_output=True, text=True)
+    print(result.stdout)
+    if result.returncode != 0:
+        print(result.stderr)
+        raise RuntimeError(f"Benchmark script failed with exit code {result.returncode}")
+
+
 def main():
+    parser = argparse.ArgumentParser(description='Plot model comparisons with optional inference benchmark')
+    parser.add_argument('--benchmark', action='store_true', help='Run inference benchmark before plotting')
+    args = parser.parse_args()
+
     script_dir = os.path.dirname(os.path.abspath(__file__))
     models_dir = os.path.abspath(os.path.join(script_dir, '../models'))
+
+    if args.benchmark:
+        run_benchmark_script(script_dir)
     
     # Metrics we want to plot
     metric_keys = [
@@ -13,7 +37,8 @@ def main():
         'RMSE_X_mm',
         'RMSE_Y_mm',
         'Max_Euclidean_Error_mm',
-        '95th_Percentile_Error_mm'
+        '95th_Percentile_Error_mm',
+        'Mean_Inference_Time_ms'
     ]
     
     model_names = []
@@ -21,29 +46,45 @@ def main():
     
     print(f"Searching for evaluation metrics in {models_dir}...")
     
-    # Traverse directories to find evaluation_metrics.json
-    for root, dirs, files in os.walk(models_dir):
-        if 'evaluation_metrics.json' in files or 'quick_evaluation_metrics.json' in files:
-            json_file = 'evaluation_metrics.json' if 'evaluation_metrics.json' in files else 'quick_evaluation_metrics.json'
-            json_path = os.path.join(root, json_file)
-            model_name = os.path.basename(root)
-            
-            if 'trial_' in model_name or 'subset_' in model_name:
-                continue
-                
-            with open(json_path, 'r') as f:
-                try:
-                    data = json.load(f)
-                    
-                    model_names.append(model_name)
-                    for key in metric_keys:
-                        # If a metric is missing (e.g. FPS), default to 0
-                        val = data.get(key, 0.0)
-                        model_metrics[key].append(val)
-                        
-                    print(f"Loaded metrics for {model_name} from {json_file}")
-                except Exception as e:
-                    print(f"Error reading {json_path}: {e}")
+    # Only consider top-level YOLO, ResNet, and MLP model directories and ignore archived contents.
+    for model_name in sorted(os.listdir(models_dir)):
+        model_root = os.path.join(models_dir, model_name)
+        if not os.path.isdir(model_root):
+            continue
+        if model_name.lower() == 'archive':
+            continue
+        if 'temporal' in model_name.lower():
+            continue
+        if ('yolo' not in model_name.lower() and
+                'resnet' not in model_name.lower() and
+                'mlp' not in model_name.lower()):
+            continue
+
+        json_path = None
+        json_file = None
+        for root, dirs, files in os.walk(model_root):
+            if 'evaluation_metrics.json' in files or 'quick_evaluation_metrics.json' in files:
+                json_file = 'evaluation_metrics.json' if 'evaluation_metrics.json' in files else 'quick_evaluation_metrics.json'
+                json_path = os.path.join(root, json_file)
+                break
+
+        if json_path is None:
+            print(f"No evaluation metrics found for {model_name}. Skipping.")
+            continue
+
+        with open(json_path, 'r') as f:
+            try:
+                data = json.load(f)
+
+                model_names.append(model_name)
+                for key in metric_keys:
+                    # If a metric is missing (e.g. FPS), default to 0
+                    val = data.get(key, 0.0)
+                    model_metrics[key].append(val)
+
+                print(f"Loaded metrics for {model_name} from {json_file}")
+            except Exception as e:
+                print(f"Error reading {json_path}: {e}")
                     
     if not model_names:
         print("No models with valid metrics found!")
@@ -51,8 +92,10 @@ def main():
         
     print(f"\nPlotting comparisons for {len(model_names)} models...")
     
-    # Create a large figure to hold subplots with plenty of white space
-    fig, axes = plt.subplots(3, 2, figsize=(18, 16), facecolor='white')
+    # Adjust the subplot grid if inference time is included
+    num_plots = len(metric_keys)
+    rows = (num_plots + 1) // 2
+    fig, axes = plt.subplots(rows, 2, figsize=(18, 8 * rows), facecolor='white')
     fig.suptitle('Model Evaluation Comparisons', fontsize=26, fontweight='bold', y=0.98, color='#424242', fontname='Arial')
     
     axes = axes.flatten()
@@ -89,6 +132,8 @@ def main():
         ax.set_title(title, fontsize=18, fontweight='bold', color='#E64626', fontname='Arial', pad=15)
         if 'FPS' in metric:
             ax.set_xlabel('Frames Per Second', fontsize=14, fontname='Arial', color='#424242')
+        elif 'Inference_Time' in metric:
+            ax.set_xlabel('Inference Time (ms)', fontsize=14, fontname='Arial', color='#424242')
         else:
             ax.set_xlabel('Error in mm', fontsize=14, fontname='Arial', color='#424242')
             
