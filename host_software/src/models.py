@@ -43,13 +43,20 @@ def load_expert_model(model_path, device):
     model = models.resnet18()
     num_ftrs = model.fc.in_features
     model.fc = nn.Linear(num_ftrs, 2)
-    
+
     if os.path.exists(model_path):
-        model.load_state_dict(torch.load(model_path, map_location=device))
-        print(f"Successfully loaded weights from {model_path}")
+        checkpoint = torch.load(model_path, map_location=device, weights_only=False)
+        # Training script saves a full checkpoint dict; handle both formats.
+        if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
+            model.load_state_dict(checkpoint['model_state_dict'])
+            epoch = checkpoint.get('epoch', '?')
+            print(f"Successfully loaded checkpoint (epoch {epoch}) from {model_path}")
+        else:
+            model.load_state_dict(checkpoint)
+            print(f"Successfully loaded weights from {model_path}")
     else:
         print(f"WARNING: Weights {model_path} not found! Using random weights.")
-        
+
     model = model.to(device)
     model.eval()
     return model

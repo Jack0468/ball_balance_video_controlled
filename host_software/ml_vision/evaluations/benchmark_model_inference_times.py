@@ -52,7 +52,7 @@ def is_model_dir(name: str) -> bool:
     return (
         lower != 'archive'
         and 'temporal' not in lower
-        and ('yolo' in lower or 'resnet' in lower or 'mlp' in lower)
+        and ('yolo' in lower or 'resnet' in lower or 'mlp' in lower or 'cnn' in lower)
     )
 
 
@@ -141,16 +141,21 @@ def benchmark_yolo_model(model_name: str, model_path: str, sample_df: pd.DataFra
 
 
 def benchmark_resnet_model(model_name: str, checkpoint_path: str, sample_indices: List[int], dataset: Dataset, device: torch.device) -> Dict[str, float]:
-    arch = 'resnet50' if 'resnet50' in model_name.lower() else 'resnet18'
-    if arch == 'resnet50':
-        model = models.resnet50(weights=None)
-        img_size = (480, 640)
+    if 'cnn' in model_name.lower():
+        from training.basic_cnn import BasicCNN
+        model = BasicCNN()
     else:
-        model = models.resnet18(weights=None)
-        img_size = (240, 320)
+        arch = 'resnet50' if 'resnet50' in model_name.lower() else 'resnet18'
+        if arch == 'resnet50':
+            model = models.resnet50(weights=None)
+            img_size = (480, 640)
+        else:
+            model = models.resnet18(weights=None)
+            img_size = (240, 320)
 
-    num_ftrs = model.fc.in_features
-    model.fc = torch.nn.Linear(num_ftrs, 2)
+        num_ftrs = model.fc.in_features
+        model.fc = torch.nn.Linear(num_ftrs, 2)
+
     checkpoint = torch.load(checkpoint_path, map_location=device)
     if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
         model.load_state_dict(checkpoint['model_state_dict'])
@@ -262,7 +267,7 @@ def main():
     parser.add_argument('--seed', type=int, default=42, help='Random seed for sampling')
     parser.add_argument('--output_json', default=os.path.join(script_dir, 'inference_time_summary.json'), help='Summary JSON output')
     parser.add_argument('--update_metrics', action='store_true', help='Update evaluation_metrics.json in each model folder with the new inference time values')
-    parser.add_argument('--model-types', type=str, default='yolo,resnet,mlp', help='Comma-separated model types to benchmark: yolo,resnet,mlp')
+    parser.add_argument('--model-types', type=str, default='yolo,resnet,mlp,cnn', help='Comma-separated model types to benchmark: yolo,resnet,mlp,cnn')
     parser.add_argument('--model-names', type=str, default='', help='Comma-separated exact model directory names to benchmark')
     args = parser.parse_args()
 
@@ -297,14 +302,14 @@ def main():
                     continue
                 sample_df = select_sample_rows(df, args.sample_fraction, args.max_samples, args.seed)
                 metrics = benchmark_yolo_model(model_name, model_path, sample_df, images_dir)
-            elif 'resnet' in model_name.lower() and 'resnet' in allowed_model_types:
-                model_type = 'resnet'
+            elif ('resnet' in model_name.lower() or 'cnn' in model_name.lower()) and ('resnet' in allowed_model_types or 'cnn' in allowed_model_types):
+                model_type = 'cnn' if 'cnn' in model_name.lower() else 'resnet'
                 checkpoint_path = find_resnet_checkpoint(model_root)
                 if checkpoint_path is None:
-                    print(f"Skipping {model_name}: no ResNet checkpoint found.")
+                    print(f"Skipping {model_name}: no CNN/ResNet checkpoint found.")
                     continue
                 test_dataset = BallDataset(os.path.join(args.data_dir, 'labels_sequential.csv'), images_dir, transform=transforms.Compose([
-                    transforms.Resize((240, 320)) if 'resnet18' in model_name.lower() else transforms.Resize((480, 640)),
+                    transforms.Resize((240, 320)) if ('resnet18' in model_name.lower() or 'cnn' in model_name.lower()) else transforms.Resize((480, 640)),
                     transforms.ToTensor(),
                     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
                 ]))

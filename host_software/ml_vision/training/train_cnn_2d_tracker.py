@@ -3,45 +3,23 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, Subset
-from torchvision import models, transforms
+from torchvision import transforms
 
 import argparse
 from ball_dataset import BallDataset
+from basic_cnn import BasicCNN
 
 def main():
-    parser = argparse.ArgumentParser(description="Train ResNet Expert Tracker")
+    parser = argparse.ArgumentParser(description="Train Basic CNN Expert Tracker")
     parser.add_argument("--data_dir", default="../../data/02_silver/session_20260728_102908", help="Path to session data directory")
     parser.add_argument("--csv_name", default="labels.csv", help="Name of the labels CSV file")
     parser.add_argument("--save_dir", default="../models", help="Directory to save the trained models")
     parser.add_argument("--resume", type=str, default=None, help="Path to checkpoint (.pth) to resume training from")
-    parser.add_argument("--arch", type=str, default="resnet18", choices=["resnet18", "resnet50"], help="Architecture to use")
     args = parser.parse_args()
 
-    print(f"Initializing PyTorch Expert Tracker Model ({args.arch})...")
-    
-    # 1. Initialize pre-trained ResNet
-    # We use a standard CNN backbone which will easily allow us to add
-    # multi-task heads in the future (e.g., finding coloured markers, or predicting control signals)
-    if args.arch == "resnet18":
-        model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
-        img_size = (240, 320)
-    elif args.arch == "resnet50":
-        model = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
-        img_size = (480, 640)
-    
-    # Freeze the early layers of ResNet18 to significantly speed up training 
-    # and reduce VRAM usage, since the backbone is already pretrained.
-    for name, param in model.named_parameters():
-        if "layer4" not in name and "fc" not in name:
-            param.requires_grad = False
-    
-    
-    # Replace the classification head with a regression head with Dropout for (x, y)
-    num_ftrs = model.fc.in_features
-    model.fc = nn.Sequential(
-        nn.Dropout(p=0.5), # Drops 50% of connections randomly during training
-        nn.Linear(num_ftrs, 2)
-    )
+    print("Initializing PyTorch Custom Basic CNN Expert Tracker Model...")
+    model = BasicCNN()
+    img_size = (240, 320)
         
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     if device.type == 'cuda':
@@ -54,13 +32,19 @@ def main():
     # Handle absolute vs relative data_dir
     data_dir = os.path.abspath(args.data_dir)
         
-    csv_path = os.path.join(data_dir, args.csv_name)
+    # Resolve CSV path: check if the argument directly exists as a path,
+    # otherwise treat it as relative to the data_dir.
+    if os.path.exists(args.csv_name):
+        csv_path = os.path.abspath(args.csv_name)
+    else:
+        csv_path = os.path.join(data_dir, args.csv_name)
+        
     images_dir = os.path.join(data_dir, 'images')
     
     # Handle absolute vs relative save_dir
     # Dynamically update the save_dir to ensure models are kept organized by architecture
     if os.path.basename(args.save_dir) == "models" or os.path.basename(args.save_dir) == "models/":
-        args.save_dir = os.path.join(args.save_dir, f"{args.arch}_expert_tracker")
+        args.save_dir = os.path.join(args.save_dir, "cnn_2d_tracker")
     project_dir = os.path.abspath(args.save_dir)
     
     # Ensure models directory exists
@@ -68,12 +52,7 @@ def main():
     
     print(f"Loading dataset from: {csv_path}")
     
-    # Define Transforms
-    # We removed RandomAffine and RandomPerspective. In a fixed-camera setup, applying geometric
-    # augmentations to the image while keeping the physical labels (touch_x, touch_y) unchanged
-    # forces the model to dynamically estimate the camera homography relative to the board boundaries.
-    # This destroys the highly accurate absolute pixel-to-mm mapping and degrades tracking accuracy.
-    # Note: RandomHorizontalFlip is strictly forbidden as it creates a physically impossible mirrored board.
+    # Define Transforms (identical to ResNet18 config)
     train_transform = transforms.Compose([
         transforms.Resize(img_size),
         transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.2),
@@ -101,7 +80,6 @@ def main():
     train_dataset = Subset(full_dataset_train, indices[:train_size])
     test_dataset = Subset(full_dataset_test, indices[train_size:])
     
-    # Increased batch size from 32 to 128 to maximize Colab GPU utilization
     train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=2, pin_memory=True)
     test_loader = DataLoader(test_dataset, batch_size=128, shuffle=False, num_workers=2, pin_memory=True)
     
@@ -136,7 +114,7 @@ def main():
         else:
             print("\n[DIAGNOSTIC] No resume checkpoint provided. Starting from SCRATCH!")
             
-    save_path = os.path.join(project_dir, 'resnet18_expert_tracker_v1/expert_tracker_best.pth')
+    save_path = os.path.join(project_dir, 'cnn_2d_tracker_v1/expert_tracker_best.pth')
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     
     print(f"Starting training on {device}...")
@@ -209,8 +187,8 @@ def main():
             torch.save(checkpoint, save_path)
             print(f"Saved new best model to {save_path}")
             
-        # Save the latest model at the end of every epoch just in case Colab crashes!
-        latest_path = os.path.join(project_dir, 'resnet18_expert_tracker_v1/expert_tracker_latest.pth')
+        # Save the latest model at the end of every epoch just in case training is interrupted
+        latest_path = os.path.join(project_dir, 'cnn_2d_tracker_v1/expert_tracker_latest.pth')
         torch.save(checkpoint, latest_path)
 
     print("Training complete!")
