@@ -5,21 +5,29 @@ import sys
 import os
 
 class DatasetPreprocessor:
-    def __init__(self, video_path, synced_csv_path, output_dir, crop_box):
+    def __init__(self, video_path, synced_csv_path, output_dir, crop_box=None):
         self.video_path = video_path
         self.synced_csv_path = synced_csv_path
         self.output_dir = output_dir
         
-        # crop_box is expected as "x,y,w,h" (output from select_crop.py)
-        try:
-            cx, cy, cw, ch = map(int, crop_box.split(','))
-            self.crop_x1 = cx
-            self.crop_y1 = cy
-            self.crop_x2 = cx + cw
-            self.crop_y2 = cy + ch
-        except Exception:
-            print("Error parsing crop box. Must be 'x,y,w,h'.")
-            sys.exit(1)
+        if crop_box is None:
+            self.crop_x1 = 0
+            self.crop_y1 = 0
+            self.crop_x2 = None
+            self.crop_y2 = None
+            self.use_full_frame = True
+        else:
+            self.use_full_frame = False
+            # crop_box is expected as "x,y,w,h" (output from select_crop.py)
+            try:
+                cx, cy, cw, ch = map(int, crop_box.split(','))
+                self.crop_x1 = cx
+                self.crop_y1 = cy
+                self.crop_x2 = cx + cw
+                self.crop_y2 = cy + ch
+            except Exception:
+                print("Error parsing crop box. Must be 'x,y,w,h'.")
+                sys.exit(1)
             
     def run_preprocessing(self):
         print(f"Loading synced mapping from {self.synced_csv_path}...")
@@ -46,8 +54,12 @@ class DatasetPreprocessor:
             frame_idx = int(row['frame_index'])
             host_ms = int(row['host_timestamp_ms'])
             
-            # Crop the frame
-            cropped = frame[self.crop_y1:self.crop_y2, self.crop_x1:self.crop_x2]
+            if self.use_full_frame:
+                self.crop_x2 = frame.shape[1]
+                self.crop_y2 = frame.shape[0]
+                cropped = frame
+            else:
+                cropped = frame[self.crop_y1:self.crop_y2, self.crop_x1:self.crop_x2]
             
             # Resize to standardized 640x480
             resized = cv2.resize(cropped, (640, 480))
@@ -93,7 +105,8 @@ def main():
     parser.add_argument('--video', required=True, help="Path to raw .MOV video")
     parser.add_argument('--synced-csv', required=True, help="Path to intermediate synced telemetry mapping")
     parser.add_argument('--output-dir', default="host_software/data/02_silver", help="Output directory")
-    parser.add_argument('--crop', required=True, help="Crop box as 'x,y,w,h' e.g. '82,435,915,762'")
+    parser.add_argument('--crop', required=False, default=None,
+                        help="Optional crop box as 'x,y,w,h'. If omitted, the full frame is used.")
     
     args = parser.parse_args()
     

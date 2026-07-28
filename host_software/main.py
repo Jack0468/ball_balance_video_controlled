@@ -44,11 +44,11 @@ def main():
     # 1. Hardware/Model Init
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    yolo_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/yolov8_platform_pose_markers_v1/weights/best.pt'))
-    mlp_corrector_v1_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/mlp_corrector_v1/best_corrector.pth'))
+    yolo_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/yolov8_platform_pose_markers_v3/weights/best.pt'))
+    mlp_corrector_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/mlp_corrector_v2/best_corrector_v2.pth'))
     
     yolo_model = load_yolo_model(yolo_path, device)
-    mlp_corrector_v1_model = load_mlp_corrector_v1_model(mlp_corrector_v1_path, device)
+    mlp_corrector_v1_model = load_mlp_corrector_v1_model(mlp_corrector_path, device)
     
     # Initialize Homography Projector
     dst_pts = np.array([

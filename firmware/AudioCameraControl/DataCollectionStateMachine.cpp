@@ -85,7 +85,7 @@ void DataCollectionStateMachine::getNextTarget(double &out_x, double &out_y, boo
         }
         
         // Once the moving average drops below 3.0mm, we consider it completely settled
-        if (ewma_err_x < 3.0 && ewma_err_y < 3.0) {
+        if (ewma_err_x < 4.0 && ewma_err_y < 4.0) {
             if (in_recovery) {
                 state = state_before_recovery;
                 in_recovery = false;

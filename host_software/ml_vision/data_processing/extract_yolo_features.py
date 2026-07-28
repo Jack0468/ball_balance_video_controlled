@@ -15,18 +15,24 @@ from core.coordinate_math import HomographyProjector
 
 def extract_features():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--dir_input", default=None, help="Path to a session folder containing images/ and labels.csv")
     parser.add_argument("--data_dir", default="../../data/02_silver", help="Path to telemetry dataset")
-    parser.add_argument("--model_path", default="../models/yolov8_platform_markers_v1/weights/best.pt", help="Path to YOLO model")
+    parser.add_argument("--model_path", default="../models/yolov8_platform_pose_markers_v3/weights/best.pt", help="Path to YOLO model")
     parser.add_argument("--num_train", type=int, default=5000, help="Number of training samples to extract")
     parser.add_argument("--num_test", type=int, default=1000, help="Number of test samples to extract")
     args = parser.parse_args()
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
     model_path = os.path.abspath(os.path.join(script_dir, args.model_path))
-    data_dir = os.path.abspath(os.path.join(script_dir, args.data_dir))
-    
-    csv_path = os.path.join(data_dir, "labels_sequential.csv")
-    images_dir = os.path.join(data_dir, "images")
+
+    if args.dir_input:
+        data_dir = os.path.abspath(args.dir_input)
+        csv_path = os.path.join(data_dir, "labels.csv")
+        images_dir = os.path.join(data_dir, "images")
+    else:
+        data_dir = os.path.abspath(os.path.join(script_dir, args.data_dir))
+        csv_path = os.path.join(data_dir, "labels_sequential.csv")
+        images_dir = os.path.join(data_dir, "images")
     
     print(f"Loading YOLO Model from {model_path}...")
     model = YOLO(model_path)
