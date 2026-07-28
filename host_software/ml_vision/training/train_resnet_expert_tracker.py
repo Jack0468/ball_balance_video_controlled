@@ -10,8 +10,8 @@ from ball_dataset import BallDataset
 
 def main():
     parser = argparse.ArgumentParser(description="Train ResNet Expert Tracker")
-    parser.add_argument("--data_dir", default="../../data/02_silver", help="Path to data directory")
-    parser.add_argument("--csv_name", default="labels_normalized.csv", help="Name of the labels CSV file")
+    parser.add_argument("--data_dir", default="../../data/02_silver/session_20260728_102908", help="Path to session data directory")
+    parser.add_argument("--csv_name", default="labels.csv", help="Name of the labels CSV file")
     parser.add_argument("--save_dir", default="../models", help="Directory to save the trained models")
     parser.add_argument("--resume", type=str, default=None, help="Path to checkpoint (.pth) to resume training from")
     parser.add_argument("--arch", type=str, default="resnet18", choices=["resnet18", "resnet50"], help="Architecture to use")
