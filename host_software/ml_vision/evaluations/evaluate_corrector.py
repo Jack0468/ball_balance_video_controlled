@@ -14,7 +14,7 @@ parent_dir = os.path.abspath(os.path.join(script_dir, '..'))
 if parent_dir not in sys.path:
     sys.path.append(parent_dir)
 
-from core.mlp_corrector_v1_mlp import CorrectorMLP
+from core.corrector_mlp import CorrectorMLP
 from core.coordinate_math import HomographyProjector
 
 def main():
