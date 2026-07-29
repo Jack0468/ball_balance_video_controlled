@@ -23,7 +23,7 @@ class VLAEvaluator:
         self.vla_model = RT1LiteVLA().to(self.device)
         self.vla_model.eval()
         
-        self.output_dir = "evaluations/04_evaluation"
+        self.output_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data", "04_evaluation")
         os.makedirs(self.output_dir, exist_ok=True)
         
         filename = "labels_sequential_baseline_vla.csv" if is_baseline else "labels_sequential_our_vla.csv"

@@ -1,5 +1,8 @@
 # VRI 2026: Ball-Balancing Robot
 
+![Ball Balancing Demo](file:///c:/Users/Admin/Documents/Windows_codespace/VRI_2026/docs/ball-balancing-demo.gif)
+![Bronze System Demo](file:///c:/Users/Admin/Documents/Windows_codespace/VRI_2026/host_software/data/bronze_demo.mp4)
+
 A fully autonomous, multi-modal ball-balancing robot built using a highly distributed architecture. This system leverages Machine Learning (Computer Vision and Audio Classification), high-speed FPGA hardware acceleration, and precision stepper motor control to dynamically balance a ball on a moving platform.
 
 ## 🏗️ System Architecture

@@ -7,7 +7,7 @@ def main():
     # We start with the nano model for speed (yolov8n-pose.pt)
     # The model will be automatically downloaded by Ultralytics if not present.
     print("Initializing YOLOv8n-Pose model...")
-    model = YOLO('yolov8n-pose.pt')
+    model = YOLO(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'models', 'base_models', 'yolov8n_pose', 'weights', 'yolov8n-pose.pt'))
 
     # Path to the dataset configuration file we just created
     yaml_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../data/platform_pose.yaml'))

@@ -10,7 +10,7 @@ def main():
     
     script_dir = os.path.dirname(os.path.abspath(__file__))
     repo_root = os.path.abspath(os.path.join(script_dir, '..', '..', '..'))
-    model_path = os.path.join(repo_root, 'yolov8n-pose.pt')
+    model_path = os.path.join(repo_root, 'host_software', 'ml_vision', 'models', 'base_models', 'yolov8n_pose', 'weights', 'yolov8n-pose.pt')
     yaml_path = os.path.join(repo_root, 'host_software', 'ml_vision', 'data_processing', 'raw_dataset.yaml')
     project_dir = os.path.join(repo_root, 'models')
     

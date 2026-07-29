@@ -5,7 +5,7 @@ from ultralytics import YOLO
 def main():
     # 1. Initialize standard YOLOv8n object detection model
     # (Notice we are not using yolov8n-pose.pt)
-    model = YOLO('yolov8n.pt')
+    model = YOLO(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'models', 'base_models', 'yolov8n', 'weights', 'yolov8n.pt'))
     
     # 2. Set absolute paths
     script_dir = os.path.dirname(os.path.abspath(__file__))
