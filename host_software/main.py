@@ -45,7 +45,7 @@ def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     script_dir = os.path.dirname(os.path.abspath(__file__))
     yolo_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/yolov8_platform_pose_markers_v3/weights/best.pt'))
-    mlp_corrector_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/mlp_corrector_v2/best_corrector_v2.pth'))
+    mlp_corrector_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/mlp_corrector_v2/best_mlp_corrector_v2.pth'))
     
     yolo_model = load_yolo_model(yolo_path, device)
     mlp_corrector_v1_model = load_mlp_corrector_v1_model(mlp_corrector_path, device)
@@ -60,10 +60,10 @@ def main():
     projector = HomographyProjector(dst_pts)
     
     # 2. Audio & State Init
-    audio_model_path = os.path.abspath(os.path.join(script_dir, 'ml_audio/audio_command_classifier_state_dict_v2.pth'))
+    audio_model_path = os.path.abspath(os.path.join(script_dir, 'ml_audio/models/pytorch_v3/audio_command_classifier_state_dict_v3.pth'))
     audio_receiver = AudioCommandReceiver(audio_model_path)
     state_machine = TargetStateMachine()
-    
+
     latency_monitor = RealtimeLatencyMonitor(log_interval=100, save_dir=os.path.join(script_dir, 'ml_vision/evaluations'))
     
     # 3. Serial Port Init
@@ -128,9 +128,10 @@ def main():
                     ser.write(payload)
             except Exception as e:
                 print(f"Serial Error: {e}")
-                
+
             end_t = time.perf_counter()
             latency_monitor.end_frame(log_to_console=False)
+
             
             total_latency_ms = (end_t - start_t) * 1000.0
             yolo_latency_ms = (yolo_t - start_t) * 1000.0

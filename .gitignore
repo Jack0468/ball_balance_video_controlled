@@ -54,6 +54,8 @@ models/
 *.bin
 host_software/ml_vision/models/platform_pose_model/
 host_software/ml_vision/models/weights/
+host_software/ml_vision/models/archive
+
 runs/
 *.zip
 fpga/camera_i2c/old_images/

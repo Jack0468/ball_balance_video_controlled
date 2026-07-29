@@ -57,7 +57,8 @@ def main():
             continue
         if ('yolo' not in model_name.lower() and
                 'resnet' not in model_name.lower() and
-                'mlp' not in model_name.lower()):
+                'mlp' not in model_name.lower() and
+                'cnn' not in model_name.lower()):
             continue
 
         json_path = None
