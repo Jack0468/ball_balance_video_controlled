@@ -69,7 +69,7 @@ def main():
 
         sources = set(colab_yaml.get('train', []) + colab_yaml.get('val', []))
         for source in sorted(sources):
-            images_rel = source  # e.g. '03_yolo_raw_dataset/images'
+            images_rel = source  # e.g. '03_gold/images_iphone/images'
             images_dir = os.path.join(dataset_root, images_rel)
             if not os.path.isdir(images_dir):
                 print(f"Warning: images directory not found: {images_dir}")
@@ -82,7 +82,7 @@ def main():
                 continue
 
             # determine labels directory (sibling to images dir)
-            parent = os.path.dirname(images_rel)  # e.g. '03_yolo_raw_dataset'
+            parent = os.path.dirname(images_rel)  # e.g. '03_gold/images_iphone'
             labels_dir = os.path.join(dataset_root, parent, 'labels')
 
             labeled_imgs = []

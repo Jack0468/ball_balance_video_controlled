@@ -1,10 +1,10 @@
 path: /content/dataset
 train:
-- 03_yolo_raw_dataset/images
+- 03_gold/images_iphone/images
 - 03_synthetic_yolo/images
-- 03_gold/session_20260728_102908/images
+- 02_silver/session_20260728_102908/images
 val:
-- 03_gold/session_20260728_102908/images
+- 02_silver/session_20260728_102908/images
 names:
   0: platform
   1: ball

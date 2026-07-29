@@ -146,8 +146,18 @@ def main():
     if args.image_dir:
         source_image_paths = sorted(glob.glob(os.path.join(args.image_dir, '**', '*.jpg'), recursive=True)) + \
                              sorted(glob.glob(os.path.join(args.image_dir, '**', '*.png'), recursive=True))
+        
+        # Filter out images that already have a label in the output directory
+        unlabeled_paths = []
+        for img_path in source_image_paths:
+            base = os.path.basename(img_path)
+            txt_path = os.path.join(labels_dir, os.path.splitext(base)[0] + '.txt')
+            if not os.path.exists(txt_path):
+                unlabeled_paths.append(img_path)
+        source_image_paths = unlabeled_paths
+        
         if not source_image_paths:
-            print(f"No JPG/PNG images found in {args.image_dir}!")
+            print(f"No unlabeled JPG/PNG images found in {args.image_dir}!")
             return
         source_image_paths = random.sample(source_image_paths, min(args.frames_per_video, len(source_image_paths)))
         if args.copy_images:
@@ -203,6 +213,7 @@ def main():
     # 2. Labeling Loop
     global display_image, clicked_points, marker_points, current_image, current_marker_class, existing_labels
     cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+    cv2.resizeWindow(window_name, 2560, 1920)
     
     for img_path in sorted(existing_images):
         txt_path = label_path_for_image(img_path)

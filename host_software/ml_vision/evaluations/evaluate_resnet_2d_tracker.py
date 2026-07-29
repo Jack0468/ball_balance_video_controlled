@@ -3,13 +3,13 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Subset
-from torchvision import transforms
+from torchvision import models, transforms
 import matplotlib.pyplot as plt
 import numpy as np
 import json
 import time
-import sys
 
+import sys
 script_dir = os.path.dirname(os.path.abspath(__file__))
 training_dir = os.path.abspath(os.path.join(script_dir, '../training'))
 if training_dir not in sys.path:
@@ -17,16 +17,16 @@ if training_dir not in sys.path:
 
 import argparse
 from ball_dataset import BallDataset
-from basic_cnn import BasicCNN
 
 def main():
-    parser = argparse.ArgumentParser(description="Evaluate Custom CNN 2D Expert Tracker")
-    parser.add_argument("--data_dir", default="../../data/02_silver", help="Path to data directory")
-    parser.add_argument("--csv_name", default="labels_sequential.csv", help="Name of the CSV labels file")
-    parser.add_argument("--model_path", required=True, help="Path to the trained .pth file (e.g. models/cnn_2d_tracker/cnn_2d_tracker_v1/expert_tracker_best.pth)")
+    parser = argparse.ArgumentParser(description="Evaluate ResNet 2D Tracker V1")
+    parser.add_argument("--data_dir", default="../../data/02_silver/cropped_yolo", help="Path to cropped data directory")
+    parser.add_argument("--csv_name", default="labels_normalized.csv", help="Name of the CSV labels file")
+    parser.add_argument("--model_path", required=True, help="Path to the trained .pth file (e.g. models/resnet18_2d_tracker_v1/expert_tracker_best.pth)")
+    parser.add_argument("--arch", type=str, default="resnet18", choices=["resnet18", "resnet50"], help="Architecture to use")
     args = parser.parse_args()
 
-    print("Initializing Evaluation Script for Custom CNN Tracker...")
+    print(f"Initializing Evaluation Script for ResNet 2D Tracker V1 ({args.arch})...")
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model_path = os.path.abspath(args.model_path)
@@ -37,15 +37,32 @@ def main():
         return
         
     # 1. Initialize model
-    model = BasicCNN()
-    img_size = (240, 320)
-    
-    # Load weights safely
+    if args.arch == "resnet18":
+        model = models.resnet18(weights=None)
+        img_size = (240, 320)
+    elif args.arch == "resnet50":
+        model = models.resnet50(weights=None)
+        img_size = (480, 640)
+        
+    # Load weights safely and determine fc structure dynamically
     checkpoint = torch.load(model_path, map_location=device, weights_only=False)
-    if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
-        model.load_state_dict(checkpoint['model_state_dict'])
+    state_dict = checkpoint['model_state_dict'] if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint else checkpoint
+    
+    # Check if fc layer is a Sequential block in the saved checkpoint
+    has_sequential_fc = any(k.startswith('fc.1.') for k in state_dict.keys())
+    
+    num_ftrs = model.fc.in_features
+    if has_sequential_fc:
+        print("[INFO] Loading model with Sequential Dropout regression head...")
+        model.fc = nn.Sequential(
+            nn.Dropout(p=0.5),
+            nn.Linear(num_ftrs, 2)
+        )
     else:
-        model.load_state_dict(checkpoint)
+        print("[INFO] Loading model with Linear regression head...")
+        model.fc = nn.Linear(num_ftrs, 2)
+        
+    model.load_state_dict(state_dict)
     model = model.to(device)
     model.eval()
     
@@ -63,7 +80,7 @@ def main():
     
     full_dataset = BallDataset(csv_file=csv_path, root_dir=images_dir, transform=test_transform)
     
-    # Test on the last 20% of the dataset sequentially to avoid leakage
+    # We want to test on the last 20% of the dataset sequentially to prevent temporal leakage
     indices = list(range(len(full_dataset)))
     train_size = int(0.8 * len(indices))
     test_indices = indices[train_size:]
@@ -94,7 +111,7 @@ def main():
             for _ in range(batch_size):
                 inference_times_ms.append(time_per_frame_ms)
             
-            # De-normalize
+            # De-normalize coordinates
             outputs_mm = outputs.cpu().numpy() * MAX_BOUND
             targets_mm = targets.cpu().numpy() * MAX_BOUND
             
@@ -127,7 +144,7 @@ def main():
         "FPS_Estimate": float(1000.0 / np.mean(inference_times_ms))
     }
     
-    print("\n--- Custom CNN Evaluation Metrics (Millimeters) ---")
+    print("\n--- Evaluation Metrics (Millimeters) ---")
     for k, v in metrics.items():
         print(f"{k}: {v:.2f} mm" if "Time" not in k and "FPS" not in k else f"{k}: {v:.2f}")
         
@@ -142,7 +159,7 @@ def main():
     plt.plot(targs_x, label='Actual X', color='blue', alpha=0.7)
     plt.plot(preds_x, label='Predicted X', color='red', linestyle='--', alpha=0.7)
     plt.ylabel('X Position (mm)')
-    plt.title('CNN 2D Tracker Test Set Trajectory (X)')
+    plt.title('ResNet 2D Tracker Test Set Trajectory (X)')
     plt.legend()
     plt.grid(True)
     
@@ -151,7 +168,7 @@ def main():
     plt.plot(preds_y, label='Predicted Y', color='red', linestyle='--', alpha=0.7)
     plt.xlabel('Frame Index (Time)')
     plt.ylabel('Y Position (mm)')
-    plt.title('CNN 2D Tracker Test Set Trajectory (Y)')
+    plt.title('ResNet 2D Tracker Test Set Trajectory (Y)')
     plt.legend()
     plt.grid(True)
     
@@ -160,6 +177,6 @@ def main():
     plt.savefig(plot_path)
     print(f"\nSaved trajectory plot to {plot_path}")
     print(f"Saved metrics to {metrics_path}")
- 
+
 if __name__ == '__main__':
     main()

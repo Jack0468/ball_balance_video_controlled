@@ -9,7 +9,7 @@ import argparse
 from ball_dataset import BallDataset
 
 def main():
-    parser = argparse.ArgumentParser(description="Train ResNet Expert Tracker")
+    parser = argparse.ArgumentParser(description="Train ResNet 2D Tracker")
     parser.add_argument("--data_dir", default="../../data/02_silver/session_20260728_102908", help="Path to session data directory")
     parser.add_argument("--csv_name", default="labels.csv", help="Name of the labels CSV file")
     parser.add_argument("--save_dir", default="../models", help="Directory to save the trained models")
@@ -17,7 +17,7 @@ def main():
     parser.add_argument("--arch", type=str, default="resnet18", choices=["resnet18", "resnet50"], help="Architecture to use")
     args = parser.parse_args()
 
-    print(f"Initializing PyTorch Expert Tracker Model ({args.arch})...")
+    print(f"Initializing PyTorch ResNet 2D Tracker Model ({args.arch})...")
     
     # 1. Initialize pre-trained ResNet
     # We use a standard CNN backbone which will easily allow us to add
@@ -60,7 +60,7 @@ def main():
     # Handle absolute vs relative save_dir
     # Dynamically update the save_dir to ensure models are kept organized by architecture
     if os.path.basename(args.save_dir) == "models" or os.path.basename(args.save_dir) == "models/":
-        args.save_dir = os.path.join(args.save_dir, f"{args.arch}_expert_tracker")
+        args.save_dir = os.path.join(args.save_dir, f"{args.arch}_2d_tracker")
     project_dir = os.path.abspath(args.save_dir)
     
     # Ensure models directory exists
@@ -102,8 +102,8 @@ def main():
     test_dataset = Subset(full_dataset_test, indices[train_size:])
     
     # Increased batch size from 32 to 128 to maximize Colab GPU utilization
-    train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=2, pin_memory=True)
-    test_loader = DataLoader(test_dataset, batch_size=128, shuffle=False, num_workers=2, pin_memory=True)
+    train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=0, pin_memory=True)
+    test_loader = DataLoader(test_dataset, batch_size=128, shuffle=False, num_workers=0, pin_memory=True)
     
     print(f"Found {len(full_dataset_train)} total images -> {len(train_dataset)} Train | {len(test_dataset)} Test.")
     
@@ -138,7 +138,7 @@ def main():
         else:
             print("\n[DIAGNOSTIC] No resume checkpoint provided. Starting from SCRATCH!")
             
-    save_path = os.path.join(project_dir, 'resnet18_expert_tracker_v1/expert_tracker_best.pth')
+    save_path = os.path.join(project_dir, f'{args.arch}_2d_tracker_v1/resnet_2d_tracker_best.pth')
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     
     print(f"Starting training on {device}...")
@@ -215,7 +215,7 @@ def main():
             print(f"Saved new best model to {save_path}")
             
         # Save the latest model at the end of every epoch just in case Colab crashes!
-        latest_path = os.path.join(project_dir, 'resnet18_expert_tracker_v1/expert_tracker_latest.pth')
+        latest_path = os.path.join(project_dir, f'{args.arch}_2d_tracker_v1/resnet_2d_tracker_latest.pth')
         torch.save(checkpoint, latest_path)
 
     print("Training complete!")
@@ -224,6 +224,7 @@ def main():
     import json
     
     plt.figure(figsize=(10, 6))
+    # range needs to match length of train_losses
     epochs_range = range(start_epoch + 1, start_epoch + 1 + len(train_losses))
     plt.plot(epochs_range, train_losses, label='Train Loss')
     plt.plot(epochs_range, test_losses, label='Test Loss')
@@ -233,7 +234,7 @@ def main():
     plt.legend()
     plt.grid(True)
     
-    curve_path = os.path.join(project_dir, 'resnet18_expert_tracker_v1/training_curve.png')
+    curve_path = os.path.join(project_dir, f'{args.arch}_2d_tracker_v1/training_curve.png')
     plt.savefig(curve_path)
     print(f"Saved {curve_path}")
     
@@ -242,7 +243,7 @@ def main():
         'test_losses': test_losses,
         'best_loss': best_loss
     }
-    metrics_path = os.path.join(project_dir, 'resnet18_expert_tracker_v1/training_metrics.json')
+    metrics_path = os.path.join(project_dir, f'{args.arch}_2d_tracker_v1/training_metrics.json')
     with open(metrics_path, 'w') as f:
         json.dump(metrics, f, indent=4)
     print(f"Saved {metrics_path}")

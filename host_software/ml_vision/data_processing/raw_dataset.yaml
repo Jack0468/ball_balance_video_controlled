@@ -1,10 +1,10 @@
 path: C:/Users/Admin/Documents/Windows_codespace/VRI_2026/host_software/data
 train:
-  - 03_yolo_raw_dataset/images
+  - 03_gold/images_iphone/images
   - 03_synthetic_yolo/images
-  - 03_gold/session_20260728_102908/images
+  - 02_silver/session_20260728_102908/images
 val: 
-  - 03_gold/session_20260728_102908/images
+  - 02_silver/session_20260728_102908/images
 
 # Classes
 names:

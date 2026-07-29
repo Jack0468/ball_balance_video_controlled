@@ -1,5 +1,12 @@
 # VRI 2026 Project Logbook
 
+## 29/07/2026
+### ML Vision Pipeline: YOLO Jitter Hypothesis Validation
+- **YOLO Bounding Box Jitter Hypothesis Proven**: Verified that the uncertainty in the size and scale of YOLO's bounding boxes was the root cause of downstream ML model failures. 
+- **ResNet 2D Tracker Failure**: Trained the ResNet 2D tracker CNN on perfect, hand-labeled crops (`03_gold_cropped`). When deployed against noisy, jittery YOLO crops simulating inference (`02_silver/cropped_yolo`), the model failed catastrophically with a mean error of ~546mm. This confirmed that CNNs map raw pixels directly to intrinsic board coordinates (mm) and completely break down when crop variance shifts the board's apparent size and position.
+- **MLP Corrector Success**: Trained the MLP Corrector on analytically derived ground-truth features (`yolo_features.csv` based on hand-labeled keypoints) instead of noisy YOLO coordinates. Because the MLP uses robust mathematical structures (four keypoints -> homography calculation) instead of raw pixels, it successfully generalized to noisy YOLO data during evaluation. Its mean Euclidean error plummeted from 61.42 mm (when trained on noisy YOLO data) to just 27.40 mm, demonstrating vastly superior robustness.
+- **Strategic Decision**: Concluded that for CNNs to work, we must either eliminate crop variance (e.g., use fixed crop boxes) or artificially inject jitter during training. Conversely, the analytic homography + MLP corrector pipeline is proven to be robust against tracking jitter and remains the most viable architecture.
+
 ## 26/07/2026
 ### Codebase Consolidation & Documentation Overhaul
 - **Primary Entry Point Unification**: Identified technical debt from multiple competing inference loops. Renamed the state-of-the-art PyTorch script (`main_yolo_marker_pytorch.py`) to `main.py` as the definitive, singular entry point for the robot. 
