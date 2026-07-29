@@ -20,6 +20,8 @@ def extract_features():
     parser.add_argument("--model_path", default="../models/yolov8_platform_pose_markers_v3/weights/best.pt", help="Path to YOLO model")
     parser.add_argument("--num_train", type=int, default=5000, help="Number of training samples to extract")
     parser.add_argument("--num_test", type=int, default=1000, help="Number of test samples to extract")
+    parser.add_argument("--csv_name", default="labels.csv", help="Name of the telemetry csv file in dir_input")
+    parser.add_argument("--out_csv", default="yolo_features.csv", help="Name of the output csv file")
     args = parser.parse_args()
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -27,7 +29,7 @@ def extract_features():
 
     if args.dir_input:
         data_dir = os.path.abspath(args.dir_input)
-        csv_path = os.path.join(data_dir, "labels.csv")
+        csv_path = os.path.join(data_dir, args.csv_name)
         images_dir = os.path.join(data_dir, "images")
     else:
         data_dir = os.path.abspath(os.path.join(script_dir, args.data_dir))
@@ -61,7 +63,7 @@ def extract_features():
     ], dtype=np.float32)
     projector = HomographyProjector(dst_pts)
     
-    out_csv = os.path.join(data_dir, "yolo_features.csv")
+    out_csv = os.path.join(data_dir, args.out_csv)
     processed_images = set()
     if os.path.exists(out_csv):
         existing_df = pd.read_csv(out_csv)

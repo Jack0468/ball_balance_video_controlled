@@ -48,7 +48,7 @@ def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     script_dir = root_dir
 
-    yolo_path  = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/yolov8_platform_pose_markers_v3/weights/best.pt'))
+    yolo_path  = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/yolov8_platform_pose_markers_v4/weights/best.pt'))
     resnet_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/resnet18_expert_tracker_v6/expert_tracker_best.pth'))
 
     yolo_model  = load_yolo_model(yolo_path, device)
