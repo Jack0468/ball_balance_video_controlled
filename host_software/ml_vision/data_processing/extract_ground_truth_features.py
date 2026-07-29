@@ -150,7 +150,7 @@ def extract_ground_truth_features():
                 })
                 
         if features:
-            out_csv = os.path.join(gold_dir, "yolo_features.csv")
+            out_csv = os.path.join(gold_dir, "ground_truth_features.csv")
             out_df = pd.DataFrame(features)
             # Sort by image_file to maintain determinism
             out_df = out_df.sort_values(by='image_file')
