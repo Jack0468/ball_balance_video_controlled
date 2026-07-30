@@ -61,6 +61,28 @@ def load_expert_model(model_path, device):
     model.eval()
     return model
 
+def load_cnn_expert_model(model_path, device):
+    from ml_vision.training.basic_cnn import BasicCNN
+    print("Loading Custom BasicCNN Expert Model...")
+    model = BasicCNN()
+
+    if os.path.exists(model_path):
+        checkpoint = torch.load(model_path, map_location=device, weights_only=False)
+        # Training script saves a full checkpoint dict; handle both formats.
+        if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
+            model.load_state_dict(checkpoint['model_state_dict'])
+            epoch = checkpoint.get('epoch', '?')
+            print(f"Successfully loaded checkpoint (epoch {epoch}) from {model_path}")
+        else:
+            model.load_state_dict(checkpoint)
+            print(f"Successfully loaded weights from {model_path}")
+    else:
+        print(f"WARNING: Weights {model_path} not found! Using random weights.")
+
+    model = model.to(device)
+    model.eval()
+    return model
+
 def process_vision_frame(frame, yolo_model, mlp_corrector_v1_model, projector, device):
     import numpy as np
     
