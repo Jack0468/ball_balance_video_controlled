@@ -35,20 +35,31 @@ class BasicCNN(nn.Module):
             nn.MaxPool2d(kernel_size=2, stride=2),
         )
         
-        # Adaptive average pooling maps any input spatial dimensions to a fixed (4, 4) grid
-        self.pool = nn.AdaptiveAvgPool2d((4, 4)) # Output shape: Batch x 256 x 4 x 4 (flattened to 4096)
-        
         # Regression head with dropout to prevent overfitting
         self.fc = nn.Sequential(
             nn.Dropout(p=0.5),
-            nn.Linear(256 * 4 * 4, 256),
+            nn.Linear(256 * 15 * 20, 256),
             nn.GELU(),
             nn.Linear(256, num_outputs)
         )
         
+        self._initialize_weights()
+
+    def _initialize_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                nn.init.kaiming_normal_(m.weight, mode='fan_in', nonlinearity='relu')
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+
+        
     def forward(self, x):
         x = self.features(x)
-        x = self.pool(x)
         x = torch.flatten(x, 1)
         x = self.fc(x)
         return x

@@ -9,6 +9,18 @@ import argparse
 from ball_dataset import BallDataset
 from basic_cnn import BasicCNN
 
+class AddGaussianNoise(object):
+    def __init__(self, mean=0., std=1.):
+        self.std = std
+        self.mean = mean
+        
+    def __call__(self, tensor):
+        return tensor + torch.randn(tensor.size()) * self.std + self.mean
+    
+    def __repr__(self):
+        return self.__class__.__name__ + f'(mean={self.mean}, std={self.std})'
+
+
 def main():
     parser = argparse.ArgumentParser(description="Train Basic CNN Expert Tracker")
     parser.add_argument("--data_dir", default="../../data/02_silver/session_20260728_102908", help="Path to session data directory")
@@ -52,13 +64,13 @@ def main():
     
     print(f"Loading dataset from: {csv_path}")
     
-    # Define Transforms (identical to ResNet18 config)
+    # Define Transforms
     train_transform = transforms.Compose([
         transforms.Resize(img_size),
         transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.2),
         transforms.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 5.0)),
         transforms.ToTensor(),
-        transforms.RandomErasing(p=0.4, scale=(0.02, 0.1)),
+        AddGaussianNoise(mean=0., std=0.05),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
     
