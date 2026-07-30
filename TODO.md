@@ -109,3 +109,10 @@ DOES THIS SATIISFY OUR ORIGNAL SPECIFICATION FOR THE PROJECT?
 
 FOR THE FIRST DATASET OF THE BALL MOVEMENT COLLECTION
 IDEA FOR PREPROCESSING: remove the peak at the centre and normalise it to the rest of the data, then train the model
+
+30/07/2026
+
+double check the outputs of the evaluation of the ml_multimodal actually go to the correct place and are named in a way that makes sense.
+
+THEN design a way of reducing the model weights of the yolo such that we can compile directly to fpga.
+use the research paper we found. we want to extensively plan, and design from the ground up. module by module, double checking correctness at each phase.

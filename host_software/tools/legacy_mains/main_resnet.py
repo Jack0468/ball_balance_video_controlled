@@ -23,7 +23,7 @@ SERIAL_PORT       = "COM7"
 SERIAL_BAUD       = 2000000
 MAX_BOUND         = 200.0   # ResNet denormalisation constant (must match BallDataset)
 CROP_PAD          = 20      # Pixels of padding around the YOLO platform crop
-YOLO_POLL_INTERVAL = 1.0    # Seconds between YOLO checks (gate refresh rate)
+YOLO_POLL_INTERVAL = 3.0    # Seconds between YOLO checks (gate refresh rate)
 # ---------------------
 
 def main():

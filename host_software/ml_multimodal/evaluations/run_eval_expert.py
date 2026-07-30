@@ -92,7 +92,7 @@ def main():
         return
 
     # Output CSV
-    out_dir = os.path.abspath(os.path.join(script_dir, 'data', '04_evaluation'))
+    out_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data", "04_evaluation")
     os.makedirs(out_dir, exist_ok=True)
     timestamp = time.strftime("%Y%m%d_%H%M%S")
     csv_path = os.path.join(out_dir, f'expert_evaluation_run_{timestamp}.csv')

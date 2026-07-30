@@ -9,7 +9,7 @@ def main():
     args = parser.parse_args()
     
     print("Loading yolov8n-pose.pt...")
-    model = YOLO("yolov8n-pose.pt")
+    model = YOLO(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "models", "base_models", "yolov8n_pose", "weights", "yolov8n-pose.pt"))
     
     yaml_path = os.path.abspath('host_software/ml_vision/data_processing/raw_dataset.yaml')
     

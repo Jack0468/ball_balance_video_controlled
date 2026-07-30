@@ -24,7 +24,7 @@ def main():
     
     # 1. Export the standard YOLOv8n Ball Tracker
     # It will automatically download yolov8n.pt if it isn't in the root dir
-    export_model('yolov8n.pt', is_local_path=False)
+    export_model('../models/base_models/yolov8n/weights/yolov8n.pt', is_local_path=True)
     
     # 2. Export our custom YOLO-Pose model
     export_model('../models/yolov8_platform_pose_v2/weights/best.pt', is_local_path=True)

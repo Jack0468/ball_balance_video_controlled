@@ -30,7 +30,7 @@ from core.preprocessor import Preprocessor
 
 def run_pipeline(source=0, headless=False, fallback='raw', max_frames=None):
     print("Loading YOLOv8n pre-trained model...")
-    model_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "models", "weights", "yolov8n.pt")
+    model_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "models", "base_models", "yolov8n", "weights", "yolov8n.pt")
     model = YOLO(model_path)
     
     print("Initializing Canny Preprocessor...")
