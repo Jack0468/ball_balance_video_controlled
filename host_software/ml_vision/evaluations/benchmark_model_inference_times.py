@@ -38,7 +38,7 @@ class BallDataset(Dataset):
         image = Image.open(img_name).convert('RGB')
         touch_x = self.labels_df.iloc[idx]['touch_x']
         touch_y = self.labels_df.iloc[idx]['touch_y']
-        MAX_BOUND = 200.0
+        MAX_X_BOUND, MAX_Y_BOUND = 93.75, 71.0
         target = torch.tensor([touch_x / MAX_BOUND, touch_y / MAX_BOUND], dtype=torch.float32)
 
         if self.transform is not None:

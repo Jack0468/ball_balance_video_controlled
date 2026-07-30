@@ -59,7 +59,7 @@ def main():
     subset = Subset(full_dataset, indices)
     loader = DataLoader(subset, batch_size=args.num_images, shuffle=False)
     
-    MAX_BOUND = 200.0 # From ball_dataset.py
+    MAX_X_BOUND, MAX_Y_BOUND = 93.75, 71.0 # True physical plate bounds
 
     print("Running inference...")
     inputs, targets = next(iter(loader))
@@ -73,8 +73,8 @@ def main():
     print(f"Inference completed in {(t1-t0)*1000.0:.2f} ms for {args.num_images} images.")
 
     # Convert to numpy and de-normalize coordinates
-    preds_mm = outputs.cpu().numpy() * MAX_BOUND
-    targs_mm = targets.cpu().numpy() * MAX_BOUND
+    preds_mm = outputs.cpu().numpy() * np.array([MAX_X_BOUND, MAX_Y_BOUND])
+    targs_mm = targets.cpu().numpy() * np.array([MAX_X_BOUND, MAX_Y_BOUND])
     
     # Denormalize images for plotting
     inv_normalize = transforms.Normalize(

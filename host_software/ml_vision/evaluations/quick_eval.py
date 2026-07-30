@@ -66,7 +66,7 @@ def main():
     # Large batch size for speed since we aren't training
     loader = DataLoader(subset, batch_size=128, shuffle=False, num_workers=0)
     
-    MAX_BOUND = 200.0 # From ball_dataset.py
+    MAX_X_BOUND, MAX_Y_BOUND = 93.75, 71.0 # True physical plate bounds
 
     all_preds_x = []
     all_preds_y = []
@@ -90,8 +90,8 @@ def main():
                 inference_times_ms.append(time_per_frame_ms)
             
             # De-normalize coordinates
-            preds_mm = outputs.cpu().numpy() * MAX_BOUND
-            targs_mm = targets.cpu().numpy() * MAX_BOUND
+            preds_mm = outputs.cpu().numpy() * np.array([MAX_X_BOUND, MAX_Y_BOUND])
+            targs_mm = targets.cpu().numpy() * np.array([MAX_X_BOUND, MAX_Y_BOUND])
             
             all_preds_x.extend(preds_mm[:, 0])
             all_preds_y.extend(preds_mm[:, 1])

@@ -20,7 +20,7 @@ import csv
 # --- Configuration ---
 SERIAL_PORT = "COM8"
 SERIAL_BAUD = 2000000 # Increased to 2Mbaud to match firmware
-MAX_BOUND = 200.0 # Denormalization constant
+MAX_X_BOUND, MAX_Y_BOUND = 93.75, 71.0 # True physical plate bounds
 LOG_FILE = "laptop_camera_telemetry.csv"
 # ---------------------
 
@@ -265,8 +265,8 @@ def main():
                 output = model(input_tensor)
             
             norm_x, norm_y = output[0].cpu().numpy()
-            cam_x = float(norm_x * MAX_BOUND)
-            cam_y = float(norm_y * MAX_BOUND)
+            cam_x = float(norm_x * MAX_X_BOUND)
+            cam_y = float(norm_y * MAX_Y_BOUND)
             
             # Update logger
             logger.update_cam_pos(cam_x, cam_y)

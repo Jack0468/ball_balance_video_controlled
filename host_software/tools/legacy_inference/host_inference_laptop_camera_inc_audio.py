@@ -25,7 +25,7 @@ from ml_audio.audio_listener import AudioListener
 # --- Configuration ---
 SERIAL_PORT = "COM7"
 SERIAL_BAUD = 2000000 
-MAX_BOUND = 200.0 
+MAX_X_BOUND, MAX_Y_BOUND = 93.75, 71.0 
 LOG_FILE = "laptop_camera_audio_telemetry.csv"
 
 # Hardware target mapping based on bounding_boxes_for_data.md
@@ -247,8 +247,8 @@ def main():
                 output = model(input_tensor)
             
             norm_x, norm_y = output[0].cpu().numpy()
-            cam_x = float(norm_x * MAX_BOUND)
-            cam_y = float(norm_y * MAX_BOUND)
+            cam_x = float(norm_x * MAX_X_BOUND)
+            cam_y = float(norm_y * MAX_Y_BOUND)
             logger.update_cam_pos(cam_x, cam_y)
             
             # Audio Target Update Phase

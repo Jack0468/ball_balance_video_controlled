@@ -105,8 +105,9 @@ class SequenceBallDataset(Dataset):
             
             touch_x = row['touch_x']
             touch_y = row['touch_y']
-            MAX_BOUND = 200.0
-            targets.append(torch.tensor([touch_x / MAX_BOUND, touch_y / MAX_BOUND], dtype=torch.float32))
+            MAX_X_BOUND = 93.75
+            MAX_Y_BOUND = 71.0
+            targets.append(torch.tensor([touch_x / MAX_X_BOUND, touch_y / MAX_Y_BOUND], dtype=torch.float32))
 
         # Apply transformations
         if self.transform:

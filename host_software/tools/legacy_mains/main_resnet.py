@@ -21,7 +21,7 @@ from src.models import load_expert_model, load_yolo_model
 # --- Configuration ---
 SERIAL_PORT       = "COM7"
 SERIAL_BAUD       = 2000000
-MAX_BOUND         = 200.0   # ResNet denormalisation constant (must match BallDataset)
+MAX_X_BOUND, MAX_Y_BOUND = 93.75, 71.0 # True physical plate bounds
 CROP_PAD          = 20      # Pixels of padding around the YOLO platform crop
 YOLO_POLL_INTERVAL = 3.0    # Seconds between YOLO checks (gate refresh rate)
 # ---------------------
@@ -169,8 +169,8 @@ def main():
             resnet_ms = (time.perf_counter() - resnet_t0) * 1000.0
 
             norm_x, norm_y = output[0].cpu().numpy()
-            cam_x = float(norm_x * MAX_BOUND)
-            cam_y = float(norm_y * MAX_BOUND)
+            cam_x = float(norm_x * MAX_X_BOUND)
+            cam_y = float(norm_y * MAX_Y_BOUND)
 
             # ----------------------------------------------------------------
             # Serial Transmission — target is always centre (0, 0)

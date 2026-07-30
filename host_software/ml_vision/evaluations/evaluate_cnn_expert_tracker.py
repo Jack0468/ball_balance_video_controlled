@@ -76,7 +76,7 @@ def main():
     test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False, num_workers=0)
     print(f"Evaluating on {len(test_dataset)} unseen test frames.")
     
-    MAX_BOUND = 200.0 # From ball_dataset.py
+    MAX_X_BOUND, MAX_Y_BOUND = 93.75, 71.0 # True physical plate bounds
     
     all_preds_x = []
     all_preds_y = []
@@ -99,8 +99,8 @@ def main():
                 inference_times_ms.append(time_per_frame_ms)
             
             # De-normalize
-            outputs_mm = outputs.cpu().numpy() * MAX_BOUND
-            targets_mm = targets.cpu().numpy() * MAX_BOUND
+            outputs_mm = outputs.cpu().numpy() * np.array([MAX_X_BOUND, MAX_Y_BOUND])
+            targets_mm = targets.cpu().numpy() * np.array([MAX_X_BOUND, MAX_Y_BOUND])
             
             all_preds_x.extend(outputs_mm[:, 0])
             all_preds_y.extend(outputs_mm[:, 1])

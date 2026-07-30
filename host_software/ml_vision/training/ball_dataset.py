@@ -48,9 +48,11 @@ class BallDataset(Dataset):
         touch_x = self.labels_df.iloc[idx]['touch_x']
         touch_y = self.labels_df.iloc[idx]['touch_y']
         
-        # Normalize coordinates to approximately [-1, 1] assuming a max 200mm bound
-        MAX_BOUND = 200.0
-        target = torch.tensor([touch_x / MAX_BOUND, touch_y / MAX_BOUND], dtype=torch.float32)
+        # Normalize coordinates to precisely [-1.0, 1.0].
+        # The resistive plate bounds are exactly X: [-93.75, 93.75] and Y: [-71.0, 71.0] from center
+        MAX_X_BOUND = 93.75
+        MAX_Y_BOUND = 71.0
+        target = torch.tensor([touch_x / MAX_X_BOUND, touch_y / MAX_Y_BOUND], dtype=torch.float32)
 
         if self.transform:
             image = self.transform(image)
