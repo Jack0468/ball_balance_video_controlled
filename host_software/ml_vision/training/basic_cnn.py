@@ -10,40 +10,40 @@ class BasicCNN(nn.Module):
         super(BasicCNN, self).__init__()
         
         self.features = nn.Sequential(
-            # Block 1: 3 x 240 x 320 -> 16 x 240 x 320 -> 16 x 120 x 160
-            nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.BatchNorm2d(16),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            
-            # Block 2: 16 x 120 x 160 -> 32 x 120 x 160 -> 32 x 60 x 80
-            nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1, bias=False),
+            # Block 1: 3 x 240 x 320 -> 32 x 240 x 320 -> 32 x 120 x 160
+            nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1, bias=False),
             nn.BatchNorm2d(32),
-            nn.ReLU(inplace=True),
+            nn.GELU(),
             nn.MaxPool2d(kernel_size=2, stride=2),
             
-            # Block 3: 32 x 60 x 80 -> 64 x 60 x 80 -> 64 x 30 x 40
+            # Block 2: 32 x 120 x 160 -> 64 x 120 x 160 -> 64 x 60 x 80
             nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1, bias=False),
             nn.BatchNorm2d(64),
-            nn.ReLU(inplace=True),
+            nn.GELU(),
             nn.MaxPool2d(kernel_size=2, stride=2),
             
-            # Block 4: 64 x 30 x 40 -> 128 x 30 x 40 -> 128 x 15 x 20
+            # Block 3: 64 x 60 x 80 -> 128 x 60 x 80 -> 128 x 30 x 40
             nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1, bias=False),
             nn.BatchNorm2d(128),
-            nn.ReLU(inplace=True),
+            nn.GELU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            
+            # Block 4: 128 x 30 x 40 -> 256 x 30 x 40 -> 256 x 15 x 20
+            nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.BatchNorm2d(256),
+            nn.GELU(),
             nn.MaxPool2d(kernel_size=2, stride=2),
         )
         
         # Adaptive average pooling maps any input spatial dimensions to a fixed (4, 4) grid
-        self.pool = nn.AdaptiveAvgPool2d((4, 4)) # Output shape: Batch x 128 x 4 x 4 (flattened to 2048)
+        self.pool = nn.AdaptiveAvgPool2d((4, 4)) # Output shape: Batch x 256 x 4 x 4 (flattened to 4096)
         
         # Regression head with dropout to prevent overfitting
         self.fc = nn.Sequential(
             nn.Dropout(p=0.5),
-            nn.Linear(128 * 4 * 4, 128),
-            nn.ReLU(inplace=True),
-            nn.Linear(128, num_outputs)
+            nn.Linear(256 * 4 * 4, 256),
+            nn.GELU(),
+            nn.Linear(256, num_outputs)
         )
         
     def forward(self, x):

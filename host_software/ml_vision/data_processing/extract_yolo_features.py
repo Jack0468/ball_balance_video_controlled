@@ -17,7 +17,7 @@ def extract_features():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dir_input", default=None, help="Path to a session folder containing images/ and labels.csv")
     parser.add_argument("--data_dir", default="../../data/02_silver", help="Path to telemetry dataset")
-    parser.add_argument("--model_path", default="../models/yolov8_platform_pose_markers_v3/weights/best.pt", help="Path to YOLO model")
+    parser.add_argument("--model_path", default="../models/yolov8_platform_pose_markers_v4/weights/best.pt", help="Path to YOLO model")
     parser.add_argument("--num_train", type=int, default=5000, help="Number of training samples to extract")
     parser.add_argument("--num_test", type=int, default=1000, help="Number of test samples to extract")
     parser.add_argument("--csv_name", default="labels.csv", help="Name of the telemetry csv file in dir_input")
@@ -32,8 +32,11 @@ def extract_features():
         csv_path = os.path.join(data_dir, args.csv_name)
         images_dir = os.path.join(data_dir, "images")
     else:
-        data_dir = os.path.abspath(os.path.join(script_dir, args.data_dir))
-        csv_path = os.path.join(data_dir, "labels_sequential.csv")
+        if os.path.exists(args.data_dir):
+            data_dir = os.path.abspath(args.data_dir)
+        else:
+            data_dir = os.path.abspath(os.path.join(script_dir, args.data_dir))
+        csv_path = os.path.join(data_dir, "labels_normalized.csv")
         images_dir = os.path.join(data_dir, "images")
     
     print(f"Loading YOLO Model from {model_path}...")
@@ -104,30 +107,42 @@ def extract_features():
             
             corners = None
             ball_box = None
+            markers = {i: None for i in range(2, 13)}
             
             for i, cls in enumerate(classes):
-                if int(cls) == 0: # Platform
+                c = int(cls)
+                if c == 0: # Platform
                     if res.keypoints is not None and len(res.keypoints.xy) > i:
                         kpts = res.keypoints.xy[i].cpu().numpy()
                         if len(kpts) == 4:
                             corners = kpts
-                elif int(cls) == 1: # Ball
+                elif c == 1: # Ball
                     ball_box = boxes[i]
+                elif c >= 2 and c <= 12: # Markers
+                    markers[c] = boxes[i]
                     
-            if corners is not None and ball_box is not None:
+            if corners is not None:
                 homography_x, homography_y = 0.0, 0.0
-                if projector.update_homography(corners):
-                    hx, hy = projector.project_point(ball_box[0], ball_box[1])
-                    if hx is not None and hy is not None:
-                        homography_x, homography_y = hx, hy
+                ball_x, ball_y, ball_w, ball_h = -1.0, -1.0, -1.0, -1.0
+                ball_present = 0.0
+                
+                if ball_box is not None:
+                    ball_x, ball_y, ball_w, ball_h = ball_box[0], ball_box[1], ball_box[2], ball_box[3]
+                    ball_present = 1.0
+                    
+                    if projector.update_homography(corners):
+                        hx, hy = projector.project_point(ball_x, ball_y)
+                        if hx is not None and hy is not None:
+                            homography_x, homography_y = hx, hy
                         
-                features.append({
+                feature_dict = {
                     'image_file': row['image_file'],
                     'split': split_name,
-                    'ball_x': ball_box[0],
-                    'ball_y': ball_box[1],
-                    'ball_w': ball_box[2],
-                    'ball_h': ball_box[3],
+                    'ball_present': ball_present,
+                    'ball_x': ball_x,
+                    'ball_y': ball_y,
+                    'ball_w': ball_w,
+                    'ball_h': ball_h,
                     'kpt0_x': corners[0][0], 'kpt0_y': corners[0][1],
                     'kpt1_x': corners[1][0], 'kpt1_y': corners[1][1],
                     'kpt2_x': corners[2][0], 'kpt2_y': corners[2][1],
@@ -136,7 +151,17 @@ def extract_features():
                     'homography_y': homography_y,
                     'touch_x': row['touch_x'],
                     'touch_y': row['touch_y']
-                })
+                }
+                
+                for c in range(2, 13):
+                    if markers[c] is not None:
+                        feature_dict[f'marker{c}_x'] = markers[c][0]
+                        feature_dict[f'marker{c}_y'] = markers[c][1]
+                    else:
+                        feature_dict[f'marker{c}_x'] = -1.0
+                        feature_dict[f'marker{c}_y'] = -1.0
+                        
+                features.append(feature_dict)
             
             if len(features) >= 500:
                 out_df = pd.DataFrame(features)
