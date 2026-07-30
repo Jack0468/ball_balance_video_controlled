@@ -35,20 +35,21 @@ class BasicCNN(nn.Module):
             nn.MaxPool2d(kernel_size=2, stride=2),
         )
         
-        # Regression head with dropout to prevent overfitting
-        self.fc = nn.Sequential(
-            nn.Dropout(p=0.5),
-            nn.Linear(256 * 15 * 20, 256),
-            nn.GELU(),
-            nn.Linear(256, num_outputs)
-        )
+        # Replaces the massive Dense layer with a 1x1 conv to create a single-channel spatial heatmap
+        self.heatmap_conv = nn.Conv2d(256, 1, kernel_size=1)
         
         self._initialize_weights()
 
     def _initialize_weights(self):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                if m.out_channels == 1 and m.kernel_size == (1, 1):
+                    # Heatmap conv: initialize with near-zero variance to start with a flat, uniform softmax distribution
+                    nn.init.normal_(m.weight, mean=0, std=0.01)
+                    if m.bias is not None:
+                        nn.init.constant_(m.bias, 0)
+                else:
+                    nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
@@ -60,6 +61,26 @@ class BasicCNN(nn.Module):
         
     def forward(self, x):
         x = self.features(x)
-        x = torch.flatten(x, 1)
-        x = self.fc(x)
-        return x
+        heatmap = self.heatmap_conv(x) # Shape: (Batch, 1, H, W)
+        
+        B, C, H, W = heatmap.shape
+        heatmap_flat = heatmap.view(B, C, -1)
+        
+        # Apply spatial softmax across all pixels in the HxW grid
+        attention = torch.nn.functional.softmax(heatmap_flat, dim=-1)
+        attention = attention.view(B, C, H, W)
+        
+        # Create normalized coordinate grid [-1, 1] mapped to the device
+        grid_y, grid_x = torch.meshgrid(
+            torch.linspace(-1, 1, H, device=x.device),
+            torch.linspace(-1, 1, W, device=x.device),
+            indexing='ij'
+        )
+        
+        # Compute Expected X and Expected Y by doing a weighted sum of the coordinate grid
+        expected_x = torch.sum(attention * grid_x, dim=(2, 3))
+        expected_y = torch.sum(attention * grid_y, dim=(2, 3))
+        
+        # Concatenate expected coordinates to shape (Batch, 2)
+        out = torch.cat([expected_x, expected_y], dim=1)
+        return out

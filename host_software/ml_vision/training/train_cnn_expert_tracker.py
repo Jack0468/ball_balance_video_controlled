@@ -159,12 +159,19 @@ def main():
                 
                 # Backward and optimize with scaler
                 scaler.scale(loss).backward()
+                
+                # Unscales the gradients of optimizer's assigned params in-place
+                scaler.unscale_(optimizer)
+                # Since the gradients of optimizer's assigned params are unscaled, clips as usual
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=2.0)
+                
                 scaler.step(optimizer)
                 scaler.update()
             else:
                 outputs = model(inputs)
                 loss = criterion(outputs, targets)
                 loss.backward()
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=2.0)
                 optimizer.step()
             
             running_loss += loss.item() * inputs.size(0)

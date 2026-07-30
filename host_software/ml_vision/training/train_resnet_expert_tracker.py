@@ -8,6 +8,45 @@ from torchvision import models, transforms
 import argparse
 from ball_dataset import BallDataset
 
+class SpatialSoftmaxResNetHead(nn.Module):
+    def __init__(self, in_channels, height, width):
+        super(SpatialSoftmaxResNetHead, self).__init__()
+        self.height = height
+        self.width = width
+        self.in_channels = in_channels
+        
+        # 1x1 conv to squash the channels down into a single heatmap
+        self.heatmap_conv = nn.Conv2d(in_channels, 1, kernel_size=1)
+        # Initialize with near-zero variance for a flat starting softmax distribution
+        nn.init.normal_(self.heatmap_conv.weight, mean=0, std=0.01)
+        if self.heatmap_conv.bias is not None:
+            nn.init.constant_(self.heatmap_conv.bias, 0)
+        
+    def forward(self, x):
+        # x is the flattened output from ResNet (Batch, in_channels * H * W)
+        B = x.size(0)
+        x = x.view(B, self.in_channels, self.height, self.width)
+        
+        heatmap = self.heatmap_conv(x) # (Batch, 1, H, W)
+        
+        # Flatten spatial dims to apply softmax
+        heatmap_flat = heatmap.view(B, 1, -1)
+        attention = torch.nn.functional.softmax(heatmap_flat, dim=-1)
+        attention = attention.view(B, 1, self.height, self.width)
+        
+        # Create dynamic grid on the same device as the input tensor
+        grid_y, grid_x = torch.meshgrid(
+            torch.linspace(-1, 1, self.height, device=x.device),
+            torch.linspace(-1, 1, self.width, device=x.device),
+            indexing='ij'
+        )
+        
+        expected_x = torch.sum(attention * grid_x, dim=(2, 3))
+        expected_y = torch.sum(attention * grid_y, dim=(2, 3))
+        
+        return torch.cat([expected_x, expected_y], dim=1)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Train ResNet Expert Tracker")
     parser.add_argument("--data_dir", default="../../data/02_silver/session_20260728_102908", help="Path to session data directory")
@@ -15,6 +54,7 @@ def main():
     parser.add_argument("--save_dir", default="../models", help="Directory to save the trained models")
     parser.add_argument("--resume", type=str, default=None, help="Path to checkpoint (.pth) to resume training from")
     parser.add_argument("--arch", type=str, default="resnet18", choices=["resnet18", "resnet50"], help="Architecture to use")
+    parser.add_argument("--version", type=str, default="v1", help="Version name for the training run (e.g. v2, v3)")
     args = parser.parse_args()
 
     print(f"Initializing PyTorch Expert Tracker Model ({args.arch})...")
@@ -36,12 +76,17 @@ def main():
             param.requires_grad = False
     
     
-    # Replace the classification head with a regression head with Dropout for (x, y)
-    num_ftrs = model.fc.in_features
-    model.fc = nn.Sequential(
-        nn.Dropout(p=0.5), # Drops 50% of connections randomly during training
-        nn.Linear(num_ftrs, 2)
-    )
+    # The standard ResNet architecture uses an AdaptiveAvgPool2d((1, 1)) before the fully connected layer.
+    # This completely destroys the spatial location of the ball, averaging the 8x10 feature map into a single pixel!
+    # We must remove this pooling layer so the linear layer can "see" where the ball is in the 8x10 grid.
+    model.avgpool = nn.Identity()
+    
+    # Replace the classification head with a Spatial Softmax (Soft-Argmax) head
+    if args.arch == "resnet18":
+        model.fc = SpatialSoftmaxResNetHead(in_channels=512, height=8, width=10)
+    elif args.arch == "resnet50":
+        model.fc = SpatialSoftmaxResNetHead(in_channels=2048, height=15, width=20)
+
         
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     if device.type == 'cuda':
@@ -137,7 +182,7 @@ def main():
         else:
             print("\n[DIAGNOSTIC] No resume checkpoint provided. Starting from SCRATCH!")
             
-    save_path = os.path.join(project_dir, 'resnet18_expert_tracker_v1/expert_tracker_best.pth')
+    save_path = os.path.join(project_dir, f'{args.arch}_expert_tracker_{args.version}/expert_tracker_best.pth')
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     
     print(f"Starting training on {device}...")
@@ -164,12 +209,17 @@ def main():
                 
                 # Backward and optimize with scaler
                 scaler.scale(loss).backward()
+                
+                scaler.unscale_(optimizer)
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=2.0)
+                
                 scaler.step(optimizer)
                 scaler.update()
             else:
                 outputs = model(inputs)
                 loss = criterion(outputs, targets)
                 loss.backward()
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=2.0)
                 optimizer.step()
             
             running_loss += loss.item() * inputs.size(0)
