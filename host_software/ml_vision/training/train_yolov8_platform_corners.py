@@ -1,0 +1,51 @@
+from ultralytics import YOLO
+import argparse
+import os
+
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--epochs', type=int, default=100)
+    args = parser.parse_args()
+    
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.abspath(os.path.join(script_dir, '..', '..', '..'))
+    
+    # We use the standard yolov8n-pose base model
+    model_path = os.path.join(repo_root, 'host_software', 'ml_vision', 'models', 'base_models', 'yolov8n_pose', 'weights', 'yolov8n-pose.pt')
+    
+    # We point to the dataset we just generated
+    yaml_path = os.path.join(repo_root, 'host_software', 'data', '03_pose_dataset', 'dataset.yaml')
+    
+    print(f"Loading {model_path}...")
+    model = YOLO(model_path)
+    
+    print(f"Starting single-class YOLO-Pose training on {yaml_path} for Platform Corners...")
+    
+    # Using extreme augmentations to ensure perspective invariance and lighting invariance.
+    # The model will learn the geometry of the paper such that it can detect it in the other 6 sessions!
+    results = model.train(
+        data=yaml_path,
+        epochs=args.epochs,
+        imgsz=640,
+        batch=16,
+        project='models',
+        name='yolov8_platform_corners_v1',
+        exist_ok=True,
+        # Heavy augmentations
+        perspective=0.001, # Perspective warp
+        fliplr=0.5,
+        degrees=90.0,      # Rotations (increased for rotational invariance)
+        translate=0.2,     # Horizontal/vertical shift
+        scale=0.9,         # Zoom out/in by 90% (increased for distance invariance)
+        mosaic=1.0,        # High mosaic for background variety
+        hsv_h=0.015,       # Color jitter (Hue)
+        hsv_s=0.7,         # Color jitter (Sat)
+        hsv_v=0.4          # Color jitter (Val)
+    )
+    
+    print("Training complete! Model saved in models/yolov8_platform_corners_v1/weights/best.pt")
+
+if __name__ == '__main__':
+    main()
