@@ -4,17 +4,19 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, Subset
 from torchvision import transforms
+import matplotlib.pyplot as plt
 
 import argparse
-from ball_dataset import BallDataset
+from ball_pixel_dataset import BallPixelDataset
 from basic_cnn import BasicCNN
 
 def main():
     parser = argparse.ArgumentParser(description="Train Basic CNN Expert Tracker")
     parser.add_argument("--data_dir", default="../../data/02_silver/session_20260728_102908", help="Path to session data directory")
-    parser.add_argument("--csv_name", default="labels.csv", help="Name of the labels CSV file")
+    parser.add_argument("--csv_name", default="yolo_features.csv", help="Name of the labels CSV file")
     parser.add_argument("--save_dir", default="../models", help="Directory to save the trained models")
     parser.add_argument("--resume", type=str, default=None, help="Path to checkpoint (.pth) to resume training from")
+    parser.add_argument("--version", type=int, default=1, help="Model version number (e.g. 1 -> cnn_2d_tracker_v1)")
     args = parser.parse_args()
 
     print("Initializing PyTorch Custom Basic CNN Expert Tracker Model...")
@@ -42,9 +44,9 @@ def main():
     images_dir = os.path.join(data_dir, 'images')
     
     # Handle absolute vs relative save_dir
-    # Dynamically update the save_dir to ensure models are kept organized by architecture
+    # Dynamically update the save_dir to ensure models are kept organized by architecture and version
     if os.path.basename(args.save_dir) == "models" or os.path.basename(args.save_dir) == "models/":
-        args.save_dir = os.path.join(args.save_dir, "cnn_2d_tracker")
+        args.save_dir = os.path.join(args.save_dir, f"cnn_2d_tracker_v{args.version}")
     project_dir = os.path.abspath(args.save_dir)
     
     # Ensure models directory exists
@@ -69,8 +71,8 @@ def main():
     ])
     
     # 3. Create Dataset and DataLoader
-    full_dataset_train = BallDataset(csv_file=csv_path, root_dir=images_dir, transform=train_transform)
-    full_dataset_test = BallDataset(csv_file=csv_path, root_dir=images_dir, transform=test_transform)
+    full_dataset_train = BallPixelDataset(csv_file=csv_path, root_dir=images_dir, transform=train_transform)
+    full_dataset_test = BallPixelDataset(csv_file=csv_path, root_dir=images_dir, transform=test_transform)
     
     # Split strictly sequentially: Train on first 80%, Test on strictly subsequent 20%
     # This prevents temporal data leakage across video frames.
@@ -114,13 +116,17 @@ def main():
         else:
             print("\n[DIAGNOSTIC] No resume checkpoint provided. Starting from SCRATCH!")
             
-    save_path = os.path.join(project_dir, 'cnn_2d_tracker_v1/expert_tracker_best.pth')
+    save_path = os.path.join(project_dir, 'expert_tracker_best.pth')
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     
     print(f"Starting training on {device}...")
     
     # Initialize Mixed Precision Scaler for faster training
     scaler = torch.amp.GradScaler('cuda') if device.type == 'cuda' else None
+    
+    # Track losses for plotting
+    history_train_loss = []
+    history_test_loss = []
     
     for epoch in range(start_epoch, num_epochs):
         model.train()
@@ -171,6 +177,9 @@ def main():
         # Step the scheduler
         scheduler.step(epoch_test_loss)
         
+        history_train_loss.append(epoch_train_loss)
+        history_test_loss.append(epoch_test_loss)
+        
         print(f"--- Epoch [{epoch+1}/{num_epochs}] Train Loss: {epoch_train_loss:.4f} | Test Loss: {epoch_test_loss:.4f} ---")
         
         checkpoint = {
@@ -188,9 +197,23 @@ def main():
             print(f"Saved new best model to {save_path}")
             
         # Save the latest model at the end of every epoch just in case training is interrupted
-        latest_path = os.path.join(project_dir, 'cnn_2d_tracker_v1/expert_tracker_latest.pth')
+        latest_path = os.path.join(project_dir, 'expert_tracker_latest.pth')
         torch.save(checkpoint, latest_path)
 
+    # Plot and save training curve
+    plt.figure(figsize=(10, 6))
+    plt.plot(range(1, num_epochs + 1), history_train_loss, label='Train Loss')
+    plt.plot(range(1, num_epochs + 1), history_test_loss, label='Test Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss (MSE)')
+    plt.title('Training Curve')
+    plt.legend()
+    plt.grid(True)
+    plot_path = os.path.join(project_dir, 'training_curve.png')
+    plt.savefig(plot_path)
+    plt.close()
+    print(f"Saved training curve to {plot_path}")
+    
     print("Training complete!")
 
 if __name__ == '__main__':

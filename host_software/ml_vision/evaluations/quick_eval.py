@@ -66,7 +66,7 @@ def main():
     # Large batch size for speed since we aren't training
     loader = DataLoader(subset, batch_size=128, shuffle=False, num_workers=0)
     
-    MAX_X_BOUND, MAX_Y_BOUND = 93.75, 71.0 # True physical plate bounds
+    MAX_X_BOUND, MAX_Y_BOUND = 200.0, 200.0 # True physical plate bounds
 
     all_preds_x = []
     all_preds_y = []
