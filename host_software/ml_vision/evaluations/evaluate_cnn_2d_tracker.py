@@ -94,7 +94,8 @@ def main():
             for _ in range(batch_size):
                 inference_times_ms.append(time_per_frame_ms)
             
-            # De-normalize [-1, 1] back to [0, PLATFORM_W] and [0, PLATFORM_H]
+            # De-normalize [-1, 1] back to approximate physical mm scale.
+            # We assume a linear mapping for evaluation purposes: [-1, 1] -> [0, PLATFORM_W]
             outputs_np = outputs.cpu().numpy()
             targets_np = targets.cpu().numpy()
             

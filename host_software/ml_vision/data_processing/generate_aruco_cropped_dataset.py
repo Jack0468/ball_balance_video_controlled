@@ -10,12 +10,15 @@ PLATFORM_W = 187.5
 PLATFORM_H = 142.0
 CROP_PAD = 20
 
-# 6 Marker Physical Coordinates
+# These are the exact millimeter coordinates of the centers of the 6 markers
+# relative to the Top-Left (0,0) corner of the printed PDF bounding box.
+# Note: The physical setup requires a vertical flip (only Y is inverted).
+# So we keep original X, but subtract Y from PLATFORM_H (142.0).
 MARKER_PHYSICAL_MM = {
-    0: [12.0, 12.0],
-    1: [175.5, 12.0],
-    2: [175.5, 130.0],
-    3: [12.0, 130.0],
+    0: [12.0, 130.0],
+    1: [175.5, 130.0],
+    2: [175.5, 12.0],
+    3: [12.0, 12.0],
     4: [12.0, 71.0],
     5: [175.5, 71.0]
 }
@@ -95,6 +98,10 @@ def main():
     features = []
     frame_idx = 0
     saved_count = 0
+    
+    # State tracking to detect if ball fell off (frozen touch coordinates)
+    prev_touch_x = None
+    prev_touch_y = None
     
     # If appending, figure out what the next saved_count should be
     if os.path.exists(csv_path):
@@ -179,17 +186,50 @@ def main():
             
         crop = frame[y1:y2, x1:x2]
         
-        # 3. Automatically save the crop and synced telemetry
+        # 3. Automatically save the crop and calculate pixel labels using Inverse Homography
         current_frame_index = frame_idx - 1
         if current_frame_index in synced_telemetry:
+            # The telemetry from the firmware is centered at (0,0) (i.e. Center of the board)
+            # But the ArUco Homography matrix M uses the Top-Left corner as (0,0)!
+            # We must shift the telemetry by half the platform width/height to match the ArUco origin!
+            touch_x_centered = synced_telemetry[current_frame_index]['touch_x']
+            touch_y_centered = synced_telemetry[current_frame_index]['touch_y']
+            
+            # Heuristic to detect if the ball has fallen off the board or is teleporting!
+            # The firmware holds touch_x/y perfectly constant when pressure (z) drops to 0.
+            if prev_touch_x is not None:
+                dist = ((touch_x_centered - prev_touch_x)**2 + (touch_y_centered - prev_touch_y)**2)**0.5
+                if dist == 0.0 or dist > 30.0:
+                    prev_touch_x = touch_x_centered
+                    prev_touch_y = touch_y_centered
+                    continue
+            
+            prev_touch_x = touch_x_centered
+            prev_touch_y = touch_y_centered
+            
+            touch_x_topleft = touch_x_centered + (PLATFORM_W / 2.0)
+            touch_y_topleft = touch_y_centered + (PLATFORM_H / 2.0)
+            
+            # Use Inverse Homography to map physical telemetry back to full-frame pixels
+            touch_pt = np.array([[[touch_x_topleft, touch_y_topleft]]], dtype=np.float32)
+            frame_pt = cv2.perspectiveTransform(touch_pt, M_inv)
+            ball_frame_x = float(frame_pt[0, 0, 0])
+            ball_frame_y = float(frame_pt[0, 0, 1])
+            
+            # Subtract the bounding box offsets to get crop-relative pixels
+            ball_x = ball_frame_x - x1
+            ball_y = ball_frame_y - y1
+            
             img_name = f"frame_{saved_count:04d}.jpg"
             cv2.imwrite(os.path.join(images_dir, img_name), crop)
             
             feat = {
                 'image_file': img_name,
                 'ball_present': 1.0,
-                'touch_x': synced_telemetry[current_frame_index]['touch_x'],
-                'touch_y': synced_telemetry[current_frame_index]['touch_y']
+                'touch_x': touch_x_centered,
+                'touch_y': touch_y_centered,
+                'ball_x': ball_x,
+                'ball_y': ball_y
             }
             features.append(feat)
             saved_count += 1

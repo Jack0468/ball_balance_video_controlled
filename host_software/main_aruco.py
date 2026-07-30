@@ -28,11 +28,13 @@ PLATFORM_H = 142.0
 
 # These are the exact millimeter coordinates of the centers of the 6 markers
 # relative to the Top-Left (0,0) corner of the printed PDF bounding box.
+# Note: The physical setup requires a vertical flip (only Y is inverted).
+# So we keep original X, but subtract Y from PLATFORM_H (142.0).
 MARKER_PHYSICAL_MM = {
-    0: [12.0, 12.0],
-    1: [175.5, 12.0],
-    2: [175.5, 130.0],
-    3: [12.0, 130.0],
+    0: [12.0, 130.0],
+    1: [175.5, 130.0],
+    2: [175.5, 12.0],
+    3: [12.0, 12.0],
     4: [12.0, 71.0],
     5: [175.5, 71.0]
 }
@@ -193,19 +195,27 @@ def main():
 
             cnn_ms = (time.perf_counter() - cnn_t0) * 1000.0
 
-            # The CNN now predicts the physical touch pad telemetry directly in [-1, 1] space!
+            # The CNN predicts [-1, 1] relative to the crop dimensions!
             norm_x, norm_y = output[0].cpu().numpy()
             
-            # Convert [-1, 1] directly to physical mm (0 to PLATFORM_W)
-            touch_x = (norm_x + 1.0) * (PLATFORM_W / 2.0)
-            touch_y = (norm_y + 1.0) * (PLATFORM_H / 2.0)
+            crop_w = x2 - x1
+            crop_h = y2 - y1
             
-            # For visual debugging, we use the Inverse Homography (M_inv) 
-            # to map the physical mm back to pixels on the webcam frame!
-            touch_pt = np.array([[[touch_x, touch_y]]], dtype=np.float32)
-            frame_pt = cv2.perspectiveTransform(touch_pt, M_inv)
-            ball_frame_x = float(frame_pt[0, 0, 0])
-            ball_frame_y = float(frame_pt[0, 0, 1])
+            # Convert [-1, 1] back to [0, crop_w] and [0, crop_h]
+            ball_crop_x = (norm_x + 1.0) * (crop_w / 2.0)
+            ball_crop_y = (norm_y + 1.0) * (crop_h / 2.0)
+            
+            # Convert crop pixels to full frame pixels
+            ball_frame_x = ball_crop_x + x1
+            ball_frame_y = ball_crop_y + y1
+            
+            # Use Homography (M) to map frame pixels to physical platform mm!
+            ball_pt = np.array([[[ball_frame_x, ball_frame_y]]], dtype=np.float32)
+            touch_pt = cv2.perspectiveTransform(ball_pt, M)
+            
+            # touch_x and touch_y are now perfectly in platform millimeters (0 to PLATFORM_W)
+            touch_x = float(touch_pt[0, 0, 0])
+            touch_y = float(touch_pt[0, 0, 1])
 
             # ----------------------------------------------------------------
             # Serial Transmission

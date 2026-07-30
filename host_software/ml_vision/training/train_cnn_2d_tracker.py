@@ -82,8 +82,8 @@ def main():
     train_dataset = Subset(full_dataset_train, indices[:train_size])
     test_dataset = Subset(full_dataset_test, indices[train_size:])
     
-    train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=2, pin_memory=True)
-    test_loader = DataLoader(test_dataset, batch_size=128, shuffle=False, num_workers=2, pin_memory=True)
+    train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=0, pin_memory=True)
+    test_loader = DataLoader(test_dataset, batch_size=128, shuffle=False, num_workers=0, pin_memory=True)
     
     print(f"Found {len(full_dataset_train)} total images -> {len(train_dataset)} Train | {len(test_dataset)} Test.")
     
@@ -213,6 +213,16 @@ def main():
     plt.savefig(plot_path)
     plt.close()
     print(f"Saved training curve to {plot_path}")
+    
+    # Save training log to CSV
+    import csv
+    log_path = os.path.join(project_dir, 'training_log.csv')
+    with open(log_path, mode='w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(['Epoch', 'Train_Loss', 'Test_Loss'])
+        for ep, (tr_loss, te_loss) in enumerate(zip(history_train_loss, history_test_loss), 1):
+            writer.writerow([ep, tr_loss, te_loss])
+    print(f"Saved training log to {log_path}")
     
     print("Training complete!")
 
