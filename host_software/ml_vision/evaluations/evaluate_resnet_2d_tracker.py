@@ -89,7 +89,7 @@ def main():
     test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False, num_workers=0)
     print(f"Evaluating on {len(test_dataset)} unseen test frames.")
     
-    MAX_X_BOUND, MAX_Y_BOUND = 93.75, 71.0 # True physical plate bounds
+    MAX_X_BOUND, MAX_Y_BOUND = 200.0, 200.0 # True physical plate bounds
     
     all_preds_x = []
     all_preds_y = []

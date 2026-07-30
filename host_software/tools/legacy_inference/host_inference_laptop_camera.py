@@ -20,7 +20,7 @@ import csv
 # --- Configuration ---
 SERIAL_PORT = "COM8"
 SERIAL_BAUD = 2000000 # Increased to 2Mbaud to match firmware
-MAX_X_BOUND, MAX_Y_BOUND = 93.75, 71.0 # True physical plate bounds
+MAX_X_BOUND, MAX_Y_BOUND = 200.0, 200.0 # True physical plate bounds
 LOG_FILE = "laptop_camera_telemetry.csv"
 # ---------------------
 

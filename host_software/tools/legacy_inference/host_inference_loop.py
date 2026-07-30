@@ -26,7 +26,7 @@ SERIAL_BAUD = 115200
 # Target coordinate (can be changed dynamically later by multi-task heads)
 TARGET_X = 0.0
 TARGET_Y = 0.0
-MAX_X_BOUND, MAX_Y_BOUND = 93.75, 71.0 # True physical plate bounds
+MAX_X_BOUND, MAX_Y_BOUND = 200.0, 200.0 # True physical plate bounds
 # ---------------------
 
 class UDPReceiver:

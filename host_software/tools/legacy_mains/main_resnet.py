@@ -21,7 +21,7 @@ from src.models import load_expert_model, load_yolo_model
 # --- Configuration ---
 SERIAL_PORT       = "COM7"
 SERIAL_BAUD       = 2000000
-MAX_X_BOUND, MAX_Y_BOUND = 93.75, 71.0 # True physical plate bounds
+MAX_X_BOUND, MAX_Y_BOUND = 200.0, 200.0 # True physical plate bounds
 CROP_PAD          = 20      # Pixels of padding around the YOLO platform crop
 YOLO_POLL_INTERVAL = 3.0    # Seconds between YOLO checks (gate refresh rate)
 # ---------------------

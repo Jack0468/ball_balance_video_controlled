@@ -25,7 +25,7 @@ from ml_audio.audio_listener import AudioListener
 # --- Configuration ---
 SERIAL_PORT = "COM7"
 SERIAL_BAUD = 2000000 
-MAX_X_BOUND, MAX_Y_BOUND = 93.75, 71.0 
+MAX_X_BOUND, MAX_Y_BOUND = 200.0, 200.0 
 LOG_FILE = "laptop_camera_audio_telemetry.csv"
 
 # Hardware target mapping based on bounding_boxes_for_data.md

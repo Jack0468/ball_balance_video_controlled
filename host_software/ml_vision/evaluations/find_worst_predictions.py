@@ -60,7 +60,7 @@ def find_worst_predictions(model_path, data_dir, output_path):
     # We use batch size 64 for speed
     test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False, num_workers=0)
     
-    MAX_X_BOUND, MAX_Y_BOUND = 93.75, 71.0
+    MAX_X_BOUND, MAX_Y_BOUND = 200.0, 200.0
     
     print("Running inference to find worst errors...")
     errors = []

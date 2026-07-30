@@ -46,6 +46,7 @@ def create_printable_sheet(output_path="aruco_markers_sheet.png", marker_size_px
         marker_bgr = cv2.cvtColor(marker_with_border, cv2.COLOR_GRAY2BGR)
         cv2.putText(marker_bgr, labels[i], (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 0), 2)
         
+        cv2.imwrite(os.path.join(os.path.dirname(output_path), f"marker_{i}.png"), marker_bgr)
         markers.append(marker_bgr)
         
     # Arrange in a 2x2 grid for printing

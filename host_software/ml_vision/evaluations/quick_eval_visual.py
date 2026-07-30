@@ -59,7 +59,7 @@ def main():
     subset = Subset(full_dataset, indices)
     loader = DataLoader(subset, batch_size=args.num_images, shuffle=False)
     
-    MAX_X_BOUND, MAX_Y_BOUND = 93.75, 71.0 # True physical plate bounds
+    MAX_X_BOUND, MAX_Y_BOUND = 200.0, 200.0 # True physical plate bounds
 
     print("Running inference...")
     inputs, targets = next(iter(loader))
