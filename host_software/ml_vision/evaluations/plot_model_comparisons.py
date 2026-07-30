@@ -23,6 +23,7 @@ def run_benchmark_script(script_dir: str) -> None:
 def main():
     parser = argparse.ArgumentParser(description='Plot model comparisons with optional inference benchmark')
     parser.add_argument('--benchmark', action='store_true', help='Run inference benchmark before plotting')
+    parser.add_argument('--filter', type=str, choices=['yolo', 'resnet', 'mlp', 'all'], default='all', help='Filter which models to plot: yolo, resnet, mlp, or all')
     args = parser.parse_args()
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -51,15 +52,19 @@ def main():
         model_root = os.path.join(models_dir, model_name)
         if not os.path.isdir(model_root):
             continue
-        if model_name.lower() == 'archive':
+        model_name_lower = model_name.lower()
+        if model_name_lower == 'archive' or 'temporal' in model_name_lower:
             continue
-        if 'temporal' in model_name.lower():
-            continue
-        if ('yolo' not in model_name.lower() and
-                'resnet' not in model_name.lower() and
-                'mlp' not in model_name.lower() and
-                'cnn' not in model_name.lower()):
-            continue
+            
+        if args.filter != 'all':
+            if args.filter not in model_name_lower:
+                continue
+        else:
+            if ('yolo' not in model_name_lower and
+                    'resnet' not in model_name_lower and
+                    'mlp' not in model_name_lower and
+                    'cnn' not in model_name_lower):
+                continue
 
         json_path = None
         json_file = None

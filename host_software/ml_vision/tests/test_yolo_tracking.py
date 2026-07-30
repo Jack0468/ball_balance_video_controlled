@@ -14,7 +14,7 @@ from ultralytics import YOLO
 def test_yolo(source, max_frames=None):
     print("Loading YOLOv8n pre-trained model...")
     # Initialize the specific model from the weights directory
-    model_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "models", "weights", "yolov8n.pt")
+    model_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "models", "base_models", "yolov8n", "weights", "yolov8n.pt")
     model = YOLO(model_path)
     
     # Check if source is an integer (webcam) or a directory/file

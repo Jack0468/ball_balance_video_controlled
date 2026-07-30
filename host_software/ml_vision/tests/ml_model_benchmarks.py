@@ -16,7 +16,7 @@ class YOLOBenchmark:
     def __init__(self, model_path=None):
         if model_path is None:
             import os
-            model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'weights', 'yolov8n.pt')
+            model_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'models', 'base_models', 'yolov8n', 'weights', 'yolov8n.pt')
         try:
             from ultralytics import YOLO
             self.model = YOLO(model_path)

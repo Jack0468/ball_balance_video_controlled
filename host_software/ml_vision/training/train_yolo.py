@@ -24,7 +24,7 @@ def main():
         model = YOLO(args.resume)
     else:
         print("Loading pre-trained YOLOv8n-Pose model...")
-        model = YOLO("yolov8n-pose.pt")
+        model = YOLO("../models/base_models/yolov8n_pose/weights/yolov8n-pose.pt")
     
     # 3. Train the model
     print(f"Starting training for {args.epochs} epochs...")
