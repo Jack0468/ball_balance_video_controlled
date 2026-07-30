@@ -87,7 +87,7 @@ def main():
     
     # 4. Training loop setup
     criterion = nn.HuberLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
+    optimizer = optim.Adam(model.parameters(), lr=0.0001, weight_decay=1e-4)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=2, factor=0.5)
     
     num_epochs = 50
@@ -166,11 +166,19 @@ def main():
         model.eval()
         running_test_loss = 0.0
         with torch.no_grad():
-            for inputs, targets in test_loader:
+            for i, (inputs, targets) in enumerate(test_loader):
                 inputs, targets = inputs.to(device), targets.to(device)
                 outputs = model(inputs)
                 test_loss = criterion(outputs, targets)
                 running_test_loss += test_loss.item() * inputs.size(0)
+                
+                # DIAGNOSTIC: Check if model is stuck in mean prediction trap
+                if i == 0:
+                    print(f"\n[DIAGNOSTIC] Epoch {epoch+1} - First batch predictions vs targets:")
+                    for j in range(min(5, outputs.size(0))):
+                        t_np = targets[j].cpu().numpy()
+                        p_np = outputs[j].cpu().numpy()
+                        print(f"  Target: [{t_np[0]:.4f}, {t_np[1]:.4f}] | Pred: [{p_np[0]:.4f}, {p_np[1]:.4f}]")
                 
         epoch_test_loss = running_test_loss / len(test_dataset)
         
