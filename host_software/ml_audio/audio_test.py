@@ -16,9 +16,11 @@ Usage:
 """
 
 import argparse
+import json
 import queue
 import sys
 import time
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -42,6 +44,8 @@ WIN_LENGTH = 255
 HOP_LENGTH = 128
 
 LABELS = ["go_blue", "go_green", "go_red", "go_yellow", "hold", "stop"]
+LABELS_WITH_BACKGROUND = ["_background_", "go_blue", "go_green", "go_red", "go_yellow", "hold", "stop"]
+LABELS_12 = ["_background_", "go_blue", "go_green", "go_red", "go_yellow", "hold", "stop", "go_grey", "forward", "backward", "left", "right"]
 
 # Keras defaults; these are plain attributes in the generated module, so they
 # are NOT part of the state_dict and have to be restated here.
@@ -56,8 +60,9 @@ NORM_EPS = 1e-7
 class AudioCommandClassifier(torch.nn.Module):
     """Conv12 -> Conv24 -> Conv48 -> global average pool -> Dense(6)."""
 
-    def __init__(self):
+    def __init__(self, num_classes=6):
         super().__init__()
+        self.num_classes = int(num_classes)
         self.norm_epsilon = NORM_EPS
         self.bn1_eps = BN_EPS
         self.bn2_eps = BN_EPS
@@ -87,8 +92,8 @@ class AudioCommandClassifier(torch.nn.Module):
         self.register_buffer("bn3_mean", torch.zeros(48))
         self.register_buffer("bn3_var", torch.ones(48))
 
-        self.register_buffer("dense_weight", torch.zeros(7, 48))
-        self.register_buffer("dense_bias", torch.zeros(7))
+        self.register_buffer("dense_weight", torch.zeros(self.num_classes, 48))
+        self.register_buffer("dense_bias", torch.zeros(self.num_classes))
 
     def forward(self, x):
         if x.dim() == 3:
@@ -122,6 +127,16 @@ class AudioCommandClassifier(torch.nn.Module):
         return F.linear(x, self.dense_weight, self.dense_bias)
 
 
+def _labels_for_num_classes(num_classes: int):
+    if num_classes == 6:
+        return LABELS
+    if num_classes == 7:
+        return LABELS_WITH_BACKGROUND
+    if num_classes == 12:
+        return LABELS_12
+    return [f"class_{i}" for i in range(num_classes)]
+
+
 def load_model(weights_path):
     """Load a state_dict .pth, or fall back to a TorchScript .pt."""
     try:
@@ -130,14 +145,15 @@ def load_model(weights_path):
         print("Not a plain state_dict, trying TorchScript...", file=sys.stderr)
         scripted = torch.jit.load(weights_path, map_location="cpu")
         scripted.eval()
-        return scripted
+        return scripted, LABELS
 
     if not isinstance(state, dict):
         raise SystemExit(f"Expected a state_dict in {weights_path}, got {type(state)}")
 
     state = {k.replace("module.", "", 1): v for k, v in state.items()}
 
-    model = AudioCommandClassifier()
+    num_classes = int(state["dense_bias"].shape[0]) if "dense_bias" in state else 6
+    model = AudioCommandClassifier(num_classes=num_classes)
     missing, unexpected = model.load_state_dict(state, strict=False)
     if missing or unexpected:
         print("State_dict did not match the expected layout.", file=sys.stderr)
@@ -148,8 +164,21 @@ def load_model(weights_path):
         print(f"  file keys:  {sorted(state.keys())}", file=sys.stderr)
         raise SystemExit("Aborting: weights would be partially uninitialised.")
 
+    labels_path = Path(weights_path).with_name("labels.json")
+    labels = None
+    if labels_path.exists():
+        try:
+            loaded = json.loads(labels_path.read_text(encoding="utf-8"))
+            if isinstance(loaded, list) and len(loaded) == num_classes:
+                labels = loaded
+        except Exception:
+            labels = None
+
+    if labels is None:
+        labels = _labels_for_num_classes(num_classes)
+
     model.eval()
-    return model
+    return model, labels
 
 
 # ----------------------------------------------------------------------------
@@ -211,21 +240,76 @@ def waveform_to_spectrogram(waveform):
     return spec.transpose(0, 1).unsqueeze(0).unsqueeze(0)
 
 
+def predict_window(model, labels, window, threshold, verbose):
+    stamp = time.strftime("%H:%M:%S")
+    aligned, reason = align_speech_to_fixed_length(window)
+
+    if aligned is None:
+        print(f"[{stamp}] hold          ({reason})")
+        return
+
+    spec = waveform_to_spectrogram(aligned)
+    with torch.no_grad():
+        probs = torch.softmax(model(spec), dim=-1)[0].numpy()
+
+    top = int(np.argmax(probs))
+    label = labels[top]
+    conf = float(probs[top])
+
+    if conf < threshold:
+        print(f"[{stamp}] hold          "
+              f"(top={label} {conf:.2f} below threshold)")
+    else:
+        print(f"[{stamp}] {label:<13} conf={conf:.2f}")
+
+    if verbose:
+        ranked = sorted(zip(labels, probs), key=lambda p: -p[1])
+        print("            " +
+              "  ".join(f"{n}={p:.3f}" for n, p in ranked))
+
+
 # ----------------------------------------------------------------------------
 # Main loop
 # ----------------------------------------------------------------------------
 
 def run(args):
-    model = load_model(args.weights)
+    model, labels = load_model(args.weights)
     print(f"Loaded weights from {args.weights}")
 
     device_info = sd.query_devices(args.device if args.device is not None
                                    else sd.default.device[0], "input")
     print(f"Microphone: {device_info['name']}")
     print(f"Window: {args.window:.1f} s   confidence threshold: {args.threshold:.2f}")
-    print("Listening. Ctrl+C to stop.\n")
+    if args.single_shot:
+        print("Single-shot mode: mic records only during each capture window.")
+        print("Press Enter to record once, or type q then Enter to quit.\n")
+    else:
+        print("Listening continuously. Ctrl+C to stop.\n")
 
     window_samples = int(SAMPLE_RATE * args.window)
+
+    if args.single_shot:
+        try:
+            while True:
+                cmd = input("Record next command? [Enter/q]: ").strip().lower()
+                if cmd in {"q", "quit", "exit"}:
+                    print("Stopped.")
+                    return
+
+                recording = sd.rec(
+                    window_samples,
+                    samplerate=SAMPLE_RATE,
+                    channels=1,
+                    dtype="float32",
+                    device=args.device,
+                )
+                sd.wait()
+                window = np.squeeze(recording, axis=-1)
+                predict_window(model, labels, window, args.threshold, args.verbose)
+        except KeyboardInterrupt:
+            print("\nStopped.")
+        return
+
     chunks = queue.Queue()
 
     def callback(indata, frames, time_info, status):
@@ -254,31 +338,7 @@ def run(args):
                 window = pending[:window_samples]
                 pending = pending[window_samples:]
 
-                stamp = time.strftime("%H:%M:%S")
-                aligned, reason = align_speech_to_fixed_length(window)
-
-                if aligned is None:
-                    print(f"[{stamp}] hold          ({reason})")
-                    continue
-
-                spec = waveform_to_spectrogram(aligned)
-                with torch.no_grad():
-                    probs = torch.softmax(model(spec), dim=-1)[0].numpy()
-
-                top = int(np.argmax(probs))
-                label = LABELS[top]
-                conf = float(probs[top])
-
-                if conf < args.threshold:
-                    print(f"[{stamp}] hold          "
-                          f"(top={label} {conf:.2f} below threshold)")
-                else:
-                    print(f"[{stamp}] {label:<13} conf={conf:.2f}")
-
-                if args.verbose:
-                    ranked = sorted(zip(LABELS, probs), key=lambda p: -p[1])
-                    print("            " +
-                          "  ".join(f"{n}={p:.3f}" for n, p in ranked))
+                predict_window(model, labels, window, args.threshold, args.verbose)
 
         except KeyboardInterrupt:
             print("\nStopped.")
@@ -296,6 +356,8 @@ def main():
                         help="Input device index (see --list-devices).")
     parser.add_argument("--verbose", action="store_true",
                         help="Also print the full probability vector.")
+    parser.add_argument("--single-shot", action="store_true",
+                        help="Record only one window each time you press Enter (mic is not continuously on).")
     parser.add_argument("--list-devices", action="store_true",
                         help="List audio devices and exit.")
     args = parser.parse_args()
