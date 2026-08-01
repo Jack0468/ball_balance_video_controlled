@@ -19,7 +19,13 @@ LABEL_NAMES = ["go_blue", "go_green", "go_red", "go_yellow", "hold", "stop"]
 
 
 def default_model_path():
-    return Path(__file__).resolve().parent / "models" / "audio_command_classifier" / "pytorch" / "audio_command_classifier_state_dict.pth"
+    return (
+        Path(__file__).resolve().parent
+        / "models"
+        / "audio_command_classifier"
+        / "pytorch"
+        / "audio_command_classifier_state_dict.pth"
+    )
 
 
 def align_speech_to_fixed_length(audio, target_samples=OUTPUT_SEQUENCE_LENGTH):
@@ -28,7 +34,7 @@ def align_speech_to_fixed_length(audio, target_samples=OUTPUT_SEQUENCE_LENGTH):
         audio = np.mean(audio, axis=1)
 
     peak = np.max(np.abs(audio))
-    rms = np.sqrt(np.mean(audio ** 2))
+    rms = np.sqrt(np.mean(audio**2))
 
     if peak < 0.03 or rms < 0.003:
         return None, {"reason": "too_quiet", "peak": float(peak), "rms": float(rms)}

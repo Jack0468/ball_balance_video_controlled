@@ -27,14 +27,13 @@ import torch
 import torch.nn.functional as F
 import sounddevice as sd
 
-
 # ----------------------------------------------------------------------------
 # Constants -- these must match the training notebook exactly.
 # ----------------------------------------------------------------------------
 
 SAMPLE_RATE = 16_000
-CLIP_SECONDS = 1.25                                  # what the model was trained on
-TARGET_SAMPLES = int(SAMPLE_RATE * CLIP_SECONDS)     # 20000
+CLIP_SECONDS = 1.25  # what the model was trained on
+TARGET_SAMPLES = int(SAMPLE_RATE * CLIP_SECONDS)  # 20000
 
 # Training used tf.signal.stft(frame_length=255, frame_step=128).
 # TF rounds fft_length up to the next power of two, so it is really a
@@ -44,8 +43,29 @@ WIN_LENGTH = 255
 HOP_LENGTH = 128
 
 LABELS = ["go_blue", "go_green", "go_red", "go_yellow", "hold", "stop"]
-LABELS_WITH_BACKGROUND = ["_background_", "go_blue", "go_green", "go_red", "go_yellow", "hold", "stop"]
-LABELS_12 = ["_background_", "go_blue", "go_green", "go_red", "go_yellow", "hold", "stop", "go_grey", "forward", "backward", "left", "right"]
+LABELS_WITH_BACKGROUND = [
+    "_background_",
+    "go_blue",
+    "go_green",
+    "go_red",
+    "go_yellow",
+    "hold",
+    "stop",
+]
+LABELS_12 = [
+    "_background_",
+    "go_blue",
+    "go_green",
+    "go_red",
+    "go_yellow",
+    "hold",
+    "stop",
+    "go_grey",
+    "forward",
+    "backward",
+    "left",
+    "right",
+]
 
 # Keras defaults; these are plain attributes in the generated module, so they
 # are NOT part of the state_dict and have to be restated here.
@@ -56,6 +76,7 @@ NORM_EPS = 1e-7
 # ----------------------------------------------------------------------------
 # Model -- mirrors audio_command_classifier_pytorch.py exactly.
 # ----------------------------------------------------------------------------
+
 
 class AudioCommandClassifier(torch.nn.Module):
     """Conv12 -> Conv24 -> Conv48 -> global average pool -> Dense(6)."""
@@ -108,20 +129,41 @@ class AudioCommandClassifier(torch.nn.Module):
 
         x = F.conv2d(x, self.conv1_weight, bias=self.conv1_bias, padding=1)
         x = F.relu(x)
-        x = F.batch_norm(x, self.bn1_mean, self.bn1_var, self.bn1_gamma,
-                         self.bn1_beta, training=False, eps=self.bn1_eps)
+        x = F.batch_norm(
+            x,
+            self.bn1_mean,
+            self.bn1_var,
+            self.bn1_gamma,
+            self.bn1_beta,
+            training=False,
+            eps=self.bn1_eps,
+        )
         x = F.max_pool2d(x, kernel_size=2, stride=2)
 
         x = F.conv2d(x, self.conv2_weight, bias=self.conv2_bias, padding=1)
         x = F.relu(x)
-        x = F.batch_norm(x, self.bn2_mean, self.bn2_var, self.bn2_gamma,
-                         self.bn2_beta, training=False, eps=self.bn2_eps)
+        x = F.batch_norm(
+            x,
+            self.bn2_mean,
+            self.bn2_var,
+            self.bn2_gamma,
+            self.bn2_beta,
+            training=False,
+            eps=self.bn2_eps,
+        )
         x = F.max_pool2d(x, kernel_size=2, stride=2)
 
         x = F.conv2d(x, self.conv3_weight, bias=self.conv3_bias, padding=1)
         x = F.relu(x)
-        x = F.batch_norm(x, self.bn3_mean, self.bn3_var, self.bn3_gamma,
-                         self.bn3_beta, training=False, eps=self.bn3_eps)
+        x = F.batch_norm(
+            x,
+            self.bn3_mean,
+            self.bn3_var,
+            self.bn3_gamma,
+            self.bn3_beta,
+            training=False,
+            eps=self.bn3_eps,
+        )
 
         x = x.mean(dim=(2, 3))
         return F.linear(x, self.dense_weight, self.dense_bias)
@@ -185,6 +227,7 @@ def load_model(weights_path):
 # Preprocessing -- same as the bronze -> silver step that built the train set.
 # ----------------------------------------------------------------------------
 
+
 def align_speech_to_fixed_length(audio, target_samples=TARGET_SAMPLES):
     """Trim to the speech region, pad/crop to 1.25 s, peak-normalise.
 
@@ -195,7 +238,7 @@ def align_speech_to_fixed_length(audio, target_samples=TARGET_SAMPLES):
         audio = np.mean(audio, axis=1)
 
     peak = float(np.max(np.abs(audio))) if audio.size else 0.0
-    rms = float(np.sqrt(np.mean(audio ** 2))) if audio.size else 0.0
+    rms = float(np.sqrt(np.mean(audio**2))) if audio.size else 0.0
 
     if peak < 0.03 or rms < 0.003:
         return None, "too_quiet"
@@ -257,27 +300,27 @@ def predict_window(model, labels, window, threshold, verbose):
     conf = float(probs[top])
 
     if conf < threshold:
-        print(f"[{stamp}] hold          "
-              f"(top={label} {conf:.2f} below threshold)")
+        print(f"[{stamp}] hold          " f"(top={label} {conf:.2f} below threshold)")
     else:
         print(f"[{stamp}] {label:<13} conf={conf:.2f}")
 
     if verbose:
         ranked = sorted(zip(labels, probs), key=lambda p: -p[1])
-        print("            " +
-              "  ".join(f"{n}={p:.3f}" for n, p in ranked))
+        print("            " + "  ".join(f"{n}={p:.3f}" for n, p in ranked))
 
 
 # ----------------------------------------------------------------------------
 # Main loop
 # ----------------------------------------------------------------------------
 
+
 def run(args):
     model, labels = load_model(args.weights)
     print(f"Loaded weights from {args.weights}")
 
-    device_info = sd.query_devices(args.device if args.device is not None
-                                   else sd.default.device[0], "input")
+    device_info = sd.query_devices(
+        args.device if args.device is not None else sd.default.device[0], "input"
+    )
     print(f"Microphone: {device_info['name']}")
     print(f"Window: {args.window:.1f} s   confidence threshold: {args.threshold:.2f}")
     if args.single_shot:
@@ -345,21 +388,39 @@ def run(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument("--weights", help="Path to the .pth state_dict.")
-    parser.add_argument("--window", type=float, default=2.0,
-                        help="Seconds of audio per decision (default: 2.0).")
-    parser.add_argument("--threshold", type=float, default=0.60,
-                        help="Below this confidence, print hold (default: 0.60).")
-    parser.add_argument("--device", type=int, default=None,
-                        help="Input device index (see --list-devices).")
-    parser.add_argument("--verbose", action="store_true",
-                        help="Also print the full probability vector.")
-    parser.add_argument("--single-shot", action="store_true",
-                        help="Record only one window each time you press Enter (mic is not continuously on).")
-    parser.add_argument("--list-devices", action="store_true",
-                        help="List audio devices and exit.")
+    parser.add_argument(
+        "--window",
+        type=float,
+        default=2.0,
+        help="Seconds of audio per decision (default: 2.0).",
+    )
+    parser.add_argument(
+        "--threshold",
+        type=float,
+        default=0.60,
+        help="Below this confidence, print hold (default: 0.60).",
+    )
+    parser.add_argument(
+        "--device",
+        type=int,
+        default=None,
+        help="Input device index (see --list-devices).",
+    )
+    parser.add_argument(
+        "--verbose", action="store_true", help="Also print the full probability vector."
+    )
+    parser.add_argument(
+        "--single-shot",
+        action="store_true",
+        help="Record only one window each time you press Enter (mic is not continuously on).",
+    )
+    parser.add_argument(
+        "--list-devices", action="store_true", help="List audio devices and exit."
+    )
     args = parser.parse_args()
 
     if args.list_devices:

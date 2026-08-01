@@ -4,6 +4,7 @@ import time
 import matplotlib.pyplot as plt
 from collections import deque
 
+
 def real_time_plotter(port, baudrate=115200):
 
     # Setup serial connection
@@ -32,7 +33,8 @@ def real_time_plotter(port, baudrate=115200):
                     try:
                         parts = line.split(",")
                         ball_x = float(parts[1])
-                        if ball_x > 90: continue
+                        if ball_x > 90:
+                            continue
                         ball_y = float(parts[2])
                         target_x = float(parts[3])
                         target_y = float(parts[4])
@@ -46,13 +48,15 @@ def real_time_plotter(port, baudrate=115200):
                         # Update plot
                         ax.clear()
                         ax.plot(ball_x_data, ball_y_data, "b-", label="Ball path")
-                        ax.plot(target_x_data, target_y_data, "r--", label="Target path")
+                        ax.plot(
+                            target_x_data, target_y_data, "r--", label="Target path"
+                        )
                         ax.set_xlabel("X position (mm)")
                         ax.set_ylabel("Y position (mm)")
                         ax.set_title("Ball Tracking Plotter")
                         ax.legend
                         ax.grid(True)
-                        ax.set_aspect('equal')
+                        ax.set_aspect("equal")
                         plt.draw
                         plt.pause(0.0001)
 
@@ -67,9 +71,8 @@ def real_time_plotter(port, baudrate=115200):
         plt.ioff()
         plt.show()
 
+
 # Usage
 ports = serial.tools.list_ports.comports()
 print(ports)
 real_time_plotter("COM5", 115200)
-
-

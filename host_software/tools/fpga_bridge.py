@@ -10,30 +10,34 @@ import time
 
 try:
     import ok
+
     HAS_OK = True
 except ImportError:
     HAS_OK = False
     print("Warning: Opal Kelly FrontPanel API (ok) not found. Running in MOCK mode.")
 
+
 class MockFrontPanel:
     """A mock class that simulates Opal Kelly FrontPanel for testing without hardware."""
+
     def __init__(self):
         self.wires = {}
-        
+
     def OpenBySerial(self, serial):
         print(f"[Mock FPGA] Connected to serial: {serial}")
-        return 0 # 0 means success in OK API
-        
+        return 0  # 0 means success in OK API
+
     def ConfigureFPGA(self, bitfile):
         print(f"[Mock FPGA] Configured with bitfile: {bitfile}")
         return 0
-        
+
     def SetWireInValue(self, ep_addr, val, mask):
         self.wires[ep_addr] = val & mask
-        
+
     def UpdateWireIns(self):
         # In real API, this flushes the local wire states to the FPGA
         print(f"[Mock FPGA] Updated Wires: {self.wires}")
+
 
 class FPGABridge:
     def __init__(self, bitfile_path=None, serial=""):
@@ -41,18 +45,18 @@ class FPGABridge:
             self.dev = ok.okCFrontPanel()
         else:
             self.dev = MockFrontPanel()
-            
+
         if self.dev.OpenBySerial(serial) != 0:
             raise RuntimeError("FPGA could not be opened.")
-            
+
         if bitfile_path:
             if self.dev.ConfigureFPGA(bitfile_path) != 0:
                 raise RuntimeError("FPGA configuration failed.")
-                
+
         # Endpoint definitions (example addresses)
         self.EP_X_COORD = 0x00
         self.EP_Y_COORD = 0x01
-        self.EP_STATE   = 0x02
+        self.EP_STATE = 0x02
 
     def float_to_fixed_wire(self, value):
         """
@@ -71,12 +75,13 @@ class FPGABridge:
         """
         x_fixed = self.float_to_fixed_wire(x_mm)
         y_fixed = self.float_to_fixed_wire(y_mm)
-        
+
         self.dev.SetWireInValue(self.EP_X_COORD, x_fixed, 0xFFFFFFFF)
         self.dev.SetWireInValue(self.EP_Y_COORD, y_fixed, 0xFFFFFFFF)
         self.dev.SetWireInValue(self.EP_STATE, state, 0xFFFFFFFF)
-        
+
         self.dev.UpdateWireIns()
+
 
 if __name__ == "__main__":
     bridge = FPGABridge()

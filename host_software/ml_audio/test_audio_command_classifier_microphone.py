@@ -21,7 +21,7 @@ def align_speech_to_fixed_length(audio, target_samples=OUTPUT_SEQUENCE_LENGTH):
         audio = np.mean(audio, axis=1)
 
     peak = np.max(np.abs(audio))
-    rms = np.sqrt(np.mean(audio ** 2))
+    rms = np.sqrt(np.mean(audio**2))
 
     if peak < 0.03 or rms < 0.003:
         return None
@@ -58,7 +58,9 @@ def waveform_to_spectrogram(waveform):
 
 def record_audio(duration=CLIP_SECONDS):
     print(f"Recording {duration:.2f} seconds from your default microphone...")
-    recording = sd.rec(int(duration * SAMPLE_RATE), samplerate=SAMPLE_RATE, channels=1, dtype="float32")
+    recording = sd.rec(
+        int(duration * SAMPLE_RATE), samplerate=SAMPLE_RATE, channels=1, dtype="float32"
+    )
     sd.wait()
     waveform = np.squeeze(recording, axis=-1)
     return waveform
@@ -175,8 +177,12 @@ def predict_sequence_from_microphone(
         event_time = (start + window_samples / 2) / SAMPLE_RATE
         raw_events.append({"time": event_time, "label": top_label, "conf": top_conf})
 
-    merged_events = collapse_sequence_events(raw_events, merge_gap_seconds=merge_gap_seconds)
-    merged_events = [event for event in merged_events if event["count"] >= min_event_windows]
+    merged_events = collapse_sequence_events(
+        raw_events, merge_gap_seconds=merge_gap_seconds
+    )
+    merged_events = [
+        event for event in merged_events if event["count"] >= min_event_windows
+    ]
 
     if max_commands > 0:
         capped_events = []
@@ -221,9 +227,13 @@ def predict_sequence_from_microphone(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Test the trained Keras audio classifier with microphone input.")
+    parser = argparse.ArgumentParser(
+        description="Test the trained Keras audio classifier with microphone input."
+    )
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    default_model_path = os.path.join(script_dir, 'models', 'audio_command_classifier', 'best_classifier.keras')
+    default_model_path = os.path.join(
+        script_dir, "models", "audio_command_classifier", "best_classifier.keras"
+    )
     parser.add_argument(
         "--model",
         default=default_model_path,

@@ -159,3 +159,32 @@ To synchronize a new raw video dataset:
 - **Issue:** The arbitrary MAX_BOUND = 200.0 constant used across all datasets and evaluation scripts correctly functioned as a symmetric scaler for the old Dense-layer models, but catastrophically broke the new Spatial Softmax models.
 - **Root Cause:** Dense layers are mathematically agnostic to geometric constraints and simply memorized the scaled value (e.g. 0.468). However, Spatial Softmax maps the absolute edge of the warped camera image to precisely 1.0. By dividing the 93.75mm physical plate edge by 200.0, the target label was artificially compressed to 0.468. This forced the Softmax to predict the ball was near the center of the image when it was physically at the extreme edge, resulting in a training paradox.
 - **Resolution:** Replaced the arbitrary 200.0 constant system-wide with decoupled, physically accurate bounds corresponding to the Homography-warped plate edges (MAX_X_BOUND = 93.75, MAX_Y_BOUND = 71.0). Note that this obsoletes all previous Dense-layer model checkpoints.
+
+
+## (Archived from ml_vision/docs/logbook.md)
+
+# Implementation Logbook
+
+## 2026-06-24
+- **12:50** - Initiated execution phase for the ball position vision model.
+- **12:51** - Created task list and this logbook document.
+- **12:51** - Started implementing Data Processing Pipeline (`video_sync.py`, `camera_calibration.py`).
+- **12:52** - Implemented `preprocessor.py` for ArUco and perspective transforms.
+- **12:53** - Implemented Models Benchmarking suite (`classical_cv_model.py`, `ml_model_benchmarks.py`).
+- **12:53** - Implemented Evaluation & Output (`evaluator.py`, `output_formatter.py`).
+- **12:54** - Running syntax verification on all implemented python scripts.
+- **12:54** - Syntax verification passed successfully.
+- **12:55** - Completed execution of all tasks. Walkthrough generated.
+
+## 2026-06-25
+- **10:50** - Approved implementation plan for real-time webcam testing of the vision pipeline.
+- **10:50** - Decision: We will support both GUI rendering and headless execution in the test scripts so we can prioritize testing model accuracy/reliability first, and then measure raw latency.
+- **10:50** - Decision: For the Edge Detection fallback (if Canny fails to find the platform), we will implement both options (Skip Inference entirely vs. Run YOLO on unwarped raw frame) so we can back-test which option yields better results when we collect more data.
+
+## 2026-06-26 - 2026-06-28
+- **13:30 (Jun 26)** - Implemented first pass of `marker_tracker.py` to identify dynamic target destinations via HSV color filtering.
+- **13:50 (Jun 26)** - **Algorithm Pivot**: Rewrote marker tracking to a "Shape-First, Color-Second" methodology (`cv2.adaptiveThreshold` + `cv2.findContours` Circularity filter) to fix critical tracking failures on low-brightness (Black/Grey) physical targets.
+- **14:50 (Jun 26)** - Commenced major Medallion Architecture dataset overhaul.
+- **22:50 (Jun 27)** - Concluded data module refactor. Created `01_bronze`, `02_silver`, and `03_gold` lakes. Migrated all HEIC, MP4, and synthetic dataset files.
+- **22:52 (Jun 27)** - Updated `augment_dataset.py`, `convert_heic.py`, and all YOLO config YAML files to route properly through the new Medallion pipeline.
+- **23:59 (Jun 27)** - Updated the root `.gitignore` to mask the new massive dataset directories from version control, saving the git repository from bloating.

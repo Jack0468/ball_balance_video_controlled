@@ -3,9 +3,10 @@ from pathlib import Path
 import tensorflow as tf
 import tf2onnx
 
-
 SCRIPT_DIR = Path(__file__).resolve().parent
-MODEL_PATH = (SCRIPT_DIR.parent / "models" / "audio_command_classifier" / "best_classifier.keras").resolve()
+MODEL_PATH = (
+    SCRIPT_DIR.parent / "models" / "audio_command_classifier" / "best_classifier.keras"
+).resolve()
 OUTPUT_PATH = (SCRIPT_DIR / "audio_command_classifier.onnx").resolve()
 
 

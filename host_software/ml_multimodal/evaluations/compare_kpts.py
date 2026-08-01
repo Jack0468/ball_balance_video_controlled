@@ -1,18 +1,20 @@
 import openvino as ov
 import numpy as np
 import cv2
-import torch
 from ultralytics import YOLO
 
 # Load PyTorch model
-pt_model = YOLO('ml_vision/models/yolov8_platform_markers_v2/weights/best.pt')
+pt_model = YOLO("ml_vision/models/yolov8_platform_markers_v2/weights/best.pt")
 
 # Load OpenVINO model
 core = ov.Core()
-ov_model = core.compile_model('ml_vision/models/yolov8_platform_markers_v2/weights/best_openvino_model/best.xml', 'CPU')
+ov_model = core.compile_model(
+    "ml_vision/models/yolov8_platform_markers_v2/weights/best_openvino_model/best.xml",
+    "CPU",
+)
 
 # Load image
-img = cv2.imread('data/yolo_raw_dataset/images/0000.jpg')
+img = cv2.imread("data/yolo_raw_dataset/images/0000.jpg")
 if img is None:
     print("Cannot find image!")
     exit(1)
@@ -38,10 +40,12 @@ best_box = ov_output[best_idx]
 
 print(f"Best score: {class_scores[best_idx]:.3f}")
 kpts_raw = best_box[17:29]
-ov_kpts = np.array([
-    [kpts_raw[0], kpts_raw[1]],
-    [kpts_raw[3], kpts_raw[4]],
-    [kpts_raw[6], kpts_raw[7]],
-    [kpts_raw[9], kpts_raw[10]]
-])
+ov_kpts = np.array(
+    [
+        [kpts_raw[0], kpts_raw[1]],
+        [kpts_raw[3], kpts_raw[4]],
+        [kpts_raw[6], kpts_raw[7]],
+        [kpts_raw[9], kpts_raw[10]],
+    ]
+)
 print(f"OpenVINO Keypoints:\n{ov_kpts}")

@@ -9,8 +9,11 @@ if script_dir not in sys.path:
 
 from audio_command_classifier_pytorch import AudioCommandClassifier
 
+
 def export_audio_model():
-    model_path = os.path.join(script_dir, "models", "pytorch_v3", "audio_command_classifier_state_dict_v3.pth")
+    model_path = os.path.join(
+        script_dir, "models", "pytorch_v3", "audio_command_classifier_state_dict_v3.pth"
+    )
     if not os.path.exists(model_path):
         print(f"Error: {model_path} not found.")
         return
@@ -18,7 +21,7 @@ def export_audio_model():
     print(f"Loading {model_path}...")
     # It has 12 classes
     model = AudioCommandClassifier(num_classes=12)
-    device = torch.device('cpu')
+    device = torch.device("cpu")
     state_dict = torch.load(model_path, map_location=device, weights_only=True)
     model.load_state_dict(state_dict)
     model.eval()
@@ -28,21 +31,22 @@ def export_audio_model():
     dummy_input = torch.randn(1, 155, 128)
 
     output_path = os.path.join(script_dir, "models", "audio_command_classifier_v3.onnx")
-    
+
     print(f"Exporting to {output_path}...")
     torch.onnx.export(
-        model, 
-        dummy_input, 
+        model,
+        dummy_input,
         output_path,
         export_params=True,
         opset_version=12,
         do_constant_folding=True,
-        input_names=['input'],
-        output_names=['output'],
-        dynamic_axes={'input': {0: 'batch_size'}, 'output': {0: 'batch_size'}}
+        input_names=["input"],
+        output_names=["output"],
+        dynamic_axes={"input": {0: "batch_size"}, "output": {0: "batch_size"}},
     )
-    
+
     print("Audio model exported successfully!")
+
 
 if __name__ == "__main__":
     export_audio_model()

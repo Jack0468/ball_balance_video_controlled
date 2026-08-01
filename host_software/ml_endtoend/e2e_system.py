@@ -1,12 +1,15 @@
 import time
 import queue
-import serial
 import torch
 import numpy as np
 import sounddevice as sd
 
 
-from models.vision_model_residual import load_yolo_model, load_mlp_corrector_v1_model, process_vision_frame
+from models.vision_model_residual import (
+    load_yolo_model,
+    load_mlp_corrector_v1_model,
+    process_vision_frame,
+)
 from tools.coordinate_math import HomographyProjector
 from tools.state_machine import TargetStateMachine
 from tools.serial_control import SerialController
@@ -23,8 +26,8 @@ AUDIO_SAMPLE_RATE = 16000
 AUDIO_WINDOW_SAMPLES = int(AUDIO_SAMPLE_RATE * 1.25)  # 20,000 samples
 AUDIO_CONFIDENCE_THRESHOLD = 0.60
 AUDIO_DEBOUNCE_FRAMES = 3  # Require command to be held for N *audio* frames
-AUDIO_EVERY = 3            # NEW: run audio inference every Nth loop (~10 Hz), not every loop
-BALL_LOST_HOME_SEC = 3.0   # NEW: seconds of no-ball before homing/leveling the plate
+AUDIO_EVERY = 3  # NEW: run audio inference every Nth loop (~10 Hz), not every loop
+BALL_LOST_HOME_SEC = 3.0  # NEW: seconds of no-ball before homing/leveling the plate
 
 SERIAL_PORT = "COM3"  # Update as needed
 SERIAL_BAUD = 2000000
@@ -48,7 +51,11 @@ def main():
         print(f"✅ Found STM32 on port: {detected_port}")
 
     # Initialize hardware bridge and state machine using the detected port
-    control = SerialController(port=detected_port, baudrate=SERIAL_BAUD, weights_pth="models/control_model_weights.pt")
+    control = SerialController(
+        port=detected_port,
+        baudrate=SERIAL_BAUD,
+        weights_pth="models/control_model_weights.pt",
+    )
     state_machine = TargetStateMachine()
 
     # Setup Homography Projector
@@ -72,8 +79,20 @@ def main():
 
     # Audio state variables
     current_command = "hold"
-    audio_labels = ["background", "go_red", "go_blue", "go_green", "go_yellow", "go_grey",
-                    "forward", "backward", "left", "right", "stop", "hold"]  # Update to match your labels.json
+    audio_labels = [
+        "background",
+        "go_red",
+        "go_blue",
+        "go_green",
+        "go_yellow",
+        "go_grey",
+        "forward",
+        "backward",
+        "left",
+        "right",
+        "stop",
+        "hold",
+    ]  # Update to match your labels.json
     cand_label = None
     cand_count = 0
 
@@ -158,7 +177,9 @@ def main():
                 target_x, target_y = state_machine.get_target_coords()
 
                 # Check if we reached the target and need to auto-hold
-                state_machine.maybe_auto_hold(cam_x, cam_y, marker_coords if marker_coords else {})
+                state_machine.maybe_auto_hold(
+                    cam_x, cam_y, marker_coords if marker_coords else {}
+                )
 
                 # 2. Feed physics data to the Control Policy.
                 #    control.step() reads the STM32's echoed motor positions,
@@ -172,7 +193,10 @@ def main():
                 # NEW: after a grace period, level/home the plate ONCE, mirroring
                 # the old firmware rl_balance safety. The flag prevents spamming
                 # "0,0,0" every frame (which would flood serial / backlog echoes).
-                if not homed_on_loss and (loop_start_time - last_detected_time) >= BALL_LOST_HOME_SEC:
+                if (
+                    not homed_on_loss
+                    and (loop_start_time - last_detected_time) >= BALL_LOST_HOME_SEC
+                ):
                     control.home()
                     homed_on_loss = True
                     print("[BALL LOST] No ball for 3s — homing plate to level.")

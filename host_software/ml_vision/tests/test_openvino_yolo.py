@@ -4,7 +4,12 @@ import os
 import openvino as ov
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
-yolo_xml = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/yolov8_platform_markers_v2/weights/best_openvino_model/best.xml'))
+yolo_xml = os.path.abspath(
+    os.path.join(
+        script_dir,
+        "ml_vision/models/yolov8_platform_markers_v2/weights/best_openvino_model/best.xml",
+    )
+)
 
 core = ov.Core()
 yolo_model = core.read_model(yolo_xml)
@@ -32,8 +37,8 @@ boxes_transposed = yolo_res[0].T  # (8400, 29)
 print(f"Boxes transposed shape: {boxes_transposed.shape}")
 
 num_classes = 13
-class_scores = np.max(boxes_transposed[:, 4:4+num_classes], axis=1)
-class_ids = np.argmax(boxes_transposed[:, 4:4+num_classes], axis=1)
+class_scores = np.max(boxes_transposed[:, 4 : 4 + num_classes], axis=1)
+class_ids = np.argmax(boxes_transposed[:, 4 : 4 + num_classes], axis=1)
 
 mask = class_scores > 0.5
 filtered_boxes = boxes_transposed[mask]

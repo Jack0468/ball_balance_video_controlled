@@ -1,11 +1,12 @@
 """
 output_formatter.py
 
-Formats the predicted (x, y) coordinates from the vision model into 
+Formats the predicted (x, y) coordinates from the vision model into
 the output vector required by the inverse kinematics math or microcontroller.
 """
 
 import json
+
 
 class OutputFormatter:
     def __init__(self, platform_origin=(0, 0), scale_factor=1.0):
@@ -27,9 +28,9 @@ class OutputFormatter:
         # Apply translation and scaling
         real_x = (pixel_coord[0] - self.platform_origin[0]) * self.scale_factor
         real_y = (pixel_coord[1] - self.platform_origin[1]) * self.scale_factor
-        
+
         # Note: Depending on coordinate systems, y might need to be inverted.
-        
+
         return self._build_payload(real_x, real_y, valid=True)
 
     def _build_payload(self, x, y, valid):
@@ -39,10 +40,11 @@ class OutputFormatter:
         payload = {
             "valid": valid,
             "x": round(x, 3) if valid else 0.0,
-            "y": round(y, 3) if valid else 0.0
+            "y": round(y, 3) if valid else 0.0,
         }
         # In a real scenario, this might be packed using `struct.pack` for UART transmission.
         return json.dumps(payload)
+
 
 if __name__ == "__main__":
     # Example

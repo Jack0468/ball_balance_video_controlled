@@ -1,17 +1,30 @@
 import os
-os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
+
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 from ultralytics import YOLO
+
 
 def main():
     # 1. Initialize standard YOLOv8n object detection model
     # (Notice we are not using yolov8n-pose.pt)
-    model = YOLO(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'models', 'base_models', 'yolov8n', 'weights', 'yolov8n.pt'))
-    
+    model = YOLO(
+        os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "..",
+            "..",
+            "models",
+            "base_models",
+            "yolov8n",
+            "weights",
+            "yolov8n.pt",
+        )
+    )
+
     # 2. Set absolute paths
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    data_yaml = os.path.join(script_dir, '../../data/platform_bbox.yaml')
-    project_dir = os.path.join(script_dir, '../models')
-    
+    data_yaml = os.path.join(script_dir, "../../data/platform_bbox.yaml")
+    project_dir = os.path.join(script_dir, "../models")
+
     # 3. Train the model
     # Bounding box detection is exponentially easier to learn than keypoint regression.
     # Therefore, we only need 10 epochs for it to converge on our synthetic dataset.
@@ -21,11 +34,15 @@ def main():
         imgsz=160,
         batch=16,
         project=project_dir,
-        name='yolov8_platform_bbox_v1',
-        device='cpu' # Assuming CPU training is required
+        name="yolov8_platform_bbox_v1",
+        device="cpu",  # Assuming CPU training is required
     )
-    
-    print("Training complete! Model saved to:", os.path.join(project_dir, 'yolov8_platform_bbox_v1'))
+
+    print(
+        "Training complete! Model saved to:",
+        os.path.join(project_dir, "yolov8_platform_bbox_v1"),
+    )
+
 
 if __name__ == "__main__":
     main()

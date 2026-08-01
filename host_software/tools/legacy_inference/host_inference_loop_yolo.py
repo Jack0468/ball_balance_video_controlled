@@ -1,7 +1,8 @@
 import sys
 import os
+
 # Adjust path to find modules in host_software root
-root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '/../..'))
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "/../.."))
 if root_dir not in sys.path:
     sys.path.append(root_dir)
 import cv2
@@ -17,7 +18,9 @@ import serial
 from ultralytics import YOLO
 
 # Add parent directory to path to import ml_audio
-sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.append(
+    os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
 from ml_audio.audio_listener import AudioListener
 
 # --- Configuration ---
@@ -38,12 +41,16 @@ TARGET_COORDS = {
 }
 
 # Physical Marker Coordinates in Platform-Centric Millimeters (Top-Left origin)
-MARKERS_PHYSICAL_MM = np.array([
-    [33.0, 26.0],                   # Green (Top-Left)
-    [187.5 - 41.0, 53.0],           # Red (Top-Right)
-    [69.0, 142.0 - 58.0],           # Grey (Bottom-Left)
-    [187.5 - 13.0, 142.0 - 8.0]     # Black (Bottom-Right)
-], dtype=np.float32)
+MARKERS_PHYSICAL_MM = np.array(
+    [
+        [33.0, 26.0],  # Green (Top-Left)
+        [187.5 - 41.0, 53.0],  # Red (Top-Right)
+        [69.0, 142.0 - 58.0],  # Grey (Bottom-Left)
+        [187.5 - 13.0, 142.0 - 8.0],  # Black (Bottom-Right)
+    ],
+    dtype=np.float32,
+)
+
 
 class UDPReceiver:
     def __init__(self, ip, port):
@@ -53,7 +60,7 @@ class UDPReceiver:
         self.running = True
         self.thread = threading.Thread(target=self._receive_loop, daemon=True)
         self.thread.start()
-        
+
     def _receive_loop(self):
         print(f"UDP Receiver listening on {UDP_IP}:{UDP_PORT}")
         while self.running:
@@ -81,31 +88,35 @@ class UDPReceiver:
         self.running = False
         self.sock.close()
 
+
 def order_markers(pts):
     # Sorts 4 points into: Top-Left, Top-Right, Bottom-Left, Bottom-Right
-    pts = sorted(pts, key=lambda x: x[1]) # Sort by Y
+    pts = sorted(pts, key=lambda x: x[1])  # Sort by Y
     top = pts[:2]
     bottom = pts[2:]
-    
+
     tl = min(top, key=lambda x: x[0])
     tr = max(top, key=lambda x: x[0])
     bl = min(bottom, key=lambda x: x[0])
     br = max(bottom, key=lambda x: x[0])
-    
+
     return np.array([tl, tr, bl, br], dtype=np.float32)
+
 
 def main():
     # 1. Model & Hardware Init
     script_dir = root_dir
-    model_path = os.path.join(script_dir, 'models/yolov8_platform_pose_marker_ball_v1/weights/best.pt')
-    
+    model_path = os.path.join(
+        script_dir, "models/yolov8_platform_pose_marker_ball_v1/weights/best.pt"
+    )
+
     if not os.path.exists(model_path):
         print(f"ERROR: YOLO model not found at {model_path}. Train the model first.")
         return
-        
+
     print("Loading YOLOv8 Model...")
     model = YOLO(model_path)
-    
+
     try:
         ser = serial.Serial(SERIAL_PORT, SERIAL_BAUD, timeout=0.1)
         print(f"Connected to STM32 on {SERIAL_PORT}")
@@ -118,7 +129,7 @@ def main():
     # Start background audio listener for command-driven target updates.
     audio = AudioListener()
     audio.start()
-    
+
     # 2. Main Inference Loop
     print("Starting YOLO + Audio Inference Loop...")
     target_x = TARGET_X
@@ -128,40 +139,40 @@ def main():
             frame = receiver.get_latest_frame()
             if frame is None:
                 continue
-                
+
             start_t = time.perf_counter()
-            
+
             # YOLO inference (imgsz=640 assumes standard stream)
             results = model.predict(source=frame, imgsz=640, conf=0.5, verbose=False)
             result = results[0]
-            
+
             ball_pt = None
             marker_pts = []
-            
+
             for box in result.boxes:
                 cls_id = int(box.cls[0].item())
                 x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
                 cx = (x1 + x2) / 2.0
                 cy = (y1 + y2) / 2.0
-                
-                if cls_id == 0: # Ball
+
+                if cls_id == 0:  # Ball
                     ball_pt = (cx, cy)
-                elif cls_id == 1: # Marker
+                elif cls_id == 1:  # Marker
                     marker_pts.append((cx, cy))
-                    
+
             if len(marker_pts) >= 4 and ball_pt is not None:
                 # We need exactly 4 for homography; take top 4 highest confidence if >4
                 # But here we just take the first 4 for simplicity
                 ordered_pixels = order_markers(marker_pts[:4])
-                
+
                 # M maps Pixels -> MM
                 M, _ = cv2.findHomography(ordered_pixels, MARKERS_PHYSICAL_MM)
-                
+
                 if M is not None:
                     # Project ball to MM
                     b_px = np.array([[[ball_pt[0], ball_pt[1]]]], dtype=np.float32)
                     b_mm = cv2.perspectiveTransform(b_px, M)[0][0]
-                    
+
                     # Convert to Platform Center Origin (assuming STM32 expects 0,0 at center)
                     # Platform W=187.5, H=142.0
                     final_x = b_mm[0] - (187.5 / 2.0)
@@ -178,28 +189,28 @@ def main():
                         pass
                     elif mode == "stop":
                         pass
-                    
+
                     err_x = target_x - final_x
                     err_y = target_y - final_y
-                    
+
                     # Send to STM32
                     if ser:
-                        payload = struct.pack('<chh', b'<', int(err_x), int(err_y))
+                        payload = struct.pack("<chh", b"<", int(err_x), int(err_y))
                         ser.write(payload)
-                        
+
                     inference_ms = (time.perf_counter() - start_t) * 1000.0
                     print(
                         f"Ball: ({final_x:.1f}mm, {final_y:.1f}mm) | "
                         f"Target: ({target_x:.1f}, {target_y:.1f}) [{audio_state.get('command', 'hold')}] | "
                         f"Latency: {inference_ms:.1f}ms"
                     )
-                    
+
             # (Optional) Display frame
             # annotated_frame = result.plot()
             # cv2.imshow("YOLO Tracker", annotated_frame)
             # if cv2.waitKey(1) & 0xFF == ord('q'):
             #     break
-                
+
     except KeyboardInterrupt:
         print("Stopping...")
     finally:
@@ -209,5 +220,6 @@ def main():
             ser.close()
         cv2.destroyAllWindows()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

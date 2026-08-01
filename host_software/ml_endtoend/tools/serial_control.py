@@ -1,11 +1,12 @@
 import time
 import serial
 import torch
-import torch.nn as nn
 from models.control_model import ControlNet
+
 
 class ControllerState:
     """Replicates the stateful velocity filter and observation logic from RLControl.cpp"""
+
     def __init__(self, alpha=0.35, max_motor_step=98.0):
         self.alpha = alpha
         self.max_motor_step = max_motor_step
@@ -31,7 +32,7 @@ class ControllerState:
 
         self.filt_vel[0] = self.alpha * raw_vx + (1.0 - self.alpha) * self.filt_vel[0]
         self.filt_vel[1] = self.alpha * raw_vy + (1.0 - self.alpha) * self.filt_vel[1]
-        
+
         self.prev_obs_pos[0] = x_mm
         self.prev_obs_pos[1] = y_mm
         self.have_prev_pos = True
@@ -46,21 +47,23 @@ class ControllerState:
             self.filt_vel[1],
             actual_steps[0],
             actual_steps[1],
-            actual_steps[2]
+            actual_steps[2],
         ]
-        return torch.tensor(obs, dtype=torch.float32).unsqueeze(0) # Batch size 1
+        return torch.tensor(obs, dtype=torch.float32).unsqueeze(0)  # Batch size 1
 
     def compute_step_targets(self, model, obs_tensor):
         with torch.no_grad():
-            action = model(obs_tensor).squeeze(0).numpy() # shape (3,)
-        
+            action = model(obs_tensor).squeeze(0).numpy()  # shape (3,)
+
         # Action in [-1, 1] -> integer step targets
         target_steps = [round(a * self.max_motor_step) for a in action]
         return target_steps
 
 
 class SerialController:
-    def __init__(self, port="/dev/ttyACM0", baudrate=2000000, weights_pth="control_model.pth"):
+    def __init__(
+        self, port="/dev/ttyACM0", baudrate=2000000, weights_pth="control_model.pth"
+    ):
         self.model = ControlNet()
         self.model.load_state_dict(torch.load(weights_pth, weights_only=True))
         self.model.eval()
@@ -83,7 +86,11 @@ class SerialController:
             parts = line.split(",")
             if len(parts) == 3:
                 try:
-                    self.actual_steps = [float(parts[0]), float(parts[1]), float(parts[2])]
+                    self.actual_steps = [
+                        float(parts[0]),
+                        float(parts[1]),
+                        float(parts[2]),
+                    ]
                     updated = True
                 except ValueError:
                     pass  # skip boot messages like "Motors to zero position"
@@ -110,7 +117,7 @@ class SerialController:
         self.ser.write(cmd.encode("utf-8"))
 
         return target_steps
-    
+
     def home(self):
         self.state.reset()
         self.ser.write(b"0,0,0\n")

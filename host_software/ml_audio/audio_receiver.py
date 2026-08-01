@@ -27,18 +27,21 @@ except ImportError:
         predict_probabilities,
     )
 
+
 class AudioCommandReceiver:
     def __init__(self, model_path=None, step_seconds=0.2, command_cooldown_seconds=5.0):
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.model, resolved_model_path = load_pytorch_audio_model(model_path=model_path, device=self.device)
+        self.model, resolved_model_path = load_pytorch_audio_model(
+            model_path=model_path, device=self.device
+        )
         print(f"Loading Audio Model from {resolved_model_path}...")
         self.step_seconds = step_seconds
         self.command_cooldown_seconds = command_cooldown_seconds
-        
+
         self.window_samples = OUTPUT_SEQUENCE_LENGTH
         self.step_samples = int(SAMPLE_RATE * self.step_seconds)
         self.audio_buffer = np.zeros(self.window_samples, dtype=np.float32)
-        
+
         self.command_queue = queue.Queue(maxsize=1)
         self.running = True
         self.last_command_time = -float("inf")
@@ -51,33 +54,33 @@ class AudioCommandReceiver:
             "accepted": False,
             "reason": "starting",
         }
-        
+
         # We need a small queue to pass chunks from the audio callback to the processing thread
         self.chunk_queue = queue.Queue()
-        
+
         # Configuration for debouncing
         self.min_confidence = 0.6
         self.min_margin = 0.10
         self.recent_predictions = []
-        
+
         self.stream = sd.InputStream(
             samplerate=SAMPLE_RATE,
             channels=1,
             dtype="float32",
             blocksize=self.step_samples,
-            callback=self._audio_callback
+            callback=self._audio_callback,
         )
         self.stream.start()
-        
+
         self.thread = threading.Thread(target=self._process_loop, daemon=True)
         self.thread.start()
         print("Audio receiver initialized on laptop microphone.")
 
     def _audio_callback(self, indata, frames, time_info, status):
         if status:
-            pass # ignore warnings for now
+            pass  # ignore warnings for now
         self.chunk_queue.put(indata.copy().squeeze())
-        
+
     def _process_loop(self):
         while self.running:
             try:
@@ -85,11 +88,11 @@ class AudioCommandReceiver:
                 new_chunk = self.chunk_queue.get(timeout=1.0)
             except queue.Empty:
                 continue
-                
+
             # Shift buffer left and append new chunk
             self.audio_buffer = np.roll(self.audio_buffer, -len(new_chunk))
-            self.audio_buffer[-len(new_chunk):] = new_chunk
-            
+            self.audio_buffer[-len(new_chunk) :] = new_chunk
+
             aligned, meta = align_speech_to_fixed_length(self.audio_buffer)
             if aligned is None:
                 self.ready_for_new_command = True
@@ -104,16 +107,18 @@ class AudioCommandReceiver:
                 self.recent_predictions.append(None)
             else:
                 probs = predict_probabilities(self.model, aligned, device=self.device)
-                
+
                 top_id = int(np.argmax(probs))
                 top_label = LABEL_NAMES[top_id]
                 top_conf = float(probs[top_id])
-                
+
                 top_two = np.partition(probs, -2)[-2:]
                 margin = float(top_two[-1] - top_two[-2])
                 accepted = top_conf >= self.min_confidence and margin >= self.min_margin
                 now = time.time()
-                cooldown_remaining = max(0.0, self.command_cooldown_seconds - (now - self.last_command_time))
+                cooldown_remaining = max(
+                    0.0, self.command_cooldown_seconds - (now - self.last_command_time)
+                )
                 self.latest_status = {
                     "timestamp": now,
                     "top_label": top_label,
@@ -124,20 +129,22 @@ class AudioCommandReceiver:
                     "cooldown_remaining": cooldown_remaining,
                     "ready_for_new_command": self.ready_for_new_command,
                 }
-                
+
                 if accepted:
                     self.recent_predictions.append(top_label)
                 else:
                     self.recent_predictions.append(None)
-                    
+
             # Debounce: require 2 identical consecutive valid predictions to trigger a command
             if len(self.recent_predictions) > 3:
                 self.recent_predictions.pop(0)
-                
+
             if len(self.recent_predictions) == 3:
                 p1, p2, p3 = self.recent_predictions
                 now = time.time()
-                cooldown_elapsed = (now - self.last_command_time) >= self.command_cooldown_seconds
+                cooldown_elapsed = (
+                    now - self.last_command_time
+                ) >= self.command_cooldown_seconds
                 if (
                     p2 is not None
                     and p2 == p3
@@ -171,7 +178,9 @@ class AudioCommandReceiver:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Realtime microphone test for the PyTorch audio command receiver.")
+    parser = argparse.ArgumentParser(
+        description="Realtime microphone test for the PyTorch audio command receiver."
+    )
     parser.add_argument(
         "--model-path",
         default=str(default_model_path()),
@@ -208,9 +217,13 @@ def main():
         command_cooldown_seconds=args.command_gap_seconds,
     )
     if args.duration > 0:
-        print(f"Listening for {args.duration:.1f}s. Reporting every {args.report_seconds:.1f}s.")
+        print(
+            f"Listening for {args.duration:.1f}s. Reporting every {args.report_seconds:.1f}s."
+        )
     else:
-        print(f"Listening continuously. Reporting every {args.report_seconds:.1f}s. Press Ctrl+C to stop.")
+        print(
+            f"Listening continuously. Reporting every {args.report_seconds:.1f}s. Press Ctrl+C to stop."
+        )
 
     start = time.time()
     next_report_time = start + args.report_seconds

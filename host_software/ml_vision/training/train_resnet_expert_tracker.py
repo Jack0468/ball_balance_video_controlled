@@ -8,57 +8,82 @@ from torchvision import models, transforms
 import argparse
 from ball_dataset import BallDataset
 
+
 class SpatialSoftmaxResNetHead(nn.Module):
     def __init__(self, in_channels, height, width):
         super(SpatialSoftmaxResNetHead, self).__init__()
         self.height = height
         self.width = width
         self.in_channels = in_channels
-        
+
         # 1x1 conv to squash the channels down into a single heatmap
         self.heatmap_conv = nn.Conv2d(in_channels, 1, kernel_size=1)
         # Initialize with near-zero variance for a flat starting softmax distribution
         nn.init.normal_(self.heatmap_conv.weight, mean=0, std=0.01)
         if self.heatmap_conv.bias is not None:
             nn.init.constant_(self.heatmap_conv.bias, 0)
-        
+
     def forward(self, x):
         # x is the flattened output from ResNet (Batch, in_channels * H * W)
         B = x.size(0)
         x = x.view(B, self.in_channels, self.height, self.width)
-        
-        heatmap = self.heatmap_conv(x) # (Batch, 1, H, W)
-        
+
+        heatmap = self.heatmap_conv(x)  # (Batch, 1, H, W)
+
         # Flatten spatial dims to apply softmax
         heatmap_flat = heatmap.view(B, 1, -1)
         attention = torch.nn.functional.softmax(heatmap_flat, dim=-1)
         attention = attention.view(B, 1, self.height, self.width)
-        
+
         # Create dynamic grid on the same device as the input tensor
         grid_y, grid_x = torch.meshgrid(
             torch.linspace(-1, 1, self.height, device=x.device),
             torch.linspace(-1, 1, self.width, device=x.device),
-            indexing='ij'
+            indexing="ij",
         )
-        
+
         expected_x = torch.sum(attention * grid_x, dim=(2, 3))
         expected_y = torch.sum(attention * grid_y, dim=(2, 3))
-        
+
         return torch.cat([expected_x, expected_y], dim=1)
 
 
 def main():
     parser = argparse.ArgumentParser(description="Train ResNet Expert Tracker")
-    parser.add_argument("--data_dir", default="../../data/02_silver/session_20260728_102908", help="Path to session data directory")
-    parser.add_argument("--csv_name", default="labels.csv", help="Name of the labels CSV file")
-    parser.add_argument("--save_dir", default="../models", help="Directory to save the trained models")
-    parser.add_argument("--resume", type=str, default=None, help="Path to checkpoint (.pth) to resume training from")
-    parser.add_argument("--arch", type=str, default="resnet18", choices=["resnet18", "resnet50"], help="Architecture to use")
-    parser.add_argument("--version", type=str, default="v1", help="Version name for the training run (e.g. v2, v3)")
+    parser.add_argument(
+        "--data_dir",
+        default="../../data/02_silver/session_20260728_102908",
+        help="Path to session data directory",
+    )
+    parser.add_argument(
+        "--csv_name", default="labels.csv", help="Name of the labels CSV file"
+    )
+    parser.add_argument(
+        "--save_dir", default="../models", help="Directory to save the trained models"
+    )
+    parser.add_argument(
+        "--resume",
+        type=str,
+        default=None,
+        help="Path to checkpoint (.pth) to resume training from",
+    )
+    parser.add_argument(
+        "--arch",
+        type=str,
+        default="resnet18",
+        choices=["resnet18", "resnet50"],
+        help="Architecture to use",
+    )
+    parser.add_argument(
+        "--version",
+        type=str,
+        default="v1",
+        help="Version name for the training run (e.g. v2, v3)",
+    )
     args = parser.parse_args()
 
     print(f"Initializing PyTorch Expert Tracker Model ({args.arch})...")
-    
+
     # 1. Initialize pre-trained ResNet
     # We use a standard CNN backbone which will easily allow us to add
     # multi-task heads in the future (e.g., finding coloured markers, or predicting control signals)
@@ -68,151 +93,179 @@ def main():
     elif args.arch == "resnet50":
         model = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
         img_size = (480, 640)
-    
-    # Freeze the early layers of ResNet18 to significantly speed up training 
+
+    # Freeze the early layers of ResNet18 to significantly speed up training
     # and reduce VRAM usage, since the backbone is already pretrained.
     for name, param in model.named_parameters():
         if "layer4" not in name and "fc" not in name:
             param.requires_grad = False
-    
-    
+
     # The standard ResNet architecture uses an AdaptiveAvgPool2d((1, 1)) before the fully connected layer.
     # This completely destroys the spatial location of the ball, averaging the 8x10 feature map into a single pixel!
     # We must remove this pooling layer so the linear layer can "see" where the ball is in the 8x10 grid.
     model.avgpool = nn.Identity()
-    
+
     # Replace the classification head with a Spatial Softmax (Soft-Argmax) head
     if args.arch == "resnet18":
         model.fc = SpatialSoftmaxResNetHead(in_channels=512, height=8, width=10)
     elif args.arch == "resnet50":
         model.fc = SpatialSoftmaxResNetHead(in_channels=2048, height=15, width=20)
 
-        
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    if device.type == 'cuda':
-        torch.backends.cudnn.benchmark = True # Speeds up fixed-size batch training
+    if device.type == "cuda":
+        torch.backends.cudnn.benchmark = True  # Speeds up fixed-size batch training
     model = model.to(device)
-    
+
     # 2. Set absolute paths for dataset
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    
+
     # Handle absolute vs relative data_dir
     data_dir = os.path.abspath(args.data_dir)
-        
+
     csv_path = os.path.join(data_dir, args.csv_name)
-    images_dir = os.path.join(data_dir, 'images')
-    
+    images_dir = os.path.join(data_dir, "images")
+
     # Handle absolute vs relative save_dir
     # Dynamically update the save_dir to ensure models are kept organized by architecture
-    if os.path.basename(args.save_dir) == "models" or os.path.basename(args.save_dir) == "models/":
+    if (
+        os.path.basename(args.save_dir) == "models"
+        or os.path.basename(args.save_dir) == "models/"
+    ):
         args.save_dir = os.path.join(args.save_dir, f"{args.arch}_expert_tracker")
     project_dir = os.path.abspath(args.save_dir)
-    
+
     # Ensure models directory exists
     os.makedirs(project_dir, exist_ok=True)
-    
+
     print(f"Loading dataset from: {csv_path}")
-    
+
     # Define Transforms
     # We removed RandomAffine and RandomPerspective. In a fixed-camera setup, applying geometric
     # augmentations to the image while keeping the physical labels (touch_x, touch_y) unchanged
     # forces the model to dynamically estimate the camera homography relative to the board boundaries.
     # This destroys the highly accurate absolute pixel-to-mm mapping and degrades tracking accuracy.
     # Note: RandomHorizontalFlip is strictly forbidden as it creates a physically impossible mirrored board.
-    train_transform = transforms.Compose([
-        transforms.Resize(img_size),
-        transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.2),
-        transforms.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 5.0)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    ])
-    
-    test_transform = transforms.Compose([
-        transforms.Resize(img_size),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    ])
-    
+    train_transform = transforms.Compose(
+        [
+            transforms.Resize(img_size),
+            transforms.ColorJitter(
+                brightness=0.5, contrast=0.5, saturation=0.5, hue=0.2
+            ),
+            transforms.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 5.0)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ]
+    )
+
+    test_transform = transforms.Compose(
+        [
+            transforms.Resize(img_size),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ]
+    )
+
     # 3. Create Dataset and DataLoader
-    full_dataset_train = BallDataset(csv_file=csv_path, root_dir=images_dir, transform=train_transform)
-    full_dataset_test = BallDataset(csv_file=csv_path, root_dir=images_dir, transform=test_transform)
-    
+    full_dataset_train = BallDataset(
+        csv_file=csv_path, root_dir=images_dir, transform=train_transform
+    )
+    full_dataset_test = BallDataset(
+        csv_file=csv_path, root_dir=images_dir, transform=test_transform
+    )
+
     # Split strictly sequentially: Train on first 80%, Test on strictly subsequent 20%
     # This prevents temporal data leakage across video frames.
     indices = list(range(len(full_dataset_train)))
     train_size = int(0.8 * len(indices))
-    
+
     train_dataset = Subset(full_dataset_train, indices[:train_size])
     test_dataset = Subset(full_dataset_test, indices[train_size:])
-    
+
     # Increased batch size from 32 to 128 to maximize Colab GPU utilization
-    train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=2, pin_memory=True)
-    test_loader = DataLoader(test_dataset, batch_size=128, shuffle=False, num_workers=2, pin_memory=True)
-    
-    print(f"Found {len(full_dataset_train)} total images -> {len(train_dataset)} Train | {len(test_dataset)} Test.")
-    
+    train_loader = DataLoader(
+        train_dataset, batch_size=128, shuffle=True, num_workers=2, pin_memory=True
+    )
+    test_loader = DataLoader(
+        test_dataset, batch_size=128, shuffle=False, num_workers=2, pin_memory=True
+    )
+
+    print(
+        f"Found {len(full_dataset_train)} total images -> {len(train_dataset)} Train | {len(test_dataset)} Test."
+    )
+
     # 4. Training loop setup
     criterion = nn.HuberLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=2, factor=0.5)
-    
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode="min", patience=2, factor=0.5
+    )
+
     num_epochs = 10
     start_epoch = 0
-    best_loss = float('inf')
+    best_loss = float("inf")
     train_losses = []
     test_losses = []
-    
+
     if args.resume and os.path.exists(args.resume):
         print(f"\n[DIAGNOSTIC] Resuming training from checkpoint: {args.resume}")
         checkpoint = torch.load(args.resume, map_location=device, weights_only=False)
-        if 'model_state_dict' in checkpoint:
-            model.load_state_dict(checkpoint['model_state_dict'])
-            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-            if 'scheduler_state_dict' in checkpoint:
-                scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
-            start_epoch = checkpoint['epoch'] + 1
-            best_loss = checkpoint.get('best_loss', float('inf'))
-            print(f"[DIAGNOSTIC] Successfully loaded state! Resuming from Epoch {start_epoch + 1}")
+        if "model_state_dict" in checkpoint:
+            model.load_state_dict(checkpoint["model_state_dict"])
+            optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+            if "scheduler_state_dict" in checkpoint:
+                scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
+            start_epoch = checkpoint["epoch"] + 1
+            best_loss = checkpoint.get("best_loss", float("inf"))
+            print(
+                f"[DIAGNOSTIC] Successfully loaded state! Resuming from Epoch {start_epoch + 1}"
+            )
         else:
             model.load_state_dict(checkpoint)
             print("[DIAGNOSTIC] Loaded bare model weights. Resuming from Epoch 1")
     else:
         if args.resume:
-            print(f"\n[DIAGNOSTIC] WARNING: Checkpoint '{args.resume}' not found. Starting from SCRATCH!")
+            print(
+                f"\n[DIAGNOSTIC] WARNING: Checkpoint '{args.resume}' not found. Starting from SCRATCH!"
+            )
         else:
-            print("\n[DIAGNOSTIC] No resume checkpoint provided. Starting from SCRATCH!")
-            
-    save_path = os.path.join(project_dir, f'{args.arch}_expert_tracker_{args.version}/expert_tracker_best.pth')
+            print(
+                "\n[DIAGNOSTIC] No resume checkpoint provided. Starting from SCRATCH!"
+            )
+
+    save_path = os.path.join(
+        project_dir,
+        f"{args.arch}_expert_tracker_{args.version}/expert_tracker_best.pth",
+    )
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    
+
     print(f"Starting training on {device}...")
-    
+
     # Initialize Mixed Precision Scaler for faster training
-    scaler = torch.amp.GradScaler('cuda') if device.type == 'cuda' else None
-    
+    scaler = torch.amp.GradScaler("cuda") if device.type == "cuda" else None
+
     for epoch in range(start_epoch, num_epochs):
         model.train()
         running_loss = 0.0
-        
+
         for i, (inputs, targets) in enumerate(train_loader):
             inputs = inputs.to(device)
             targets = targets.to(device)
-            
+
             # Zero the parameter gradients
             optimizer.zero_grad()
-            
+
             # Forward pass with AMP
             if scaler is not None:
-                with torch.amp.autocast('cuda'):
+                with torch.amp.autocast("cuda"):
                     outputs = model(inputs)
                     loss = criterion(outputs, targets)
-                
+
                 # Backward and optimize with scaler
                 scaler.scale(loss).backward()
-                
+
                 scaler.unscale_(optimizer)
                 torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=2.0)
-                
+
                 scaler.step(optimizer)
                 scaler.update()
             else:
@@ -221,14 +274,16 @@ def main():
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=2.0)
                 optimizer.step()
-            
+
             running_loss += loss.item() * inputs.size(0)
-            
+
             if (i + 1) % 100 == 0:
-                print(f"Epoch [{epoch+1}/{num_epochs}], Train Step [{i+1}/{len(train_loader)}], Loss: {loss.item():.4f}")
-                
+                print(
+                    f"Epoch [{epoch+1}/{num_epochs}], Train Step [{i+1}/{len(train_loader)}], Loss: {loss.item():.4f}"
+                )
+
         epoch_train_loss = running_loss / len(train_dataset)
-        
+
         # --- TEST PHASE ---
         model.eval()
         running_test_loss = 0.0
@@ -238,66 +293,76 @@ def main():
                 outputs = model(inputs)
                 test_loss = criterion(outputs, targets)
                 running_test_loss += test_loss.item() * inputs.size(0)
-                
+
         epoch_test_loss = running_test_loss / len(test_dataset)
-        
+
         # Step the scheduler
         scheduler.step(epoch_test_loss)
-        
+
         train_losses.append(epoch_train_loss)
         test_losses.append(epoch_test_loss)
-        
-        print(f"--- Epoch [{epoch+1}/{num_epochs}] Train Loss: {epoch_train_loss:.4f} | Test Loss: {epoch_test_loss:.4f} ---")
-        
+
+        print(
+            f"--- Epoch [{epoch+1}/{num_epochs}] Train Loss: {epoch_train_loss:.4f} | Test Loss: {epoch_test_loss:.4f} ---"
+        )
+
         checkpoint = {
-            'epoch': epoch,
-            'model_state_dict': model.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-            'scheduler_state_dict': scheduler.state_dict(),
-            'best_loss': best_loss if epoch_test_loss >= best_loss else epoch_test_loss
+            "epoch": epoch,
+            "model_state_dict": model.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
+            "scheduler_state_dict": scheduler.state_dict(),
+            "best_loss": best_loss if epoch_test_loss >= best_loss else epoch_test_loss,
         }
-        
+
         # Save the best model based on TEST loss
         if epoch_test_loss < best_loss:
             best_loss = epoch_test_loss
             torch.save(checkpoint, save_path)
             print(f"Saved new best model to {save_path}")
-            
+
         # Save the latest model at the end of every epoch just in case Colab crashes!
-        latest_path = os.path.join(project_dir, 'resnet18_expert_tracker_v1/expert_tracker_latest.pth')
+        latest_path = os.path.join(
+            project_dir, "resnet18_expert_tracker_v1/expert_tracker_latest.pth"
+        )
         torch.save(checkpoint, latest_path)
 
     print("Training complete!")
-    
+
     import matplotlib.pyplot as plt
     import json
-    
+
     plt.figure(figsize=(10, 6))
     epochs_range = range(start_epoch + 1, start_epoch + 1 + len(train_losses))
-    plt.plot(epochs_range, train_losses, label='Train Loss')
-    plt.plot(epochs_range, test_losses, label='Test Loss')
-    plt.xlabel('Epochs')
-    plt.ylabel('Huber Loss')
-    plt.title('Training Curve')
+    plt.plot(epochs_range, train_losses, label="Train Loss")
+    plt.plot(epochs_range, test_losses, label="Test Loss")
+    plt.xlabel("Epochs")
+    plt.ylabel("Huber Loss")
+    plt.title("Training Curve")
     plt.legend()
     plt.grid(True)
-    
-    curve_path = os.path.join(project_dir, 'resnet18_expert_tracker_v1/training_curve.png')
+
+    curve_path = os.path.join(
+        project_dir, "resnet18_expert_tracker_v1/training_curve.png"
+    )
     plt.savefig(curve_path)
     print(f"Saved {curve_path}")
-    
+
     metrics = {
-        'train_losses': train_losses,
-        'test_losses': test_losses,
-        'best_loss': best_loss
+        "train_losses": train_losses,
+        "test_losses": test_losses,
+        "best_loss": best_loss,
     }
-    metrics_path = os.path.join(project_dir, 'resnet18_expert_tracker_v1/training_metrics.json')
-    with open(metrics_path, 'w') as f:
+    metrics_path = os.path.join(
+        project_dir, "resnet18_expert_tracker_v1/training_metrics.json"
+    )
+    with open(metrics_path, "w") as f:
         json.dump(metrics, f, indent=4)
     print(f"Saved {metrics_path}")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     # Required for Windows multiprocessing (num_workers > 0)
     import multiprocessing
+
     multiprocessing.freeze_support()
     main()

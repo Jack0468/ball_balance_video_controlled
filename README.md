@@ -28,6 +28,7 @@ The "Brain" of the robot, written entirely in Python and running on the Host PC.
 - **Machine Learning Vision (`/ml_vision`)**: Utilizes YOLOv8 for real-time tracking of the platform's 3D pose and orientation based on the camera feed.
 - **Machine Learning Audio (`/ml_audio`)**: A voice command classifier that allows users to issue verbal instructions to the robot (e.g., "Balance", "Stop", "Move Left").
 - **Data Collection (`/data_collection`)**: Scripts designed to aggressively pull raw video frames and touchscreen coordinate data from the FPGA over USB to build robust training datasets.
+- **Experimental Variants (`/experimental_variants`)**: Contains legacy and experimental entry point variants for running the robot with different architectures (PyTorch, ONNX, ResNet, PID, etc.) to preserve project history.
 
 ### 2. Edge Control Firmware (`/firmware`)
 
@@ -56,7 +57,7 @@ Contains all the mechanical and electrical blueprints.
 
 ### 2. Python Environment
 
-To install the necessary host software dependencies:
+To install the necessary host software dependencies (including required libraries like PyTorch, Ultralytics, and ONNX Runtime):
 
 ```bash
 conda env create -f environment.yml
@@ -67,9 +68,9 @@ pip install -r requirements.txt
 ### 3. Running the Robot
 
 1. Ensure the USB Webcam and the STM32 are plugged into the Host PC.
-2. Execute the primary host software pipeline (handles Vision, Audio, and communication with the STM32):
+2. Execute the primary integrated host software pipeline (handles Vision, Audio, and communication with the STM32):
 
 ```bash
 cd host_software
-python main.py
+python main_onnx_aruco_audio.py
 ```

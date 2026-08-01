@@ -1,6 +1,7 @@
+"""EXPERIMENTAL ENTRY POINT: ResNet-based Expert Tracker. Used to predict ball position purely from image frames before pivoting to YOLO."""
+
 import cv2
 import time
-import numpy as np
 import os
 import torch
 import argparse
@@ -11,7 +12,7 @@ import serial
 from torchvision import transforms
 
 # Adjust path to find modules in host_software root
-root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 if root_dir not in sys.path:
     sys.path.append(root_dir)
 from src.receivers import USBReceiver, UDPReceiver
@@ -19,18 +20,21 @@ from src.utils import find_stm32_port
 from src.models import load_expert_model, load_yolo_model
 
 # --- Configuration ---
-SERIAL_PORT       = "COM7"
-SERIAL_BAUD       = 2000000
-MAX_X_BOUND, MAX_Y_BOUND = 200.0, 200.0 # True physical plate bounds
-CROP_PAD          = 20      # Pixels of padding around the YOLO platform crop
-YOLO_POLL_INTERVAL = 3.0    # Seconds between YOLO checks (gate refresh rate)
+SERIAL_PORT = "COM7"
+SERIAL_BAUD = 2000000
+MAX_X_BOUND, MAX_Y_BOUND = 200.0, 200.0  # True physical plate bounds
+CROP_PAD = 20  # Pixels of padding around the YOLO platform crop
+YOLO_POLL_INTERVAL = 3.0  # Seconds between YOLO checks (gate refresh rate)
 # ---------------------
+
 
 def main():
     parser = argparse.ArgumentParser(description="Cascaded YOLO→ResNet ball tracker")
-    parser.add_argument("--cam_id",   type=int, default=0,    help="Camera ID for USB mode")
-    parser.add_argument("--port",     type=str, default="auto", help="STM32 serial port or 'auto'")
-    parser.add_argument("--udp",      action="store_true",    help="Use UDP receiver")
+    parser.add_argument("--cam_id", type=int, default=0, help="Camera ID for USB mode")
+    parser.add_argument(
+        "--port", type=str, default="auto", help="STM32 serial port or 'auto'"
+    )
+    parser.add_argument("--udp", action="store_true", help="Use UDP receiver")
     parser.add_argument("--udp_port", type=int, default=5001, help="UDP listen port")
     args = parser.parse_args()
 
@@ -48,21 +52,33 @@ def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     script_dir = root_dir
 
-    yolo_path  = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/yolov8_platform_pose_markers_v4/weights/best.pt'))
-    resnet_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/resnet18_expert_tracker_v6/expert_tracker_best.pth'))
+    yolo_path = os.path.abspath(
+        os.path.join(
+            script_dir,
+            "ml_vision/models/yolov8_platform_pose_markers_v4/weights/best.pt",
+        )
+    )
+    resnet_path = os.path.abspath(
+        os.path.join(
+            script_dir,
+            "ml_vision/models/resnet18_expert_tracker_v6/expert_tracker_best.pth",
+        )
+    )
 
-    yolo_model  = load_yolo_model(yolo_path, device)
+    yolo_model = load_yolo_model(yolo_path, device)
     resnet_model = load_expert_model(resnet_path, device)
 
     if device.type == "cuda":
         torch.backends.cudnn.benchmark = True
 
-    preprocess = transforms.Compose([
-        transforms.ToPILImage(),
-        transforms.Resize((240, 320)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    ])
+    preprocess = transforms.Compose(
+        [
+            transforms.ToPILImage(),
+            transforms.Resize((240, 320)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ]
+    )
 
     # ---- 2. Serial Port Init ----
     try:
@@ -85,13 +101,15 @@ def main():
         time.sleep(0.1)
 
     print(f"Starting cascaded YOLO→ResNet loop... (press Ctrl+C to quit)")
-    print(f"  Stage 1 (gate): YOLO v3 — polls every {YOLO_POLL_INTERVAL:.1f}s, caches platform+ball presence")
+    print(
+        f"  Stage 1 (gate): YOLO v3 — polls every {YOLO_POLL_INTERVAL:.1f}s, caches platform+ball presence"
+    )
     print(f"  Stage 2 (track): ResNet18 — runs every frame when gate is open")
     print()
 
     # YOLO gate state — updated at most once per YOLO_POLL_INTERVAL seconds
-    yolo_gate_open  = False   # True when platform + ball were last seen
-    last_yolo_time  = -YOLO_POLL_INTERVAL  # force a check on the very first frame
+    yolo_gate_open = False  # True when platform + ball were last seen
+    last_yolo_time = -YOLO_POLL_INTERVAL  # force a check on the very first frame
 
     try:
         while True:
@@ -109,15 +127,17 @@ def main():
             now = time.perf_counter()
             if now - last_yolo_time >= YOLO_POLL_INTERVAL:
                 yolo_t0 = time.perf_counter()
-                results = yolo_model.predict(source=frame, imgsz=320, conf=0.5, verbose=False)
+                results = yolo_model.predict(
+                    source=frame, imgsz=320, conf=0.5, verbose=False
+                )
                 yolo_ms = (time.perf_counter() - yolo_t0) * 1000.0
                 last_yolo_time = time.perf_counter()
 
                 platform_seen = False
-                ball_seen     = False
+                ball_seen = False
 
                 if results and len(results) > 0 and results[0].boxes is not None:
-                    res     = results[0]
+                    res = results[0]
                     classes = res.boxes.cls.cpu().numpy()
                     for i, cls in enumerate(classes):
                         c = int(cls)
@@ -133,11 +153,17 @@ def main():
 
                 if not yolo_gate_open:
                     missing = []
-                    if not platform_seen: missing.append("platform")
-                    if not ball_seen:     missing.append("ball")
-                    print(f"[YOLO] {' + '.join(missing)} not detected — gate closed ({yolo_ms:.1f}ms)")
+                    if not platform_seen:
+                        missing.append("platform")
+                    if not ball_seen:
+                        missing.append("ball")
+                    print(
+                        f"[YOLO] {' + '.join(missing)} not detected — gate closed ({yolo_ms:.1f}ms)"
+                    )
                 else:
-                    print(f"[YOLO] Gate open — platform + ball confirmed ({yolo_ms:.1f}ms)")
+                    print(
+                        f"[YOLO] Gate open — platform + ball confirmed ({yolo_ms:.1f}ms)"
+                    )
 
             if not yolo_gate_open:
                 continue
@@ -177,15 +203,15 @@ def main():
             # Firmware expects: cam_x, cam_y, target_x, target_y
             # ----------------------------------------------------------------
             try:
-                payload = f"{cam_x:.2f},{cam_y:.2f},0.00,0.00\n".encode('ascii')
+                payload = f"{cam_x:.2f},{cam_y:.2f},0.00,0.00\n".encode("ascii")
                 if ser is not None:
                     ser.write(payload)
             except Exception as e:
                 print(f"Serial Error: {e}")
 
-            end_t     = time.perf_counter()
-            total_ms  = (end_t - start_t) * 1000.0
-            fps       = 1.0 / (end_t - start_t)
+            end_t = time.perf_counter()
+            total_ms = (end_t - start_t) * 1000.0
+            fps = 1.0 / (end_t - start_t)
 
             yolo_str = f", YOLO={yolo_ms:.1f}ms" if yolo_ms > 0 else ""
             print(
@@ -203,5 +229,5 @@ def main():
         print("Inference loop stopped.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

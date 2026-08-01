@@ -4,11 +4,16 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from combined_audio_video_controller import build_error_payload, resolve_target_coordinates
+from combined_audio_video_controller import (
+    build_error_payload,
+    resolve_target_coordinates,
+)
 
 
 def test_resolve_target_coordinates_for_colour_select():
-    target = resolve_target_coordinates({"mode": "colour_select", "target_colour": "red"})
+    target = resolve_target_coordinates(
+        {"mode": "colour_select", "target_colour": "red"}
+    )
     assert target == (52.75, 18.0)
 
 

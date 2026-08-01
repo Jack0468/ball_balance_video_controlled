@@ -1,14 +1,20 @@
 import os
 import subprocess
 import glob
-import time
 
-base_dir = "c:/Users/Admin/Documents/Windows_codespace/VRI_2026/host_software/ml_vision"
+base_dir = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "ml_vision")
+)
 eval_dir = os.path.join(base_dir, "evaluations")
 models_dir = os.path.join(base_dir, "models")
 
 # We will skip bbox models
-skip_models = ["yolov8_platform_bbox_v1", "yolov8_platform_bbox_v2", "yolov8_platform_bbox_v3", "yolov8_platform_bbox_v4"]
+skip_models = [
+    "yolov8_platform_bbox_v1",
+    "yolov8_platform_bbox_v2",
+    "yolov8_platform_bbox_v3",
+    "yolov8_platform_bbox_v4",
+]
 
 # Find all YOLO models (they have weights/best.pt)
 yolo_models = []
@@ -30,12 +36,14 @@ resnet_models = list(set(resnet_models))
 print("Found YOLO models to evaluate:", yolo_models)
 print("Found ResNet models to evaluate:", resnet_models)
 
+
 def run_cmd(cmd):
     print(f"Running: {cmd}")
     try:
         subprocess.run(cmd, shell=True, cwd=eval_dir, check=True)
     except subprocess.CalledProcessError as e:
         print(f"Error evaluating: {e}")
+
 
 # Evaluate YOLO
 for model in yolo_models:

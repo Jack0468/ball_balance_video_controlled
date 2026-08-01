@@ -5,6 +5,7 @@ D_MM = 86.2  # Distance from upper limb to center of platform
 E_MM = 50.0  # Length of lower limb (motor horn)
 F_MM = 87.0  # Length of upper limb (connecting rod)
 
+
 def calculate_triangle(theta_deg, phi_deg, h):
     """
     Calculates the target XYZ coordinates of the 3 platform joints based on desired tilt and height.
@@ -19,24 +20,18 @@ def calculate_triangle(theta_deg, phi_deg, h):
     sqrt3_half = np.sqrt(3) / 2
 
     # Initial vertices at height h
-    v_initial = np.array([
-        [0, D_MM, h],
-        [-D_MM * sqrt3_half, -D_MM * 0.5, h],
-        [D_MM * sqrt3_half, -D_MM * 0.5, h]
-    ])
+    v_initial = np.array(
+        [
+            [0, D_MM, h],
+            [-D_MM * sqrt3_half, -D_MM * 0.5, h],
+            [D_MM * sqrt3_half, -D_MM * 0.5, h],
+        ]
+    )
 
     # Rotation matrices
-    Rx = np.array([
-        [1, 0, 0],
-        [0, cos_t, -sin_t],
-        [0, sin_t, cos_t]
-    ])
+    Rx = np.array([[1, 0, 0], [0, cos_t, -sin_t], [0, sin_t, cos_t]])
 
-    Ry = np.array([
-        [cos_p, 0, sin_p],
-        [0, 1, 0],
-        [-sin_p, 0, cos_p]
-    ])
+    Ry = np.array([[cos_p, 0, sin_p], [0, 1, 0], [-sin_p, 0, cos_p]])
 
     R = Ry @ Rx
 
@@ -52,6 +47,7 @@ def calculate_triangle(theta_deg, phi_deg, h):
 
     return v_rotated
 
+
 def ik_solver(base_point, top_point):
     """
     Solves the inverse kinematics for a single leg.
@@ -62,21 +58,22 @@ def ik_solver(base_point, top_point):
 
     # Check unreachable
     if d2 < 0.001 or d2 > E_MM + F_MM or d2 < abs(E_MM - F_MM):
-        return 0.0 
+        return 0.0
 
     e2 = E_MM * E_MM
     f2 = F_MM * F_MM
     d2_2 = d2 * d2
 
-    phi2 = np.arctan2(r[2], np.sqrt(r[0]**2 + r[1]**2))
-    
+    phi2 = np.arctan2(r[2], np.sqrt(r[0] ** 2 + r[1] ** 2))
+
     # Law of cosines
     val = (e2 + d2_2 - f2) / (2 * E_MM * d2)
-    val = np.clip(val, -1.0, 1.0) # Prevent NaN from float precision issues
+    val = np.clip(val, -1.0, 1.0)  # Prevent NaN from float precision issues
     beta = np.arccos(val)
 
     theta2 = phi2 - beta
     return np.degrees(theta2)
+
 
 def get_target_angles(theta_deg, phi_deg, h):
     """
@@ -84,13 +81,15 @@ def get_target_angles(theta_deg, phi_deg, h):
     returns the required angles for the 3 stepper motors (A, B, C)
     """
     sqrt3_half = np.sqrt(3) / 2
-    
+
     # Base motor joints at z=0
-    base_points = np.array([
-        [0, D_MM, 0],
-        [-D_MM * sqrt3_half, -D_MM * 0.5, 0],
-        [D_MM * sqrt3_half, -D_MM * 0.5, 0]
-    ])
+    base_points = np.array(
+        [
+            [0, D_MM, 0],
+            [-D_MM * sqrt3_half, -D_MM * 0.5, 0],
+            [D_MM * sqrt3_half, -D_MM * 0.5, 0],
+        ]
+    )
 
     top_points = calculate_triangle(theta_deg, phi_deg, h)
 

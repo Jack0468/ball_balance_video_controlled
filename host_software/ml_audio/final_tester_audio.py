@@ -37,14 +37,13 @@ import torch
 import torch.nn.functional as F
 import sounddevice as sd
 
-
 # ----------------------------------------------------------------------------
 # Constants -- these must match the training notebook exactly.
 # ----------------------------------------------------------------------------
 
 SAMPLE_RATE = 16_000
-CLIP_SECONDS = 1.25                                  # what the model was trained on
-TARGET_SAMPLES = int(SAMPLE_RATE * CLIP_SECONDS)     # 20000
+CLIP_SECONDS = 1.25  # what the model was trained on
+TARGET_SAMPLES = int(SAMPLE_RATE * CLIP_SECONDS)  # 20000
 
 # Training used tf.signal.stft(frame_length=255, frame_step=128).
 # TF rounds fft_length up to the next power of two, so it is really a
@@ -62,6 +61,7 @@ NORM_EPS = 1e-7
 # ----------------------------------------------------------------------------
 # Model -- mirrors audio_command_classifier_pytorch.py exactly.
 # ----------------------------------------------------------------------------
+
 
 class AudioCommandClassifier(torch.nn.Module):
     """Conv12 -> Conv24 -> Conv48 -> global average pool -> Dense(num_classes)."""
@@ -113,20 +113,41 @@ class AudioCommandClassifier(torch.nn.Module):
 
         x = F.conv2d(x, self.conv1_weight, bias=self.conv1_bias, padding=1)
         x = F.relu(x)
-        x = F.batch_norm(x, self.bn1_mean, self.bn1_var, self.bn1_gamma,
-                         self.bn1_beta, training=False, eps=self.bn1_eps)
+        x = F.batch_norm(
+            x,
+            self.bn1_mean,
+            self.bn1_var,
+            self.bn1_gamma,
+            self.bn1_beta,
+            training=False,
+            eps=self.bn1_eps,
+        )
         x = F.max_pool2d(x, kernel_size=2, stride=2)
 
         x = F.conv2d(x, self.conv2_weight, bias=self.conv2_bias, padding=1)
         x = F.relu(x)
-        x = F.batch_norm(x, self.bn2_mean, self.bn2_var, self.bn2_gamma,
-                         self.bn2_beta, training=False, eps=self.bn2_eps)
+        x = F.batch_norm(
+            x,
+            self.bn2_mean,
+            self.bn2_var,
+            self.bn2_gamma,
+            self.bn2_beta,
+            training=False,
+            eps=self.bn2_eps,
+        )
         x = F.max_pool2d(x, kernel_size=2, stride=2)
 
         x = F.conv2d(x, self.conv3_weight, bias=self.conv3_bias, padding=1)
         x = F.relu(x)
-        x = F.batch_norm(x, self.bn3_mean, self.bn3_var, self.bn3_gamma,
-                         self.bn3_beta, training=False, eps=self.bn3_eps)
+        x = F.batch_norm(
+            x,
+            self.bn3_mean,
+            self.bn3_var,
+            self.bn3_gamma,
+            self.bn3_beta,
+            training=False,
+            eps=self.bn3_eps,
+        )
 
         x = x.mean(dim=(2, 3))
         return F.linear(x, self.dense_weight, self.dense_bias)
@@ -187,6 +208,7 @@ def load_model(weights_path):
 # Preprocessing -- same as the bronze -> silver step that built the train set.
 # ----------------------------------------------------------------------------
 
+
 def align_speech_to_fixed_length(audio, target_samples=TARGET_SAMPLES):
     """Trim to the speech region, pad/crop to 1.25 s, peak-normalise.
 
@@ -197,7 +219,7 @@ def align_speech_to_fixed_length(audio, target_samples=TARGET_SAMPLES):
         audio = np.mean(audio, axis=1)
 
     peak = float(np.max(np.abs(audio))) if audio.size else 0.0
-    rms = float(np.sqrt(np.mean(audio ** 2))) if audio.size else 0.0
+    rms = float(np.sqrt(np.mean(audio**2))) if audio.size else 0.0
 
     if peak < 0.03 or rms < 0.003:
         return None, "too_quiet"
@@ -246,6 +268,7 @@ def waveform_to_spectrogram(waveform):
 # Main loop
 # ----------------------------------------------------------------------------
 
+
 def run(args):
     model, labels = load_model(args.weights)
     print(f"Loaded weights from {args.weights}")
@@ -254,20 +277,28 @@ def run(args):
     # Classes that should never become a latched motor command. _background_
     # is a reject class; if it wins, treat the window as "no new command" and
     # keep the previous state rather than latching onto background.
-    non_command = {lbl for lbl in labels if lbl.strip("_").lower()
-                   in ("background", "unknown", "silence", "noise")}
+    non_command = {
+        lbl
+        for lbl in labels
+        if lbl.strip("_").lower() in ("background", "unknown", "silence", "noise")
+    }
 
     # Safe idle state to start from: prefer an explicit "hold" command if the
     # model has one, otherwise nothing until the first real detection.
     latched = "hold" if "hold" in labels else None
 
-    device_info = sd.query_devices(args.device if args.device is not None
-                                   else sd.default.device[0], "input")
+    device_info = sd.query_devices(
+        args.device if args.device is not None else sd.default.device[0], "input"
+    )
     print(f"Microphone: {device_info['name']}")
-    print(f"Window: {args.window:.1f} s   threshold: {args.threshold:.2f}   "
-          f"confirm: {args.confirm} window(s)")
-    print(f"Latching enabled: quiet / low-confidence windows keep the last "
-          f"command (start = {latched!r}).")
+    print(
+        f"Window: {args.window:.1f} s   threshold: {args.threshold:.2f}   "
+        f"confirm: {args.confirm} window(s)"
+    )
+    print(
+        f"Latching enabled: quiet / low-confidence windows keep the last "
+        f"command (start = {latched!r})."
+    )
     print("Listening. Ctrl+C to stop.\n")
 
     window_samples = int(SAMPLE_RATE * args.window)
@@ -313,7 +344,7 @@ def run(args):
                 note = ""
                 probs = None
                 if aligned is None:
-                    note = reason                      # too_quiet / no_speech
+                    note = reason  # too_quiet / no_speech
                 else:
                     spec = waveform_to_spectrogram(aligned)
                     with torch.no_grad():
@@ -334,7 +365,7 @@ def run(args):
                 if candidate is None:
                     cand_label, cand_count = None, 0
                 elif candidate == latched:
-                    cand_label, cand_count = None, 0   # already there
+                    cand_label, cand_count = None, 0  # already there
                 else:
                     if candidate == cand_label:
                         cand_count += 1
@@ -349,33 +380,55 @@ def run(args):
 
                 if args.verbose and probs is not None:
                     ranked = sorted(zip(labels, probs), key=lambda p: -p[1])
-                    print("            " +
-                          "  ".join(f"{n}={p:.3f}" for n, p in ranked[:6]))
+                    print(
+                        "            "
+                        + "  ".join(f"{n}={p:.3f}" for n, p in ranked[:6])
+                    )
 
         except KeyboardInterrupt:
             print("\nStopped.")
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument("--weights", help="Path to the .pth state_dict.")
-    parser.add_argument("--window", type=float, default=2.0,
-                        help="Seconds of audio per decision (default: 2.0). "
-                             "Lower = more responsive latch changes.")
-    parser.add_argument("--threshold", type=float, default=0.60,
-                        help="Below this confidence, keep the previous command "
-                             "(default: 0.60).")
-    parser.add_argument("--confirm", type=int, default=1,
-                        help="Consecutive windows a new command must win before "
-                             "it replaces the latched one (default: 1 = "
-                             "immediate; 2-3 = debounced/safer).")
-    parser.add_argument("--device", type=int, default=None,
-                        help="Input device index (see --list-devices).")
-    parser.add_argument("--verbose", action="store_true",
-                        help="Also print the top probabilities per window.")
-    parser.add_argument("--list-devices", action="store_true",
-                        help="List audio devices and exit.")
+    parser.add_argument(
+        "--window",
+        type=float,
+        default=2.0,
+        help="Seconds of audio per decision (default: 2.0). "
+        "Lower = more responsive latch changes.",
+    )
+    parser.add_argument(
+        "--threshold",
+        type=float,
+        default=0.60,
+        help="Below this confidence, keep the previous command " "(default: 0.60).",
+    )
+    parser.add_argument(
+        "--confirm",
+        type=int,
+        default=1,
+        help="Consecutive windows a new command must win before "
+        "it replaces the latched one (default: 1 = "
+        "immediate; 2-3 = debounced/safer).",
+    )
+    parser.add_argument(
+        "--device",
+        type=int,
+        default=None,
+        help="Input device index (see --list-devices).",
+    )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Also print the top probabilities per window.",
+    )
+    parser.add_argument(
+        "--list-devices", action="store_true", help="List audio devices and exit."
+    )
     args = parser.parse_args()
 
     if args.list_devices:

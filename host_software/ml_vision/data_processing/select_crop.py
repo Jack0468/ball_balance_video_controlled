@@ -2,9 +2,12 @@ import cv2
 import argparse
 import sys
 
+
 def main():
-    parser = argparse.ArgumentParser(description="Helper script to select a cropping ROI from a video.")
-    parser.add_argument('--video', required=True, help="Path to the video file")
+    parser = argparse.ArgumentParser(
+        description="Helper script to select a cropping ROI from a video."
+    )
+    parser.add_argument("--video", required=True, help="Path to the video file")
     args = parser.parse_args()
 
     cap = cv2.VideoCapture(args.video)
@@ -17,7 +20,7 @@ def main():
         ret, frame = cap.read()
         if not ret:
             break
-            
+
     if not ret or frame is None:
         print("Error: Could not read frame from video.")
         sys.exit(1)
@@ -29,11 +32,11 @@ def main():
     print("2. Press SPACE or ENTER to confirm your selection.")
     print("3. Press 'c' to cancel and try again.")
     print("---------------------\n")
-    
+
     # Scale the image down so it easily fits on a laptop screen
     scale = 0.4
     display_frame = cv2.resize(frame, (0, 0), fx=scale, fy=scale)
-    
+
     # False for showCrosshair, False for fromCenter
     roi = cv2.selectROI("Select Crop Region", display_frame, False, False)
     cv2.destroyAllWindows()
@@ -47,7 +50,10 @@ def main():
         print(f"Selected Crop Box (x, y, w, h): {x},{y},{w},{h}")
         print("=============================================\n")
         print("You can now run the sync script with this crop parameter:")
-        print(f"python host_software/ml_vision/scripts/sync_telemetry_video.py --video {args.video} --telemetry <path> --output <dir> --crop {x},{y},{w},{h}")
+        print(
+            f"python host_software/ml_vision/scripts/sync_telemetry_video.py --video {args.video} --telemetry <path> --output <dir> --crop {x},{y},{w},{h}"
+        )
+
 
 if __name__ == "__main__":
     main()

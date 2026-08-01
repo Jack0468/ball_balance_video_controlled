@@ -77,12 +77,16 @@ def print_summary(results, confusion):
 
     print("\nConfusion details (expected -> predicted counts):")
     for expected in LABEL_NAMES:
-        counts = ", ".join(f"{pred}:{confusion[expected].get(pred, 0)}" for pred in LABEL_NAMES)
+        counts = ", ".join(
+            f"{pred}:{confusion[expected].get(pred, 0)}" for pred in LABEL_NAMES
+        )
         print(f"  {expected:10s} -> {counts}")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Guided microphone checklist for all 6 audio commands.")
+    parser = argparse.ArgumentParser(
+        description="Guided microphone checklist for all 6 audio commands."
+    )
     parser.add_argument(
         "--model",
         default=r"c:\Users\aritr\Downloads\ball_balance_video_controlled\host_software\ml_audio\models\audio_command_classifier\best_classifier.keras",
