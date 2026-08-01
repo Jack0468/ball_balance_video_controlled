@@ -17,22 +17,14 @@ OFFSET_X = (TOUCHPAD_W - PAPER_W) / 2.0
 OFFSET_Y = (TOUCHPAD_H - PAPER_H) / 2.0
 
 # 4 Corners of the Paper in Touchpad MM coordinate space (0,0 is top-left of touchpad)
+# IMPORTANT: YOLO learned these keypoints with a Y-flip applied (from generate_pose_dataset_from_aruco.py).
+# We must define them in the exact same order (0, 1, 2, 3) and values so findHomography matches them correctly.
 PAPER_CORNERS_MM = np.array([
-    [OFFSET_X, OFFSET_Y],                     
-    [OFFSET_X + PAPER_W, OFFSET_Y],             
-    [OFFSET_X + PAPER_W, OFFSET_Y + PAPER_H],     
-    [OFFSET_X, OFFSET_Y + PAPER_H]              
+    [OFFSET_X, TOUCHPAD_H - OFFSET_Y],                     
+    [OFFSET_X + PAPER_W, TOUCHPAD_H - OFFSET_Y],             
+    [OFFSET_X + PAPER_W, TOUCHPAD_H - (OFFSET_Y + PAPER_H)],     
+    [OFFSET_X, TOUCHPAD_H - (OFFSET_Y + PAPER_H)]              
 ], dtype=np.float32)
-
-def order_corners(pts):
-    pts = sorted(pts, key=lambda x: x[1])
-    top = pts[:2]
-    bottom = pts[2:]
-    tl = min(top, key=lambda x: x[0])
-    tr = max(top, key=lambda x: x[0])
-    bl = min(bottom, key=lambda x: x[0])
-    br = max(bottom, key=lambda x: x[0])
-    return np.array([tl, tr, br, bl], dtype=np.float32)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -50,6 +42,9 @@ def main():
         
     sessions = [d for d in os.listdir(args.data_dir) if os.path.isdir(os.path.join(args.data_dir, d))]
     
+    if "images_iphone" in sessions:
+        sessions.remove("images_iphone")
+
     for session in sessions:
         session_dir = os.path.join(args.data_dir, session)
         csv_path = os.path.join(session_dir, "labels_normalized.csv")
@@ -63,6 +58,10 @@ def main():
         
         # We will create a new CSV and a new cropped directory
         out_csv_path = os.path.join(session_dir, "yolo_platform_corners_features.csv")
+        # Remove existing partial CSV if it exists so we start fresh for this session
+        if os.path.exists(out_csv_path):
+            os.remove(out_csv_path)
+            
         out_crop_dir = os.path.join(session_dir, "cropped_pose", "images")
         os.makedirs(out_crop_dir, exist_ok=True)
         
@@ -90,20 +89,23 @@ def main():
             if len(kpts) < 4:
                 continue
                 
-            ordered_kpts = order_corners(kpts[:4])
+            # Use YOLO's native keypoint order! It already knows which corner is which.
+            kpts = kpts[:4]
             
             # 2. Compute Homography mapping Touchpad MM -> Image Pixels
-            M_inv, _ = cv2.findHomography(PAPER_CORNERS_MM, ordered_kpts)
+            M_inv, _ = cv2.findHomography(PAPER_CORNERS_MM, kpts)
             if M_inv is None:
                 continue
                 
             # 3. Telemetry is relative to the center of the touchpad.
             # Convert to Touchpad MM space (where Top-Left is 0,0)
+            # NOTE: physical touch_y increases UP, but image Y increases DOWN.
+            # So we must subtract touch_y from the center instead of adding it.
             touch_x = row['touch_x']
             touch_y = row['touch_y']
             
             ball_x_mm = touch_x + (TOUCHPAD_W / 2.0)
-            ball_y_mm = touch_y + (TOUCHPAD_H / 2.0)
+            ball_y_mm = (TOUCHPAD_H / 2.0) - touch_y
             
             ball_pt_mm = np.array([[[ball_x_mm, ball_y_mm]]], dtype=np.float32)
             ball_pt_pixel = cv2.perspectiveTransform(ball_pt_mm, M_inv)[0][0]
@@ -156,10 +158,19 @@ def main():
                 
             results_list.append(row_dict)
             
+            # Periodically save to disk to save RAM
+            if len(results_list) >= 100:
+                out_df = pd.DataFrame(results_list)
+                out_df.to_csv(out_csv_path, mode='a', header=not os.path.exists(out_csv_path), index=False)
+                results_list = []
+            
+        # Save any remaining results
         if len(results_list) > 0:
             out_df = pd.DataFrame(results_list)
-            out_df.to_csv(out_csv_path, index=False)
-            print(f"Saved {len(results_list)} auto-labeled frames to {out_csv_path}")
+            out_df.to_csv(out_csv_path, mode='a', header=not os.path.exists(out_csv_path), index=False)
+            results_list = []
+            
+        print(f"Finished auto-labeling {session} -> {out_csv_path}")
             
 if __name__ == "__main__":
     main()

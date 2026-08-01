@@ -5,9 +5,9 @@ import os
 import sys
 import serial
 import argparse
-import torch
+import collections
 import cv2.aruco as aruco
-from torchvision import transforms
+import onnxruntime as ort
 
 root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if root_dir not in sys.path:
@@ -15,7 +15,6 @@ if root_dir not in sys.path:
 
 from src.receivers import USBReceiver, UDPReceiver
 from src.utils import find_stm32_port
-from ml_vision.training.basic_cnn import BasicCNN
 
 # --- Configuration ---
 SERIAL_PORT       = "COM7"
@@ -28,8 +27,6 @@ PLATFORM_H = 142.0
 
 # These are the exact millimeter coordinates of the centers of the 6 markers
 # relative to the Top-Left (0,0) corner of the printed PDF bounding box.
-# Note: The physical setup requires a vertical flip (only Y is inverted).
-# So we keep original X, but subtract Y from PLATFORM_H (142.0).
 MARKER_PHYSICAL_MM = {
     0: [12.0, 130.0],
     1: [175.5, 130.0],
@@ -48,23 +45,28 @@ PLATFORM_CORNERS_MM = np.array([
 ], dtype=np.float32)
 # ---------------------
 
-def load_cnn_tracker(model_path, device):
-    model = BasicCNN(num_outputs=2)
-    checkpoint = torch.load(model_path, map_location=device, weights_only=False)
-    if 'model_state_dict' in checkpoint:
-        model.load_state_dict(checkpoint['model_state_dict'])
-    else:
-        model.load_state_dict(checkpoint)
-    model.to(device)
-    model.eval()
-    return model
+def preprocess_numpy(img):
+    # cv2 uses (width, height) for resize
+    img = cv2.resize(img, (320, 240))
+    img = img.astype(np.float32) / 255.0
+    
+    mean = np.array([0.485, 0.456, 0.406], dtype=np.float32)
+    std = np.array([0.229, 0.224, 0.225], dtype=np.float32)
+    img = (img - mean) / std
+    
+    # HWC to CHW
+    img = np.transpose(img, (2, 0, 1))
+    
+    # Add batch dim -> (1, 3, 240, 320)
+    return np.expand_dims(img, axis=0)
 
 def main():
-    parser = argparse.ArgumentParser(description="Cascaded ArUco -> CNN Ball Tracker")
+    parser = argparse.ArgumentParser(description="Cascaded ArUco -> CNN -> MLP Ball Tracker (ONNX)")
     parser.add_argument("--cam_id",   type=int, default=1,    help="Camera ID for USB mode")
     parser.add_argument("--port",     type=str, default="auto", help="STM32 serial port or 'auto'")
     parser.add_argument("--udp",      action="store_true",    help="Use UDP receiver")
     parser.add_argument("--udp_port", type=int, default=5001, help="UDP listen port")
+    parser.add_argument("--headless", action="store_true",    help="Disable GUI display (improves performance)")
     args = parser.parse_args()
 
     # Auto-detect serial port
@@ -77,22 +79,29 @@ def main():
             args.port = SERIAL_PORT
             print(f"Could not auto-detect STM32. Defaulting to {args.port}")
 
-    # ---- 1. Model Init ----
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    # ---- 1. Model Init (ONNX) ----
     script_dir = os.path.dirname(os.path.abspath(__file__))
 
-    cnn_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/cnn_2d_tracker_v2/expert_tracker_best.pth'))
-    cnn_model = load_cnn_tracker(cnn_path, device)
+    cnn_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/cnn_2d_tracker_v3/expert_tracker_best.onnx'))
+    mlp_path = os.path.abspath(os.path.join(script_dir, 'ml_vision/models/mlp_corrector_time_varuco_v1/mlp_corrector_best.onnx'))
+    
+    if not os.path.exists(cnn_path):
+        print(f"Error: ONNX CNN model not found at {cnn_path}")
+        print("Please run export_to_onnx.py first!")
+        return
+        
+    if not os.path.exists(mlp_path):
+        print(f"Error: ONNX MLP model not found at {mlp_path}")
+        print("Please run export_to_onnx.py first!")
+        return
 
-    if device.type == "cuda":
-        torch.backends.cudnn.benchmark = True
-
-    preprocess = transforms.Compose([
-        transforms.ToPILImage(),
-        transforms.Resize((240, 320)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    ])
+    # Initialize ONNX Sessions
+    print("Loading ONNX sessions...")
+    cnn_session = ort.InferenceSession(cnn_path, providers=['CPUExecutionProvider'])
+    mlp_session = ort.InferenceSession(mlp_path, providers=['CPUExecutionProvider'])
+    
+    cnn_input_name = cnn_session.get_inputs()[0].name
+    mlp_input_name = mlp_session.get_inputs()[0].name
 
     # ---- 2. ArUco Init ----
     try:
@@ -124,7 +133,11 @@ def main():
         frame = receiver.get_latest_frame()
         time.sleep(0.1)
 
-    print(f"Starting ArUco -> CNN Tracker loop... (press Ctrl+C to quit)")
+    print(f"Starting ArUco -> CNN -> MLP Tracker loop... (press Ctrl+C to quit)")
+
+    # Time-Series History Buffer for the MLP
+    history_buffer = collections.deque(maxlen=1)
+    last_frame_time = time.perf_counter()
 
     try:
         while True:
@@ -133,6 +146,14 @@ def main():
                 continue
 
             start_t = time.perf_counter()
+            dt_ms = (start_t - last_frame_time) * 1000.0
+            last_frame_time = start_t
+            
+            # Bound dt for safety if there's a huge lag spike
+            if dt_ms > 100.0:
+                dt_ms = 33.0
+                history_buffer.clear() # Clear buffer on large skips
+
             h_frame, w_frame = frame.shape[:2]
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
@@ -185,18 +206,18 @@ def main():
                 
             crop = frame[y1:y2, x1:x2]
             
-            # --- STAGE 3: CNN Ball Tracker ---
+            # --- STAGE 3: CNN Ball Tracker (ONNX) ---
             cnn_t0 = time.perf_counter()
             rgb_crop = cv2.cvtColor(crop, cv2.COLOR_BGR2RGB)
-            input_tensor = preprocess(rgb_crop).unsqueeze(0).to(device)
+            input_tensor = preprocess_numpy(rgb_crop)
 
-            with torch.no_grad():
-                output = cnn_model(input_tensor)
+            # ONNX Inference
+            output = cnn_session.run(None, {cnn_input_name: input_tensor})[0]
 
             cnn_ms = (time.perf_counter() - cnn_t0) * 1000.0
 
             # The CNN predicts [-1, 1] relative to the crop dimensions!
-            norm_x, norm_y = output[0].cpu().numpy()
+            norm_x, norm_y = output[0]
             
             crop_w = x2 - x1
             crop_h = y2 - y1
@@ -214,20 +235,52 @@ def main():
             touch_pt = cv2.perspectiveTransform(ball_pt, M)
             
             # touch_x and touch_y are now perfectly in platform millimeters (0 to PLATFORM_W)
-            touch_x = float(touch_pt[0, 0, 0])
-            touch_y = float(touch_pt[0, 0, 1])
+            touch_x_raw = float(touch_pt[0, 0, 0])
+            touch_y_raw = float(touch_pt[0, 0, 1])
+
+            # We must center the target relative to the PID firmware!
+            centered_touch_x = touch_x_raw - (PLATFORM_W / 2.0)
+            centered_touch_y = touch_y_raw - (PLATFORM_H / 2.0)
+            
+            # --- STAGE 4: MLP Time Corrector (ONNX) ---
+            mlp_t0 = time.perf_counter()
+            
+            # Normalize inputs matching the V2 MLP training!
+            norm_cnn_x = (ball_frame_x / 320.0) - 1.0
+            norm_cnn_y = (ball_frame_y / 240.0) - 1.0
+            norm_target_x = 0.0 # Target is always 0.0 in PID mode
+            norm_target_y = 0.0
+            norm_dt = (dt_ms / 33.0) - 1.0
+            
+            history_buffer.append([norm_cnn_x, norm_cnn_y, norm_target_x, norm_target_y, norm_dt])
+            
+            mlp_ms = 0.0
+            if len(history_buffer) == 1:
+                # Flatten the 1x5 buffer into a 1x5 input array
+                mlp_input = np.array(history_buffer, dtype=np.float32).flatten().reshape(1, -1)
+                mlp_out = mlp_session.run(None, {mlp_input_name: mlp_input})[0][0]
+                
+                final_x = float(mlp_out[0])
+                final_y = float(mlp_out[1])
+                deriv_x, deriv_y = 0.0, 0.0
+                
+                mlp_ms = (time.perf_counter() - mlp_t0) * 1000.0
+            else:
+                # Buffer not full, fallback to raw CNN tracking
+                final_x = centered_touch_x
+                final_y = centered_touch_y
+                deriv_x, deriv_y = 0.0, 0.0
 
             # ----------------------------------------------------------------
             # Serial Transmission
-            # We must center the target relative to the PID firmware!
-            # The firmware expects the center to be (0,0). So we shift origin:
             # ----------------------------------------------------------------
-            centered_touch_x = touch_x - (PLATFORM_W / 2.0)
-            centered_touch_y = touch_y - (PLATFORM_H / 2.0)
-            
             try:
-                # payload: cam_x, cam_y, target_x, target_y
-                payload = f"{centered_touch_x:.2f},{centered_touch_y:.2f},0.00,0.00\n".encode('ascii')
+                # Current compatible payload:
+                payload = f"{final_x:.2f},{final_y:.2f},0.00,0.00\n".encode('ascii')
+                
+                # TODO: When firmware is updated to support derivatives directly, swap to this:
+                # payload = f"{final_x:.2f},{final_y:.2f},{deriv_x:.2f},{deriv_y:.2f}\n".encode('ascii')
+                
                 if ser is not None:
                     ser.write(payload)
             except Exception as e:
@@ -238,16 +291,17 @@ def main():
             fps       = 1.0 / (end_t - start_t)
 
             print(
-                f"Ball: X={centered_touch_x:+6.1f} Y={centered_touch_y:+6.1f} mm | Target: centre (0,0) | "
-                f"FPS: {fps:.1f} | Total={total_ms:.1f}ms (ArUco={aruco_ms:.1f}ms, CNN={cnn_ms:.1f}ms)"
+                f"Ball: X={final_x:+6.1f} Y={final_y:+6.1f} mm | Target: 0.0,0.0 | "
+                f"FPS: {fps:.1f} | Total={total_ms:.1f}ms (ArUco={aruco_ms:.1f}ms, CNN={cnn_ms:.1f}ms, MLP={mlp_ms:.1f}ms)"
             )
             
             # Optional: Display for debugging
-            cv2.circle(frame, (int(ball_frame_x), int(ball_frame_y)), 10, (0, 0, 255), -1)
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), 2)
-            cv2.imshow("ArUco + CNN Tracker", frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+            if not args.headless:
+                cv2.circle(frame, (int(ball_frame_x), int(ball_frame_y)), 10, (0, 0, 255), -1)
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), 2)
+                cv2.imshow("ArUco + CNN + MLP Tracker (ONNX)", frame)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
 
     except KeyboardInterrupt:
         pass

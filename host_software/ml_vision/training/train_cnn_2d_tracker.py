@@ -13,7 +13,7 @@ from basic_cnn import BasicCNN
 def main():
     parser = argparse.ArgumentParser(description="Train Basic CNN Expert Tracker")
     parser.add_argument("--data_dir", default="../../data/02_silver/session_20260728_102908", help="Path to session data directory")
-    parser.add_argument("--csv_name", default="yolo_features.csv", help="Name of the labels CSV file")
+    parser.add_argument("--csv_name", default="labels.csv", help="Name of the labels CSV file")
     parser.add_argument("--save_dir", default="../models", help="Directory to save the trained models")
     parser.add_argument("--resume", type=str, default=None, help="Path to checkpoint (.pth) to resume training from")
     parser.add_argument("--version", type=int, default=1, help="Model version number (e.g. 1 -> cnn_2d_tracker_v1)")
