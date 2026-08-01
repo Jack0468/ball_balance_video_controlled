@@ -132,10 +132,8 @@ def main():
 
         frame_idx += 1
         
-        # To speed up labeling, we can skip every N frames (e.g., sample at 5 fps instead of 30)
-        # Let's extract 1 frame every 6 frames
-        if frame_idx % 6 != 0:
-            continue
+        # Process every frame sequentially for the whole dataset
+        # (Subsampling removed)
 
         h_frame, w_frame = frame.shape[:2]
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)

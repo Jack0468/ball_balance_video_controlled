@@ -1,4 +1,10 @@
-# VRI 2026 Project Logbook
+# VRI 2026 Project Logbook
+
+## 31/07/2026
+### YOLO-Pose vs Marker Tracking Analysis
+- **Featureless Keypoint Instability**: Attempted to train a YOLOv8-Pose model to directly regress the 4 physical corners of the white paper platform to calculate homography (mimicking ArUco behavior). Observed heavy rotational and shear distortion during inference on novel camera angles (e.g., iPhone footage).
+- **Rotational Symmetry Confusion**: Concluded that the physical corners of a blank white rectangle lack unique, localized semantic features. When the camera is rotated (e.g. 180 degrees), the model becomes confused and misidentifies keypoints (swapping Top-Left with Bottom-Right). This invalidates the strict point-ordering required by `cv2.findHomography`, forcing the resulting image to violently rotate or shear by 45-90 degrees to make the invalid geometry fit.
+- **Superiority of Distinct Targets**: Confirmed that the `yolo_markers_tracker_v4` vastly outperforms the pose model because it is trained to detect the physical *colored targets*. These colored targets act as strong, unambiguous semantic anchors for a bounding-box object detector, proving that relying on distinct visual objects is fundamentally more stable than regressing abstract, featureless corners for perspective transformations.
 
 ## 29/07/2026
 ### ML Vision Pipeline: YOLO Jitter Hypothesis Validation
