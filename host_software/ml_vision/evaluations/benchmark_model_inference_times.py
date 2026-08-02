@@ -548,11 +548,18 @@ def main():
 
         return df, images_dir
 
-    summary = {
-        "models": [],
-        "sample_fraction": args.sample_fraction,
-        "max_samples": args.max_samples,
-    }
+    if os.path.exists(args.output_json):
+        with open(args.output_json, "r") as f:
+            try:
+                summary = json.load(f)
+            except:
+                summary = {"models": [], "sample_fraction": args.sample_fraction, "max_samples": args.max_samples}
+    else:
+        summary = {
+            "models": [],
+            "sample_fraction": args.sample_fraction,
+            "max_samples": args.max_samples,
+        }
 
     for model_name in sorted(os.listdir(args.models_dir)):
         if not is_model_dir(model_name):
@@ -606,7 +613,16 @@ def main():
                 print(f"{model_name}: {metrics['Mean_Inference_Time_ms']:.2f} ms avg (Net: {metrics['Mean_Network_Time_ms']:.2f} ms)")
                 if args.update_metrics:
                     update_evaluation_metrics(model_root, metrics)
-                summary["models"].append(model_summary)
+                
+                # Update existing or append
+                found = False
+                for m in summary["models"]:
+                    if m["model_name"] == model_name:
+                        m.update(model_summary)
+                        found = True
+                        break
+                if not found:
+                    summary["models"].append(model_summary)
                 
         except Exception as exc:
             print(f"Error benchmarking PyTorch {model_name}: {exc}")
@@ -618,7 +634,15 @@ def main():
                     if onnx_path:
                         sample_df = select_sample_rows(df, args.sample_fraction, args.max_samples, args.seed)
                         metrics_onnx = benchmark_yolo_model(model_name, onnx_path, sample_df, images_dir)
-                        summary["models"].append({"model_name": f"{model_name}_ONNX", "model_type": "onnx", "model_root": model_root, **metrics_onnx})
+                        onnx_summary = {"model_name": f"{model_name}_ONNX", "model_type": "onnx", "model_root": model_root, **metrics_onnx}
+                        found = False
+                        for m in summary["models"]:
+                            if m["model_name"] == onnx_summary["model_name"]:
+                                m.update(onnx_summary)
+                                found = True
+                                break
+                        if not found:
+                            summary["models"].append(onnx_summary)
                         print(f"{model_name}_ONNX: {metrics_onnx['Mean_Inference_Time_ms']:.2f} ms avg (Net: {metrics_onnx['Mean_Network_Time_ms']:.2f} ms)")
                 
                 elif model_type in ["resnet", "cnn"]:
@@ -635,7 +659,15 @@ def main():
                         )
                         sample_indices = sample_dataset_indices(len(test_dataset), args.sample_fraction, args.max_samples, args.seed)
                         metrics_onnx = benchmark_onnx_model(model_name, onnx_path, sample_indices, test_dataset)
-                        summary["models"].append({"model_name": f"{model_name}_ONNX", "model_type": "onnx", "model_root": model_root, **metrics_onnx})
+                        onnx_summary = {"model_name": f"{model_name}_ONNX", "model_type": "onnx", "model_root": model_root, **metrics_onnx}
+                        found = False
+                        for m in summary["models"]:
+                            if m["model_name"] == onnx_summary["model_name"]:
+                                m.update(onnx_summary)
+                                found = True
+                                break
+                        if not found:
+                            summary["models"].append(onnx_summary)
                         print(f"{model_name}_ONNX: {metrics_onnx['Mean_Inference_Time_ms']:.2f} ms avg (Net: {metrics_onnx['Mean_Network_Time_ms']:.2f} ms)")
                         
                 elif model_type == "mlp":
@@ -643,8 +675,17 @@ def main():
                     if onnx_path:
                         yolo_model_path = os.path.join(args.models_dir, "yolov8_platform_pose_markers_iphone_v1", "weights", "best.pt")
                         sample_df = select_sample_rows(df, args.sample_fraction, args.max_samples, args.seed)
-                        metrics_onnx = benchmark_mlp_model(model_name, yolo_model_path, onnx_path, sample_df, images_dir, device, is_onnx=True)
-                        summary["models"].append({"model_name": f"{model_name}_ONNX", "model_type": "onnx", "model_root": model_root, **metrics_onnx})
+                        onnx_summary = {"model_name": f"{model_name}_ONNX", "model_type": "onnx", "model_root": model_root, **metrics_onnx}
+                        
+                        found = False
+                        for m in summary["models"]:
+                            if m["model_name"] == onnx_summary["model_name"]:
+                                m.update(onnx_summary)
+                                found = True
+                                break
+                        if not found:
+                            summary["models"].append(onnx_summary)
+                            
                         print(f"{model_name}_ONNX: {metrics_onnx['Mean_Inference_Time_ms']:.2f} ms avg (Net: {metrics_onnx['Mean_Network_Time_ms']:.2f} ms)")
                         
             except Exception as exc:

@@ -70,6 +70,12 @@ def main():
         help="Path to data directory",
     )
     parser.add_argument(
+        "--csv_name",
+        type=str,
+        default="labels_sequential.csv",
+        help="Name of the CSV labels file",
+    )
+    parser.add_argument(
         "--model_path", required=True, help="Path to the trained .pth file"
     )
     parser.add_argument(
@@ -127,7 +133,7 @@ def main():
     # 2. Load the test subset data
     data_dir = os.path.abspath(args.data_dir)
 
-    csv_path = os.path.join(data_dir, "labels_sequential.csv")
+    csv_path = os.path.join(data_dir, args.csv_name)
     if not os.path.exists(csv_path):
         csv_path = os.path.join(data_dir, "labels.csv")
 

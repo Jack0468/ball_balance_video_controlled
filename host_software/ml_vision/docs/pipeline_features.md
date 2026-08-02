@@ -10,6 +10,19 @@ The pipeline has evolved into a robust **Deep Learning Architecture** utilizing 
 
 ---
 
+## Validated End-to-End Pipelines
+Through rigorous inference benchmarks, we have tested and validated the following pipeline combinations (stages of execution stacked in sequence). The models can be mixed and matched depending on computational constraints:
+
+1. **ResNet Standalone**: Direct regression using just `resnet` (assumes fixed camera angle/crop).
+2. **YOLO Standalone**: Detection using just `yolo` (if it was trained to detect both platform and ball).
+3. **YOLO + MLP**: `yolo` detection ➔ `mlp` temporal smoothing.
+4. **Classical Aruco + CNN**: OpenCV `aruco` marker homography ➔ `cnn_2d_tracker`.
+5. **Classical Aruco + CNN + MLP**: OpenCV `aruco` ➔ `cnn_2d_tracker` ➔ `mlp` temporal smoothing.
+6. **YOLO + CNN**: `yolov8_platform_pose` ➔ `cnn_2d_tracker`.
+7. **YOLO + CNN + MLP**: `yolov8_platform_pose` ➔ `cnn_2d_tracker` ➔ `mlp`.
+
+---
+
 ## 1. Platform Extraction (YOLO-Pose)
 
 The pipeline previously relied on a YOLO bounding box combined with classical HSV color masking and morphological operations to find the platform corners. 

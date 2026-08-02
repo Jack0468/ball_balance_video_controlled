@@ -43,9 +43,9 @@ def main():
     parser.add_argument(
         "--filter",
         type=str,
-        choices=["yolo", "resnet", "mlp", "all"],
-        default="all",
-        help="Filter which models to plot: yolo, resnet, mlp, or all",
+        choices=["yolo", "resnet", "mlp", "cnn", "2d_tracker", "all_models", "all_metrics"],
+        default="all_metrics",
+        help="Filter which models to plot",
     )
     args = parser.parse_args()
 
@@ -54,6 +54,15 @@ def main():
 
     if args.benchmark:
         run_benchmark_script(script_dir)
+
+    if args.filter == "all_metrics":
+        choices = ["yolo", "resnet", "mlp", "cnn", "2d_tracker", "all_models"]
+        for choice in choices:
+            print(f"\n--- Running plot for filter: {choice} ---")
+            cmd = [sys.executable, os.path.abspath(__file__), "--filter", choice]
+            subprocess.run(cmd)
+        print("\nFinished generating all metrics plots.")
+        return
 
     # Metrics we want to plot
     metric_keys = [
@@ -80,7 +89,7 @@ def main():
         if model_name_lower == "archive" or "temporal" in model_name_lower:
             continue
 
-        if args.filter != "all":
+        if args.filter != "all_models":
             if args.filter not in model_name_lower:
                 continue
         else:
@@ -135,6 +144,80 @@ def main():
             except Exception as e:
                 print(f"Error reading {summary_json}: {e}")
 
+    # Copy accuracy metrics from PyTorch models to ONNX models
+    for m_name in list(model_data.keys()):
+        if m_name.endswith("_ONNX"):
+            base_name = m_name[:-5]
+            if base_name in model_data:
+                for metric in metric_keys:
+                    if metric not in model_data[m_name] and metric in model_data[base_name]:
+                        model_data[m_name][metric] = model_data[base_name][metric]
+
+    if args.filter == "best_pipelines":
+        model_names = [
+            "ResNet (PyTorch)",
+            "ResNet (ONNX)",
+            "YOLO Pose (PyTorch)",
+            "YOLO Pose (ONNX)",
+            "YOLO + MLP",
+            "Aruco + CNN",
+            "Aruco + CNN + MLP",
+            "YOLO + CNN",
+            "YOLO + CNN + MLP"
+        ]
+        
+        # Pull best models
+        resnet_pt = model_data.get("resnet18_expert_tracker_0728_v6", {})
+        resnet_onnx = model_data.get("resnet18_expert_tracker_0728_v6_ONNX", resnet_pt)
+        yolo_pt = model_data.get("yolov8_platform_pose_markers_0728_v4", {})
+        yolo_onnx = model_data.get("yolov8_platform_pose_markers_0728_v4_ONNX", yolo_pt)
+        cnn = model_data.get("cnn_2d_tracker_0730_v3", {})
+        mlp = model_data.get("mlp_corrector_0728_v6", {})
+
+        aruco_time = 3.5 # Estimated ms for cv2.aruco.detectMarkers + Homography
+
+        # Synthesize pipelines
+        model_data = {}
+        # 1. ResNet (Standalone)
+        model_data["ResNet (PyTorch)"] = resnet_pt.copy()
+        
+        # 2. ResNet (ONNX)
+        model_data["ResNet (ONNX)"] = resnet_onnx.copy()
+
+        # 3. YOLO (Standalone)
+        model_data["YOLO Pose (PyTorch)"] = yolo_pt.copy()
+
+        # 4. YOLO (ONNX)
+        model_data["YOLO Pose (ONNX)"] = yolo_onnx.copy()
+
+        # 5. YOLO + MLP
+        model_data["YOLO + MLP"] = yolo_pt.copy()
+        model_data["YOLO + MLP"]["Mean_Inference_Time_ms"] = yolo_pt.get("Mean_Inference_Time_ms", 0) + mlp.get("Mean_Network_Time_ms", 1.0)
+        model_data["YOLO + MLP"]["Mean_Postprocess_Time_ms"] = yolo_pt.get("Mean_Postprocess_Time_ms", 0) + mlp.get("Mean_Network_Time_ms", 1.0)
+        model_data["YOLO + MLP"]["Mean_Euclidean_Error_mm"] = mlp.get("Mean_Euclidean_Error_mm", yolo_pt.get("Mean_Euclidean_Error_mm", 0))
+
+        # 6. Aruco + CNN
+        model_data["Aruco + CNN"] = cnn.copy()
+        model_data["Aruco + CNN"]["Mean_Inference_Time_ms"] = cnn.get("Mean_Inference_Time_ms", 0) + aruco_time
+        model_data["Aruco + CNN"]["Mean_Preprocess_Time_ms"] = cnn.get("Mean_Preprocess_Time_ms", 0) + aruco_time
+        
+        # 7. Aruco + CNN + MLP
+        model_data["Aruco + CNN + MLP"] = model_data["Aruco + CNN"].copy()
+        model_data["Aruco + CNN + MLP"]["Mean_Inference_Time_ms"] += mlp.get("Mean_Network_Time_ms", 1.0)
+        model_data["Aruco + CNN + MLP"]["Mean_Postprocess_Time_ms"] = cnn.get("Mean_Postprocess_Time_ms", 0) + mlp.get("Mean_Network_Time_ms", 1.0)
+        model_data["Aruco + CNN + MLP"]["Mean_Euclidean_Error_mm"] = mlp.get("Mean_Euclidean_Error_mm", cnn.get("Mean_Euclidean_Error_mm", 0))
+
+        # 8. YOLO + CNN
+        model_data["YOLO + CNN"] = cnn.copy()
+        model_data["YOLO + CNN"]["Mean_Inference_Time_ms"] = cnn.get("Mean_Inference_Time_ms", 0) + yolo_pt.get("Mean_Inference_Time_ms", 0)
+        model_data["YOLO + CNN"]["Mean_Preprocess_Time_ms"] = cnn.get("Mean_Preprocess_Time_ms", 0) + yolo_pt.get("Mean_Inference_Time_ms", 0)
+
+        # 9. YOLO + CNN + MLP
+        model_data["YOLO + CNN + MLP"] = model_data["YOLO + CNN"].copy()
+        model_data["YOLO + CNN + MLP"]["Mean_Inference_Time_ms"] += mlp.get("Mean_Network_Time_ms", 1.0)
+        model_data["YOLO + CNN + MLP"]["Mean_Postprocess_Time_ms"] = cnn.get("Mean_Postprocess_Time_ms", 0) + mlp.get("Mean_Network_Time_ms", 1.0)
+        model_data["YOLO + CNN + MLP"]["Mean_Euclidean_Error_mm"] = mlp.get("Mean_Euclidean_Error_mm", cnn.get("Mean_Euclidean_Error_mm", 0))
+
     if not model_names:
         print("No models with valid metrics found!")
         return
@@ -156,6 +239,7 @@ def main():
 
     axes = axes.flatten()
 
+    # Sydney Uni Monochromatic Red/Grey Theme
     sydney_colors = [
         "#E64626",
         "#FF7F50",
@@ -265,7 +349,7 @@ def main():
         ax.tick_params(axis="y", labelsize=12)
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    save_path = os.path.join(script_dir, "model_comparisons.png")
+    save_path = os.path.join(script_dir, f"model_comparisons_{args.filter}.png")
     plt.savefig(save_path, dpi=300, bbox_inches="tight")
     print(f"\nSaved comparison graphs to {save_path}")
 

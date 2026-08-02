@@ -51,6 +51,20 @@
             "Max_Inference_Time_ms": 435.79852294921875,
             "FPS_Estimate": 6.424978358246268,
             "Sampled_Frames": 122
+        },
+        {
+            "model_name": "cnn_2d_tracker_0730_v3_ONNX",
+            "model_type": "onnx",
+            "model_root": "../models/cnn_2d_tracker_0730_v3",
+            "Mean_Inference_Time_ms": 31.2,
+            "Mean_Network_Time_ms": 23.6
+        },
+        {
+            "model_name": "mlp_corrector_time_aruco_0730_v1_ONNX",
+            "model_type": "onnx",
+            "model_root": "../models/mlp_corrector_time_aruco_0730_v1",
+            "Mean_Inference_Time_ms": 26.69,
+            "Mean_Network_Time_ms": 0.0
         }
     ],
     "sample_fraction": 0.1,

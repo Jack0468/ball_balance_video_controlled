@@ -151,7 +151,7 @@ def main():
 
     # 5. Export MLP Corrector Time varuco_v1
     export_mlp_corrector(
-        "../models/mlp_corrector_time_varuco_0730_v1/mlp_corrector_best.pth"
+        model_path="../models/mlp_corrector_time_aruco_0730_v1/mlp_corrector_best.pth",
     )
 
     print(
