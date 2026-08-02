@@ -56,15 +56,17 @@ def main():
                 data = json.load(f)
             
             error = data.get("Mean_Euclidean_Error_mm")
-            inference_time = data.get("Mean_Inference_Time_ms")
             
-            if error is None or inference_time is None:
+            # Prefer Mean_Network_Time_ms for the raw model latency, fallback to Inference_Time
+            mlp_time = data.get("Mean_Network_Time_ms", data.get("Mean_Inference_Time_ms"))
+            
+            if error is None or mlp_time is None:
                 continue
 
             # Fill in the latency breakdown dynamically for the model component
             for k, v in p["latency_breakdown"].items():
                 if v is None:
-                    p["latency_breakdown"][k] = inference_time
+                    p["latency_breakdown"][k] = mlp_time
 
             total_latency = sum(p["latency_breakdown"].values())
             

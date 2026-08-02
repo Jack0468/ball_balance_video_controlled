@@ -124,6 +124,8 @@ def main():
     rmse = np.sqrt(np.mean(error**2, axis=0))
     p95 = np.percentile(np.abs(error), 95, axis=0)
 
+    euclidean_error = np.linalg.norm(error, axis=1)
+
     inference_times_ms = np.array(inference_times_ms)
 
     metrics = {
@@ -133,6 +135,9 @@ def main():
         "Position_Y_RMSE_mm": float(rmse[1]),
         "Position_X_95th_mm": float(p95[0]),
         "Position_Y_95th_mm": float(p95[1]),
+        "Mean_Euclidean_Error_mm": float(np.mean(euclidean_error)),
+        "Max_Euclidean_Error_mm": float(np.max(euclidean_error)),
+        "95th_Percentile_Error_mm": float(np.percentile(euclidean_error, 95)),
         "Mean_Inference_Time_ms": float(np.mean(inference_times_ms)),
         "FPS_Estimate": float(1000.0 / np.mean(inference_times_ms)),
     }

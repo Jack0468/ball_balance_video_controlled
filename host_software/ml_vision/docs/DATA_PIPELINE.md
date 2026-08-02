@@ -43,8 +43,8 @@ Because telemetry runs much faster (100Hz+) than the camera (30fps), the raw syn
 
 ## 4. Spatial Normalization (`normalize_spatial_density.py`)
 The ball naturally spends a disproportionate amount of time near the center of the board. If a CNN is trained on this, it becomes biased to guess the center.
-- **Process**: We grid the platform into 5mm x 5mm cells, calculate frequencies, and aggressively downsample redundant overlapping coordinates.
-- **Output**: `labels_normalized.csv` (A perfectly balanced dataset).
+- **Process**: We grid the platform into 5mm x 5mm cells, calculate spatial frequencies, and aggressively downsample outlier high-frequency cells (e.g., the center) to match the median frequency of the surrounding board. Note that this caps outlier frequencies, but does not perfectly uniformize or artificially upsample low-frequency regions.
+- **Output**: `labels_normalized.csv` (An outlier-clipped dataset).
 
 ---
 
