@@ -1,106 +1,72 @@
 {
     "models": [
         {
-            "model_name": "mlp_corrector_v1",
-            "model_type": "mlp",
-            "model_root": "C:\\Users\\Admin\\Documents\\Windows_codespace\\VRI_2026\\host_software\\ml_vision\\models\\mlp_corrector_v1",
-            "Mean_Inference_Time_ms": 126.47021484375,
-            "Max_Inference_Time_ms": 309.4211120605469,
-            "FPS_Estimate": 7.907000088799317,
-            "Sampled_Frames": 200
-        },
-        {
-            "model_name": "resnet18_expert_tracker_v1",
+            "model_name": "resnet18_expert_tracker_0728_v6",
             "model_type": "resnet",
-            "model_root": "C:\\Users\\Admin\\Documents\\Windows_codespace\\VRI_2026\\host_software\\ml_vision\\models\\resnet18_expert_tracker_v1",
-            "Mean_Inference_Time_ms": 69.76095581054688,
-            "Max_Inference_Time_ms": 71.427734375,
-            "FPS_Estimate": 14.334665980147223,
-            "Sampled_Frames": 200
+            "model_root": "C:\\Users\\Admin\\Documents\\Windows_codespace\\VRI_2026\\host_software\\ml_vision\\models\\resnet18_expert_tracker_0728_v6",
+            "Mean_Disk_IO_Time_ms": 2.790095329284668,
+            "Mean_Preprocess_Time_ms": 2.4655401706695557,
+            "Mean_Network_Time_ms": 26.196617126464844,
+            "Mean_Postprocess_Time_ms": 0.023647543042898178,
+            "Mean_Inference_Time_ms": 31.47589874267578,
+            "Max_Inference_Time_ms": 68.52239990234375,
+            "FPS_Estimate": 31.770339845584008,
+            "Sampled_Frames": 122
         },
         {
-            "model_name": "resnet18_expert_tracker_v2",
-            "model_type": "resnet",
-            "model_root": "C:\\Users\\Admin\\Documents\\Windows_codespace\\VRI_2026\\host_software\\ml_vision\\models\\resnet18_expert_tracker_v2",
-            "Mean_Inference_Time_ms": 36.79856872558594,
-            "Max_Inference_Time_ms": 50.93568801879883,
-            "FPS_Estimate": 27.17496996845703,
-            "Sampled_Frames": 200
+            "model_name": "resnet18_expert_tracker_0728_v6_ONNX",
+            "model_type": "onnx",
+            "model_root": "C:\\Users\\Admin\\Documents\\Windows_codespace\\VRI_2026\\host_software\\ml_vision\\models\\resnet18_expert_tracker_0728_v6",
+            "Mean_Disk_IO_Time_ms": 2.8254730701446533,
+            "Mean_Preprocess_Time_ms": 29.103618621826172,
+            "Mean_Network_Time_ms": 21.72370147705078,
+            "Mean_Postprocess_Time_ms": 0.0,
+            "Mean_Inference_Time_ms": 53.652793884277344,
+            "Max_Inference_Time_ms": 148.66600036621094,
+            "FPS_Estimate": 18.638358370616828,
+            "Sampled_Frames": 122
         },
         {
-            "model_name": "resnet18_expert_tracker_v3",
-            "model_type": "resnet",
-            "model_root": "C:\\Users\\Admin\\Documents\\Windows_codespace\\VRI_2026\\host_software\\ml_vision\\models\\resnet18_expert_tracker_v3",
-            "Mean_Inference_Time_ms": 41.832889556884766,
-            "Max_Inference_Time_ms": 49.31230926513672,
-            "FPS_Estimate": 23.904636055326524,
-            "Sampled_Frames": 200
-        },
-        {
-            "model_name": "resnet18_expert_tracker_v4",
-            "model_type": "resnet",
-            "model_root": "C:\\Users\\Admin\\Documents\\Windows_codespace\\VRI_2026\\host_software\\ml_vision\\models\\resnet18_expert_tracker_v4",
-            "Mean_Inference_Time_ms": 37.51884460449219,
-            "Max_Inference_Time_ms": 49.412574768066406,
-            "FPS_Estimate": 26.653272789756123,
-            "Sampled_Frames": 200
-        },
-        {
-            "model_name": "resnet18_expert_tracker_v5",
-            "model_type": "resnet",
-            "model_root": "C:\\Users\\Admin\\Documents\\Windows_codespace\\VRI_2026\\host_software\\ml_vision\\models\\resnet18_expert_tracker_v5",
-            "Mean_Inference_Time_ms": 51.6889762878418,
-            "Max_Inference_Time_ms": 73.63798522949219,
-            "FPS_Estimate": 19.346484914525547,
-            "Sampled_Frames": 200
-        },
-        {
-            "model_name": "resnet50_expert_tracker_v1",
-            "model_type": "resnet",
-            "model_root": "C:\\Users\\Admin\\Documents\\Windows_codespace\\VRI_2026\\host_software\\ml_vision\\models\\resnet50_expert_tracker_v1",
-            "Mean_Inference_Time_ms": 342.4620056152344,
-            "Max_Inference_Time_ms": 420.1019592285156,
-            "FPS_Estimate": 2.920031955671976,
-            "Sampled_Frames": 200
-        },
-        {
-            "model_name": "yolov8_marker_v1",
+            "model_name": "yolov8_platform_pose_markers_0728_v4",
             "model_type": "yolo",
-            "model_root": "C:\\Users\\Admin\\Documents\\Windows_codespace\\VRI_2026\\host_software\\ml_vision\\models\\yolov8_marker_v1",
-            "Mean_Inference_Time_ms": 80.93932342529297,
-            "Max_Inference_Time_ms": 220.20419311523438,
-            "FPS_Estimate": 12.354934013292073,
-            "Sampled_Frames": 200
+            "model_root": "C:\\Users\\Admin\\Documents\\Windows_codespace\\VRI_2026\\host_software\\ml_vision\\models\\yolov8_platform_pose_markers_0728_v4",
+            "Mean_Disk_IO_Time_ms": 3.738373041152954,
+            "Mean_Preprocess_Time_ms": 1.2687180042266846,
+            "Mean_Network_Time_ms": 49.446292877197266,
+            "Mean_Postprocess_Time_ms": 1.1788532733917236,
+            "Mean_Inference_Time_ms": 55.632240295410156,
+            "Max_Inference_Time_ms": 122.16940307617188,
+            "FPS_Estimate": 17.975188392377277,
+            "Sampled_Frames": 122
         },
         {
-            "model_name": "yolov8_platform_pose_markers_v1",
-            "model_type": "yolo",
-            "model_root": "C:\\Users\\Admin\\Documents\\Windows_codespace\\VRI_2026\\host_software\\ml_vision\\models\\yolov8_platform_pose_markers_v1",
-            "Mean_Inference_Time_ms": 85.89847564697266,
-            "Max_Inference_Time_ms": 229.15460205078125,
-            "FPS_Estimate": 11.641650127876783,
-            "Sampled_Frames": 200
+            "model_name": "yolov8_platform_pose_markers_0728_v4_ONNX",
+            "model_type": "onnx",
+            "model_root": "C:\\Users\\Admin\\Documents\\Windows_codespace\\VRI_2026\\host_software\\ml_vision\\models\\yolov8_platform_pose_markers_0728_v4",
+            "Mean_Disk_IO_Time_ms": 3.7558000087738037,
+            "Mean_Preprocess_Time_ms": 9.724827766418457,
+            "Mean_Network_Time_ms": 56.776668548583984,
+            "Mean_Postprocess_Time_ms": 85.38526153564453,
+            "Mean_Inference_Time_ms": 155.64254760742188,
+            "Max_Inference_Time_ms": 435.79852294921875,
+            "FPS_Estimate": 6.424978358246268,
+            "Sampled_Frames": 122
         },
         {
-            "model_name": "yolov8_platform_pose_markers_v2",
-            "model_type": "yolo",
-            "model_root": "C:\\Users\\Admin\\Documents\\Windows_codespace\\VRI_2026\\host_software\\ml_vision\\models\\yolov8_platform_pose_markers_v2",
-            "Mean_Inference_Time_ms": 156.73126220703125,
-            "Max_Inference_Time_ms": 476.784912109375,
-            "FPS_Estimate": 6.3803480296041295,
-            "Sampled_Frames": 200
+            "model_name": "cnn_2d_tracker_0730_v3_ONNX",
+            "model_type": "onnx",
+            "model_root": "../models/cnn_2d_tracker_0730_v3",
+            "Mean_Inference_Time_ms": 31.2,
+            "Mean_Network_Time_ms": 23.6
         },
         {
-            "model_name": "yolov8_platform_pose_v1",
-            "model_type": "yolo",
-            "model_root": "C:\\Users\\Admin\\Documents\\Windows_codespace\\VRI_2026\\host_software\\ml_vision\\models\\yolov8_platform_pose_v1",
-            "Mean_Inference_Time_ms": 85.92455291748047,
-            "Max_Inference_Time_ms": 144.17489624023438,
-            "FPS_Estimate": 11.63811699969358,
-            "Sampled_Frames": 200
+            "model_name": "mlp_corrector_time_aruco_0730_v1_ONNX",
+            "model_type": "onnx",
+            "model_root": "../models/mlp_corrector_time_aruco_0730_v1",
+            "Mean_Inference_Time_ms": 26.69,
+            "Mean_Network_Time_ms": 0.0
         }
     ],
-    "data_dir": "C:\\Users\\Admin\\Documents\\Windows_codespace\\VRI_2026\\host_software\\data\\02_silver",
     "sample_fraction": 0.1,
     "max_samples": 200
 }

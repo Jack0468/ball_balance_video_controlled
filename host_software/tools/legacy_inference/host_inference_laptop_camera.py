@@ -1,7 +1,8 @@
 import sys
 import os
+
 # Adjust path to find modules in host_software root
-root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '/../..'))
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "/../.."))
 if root_dir not in sys.path:
     sys.path.append(root_dir)
 import cv2
@@ -9,7 +10,6 @@ import threading
 import queue
 import time
 import struct
-import numpy as np
 import os
 import torch
 import torch.nn as nn
@@ -19,54 +19,72 @@ import csv
 
 # --- Configuration ---
 SERIAL_PORT = "COM8"
-SERIAL_BAUD = 2000000 # Increased to 2Mbaud to match firmware
-MAX_X_BOUND, MAX_Y_BOUND = 200.0, 200.0 # True physical plate bounds
+SERIAL_BAUD = 2000000  # Increased to 2Mbaud to match firmware
+MAX_X_BOUND, MAX_Y_BOUND = 200.0, 200.0  # True physical plate bounds
 LOG_FILE = "laptop_camera_telemetry.csv"
 # ---------------------
+
 
 class TelemetryLogger:
     def __init__(self, serial_port):
         self.ser = serial_port
         self.running = True
         self.log_queue = queue.Queue()
-        
+
         # Open CSV file and write header
-        self.csv_file = open(LOG_FILE, 'w', newline='')
+        self.csv_file = open(LOG_FILE, "w", newline="")
         self.csv_writer = csv.writer(self.csv_file)
-        self.csv_writer.writerow([
-            "host_time_ms", "mcu_micros", "target_x", "target_y", 
-            "touch_x", "touch_y", "cam_x", "cam_y", "error_x", "error_y",
-            "pitch", "roll", "theta_a", "theta_b", "theta_c",
-            "integral_x", "integral_y", "deriv_x", "deriv_y"
-        ])
-        
+        self.csv_writer.writerow(
+            [
+                "host_time_ms",
+                "mcu_micros",
+                "target_x",
+                "target_y",
+                "touch_x",
+                "touch_y",
+                "cam_x",
+                "cam_y",
+                "error_x",
+                "error_y",
+                "pitch",
+                "roll",
+                "theta_a",
+                "theta_b",
+                "theta_c",
+                "integral_x",
+                "integral_y",
+                "deriv_x",
+                "deriv_y",
+            ]
+        )
+
         # Telemetry struct format: 2 uint32, 15 floats = 68 bytes
-        self.struct_fmt = '<IIfffffffffffffff'
+        self.struct_fmt = "<IIfffffffffffffff"
         self.struct_len = struct.calcsize(self.struct_fmt)
-        self.sync_word = b'\xAA\xBB\xCC\xDD'
-        
+        self.sync_word = b"\xaa\xbb\xcc\xdd"
+
         # Store the latest camera predictions so we can inject them into the log
         self.latest_cam_x = 0.0
         self.latest_cam_y = 0.0
-        
+
         self.thread = threading.Thread(target=self._read_loop, daemon=True)
         if self.ser is not None:
             self.thread.start()
-            
+
     def _read_loop(self):
         buffer = bytearray()
         while self.running:
             try:
                 if self.ser.in_waiting > 0:
                     buffer.extend(self.ser.read(self.ser.in_waiting))
-                    
+
                     while len(buffer) >= self.struct_len:
                         # Find sync word
                         sync_idx = buffer.find(self.sync_word)
                         if sync_idx == -1:
                             buffer.clear()
                             break
-                            
+
                         if sync_idx + self.struct_len <= len(buffer):
                             packet = buffer[sync_idx : sync_idx + self.struct_len]
                             self._parse_packet(packet)
@@ -102,16 +120,32 @@ class TelemetryLogger:
             integral_y = unpacked[14]
             deriv_x = unpacked[15]
             deriv_y = unpacked[16]
-            
+
             host_time = int(time.time() * 1000)
-            
-            self.csv_writer.writerow([
-                host_time, mcu_micros, target_x, target_y, 
-                touch_x, touch_y, self.latest_cam_x, self.latest_cam_y,
-                error_x, error_y, pitch, roll, 
-                theta_a, theta_b, theta_c,
-                integral_x, integral_y, deriv_x, deriv_y
-            ])
+
+            self.csv_writer.writerow(
+                [
+                    host_time,
+                    mcu_micros,
+                    target_x,
+                    target_y,
+                    touch_x,
+                    touch_y,
+                    self.latest_cam_x,
+                    self.latest_cam_y,
+                    error_x,
+                    error_y,
+                    pitch,
+                    roll,
+                    theta_a,
+                    theta_b,
+                    theta_c,
+                    integral_x,
+                    integral_y,
+                    deriv_x,
+                    deriv_y,
+                ]
+            )
         except struct.error:
             pass
 
@@ -125,16 +159,17 @@ class TelemetryLogger:
             self.thread.join(timeout=1.0)
         self.csv_file.close()
 
+
 class USBReceiver:
     def __init__(self, camera_id=0):
         self.cap = cv2.VideoCapture(camera_id, cv2.CAP_DSHOW)
         if not self.cap.isOpened():
             self.cap = cv2.VideoCapture(camera_id)
-            
+
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
         self.cap.set(cv2.CAP_PROP_FPS, 30)
-            
+
         self.frame_queue = queue.Queue(maxsize=1)
         self.running = True
         self.thread = threading.Thread(target=self._receive_loop, daemon=True)
@@ -143,7 +178,7 @@ class USBReceiver:
             print(f"USB Camera {camera_id} initialized.")
         else:
             print(f"ERROR: Could not open USB Camera {camera_id}")
-            
+
     def _receive_loop(self):
         while self.running and self.cap.isOpened():
             ret, frame = self.cap.read()
@@ -167,24 +202,27 @@ class USBReceiver:
         self.running = False
         self.cap.release()
 
+
 def load_expert_model(model_path, device):
     print("Loading PyTorch ResNet18 Expert Model (Subset)...")
     model = models.resnet18()
     num_ftrs = model.fc.in_features
     model.fc = nn.Linear(num_ftrs, 2)
-    
+
     if os.path.exists(model_path):
         model.load_state_dict(torch.load(model_path, map_location=device))
         print(f"Successfully loaded weights from {model_path}")
     else:
         print(f"WARNING: Weights {model_path} not found! Using random weights.")
-        
+
     model = model.to(device)
     model.eval()
     return model
 
+
 def main():
     import argparse
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--cam_id", type=int, default=0, help="Camera ID for USB mode")
     args = parser.parse_args()
@@ -192,17 +230,24 @@ def main():
     # 1. Hardware/Model Init
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     script_dir = root_dir
-    model_path = os.path.abspath(os.path.join(script_dir, 'models/resnet18_expert_tracker_v1_subset/expert_tracker_subset_best.pth'))
-    
+    model_path = os.path.abspath(
+        os.path.join(
+            script_dir,
+            "models/resnet18_expert_tracker_iphone_v1_subset/expert_tracker_subset_best.pth",
+        )
+    )
+
     model = load_expert_model(model_path, device)
-    
-    preprocess = transforms.Compose([
-        transforms.ToPILImage(),
-        transforms.Resize((240, 320)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    ])
-    
+
+    preprocess = transforms.Compose(
+        [
+            transforms.ToPILImage(),
+            transforms.Resize((240, 320)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ]
+    )
+
     # 2. Serial Port Init
     try:
         ser = serial.Serial(SERIAL_PORT, SERIAL_BAUD, timeout=0)
@@ -215,12 +260,12 @@ def main():
     # 3. Stream & Logger Init
     receiver = USBReceiver(args.cam_id)
     logger = TelemetryLogger(ser)
-    
+
     print("\n--- ROI Selection ---")
     print("1. Click and drag to draw a bounding box around the platform.")
     print("2. Press SPACE or ENTER to confirm your selection.")
     print("---------------------\n")
-    
+
     # Wait for the first frame
     frame = None
     for _ in range(30):
@@ -228,74 +273,90 @@ def main():
         if frame is not None:
             break
         time.sleep(0.1)
-        
+
     if frame is not None:
-        roi = cv2.selectROI("Select Platform Bounds", frame, showCrosshair=True, fromCenter=False)
+        roi = cv2.selectROI(
+            "Select Platform Bounds", frame, showCrosshair=True, fromCenter=False
+        )
         cv2.destroyAllWindows()
     else:
         roi = (0, 0, 0, 0)
-        
+
     if roi == (0, 0, 0, 0):
         print("No ROI selected, using full frame.")
         roi = None
     else:
         print(f"Selected ROI: {roi}")
-    
+
     print(f"Starting Main Inference Loop...")
     try:
         while True:
             frame = receiver.get_latest_frame()
             if frame is None:
                 continue
-                
+
             start_t = time.perf_counter()
-            
+
             # Crop frame if ROI is selected
             if roi is not None:
                 x, y, w, h = roi
-                crop_frame = frame[y:y+h, x:x+w]
+                crop_frame = frame[y : y + h, x : x + w]
             else:
                 crop_frame = frame.copy()
-            
+
             # Inference Phase
             rgb_frame = cv2.cvtColor(crop_frame, cv2.COLOR_BGR2RGB)
             input_tensor = preprocess(rgb_frame).unsqueeze(0).to(device)
-            
+
             with torch.no_grad():
                 output = model(input_tensor)
-            
+
             norm_x, norm_y = output[0].cpu().numpy()
             cam_x = float(norm_x * MAX_X_BOUND)
             cam_y = float(norm_y * MAX_Y_BOUND)
-            
+
             # Update logger
             logger.update_cam_pos(cam_x, cam_y)
-            
+
             # Serial Transmission Phase
             try:
-                
+
                 cam_x_int = int(max(min(cam_x, 32767), -32768))
                 cam_y_int = int(max(min(cam_y, 32767), -32768))
-                
-                payload = struct.pack('<chh', b'<', cam_x_int, cam_y_int)
+
+                payload = struct.pack("<chh", b"<", cam_x_int, cam_y_int)
                 if ser is not None:
                     ser.write(payload)
             except Exception as e:
                 print(f"Serial Error: {e}")
-                
+
             end_t = time.perf_counter()
             fps = 1.0 / (end_t - start_t)
-            
+
             # Visualization Phase
-            cv2.putText(crop_frame, f"Cam: X={cam_x:.1f} Y={cam_y:.1f} mm", (20, 50), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-            cv2.putText(crop_frame, f"FPS: {fps:.1f}", (20, 100), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 200, 0), 2)
-                        
+            cv2.putText(
+                crop_frame,
+                f"Cam: X={cam_x:.1f} Y={cam_y:.1f} mm",
+                (20, 50),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (0, 255, 0),
+                2,
+            )
+            cv2.putText(
+                crop_frame,
+                f"FPS: {fps:.1f}",
+                (20, 100),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (255, 200, 0),
+                2,
+            )
+
             cv2.imshow("Live Inference (Press 'q' to quit)", crop_frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
-                
+
     except KeyboardInterrupt:
         pass
     finally:
@@ -306,5 +367,6 @@ def main():
         cv2.destroyAllWindows()
         print("Inference loop stopped. Telemetry saved to laptop_camera_telemetry.csv.")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

@@ -5,9 +5,19 @@ class TargetStateMachine:
     def __init__(self, history_size=10):
         self.current_target_name = "center"
         self.valid_targets = [
-            "center", "hold",
-            "blue", "green", "red", "yellow",
-            "grey", "black", "cyan", "purple", "orange", "pink", "brown"
+            "center",
+            "hold",
+            "blue",
+            "green",
+            "red",
+            "yellow",
+            "grey",
+            "black",
+            "cyan",
+            "purple",
+            "orange",
+            "pink",
+            "brown",
         ]
         self.hold_x = 0.0
         self.hold_y = 0.0
@@ -52,7 +62,9 @@ class TargetStateMachine:
             self.hold_x = float(cam_x)
             self.hold_y = float(cam_y)
             self._on_target_frames = 0
-            print(f"[{command.upper()}] Holding at ({self.hold_x:.1f}, {self.hold_y:.1f})")
+            print(
+                f"[{command.upper()}] Holding at ({self.hold_x:.1f}, {self.hold_y:.1f})"
+            )
 
         elif command.startswith("go_"):
             color = command.split("_", 1)[1]
@@ -84,7 +96,9 @@ class TargetStateMachine:
             self.hold_x = max(-70.0, min(70.0, self.hold_x))
             self.hold_y = max(-55.0, min(55.0, self.hold_y))
             self._on_target_frames = 0
-            print(f"[{command.upper()}] Nudged target to ({self.hold_x:.1f}, {self.hold_y:.1f})")
+            print(
+                f"[{command.upper()}] Nudged target to ({self.hold_x:.1f}, {self.hold_y:.1f})"
+            )
 
         # Unknown commands are ignored (no edge effect).
 
@@ -118,7 +132,9 @@ class TargetStateMachine:
             # Sync the edge tracker so the still-latched "go_" audio command
             # doesn't immediately look like a new edge and switch us back.
             self._last_command = "hold"
-            print(f"[AUTO HOLD] Locked at ({self.hold_x:.1f}, {self.hold_y:.1f}) after reaching target.")
+            print(
+                f"[AUTO HOLD] Locked at ({self.hold_x:.1f}, {self.hold_y:.1f}) after reaching target."
+            )
 
     # -----------------------------------------------------------------
     # Marker history / target resolution
@@ -147,4 +163,3 @@ class TargetStateMachine:
 
         # No history for the target -> fall back to center.
         return 0.0, 0.0
-

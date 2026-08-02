@@ -13,14 +13,16 @@ from ultralytics import YOLO
 # Import modular homography projector
 import sys
 import os
+
 # Adjust path to find modules in host_software root
-root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '/../..'))
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "/../.."))
 if root_dir not in sys.path:
     sys.path.append(root_dir)
 from core.coordinate_math import HomographyProjector
 
-SERIAL_PORT = 'COM3'
+SERIAL_PORT = "COM3"
 SERIAL_BAUD = 115200
+
 
 class UDPReceiver:
     def __init__(self, port=8080):
@@ -30,23 +32,25 @@ class UDPReceiver:
         self.pixel_bytes = 2
         self.frame_size = self.width * self.height * self.pixel_bytes
         self.packet_payload = 1024
-        self.packets_per_frame = (self.frame_size + self.packet_payload - 1) // self.packet_payload
-        
+        self.packets_per_frame = (
+            self.frame_size + self.packet_payload - 1
+        ) // self.packet_payload
+
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1024 * 1024 * 5)
         self.sock.bind(("0.0.0.0", self.port))
-            
+
         self.frame_queue = queue.Queue(maxsize=1)
         self.running = True
         self.thread = threading.Thread(target=self._receive_loop, daemon=True)
         self.thread.start()
         print(f"UDP Receiver initialized on port {self.port}.")
-            
+
     def _receive_loop(self):
         current_frame_id = -1
         frame_buffer = bytearray(self.frame_size)
         packets_received = 0
-        
+
         while self.running:
             try:
                 # Use a timeout so we can exit cleanly
@@ -55,44 +59,49 @@ class UDPReceiver:
                     data, addr = self.sock.recvfrom(2048)
                 except socket.timeout:
                     continue
-                
+
                 if len(data) < 8:
                     continue
-                    
+
                 frame_id, packet_id = struct.unpack("<II", data[:8])
                 payload = data[8:]
-                
+
                 if frame_id != current_frame_id:
-                    if current_frame_id != -1 and packets_received > self.packets_per_frame * 0.8:
+                    if (
+                        current_frame_id != -1
+                        and packets_received > self.packets_per_frame * 0.8
+                    ):
                         self._process_and_queue_frame(frame_buffer)
-                    
+
                     current_frame_id = frame_id
                     packets_received = 0
-                    
+
                 offset = packet_id * self.packet_payload
                 length = len(payload)
-                
+
                 if offset + length <= self.frame_size:
-                    frame_buffer[offset:offset+length] = payload
+                    frame_buffer[offset : offset + length] = payload
                     packets_received += 1
-                    
+
             except Exception as e:
                 if self.running:
                     print(f"UDP Rx Error: {e}")
-                    
+
     def _process_and_queue_frame(self, frame_bytes):
         try:
-            img16 = np.frombuffer(frame_bytes, dtype=np.uint16).reshape((self.height, self.width))
+            img16 = np.frombuffer(frame_bytes, dtype=np.uint16).reshape(
+                (self.height, self.width)
+            )
             r = (img16 >> 11) & 0x1F
             g = (img16 >> 5) & 0x3F
             b = img16 & 0x1F
-            
+
             r = (r * 255) // 31
             g = (g * 255) // 63
             b = (b * 255) // 31
-            
+
             img_bgr = np.dstack((b, g, r)).astype(np.uint8)
-            
+
             if self.frame_queue.full():
                 try:
                     self.frame_queue.get_nowait()
@@ -112,49 +121,56 @@ class UDPReceiver:
         self.running = False
         self.sock.close()
 
+
 def get_platform_corners_and_ball(results):
     corners = None
     ball_center = None
-    
+
     if not results or len(results) == 0:
         return None, None
-        
+
     res = results[0]
     if res.boxes is None:
         return None, None
-        
+
     classes = res.boxes.cls.cpu().numpy()
     boxes = res.boxes.xywh.cpu().numpy()
-    
+
     for i, cls in enumerate(classes):
-        if int(cls) == 0: # Platform
+        if int(cls) == 0:  # Platform
             if res.keypoints is not None and len(res.keypoints.xy) > i:
                 kpts = res.keypoints.xy[i].cpu().numpy()
                 if len(kpts) == 4:
                     corners = kpts
-        elif int(cls) == 1: # Ball
+        elif int(cls) == 1:  # Ball
             bx, by, bw, bh = boxes[i]
             ball_center = (bx, by)
-            
+
     return corners, ball_center
+
 
 def main():
     import argparse
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--cam_id", type=int, default=0, help="Camera ID for USB mode")
     args = parser.parse_args()
 
     # 1. Model Init
     script_dir = root_dir
-    model_path = os.path.abspath(os.path.join(script_dir, 'models/yolov8_platform_markers_v1/weights/best.pt'))
-    
+    model_path = os.path.abspath(
+        os.path.join(script_dir, "models/yolov8_platform_markers_v1/weights/best.pt")
+    )
+
     print(f"Loading YOLOv8-Pose Model from {model_path}...")
     if not os.path.exists(model_path):
-        print(f"ERROR: Model not found at {model_path}. You must run train_platform_pose.py first!")
+        print(
+            f"ERROR: Model not found at {model_path}. You must run train_platform_pose.py first!"
+        )
         sys.exit(1)
-        
+
     model = YOLO(model_path)
-    
+
     # 2. Serial Port Init
     try:
         ser = serial.Serial(SERIAL_PORT, SERIAL_BAUD, timeout=0)
@@ -166,85 +182,94 @@ def main():
 
     # 3. Stream Init
     receiver = UDPReceiver(port=8080)
-    
+
     # Physical dimensions of the board in mm
     # Coordinate system: (0,0) is center.
     # Top-Left: (-70, 55)
     # Top-Right: (70, 55)
     # Bottom-Right: (70, -55)
     # Bottom-Left: (-70, -55)
-    dst_pts = np.array([
-        [-70, 55],
-        [70, 55],
-        [70, -55],
-        [-70, -55]
-    ], dtype=np.float32)
-    
+    dst_pts = np.array([[-70, 55], [70, 55], [70, -55], [-70, -55]], dtype=np.float32)
+
     projector = HomographyProjector(dst_pts)
-    
+
     print(f"Starting Main Inference Cascade Loop...")
     try:
         while True:
             frame = receiver.get_latest_frame()
             if frame is None:
                 continue
-                
+
             start_t = time.perf_counter()
-            
+
             # YOLO Inference (Resize implicitly handled by YOLO)
             results = model.predict(source=frame, imgsz=640, conf=0.5, verbose=False)
-            
+
             corners, ball_center = get_platform_corners_and_ball(results)
-            
+
             cam_x, cam_y = 0.0, 0.0
-            
+
             if corners is not None and ball_center is not None:
                 # Compute Homography via modular projector
                 if projector.update_homography(corners):
                     # Transform ball center to mm
                     px, py = ball_center
                     mm_x, mm_y = projector.project_point(px, py)
-                    
+
                     if mm_x is not None and mm_y is not None:
                         cam_x, cam_y = mm_x, mm_y
-                    
+
                         # Serial Transmission Phase
                     try:
                         cam_x_int = int(max(min(cam_x, 32767), -32768))
                         cam_y_int = int(max(min(cam_y, 32767), -32768))
-                        payload = struct.pack('<chh', b'<', cam_x_int, cam_y_int)
+                        payload = struct.pack("<chh", b"<", cam_x_int, cam_y_int)
                         if ser is not None:
                             ser.write(payload)
                     except Exception as e:
                         print(f"Serial Error: {e}")
-            
+
             end_t = time.perf_counter()
             fps = 1.0 / (max(end_t - start_t, 0.001))
-            
+
             # Visualization Phase
             disp = frame.copy()
             if corners is not None:
                 for i in range(4):
                     p1 = tuple(map(int, corners[i]))
-                    p2 = tuple(map(int, corners[(i+1)%4]))
+                    p2 = tuple(map(int, corners[(i + 1) % 4]))
                     cv2.line(disp, p1, p2, (255, 0, 0), 2)
                     cv2.circle(disp, p1, 5, (0, 0, 255), -1)
-            
+
             if ball_center is not None:
                 bc = tuple(map(int, ball_center))
                 cv2.circle(disp, bc, 10, (0, 255, 255), -1)
-                
-            cv2.putText(disp, f"Cam: X={cam_x:.1f} Y={cam_y:.1f} mm", (20, 50), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-            cv2.putText(disp, f"FPS: {fps:.1f}", (20, 100), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 200, 0), 2)
-                        
+
+            cv2.putText(
+                disp,
+                f"Cam: X={cam_x:.1f} Y={cam_y:.1f} mm",
+                (20, 50),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (0, 255, 0),
+                2,
+            )
+            cv2.putText(
+                disp,
+                f"FPS: {fps:.1f}",
+                (20, 100),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (255, 200, 0),
+                2,
+            )
+
             # Resize for viewing
             view_disp = cv2.resize(disp, (960, 540))
             cv2.imshow("Cascade Inference (Press 'q' to quit)", view_disp)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
-                
+
     except KeyboardInterrupt:
         pass
     finally:
@@ -252,6 +277,7 @@ def main():
         if ser:
             ser.close()
         cv2.destroyAllWindows()
+
 
 if __name__ == "__main__":
     main()

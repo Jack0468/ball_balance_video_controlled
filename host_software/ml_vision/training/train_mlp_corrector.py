@@ -10,47 +10,71 @@ import sys
 import glob
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.abspath(os.path.join(script_dir, '..'))
+parent_dir = os.path.abspath(os.path.join(script_dir, ".."))
 if parent_dir not in sys.path:
     sys.path.append(parent_dir)
 
 from core.corrector_mlp import CorrectorMLP
 
+
 class YoloFeatureDataset(Dataset):
     def __init__(self, df):
         self.df = df.reset_index(drop=True)
-        
+
         # 14 features: ball_x, ball_y, ball_w, ball_h, kpt0_x... kpt3_y, homography_x, homography_y
-        self.X = self.df[[
-            'ball_x', 'ball_y', 'ball_w', 'ball_h',
-            'kpt0_x', 'kpt0_y', 'kpt1_x', 'kpt1_y',
-            'kpt2_x', 'kpt2_y', 'kpt3_x', 'kpt3_y',
-            'homography_x', 'homography_y'
-        ]].values.astype('float32')
-        
+        self.X = self.df[
+            [
+                "ball_x",
+                "ball_y",
+                "ball_w",
+                "ball_h",
+                "kpt0_x",
+                "kpt0_y",
+                "kpt1_x",
+                "kpt1_y",
+                "kpt2_x",
+                "kpt2_y",
+                "kpt3_x",
+                "kpt3_y",
+                "homography_x",
+                "homography_y",
+            ]
+        ].values.astype("float32")
+
         # Targets: touch_x, touch_y
-        self.y = self.df[['touch_x', 'touch_y']].values.astype('float32')
-        
+        self.y = self.df[["touch_x", "touch_y"]].values.astype("float32")
+
         # We should normalize the inputs to help the MLP learn faster
         # The pixel coordinates are bounded to 640x480 max from YOLO
-        self.X[:, 0:12:2] /= 640.0 # x coords
-        self.X[:, 1:12:2] /= 480.0 # y coords
+        self.X[:, 0:12:2] /= 640.0  # x coords
+        self.X[:, 1:12:2] /= 480.0  # y coords
         # Homography features are in mm, usually bounded by roughly [-100, 100]
         self.X[:, 12:] /= 100.0
-        
+
     def __len__(self):
         return len(self.df)
-        
+
     def __getitem__(self, idx):
         return torch.tensor(self.X[idx]), torch.tensor(self.y[idx])
 
+
 def train():
     import argparse
+
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data_csv", nargs='+', default=["../../data/02_silver/yolo_features.csv"], help="Path(s) to yolo features CSVs, directories containing CSVs, or glob patterns")
-    parser.add_argument("--epochs", type=int, default=300, help="Number of training epochs")
+    parser.add_argument(
+        "--data_csv",
+        nargs="+",
+        default=["../../data/02_silver/yolo_features.csv"],
+        help="Path(s) to yolo features CSVs, directories containing CSVs, or glob patterns",
+    )
+    parser.add_argument(
+        "--epochs", type=int, default=300, help="Number of training epochs"
+    )
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size")
-    parser.add_argument("--version", type=str, default='2', help="Model version number (e.g. 1 or v2)")
+    parser.add_argument(
+        "--version", type=str, default="2", help="Model version number (e.g. 1 or v2)"
+    )
     args = parser.parse_args()
 
     # Resolve input paths from absolute paths, cwd-relative paths, script-relative paths, directories, or glob patterns.
@@ -73,19 +97,25 @@ def train():
         for path in matched_paths:
             abs_path = os.path.abspath(path)
             if os.path.isdir(abs_path):
-                target_csv = os.path.join(abs_path, 'yolo_features.csv')
+                target_csv = os.path.join(abs_path, "yolo_features.csv")
                 if os.path.exists(target_csv):
                     csv_paths.append(target_csv)
                 else:
-                    print(f"Warning: yolo_features.csv not found in directory {abs_path}")
-            elif os.path.isfile(abs_path) and abs_path.endswith('.csv'):
-                if os.path.basename(abs_path).lower() == 'labels.csv':
-                    print(f"Warning: You are attempting to load '{abs_path}'. This may not be a feature CSV.")
+                    print(
+                        f"Warning: yolo_features.csv not found in directory {abs_path}"
+                    )
+            elif os.path.isfile(abs_path) and abs_path.endswith(".csv"):
+                if os.path.basename(abs_path).lower() == "labels.csv":
+                    print(
+                        f"Warning: You are attempting to load '{abs_path}'. This may not be a feature CSV."
+                    )
                 csv_paths.append(abs_path)
 
     csv_paths = sorted(set(csv_paths))
     if not csv_paths:
-        print("ERROR: No valid CSV files found! Please check your input paths and run extract_yolo_features.py.")
+        print(
+            "ERROR: No valid CSV files found! Please check your input paths and run extract_yolo_features.py."
+        )
         return
 
     print(f"Found {len(csv_paths)} CSV file(s) to process:")
@@ -95,14 +125,32 @@ def train():
     dfs = [pd.read_csv(p, dtype=str, low_memory=False) for p in csv_paths]
     df = pd.concat(dfs, ignore_index=True)
 
-    expected_header = ['image_file', 'split', 'ball_x', 'ball_y', 'ball_w', 'ball_h',
-                       'kpt0_x', 'kpt0_y', 'kpt1_x', 'kpt1_y', 'kpt2_x', 'kpt2_y',
-                       'kpt3_x', 'kpt3_y', 'homography_x', 'homography_y',
-                       'touch_x', 'touch_y']
+    expected_header = [
+        "image_file",
+        "split",
+        "ball_x",
+        "ball_y",
+        "ball_w",
+        "ball_h",
+        "kpt0_x",
+        "kpt0_y",
+        "kpt1_x",
+        "kpt1_y",
+        "kpt2_x",
+        "kpt2_y",
+        "kpt3_x",
+        "kpt3_y",
+        "homography_x",
+        "homography_y",
+        "touch_x",
+        "touch_y",
+    ]
     header_mask = df[expected_header].eq(expected_header).all(axis=1)
     if header_mask.any():
         header_count = int(header_mask.sum())
-        print(f"Removing {header_count} repeated header row(s) from concatenated CSV input.")
+        print(
+            f"Removing {header_count} repeated header row(s) from concatenated CSV input."
+        )
         df = df[~header_mask].reset_index(drop=True)
 
     # Normalize and resolve `image_file` paths to handle new data/02_silver layout
@@ -110,8 +158,8 @@ def train():
     # - data/02_silver/images_iphone/images/<name>
     # - data/02_silver/session_*/images/<name>
     # - paths already absolute or relative in the CSV
-    data_base = os.path.abspath(os.path.join(script_dir, '..', 'data', '02_silver'))
-    iphone_dir = os.path.join(data_base, 'images_iphone', 'images')
+    data_base = os.path.abspath(os.path.join(script_dir, "..", "data", "02_silver"))
+    iphone_dir = os.path.join(data_base, "images_iphone", "images")
 
     def resolve_image_path(p):
         if pd.isna(p):
@@ -129,81 +177,93 @@ def train():
         if os.path.exists(candidate):
             return candidate
         # Try under any session_*/images folder
-        pattern = os.path.join(data_base, 'session_*', 'images', os.path.basename(p))
+        pattern = os.path.join(data_base, "session_*", "images", os.path.basename(p))
         matches = glob.glob(pattern)
         if matches:
             return os.path.abspath(matches[0])
         # Fallback: search recursively for the basename under data_base
-        search_pattern = os.path.join(data_base, '**', os.path.basename(p))
+        search_pattern = os.path.join(data_base, "**", os.path.basename(p))
         matches = glob.glob(search_pattern, recursive=True)
         if matches:
             return os.path.abspath(matches[0])
         # Not found: return original value (training may still work if CSV contains other features)
         return p
 
-    if 'image_file' in df.columns:
-        df['image_file'] = df['image_file'].apply(resolve_image_path)
-        unresolved = df[~df['image_file'].apply(lambda x: os.path.exists(str(x)) if pd.notna(x) else False)]
+    if "image_file" in df.columns:
+        df["image_file"] = df["image_file"].apply(resolve_image_path)
+        unresolved = df[
+            ~df["image_file"].apply(
+                lambda x: os.path.exists(str(x)) if pd.notna(x) else False
+            )
+        ]
         if len(unresolved) > 0:
-            print(f"Warning: {len(unresolved)} image_file entries could not be resolved to existing files. First unresolved: {unresolved['image_file'].iloc[0]}")
-    
+            print(
+                f"Warning: {len(unresolved)} image_file entries could not be resolved to existing files. First unresolved: {unresolved['image_file'].iloc[0]}"
+            )
+
     # Shuffle the dataset to mix lighting and background variations
     df = df.sample(frac=1, random_state=42).reset_index(drop=True)
-    
+
     split_idx = int(0.8 * len(df))
     train_dataset = YoloFeatureDataset(df.iloc[:split_idx])
     test_dataset = YoloFeatureDataset(df.iloc[split_idx:])
-    
-    print(f"Loaded {len(train_dataset)} training and {len(test_dataset)} testing samples.")
-    
+
+    print(
+        f"Loaded {len(train_dataset)} training and {len(test_dataset)} testing samples."
+    )
+
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
-    
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = CorrectorMLP().to(device)
     criterion = nn.HuberLoss(delta=1.0)
     optimizer = optim.Adam(model.parameters(), lr=0.005, weight_decay=1e-3)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
-    
+
     train_losses = []
     test_losses = []
-    
-    best_test_loss = float('inf')
+
+    best_test_loss = float("inf")
     # normalize version input (allow 'v2' or '2')
     version_raw = str(args.version)
-    version_num = version_raw[1:] if version_raw.startswith('v') else version_raw
-    save_dir = os.path.abspath(os.path.join(script_dir, f'../models/mlp_corrector_v{version_num}'))
+    version_num = version_raw[1:] if version_raw.startswith("v") else version_raw
+    save_dir = os.path.abspath(
+        os.path.join(script_dir, f"../models/mlp_corrector_v{version_num}")
+    )
     os.makedirs(save_dir, exist_ok=True)
-    model_save_path = os.path.join(save_dir, f'best_mlp_corrector_v{version_num}.pth')
-    
-    test_frames_path = os.path.join(save_dir, 'test_frames.txt')
-    df.iloc[split_idx:]['image_file'].to_csv(test_frames_path, index=False, header=False)
+    model_save_path = os.path.join(save_dir, f"best_mlp_corrector_v{version_num}.pth")
+
+    test_frames_path = os.path.join(save_dir, "test_frames.txt")
+    df.iloc[split_idx:]["image_file"].to_csv(
+        test_frames_path, index=False, header=False
+    )
     print(f"Saved test split frame names to {test_frames_path}")
-    
+
     print("Starting training...")
     for epoch in range(args.epochs):
         model.train()
         total_loss = 0
         for X, y in train_loader:
             X, y = X.to(device), y.to(device)
-            
+
             # Jitter Augmentation: Add small Gaussian noise to input features during training
             noise = torch.randn_like(X) * 0.01
             X_noisy = X + noise
-            
+
             optimizer.zero_grad()
             out = model(X_noisy)
             loss = criterion(out, y)
             loss.backward()
             optimizer.step()
-            
+
             total_loss += loss.item()
-            
+
         scheduler.step()
-            
+
         avg_train_loss = total_loss / len(train_loader)
         train_losses.append(avg_train_loss)
-        
+
         model.eval()
         total_test_loss = 0
         with torch.no_grad():
@@ -212,43 +272,50 @@ def train():
                 out = model(X)
                 loss = criterion(out, y)
                 total_test_loss += loss.item()
-                
+
         avg_test_loss = total_test_loss / len(test_loader)
         test_losses.append(avg_test_loss)
-        
+
         if avg_test_loss < best_test_loss:
             best_test_loss = avg_test_loss
             torch.save(model.state_dict(), model_save_path)
-            
+
         if (epoch + 1) % 10 == 0:
-            print(f"Epoch [{epoch+1}/{args.epochs}] Train Loss (Huber): {avg_train_loss:.2f} | Test Loss: {avg_test_loss:.2f}")
-            
+            print(
+                f"Epoch [{epoch+1}/{args.epochs}] Train Loss (Huber): {avg_train_loss:.2f} | Test Loss: {avg_test_loss:.2f}"
+            )
+
     print(f"Training complete! Best model saved to {model_save_path}")
-    print(f"Best Test Loss (Huber): {best_test_loss:.2f} (Note: RMSE cannot be directly calculated from Huber Loss)")
-    
+    print(
+        f"Best Test Loss (Huber): {best_test_loss:.2f} (Note: RMSE cannot be directly calculated from Huber Loss)"
+    )
+
     plt.figure(figsize=(10, 5))
-    plt.plot(train_losses, label='Train Loss')
-    plt.plot(test_losses, label='Test Loss')
-    plt.xlabel('Epoch')
-    plt.ylabel('MSE Loss')
+    plt.plot(train_losses, label="Train Loss")
+    plt.plot(test_losses, label="Test Loss")
+    plt.xlabel("Epoch")
+    plt.ylabel("MSE Loss")
     plt.legend()
-    plt.title('Corrector MLP Training Curve')
+    plt.title("Corrector MLP Training Curve")
     plt.grid(True)
-    plt.savefig(os.path.join(save_dir, 'training_curve.png'))
+    plt.savefig(os.path.join(save_dir, "training_curve.png"))
     print("Saved training_curve.png")
-    
+
     # Save metrics to JSON for evaluation later
     metrics = {
         "best_test_loss": best_test_loss,
         "epochs": args.epochs,
         "train_losses": train_losses,
         "test_losses": test_losses,
-        "version": version_num
+        "version": version_num,
     }
-    metrics_path = os.path.join(save_dir, f'mlp_corrector_v{version_num}_training_metrics.json')
-    with open(metrics_path, 'w') as f:
+    metrics_path = os.path.join(
+        save_dir, f"mlp_corrector_v{version_num}_training_metrics.json"
+    )
+    with open(metrics_path, "w") as f:
         json.dump(metrics, f, indent=4)
     print(f"Saved training metrics to {metrics_path}")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     train()

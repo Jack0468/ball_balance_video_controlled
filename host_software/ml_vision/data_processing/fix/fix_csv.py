@@ -15,12 +15,12 @@ print(f"Checking {len(df)} rows to ensure images exist...")
 
 # 2. Check each image
 for index, row in df.iterrows():
-    img_name = row['image_file'] 
-    
+    img_name = row["image_file"]
+
     # NOTE: If your images are in train/test folders, you might need to do:
     # img_path = os.path.join(images_dir, row['split'], img_name)
     img_path = os.path.join(images_dir, img_name)
-    
+
     if os.path.exists(img_path):
         valid_rows.append(row)
     else:

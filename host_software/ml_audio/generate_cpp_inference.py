@@ -5,12 +5,14 @@ from pathlib import Path
 import numpy as np
 import tensorflow as tf
 
+
 def write_array(f, name, arr):
     arr = np.asarray(arr, dtype=np.float32).reshape(-1)
     f.write(f"static const float {name}[] = {{\n")
     for i in range(0, len(arr), 8):
-        f.write("    " + ", ".join(f"{x:.9g}f" for x in arr[i:i+8]) + ",\n")
+        f.write("    " + ", ".join(f"{x:.9g}f" for x in arr[i : i + 8]) + ",\n")
     f.write("};\n\n")
+
 
 def write_conv(f, prefix, layer):
     kernel, bias = layer.get_weights()
@@ -22,6 +24,7 @@ def write_conv(f, prefix, layer):
     f.write(f"static const int {prefix}_IN_CH = {kernel.shape[2]};\n")
     f.write(f"static const int {prefix}_OUT_CH = {kernel.shape[3]};\n\n")
 
+
 def write_bn(f, prefix, layer):
     gamma, beta, mean, var = layer.get_weights()
     write_array(f, f"{prefix}_GAMMA", gamma)
@@ -29,6 +32,7 @@ def write_bn(f, prefix, layer):
     write_array(f, f"{prefix}_MOVING_MEAN", mean)
     write_array(f, f"{prefix}_MOVING_VARIANCE", var)
     f.write(f"static const float {prefix}_EPSILON = {layer.epsilon:.9g}f;\n\n")
+
 
 def write_norm(f, prefix, layer):
     weights = layer.get_weights()
@@ -38,12 +42,14 @@ def write_norm(f, prefix, layer):
     write_array(f, f"{prefix}_VARIANCE", var)
     f.write(f"static const float {prefix}_EPSILON = {layer.epsilon:.9g}f;\n\n")
 
+
 def write_dense(f, prefix, layer):
     kernel, bias = layer.get_weights()
     write_array(f, f"{prefix}_KERNEL", kernel)
     write_array(f, f"{prefix}_BIASES", bias)
     f.write(f"static const int {prefix}_IN = {kernel.shape[0]};\n")
     f.write(f"static const int {prefix}_OUT = {kernel.shape[1]};\n\n")
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--model", required=True)

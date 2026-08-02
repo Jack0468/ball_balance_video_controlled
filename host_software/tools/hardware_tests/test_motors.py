@@ -1,17 +1,20 @@
 import ok
 import time
 
+
 def split_32(val):
     """Splits a 32-bit signed int into two 16-bit unsigned shorts (LSB, MSB)"""
     val = int(val) & 0xFFFFFFFF
     return val & 0xFFFF, (val >> 16) & 0xFFFF
 
+
 def merge_16(lsb, msb):
     """Merges two 16-bit unsigned shorts into a 32-bit signed int"""
     val = (msb << 16) | lsb
-    if val & 0x80000000: 
+    if val & 0x80000000:
         val -= 0x100000000
     return val
+
 
 print("--- Hardware Motor Test for VRI_2026 ---")
 
@@ -20,15 +23,15 @@ dev = ok.okCFrontPanel()
 if dev.OpenBySerial("") != 0:
     print("FATAL: Opal Kelly XEM3010 device not found.")
     exit(1)
-    
+
 print("Device opened successfully.")
 
 print("Configuring PLL22393 for robust hardware clock (clk1)...")
 pll = ok.PLL22393()
-pll.SetReference(48.0)                 # 48 MHz crystal reference on the XEM3010
+pll.SetReference(48.0)  # 48 MHz crystal reference on the XEM3010
 pll.SetPLLParameters(0, 48, 48, True)  # PLL0 = 48 MHz
 pll.SetOutputSource(0, ok.PLL22393.ClkSrc_PLL0_0)
-pll.SetOutputDivider(0, 1)             # 48 MHz / 1 = 48 MHz on clk1
+pll.SetOutputDivider(0, 1)  # 48 MHz / 1 = 48 MHz on clk1
 pll.SetOutputEnable(0, True)
 dev.SetPLL22393Configuration(pll)
 
@@ -37,7 +40,7 @@ dev.SetPLL22393Configuration(pll)
 
 # 2. Zero the hardware step counters
 print("Sending TriggerIn(0x40, bit 1) to zero all hardware step counters...")
-dev.ActivateTriggerIn(0x40, 1) 
+dev.ActivateTriggerIn(0x40, 1)
 time.sleep(0.5)
 
 # 3. Command motors to move 1 full revolution (3200 steps)
@@ -79,4 +82,6 @@ print(f"Motor 3: {pos3}")
 if pos1 == target_steps and pos2 == target_steps and pos3 == target_steps:
     print("SUCCESS: Hardware PID successfully reached target positions.")
 else:
-    print("WARNING: Hardware PID did not reach targets. Check if speeds are clamped or time was insufficient.")
+    print(
+        "WARNING: Hardware PID did not reach targets. Check if speeds are clamped or time was insufficient."
+    )

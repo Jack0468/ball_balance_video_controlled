@@ -1,4 +1,3 @@
-import os
 import sys
 from pathlib import Path
 import numpy as np
@@ -14,7 +13,16 @@ SAMPLE_RATE = 16000
 CLIP_SECONDS = 1.25
 TARGET_SAMPLES = int(SAMPLE_RATE * CLIP_SECONDS)
 
-path = BASE_DIR / "data" / "bronze" / "audio" / "raw" / "speaker02" / "go_green" / "speaker02__go_green__001.wav"
+path = (
+    BASE_DIR
+    / "data"
+    / "bronze"
+    / "audio"
+    / "raw"
+    / "speaker02"
+    / "go_green"
+    / "speaker02__go_green__001.wav"
+)
 if not path.exists():
     raise FileNotFoundError(path)
 
@@ -25,7 +33,7 @@ if waveform.ndim > 1:
     waveform = np.mean(waveform, axis=1)
 
 peak = np.max(np.abs(waveform))
-rms = np.sqrt(np.mean(waveform ** 2))
+rms = np.sqrt(np.mean(waveform**2))
 print("waveform shape", waveform.shape, "peak", peak, "rms", rms)
 
 threshold = max(0.015, peak * 0.08)

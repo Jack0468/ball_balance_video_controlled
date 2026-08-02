@@ -23,7 +23,9 @@ def predict_file(model, wav_path: Path):
     if waveform.ndim > 1:
         waveform = np.mean(waveform, axis=1)
 
-    waveform = align_speech_to_fixed_length(waveform, target_samples=int(SAMPLE_RATE * CLIP_SECONDS))
+    waveform = align_speech_to_fixed_length(
+        waveform, target_samples=int(SAMPLE_RATE * CLIP_SECONDS)
+    )
     if waveform is None:
         return "hold", 1.0, np.zeros(len(LABEL_NAMES), dtype=np.float32)
 
@@ -80,7 +82,9 @@ def print_report(detailed, confusion):
 
     print("\nConfusion counts (expected -> predicted):")
     for expected in LABEL_NAMES:
-        line = ", ".join(f"{pred}:{confusion[expected].get(pred, 0)}" for pred in LABEL_NAMES)
+        line = ", ".join(
+            f"{pred}:{confusion[expected].get(pred, 0)}" for pred in LABEL_NAMES
+        )
         print(f"  {expected:10s} -> {line}")
 
     print("\nTop misclassifications:")
@@ -89,11 +93,15 @@ def print_report(detailed, confusion):
         print("  None")
     else:
         for expected, predicted, confidence, name in mistakes[:20]:
-            print(f"  {name}: expected={expected}, predicted={predicted}, conf={confidence:.3f}")
+            print(
+                f"  {name}: expected={expected}, predicted={predicted}, conf={confidence:.3f}"
+            )
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Evaluate audio command model accuracy on labeled WAV files.")
+    parser = argparse.ArgumentParser(
+        description="Evaluate audio command model accuracy on labeled WAV files."
+    )
     parser.add_argument(
         "--model",
         default=r"c:\Users\aritr\Downloads\ball_balance_video_controlled\host_software\ml_audio\models\audio_command_classifier\best_classifier.keras",

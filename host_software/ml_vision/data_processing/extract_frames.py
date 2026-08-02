@@ -1,13 +1,14 @@
 """
 extract_frames.py
 
-A simple utility script to convert an MP4 video into individual PNG frames 
+A simple utility script to convert an MP4 video into individual PNG frames
 for preprocessing tests when CSV label data is not available.
 """
 
 import cv2
 import os
 import argparse
+
 
 def extract_frames(video_path, output_dir, max_frames=None):
     """
@@ -43,19 +44,25 @@ def extract_frames(video_path, output_dir, max_frames=None):
 
         saved_count += 1
         frame_idx += 1
-        
+
         if saved_count % 100 == 0:
             print(f"Extracted {saved_count} frames...")
 
     cap.release()
     print(f"Extraction complete. Saved {saved_count} PNG frames to {output_dir}")
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Extract frames from a video file.")
     parser.add_argument("video_path", help="Path to the input video file (.mp4)")
     parser.add_argument("output_dir", help="Directory to save the extracted PNG frames")
-    parser.add_argument("--max_frames", type=int, default=None, help="Maximum number of frames to extract")
-    
+    parser.add_argument(
+        "--max_frames",
+        type=int,
+        default=None,
+        help="Maximum number of frames to extract",
+    )
+
     args = parser.parse_args()
-    
+
     extract_frames(args.video_path, args.output_dir, args.max_frames)

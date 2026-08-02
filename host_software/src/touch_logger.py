@@ -27,23 +27,23 @@ from collections import OrderedDict
 
 CSV_FIELDS = [
     "seq",
-    "host_send_ts",     # perf_counter when the vision frame was sent to the MCU
-    "host_recv_ts",     # perf_counter when this telemetry line was parsed
-    "rtt_ms",           # recv - send; sensor-to-log round trip for this frame
-    "mcu_ms",           # MCU millis() at sample time
-    "vision_x_mm",      # what the PC computed and sent
+    "host_send_ts",  # perf_counter when the vision frame was sent to the MCU
+    "host_recv_ts",  # perf_counter when this telemetry line was parsed
+    "rtt_ms",  # recv - send; sensor-to-log round trip for this frame
+    "mcu_ms",  # MCU millis() at sample time
+    "vision_x_mm",  # what the PC computed and sent
     "vision_y_mm",
-    "target_x_mm",      # target in force for that frame
+    "target_x_mm",  # target in force for that frame
     "target_y_mm",
     "mcu_vision_x_mm",  # what the MCU was actually acting on (echo)
     "mcu_vision_y_mm",
-    "touch_x_mm",       # GROUND TRUTH
+    "touch_x_mm",  # GROUND TRUTH
     "touch_y_mm",
     "touch_valid",
-    "err_x_mm",         # vision - touch
+    "err_x_mm",  # vision - touch
     "err_y_mm",
-    "err_mm",           # euclidean
-    "motor_a",          # actual stepper positions
+    "err_mm",  # euclidean
+    "motor_a",  # actual stepper positions
     "motor_b",
     "motor_c",
 ]
@@ -60,7 +60,7 @@ class TouchTelemetryLogger:
         self.csv_path = os.path.abspath(csv_path)
         self.print_status_lines = print_status_lines
 
-        self._pending = OrderedDict()      # seq -> (send_ts, vx, vy, tx, ty)
+        self._pending = OrderedDict()  # seq -> (send_ts, vx, vy, tx, ty)
         self._pending_lock = threading.Lock()
         self._stop = threading.Event()
         self._thread = None
@@ -84,8 +84,13 @@ class TouchTelemetryLogger:
     def register_frame(self, seq, vision_x, vision_y, target_x, target_y, send_ts):
         """Call immediately after writing a V,... line, with the same values."""
         with self._pending_lock:
-            self._pending[seq] = (send_ts, float(vision_x), float(vision_y),
-                                  float(target_x), float(target_y))
+            self._pending[seq] = (
+                send_ts,
+                float(vision_x),
+                float(vision_y),
+                float(target_x),
+                float(target_y),
+            )
             while len(self._pending) > PENDING_MAX:
                 self._pending.popitem(last=False)
 
@@ -97,8 +102,9 @@ class TouchTelemetryLogger:
         if self.ser is None:
             print("[touch-log] no serial port; ground-truth logging disabled.")
             return
-        self._thread = threading.Thread(target=self._run, name="touch-reader",
-                                        daemon=True)
+        self._thread = threading.Thread(
+            target=self._run, name="touch-reader", daemon=True
+        )
         self._thread.start()
         print(f"[touch-log] logging touchscreen ground truth to {self.csv_path}")
 
@@ -111,8 +117,10 @@ class TouchTelemetryLogger:
             self._fh.close()
         except Exception:
             pass
-        print(f"[touch-log] {self.rows} rows | {self.unmatched} unmatched seq | "
-              f"{self.touch_lost} no-contact | {self.parse_errors} bad lines")
+        print(
+            f"[touch-log] {self.rows} rows | {self.unmatched} unmatched seq | "
+            f"{self.touch_lost} no-contact | {self.parse_errors} bad lines"
+        )
 
     # -- reader thread ------------------------------------------------------
 
@@ -141,7 +149,7 @@ class TouchTelemetryLogger:
                 if i < 0:
                     break
                 raw = bytes(self._buf[:i])
-                del self._buf[:i + 1]
+                del self._buf[: i + 1]
                 self._handle_line(raw.strip())
 
     def _handle_line(self, raw):
@@ -165,16 +173,16 @@ class TouchTelemetryLogger:
             return
 
         try:
-            seq       = int(parts[1])
-            mcu_ms    = int(parts[2])
-            touch_x   = int(parts[3]) / 100.0
-            touch_y   = int(parts[4]) / 100.0
-            valid     = int(parts[5])
+            seq = int(parts[1])
+            mcu_ms = int(parts[2])
+            touch_x = int(parts[3]) / 100.0
+            touch_y = int(parts[4]) / 100.0
+            valid = int(parts[5])
             mcu_vis_x = int(parts[6]) / 100.0
             mcu_vis_y = int(parts[7]) / 100.0
-            mot_a     = int(parts[8])
-            mot_b     = int(parts[9])
-            mot_c     = int(parts[10])
+            mot_a = int(parts[8])
+            mot_b = int(parts[9])
+            mot_c = int(parts[10])
         except ValueError:
             self.parse_errors += 1
             return

@@ -5,7 +5,6 @@ import re
 import numpy as np
 import tensorflow as tf
 
-
 LAYER_PREFIX_RE = re.compile(r"[^0-9a-zA-Z_]+")
 
 
@@ -61,7 +60,9 @@ def format_weight_name(weight_obj_name: str) -> str:
     return sanitize_name(clean_name).upper()
 
 
-def export_model_weights(model_path: Path, output_path: Path, hls_style: bool = False) -> None:
+def export_model_weights(
+    model_path: Path, output_path: Path, hls_style: bool = False
+) -> None:
     model = tf.keras.models.load_model(str(model_path))
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -92,7 +93,12 @@ def export_model_weights(model_path: Path, output_path: Path, hls_style: bool = 
 
             if weight_objects:
                 suffix = format_weight_name(weight_objects[idx - 1].name)
-            elif idx == 1 and weight.ndim > 0 and layer.trainable_weights and weight.shape == layer.trainable_weights[0].shape:
+            elif (
+                idx == 1
+                and weight.ndim > 0
+                and layer.trainable_weights
+                and weight.shape == layer.trainable_weights[0].shape
+            ):
                 suffix = "KERNEL"
             elif idx == 2 and len(weights) >= 2:
                 suffix = "BIAS"
