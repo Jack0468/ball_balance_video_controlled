@@ -61,6 +61,9 @@ def main():
         "--data_dir", default="../../data/02_silver", help="Path to telemetry dataset"
     )
     parser.add_argument(
+        "--csv_name", default="labels_sequential.csv", help="Name of the CSV labels file"
+    )
+    parser.add_argument(
         "--model_path",
         default="../models/yolov8_platform_markers_v1/weights/best.pt",
         help="Path to YOLO model",
@@ -70,7 +73,7 @@ def main():
     model_path = os.path.abspath(os.path.join(script_dir, args.model_path))
     data_dir = os.path.abspath(os.path.join(script_dir, args.data_dir))
 
-    csv_path = os.path.join(data_dir, "labels_sequential.csv")
+    csv_path = os.path.join(data_dir, args.csv_name)
     images_dir = os.path.join(data_dir, "images")
 
     if not os.path.exists(model_path):
@@ -114,7 +117,12 @@ def main():
 
     print("Starting evaluation...")
     for idx, row in df.iterrows():
-        img_name = row["image_file"]
+        if "image_file" in row:
+            img_name = row["image_file"]
+        else:
+            # Need to use the original dataframe index to get correct frame number
+            img_name = f"frame_{idx:04d}.jpg"
+        
         true_x = row["touch_x"]
         true_y = row["touch_y"]
 

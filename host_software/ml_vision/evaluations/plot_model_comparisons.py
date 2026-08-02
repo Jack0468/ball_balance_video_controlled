@@ -4,6 +4,7 @@ import subprocess
 import sys
 import argparse
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def run_benchmark_script(script_dir: str) -> None:
@@ -65,11 +66,12 @@ def main():
     ]
 
     model_names = []
-    model_metrics = {key: [] for key in metric_keys}
+    # We'll store full data dictionaries for each model
+    model_data = {}
 
     print(f"Searching for evaluation metrics in {models_dir}...")
 
-    # Only consider top-level YOLO, ResNet, and MLP model directories and ignore archived contents.
+    # Load from PyTorch model directories
     for model_name in sorted(os.listdir(models_dir)):
         model_root = os.path.join(models_dir, model_name)
         if not os.path.isdir(model_root):
@@ -106,22 +108,32 @@ def main():
                 break
 
         if json_path is None:
-            print(f"No evaluation metrics found for {model_name}. Skipping.")
             continue
 
         with open(json_path, "r") as f:
             try:
                 data = json.load(f)
-
                 model_names.append(model_name)
-                for key in metric_keys:
-                    # If a metric is missing (e.g. FPS), default to 0
-                    val = data.get(key, 0.0)
-                    model_metrics[key].append(val)
-
+                model_data[model_name] = data
                 print(f"Loaded metrics for {model_name} from {json_file}")
             except Exception as e:
                 print(f"Error reading {json_path}: {e}")
+                
+    # Additionally, check inference_time_summary.json for ONNX metrics or overriding metrics
+    summary_json = os.path.join(script_dir, "inference_time_summary.json")
+    if os.path.exists(summary_json):
+        with open(summary_json, "r") as f:
+            try:
+                summary_data = json.load(f)
+                for model in summary_data.get("models", []):
+                    m_name = model["model_name"]
+                    if m_name not in model_data:
+                        model_names.append(m_name)
+                        model_data[m_name] = model
+                    else:
+                        model_data[m_name].update(model)
+            except Exception as e:
+                print(f"Error reading {summary_json}: {e}")
 
     if not model_names:
         print("No models with valid metrics found!")
@@ -129,7 +141,7 @@ def main():
 
     print(f"\nPlotting comparisons for {len(model_names)} models...")
 
-    # Adjust the subplot grid if inference time is included
+    # Set up plots
     num_plots = len(metric_keys)
     rows = (num_plots + 1) // 2
     fig, axes = plt.subplots(rows, 2, figsize=(18, 8 * rows), facecolor="white")
@@ -144,7 +156,6 @@ def main():
 
     axes = axes.flatten()
 
-    # Sydney Uni Monochromatic Red/Grey Theme
     sydney_colors = [
         "#E64626",
         "#FF7F50",
@@ -171,32 +182,55 @@ def main():
             continue
 
         metric = metric_keys[i]
-
-        # Sort data for better visualization
-        sorted_pairs = sorted(
-            zip(model_names, model_metrics[metric]), key=lambda x: x[1]
-        )
+        
+        # Sort data for this metric
+        vals = [model_data[name].get(metric, 0.0) for name in model_names]
+        sorted_pairs = sorted(zip(model_names, vals), key=lambda x: x[1])
         sorted_names, sorted_vals = zip(*sorted_pairs)
 
-        # Assign consistent colors based on model name
-        colors = [model_colors[name] for name in sorted_names]
-
-        bars = ax.barh(sorted_names, sorted_vals, color=colors, edgecolor="none")
-
-        # Add values to the end of bars
-        for bar in bars:
-            width = bar.get_width()
-            ax.text(
-                width + (max(sorted_vals) * 0.02),
-                bar.get_y() + bar.get_height() / 2,
-                f"{width:.2f}",
-                ha="left",
-                va="center",
-                fontsize=12,
-                fontweight="bold",
-                color="#424242",
-                fontname="Arial",
-            )
+        # Draw stacked bar chart for inference time, otherwise regular bar chart
+        if metric == "Mean_Inference_Time_ms":
+            # Stack components
+            comp_colors = ["#424242", "#808080", "#E64626", "#FF7F50"]
+            comp_labels = ["Disk IO", "Preprocess", "Network", "Postprocess"]
+            comp_keys = ["Mean_Disk_IO_Time_ms", "Mean_Preprocess_Time_ms", "Mean_Network_Time_ms", "Mean_Postprocess_Time_ms"]
+            
+            y_pos = np.arange(len(sorted_names))
+            left = np.zeros(len(sorted_names))
+            
+            bars = []
+            for j, ckey in enumerate(comp_keys):
+                cvals = [model_data[name].get(ckey, 0.0) for name in sorted_names]
+                b = ax.barh(y_pos, cvals, left=left, color=comp_colors[j], edgecolor="none", label=comp_labels[j])
+                left += cvals
+                bars.append(b)
+                
+            ax.set_yticks(y_pos)
+            ax.set_yticklabels(sorted_names)
+            ax.legend(loc="lower right")
+            
+            # Label total sum at the end
+            for y, val in zip(y_pos, sorted_vals):
+                if val > 0:
+                    ax.text(val + (max(sorted_vals) * 0.02), y, f"{val:.2f}", ha="left", va="center", fontsize=12, fontweight="bold", color="#424242", fontname="Arial")
+        else:
+            colors = [model_colors[name] for name in sorted_names]
+            bars = ax.barh(sorted_names, sorted_vals, color=colors, edgecolor="none")
+            
+            for bar in bars:
+                width = bar.get_width()
+                if width > 0:
+                    ax.text(
+                        width + (max(sorted_vals) * 0.02),
+                        bar.get_y() + bar.get_height() / 2,
+                        f"{width:.2f}",
+                        ha="left",
+                        va="center",
+                        fontsize=12,
+                        fontweight="bold",
+                        color="#424242",
+                        fontname="Arial",
+                    )
 
         title = metric.replace("_", " ")
         ax.set_title(
@@ -208,13 +242,9 @@ def main():
             pad=15,
         )
         if "FPS" in metric:
-            ax.set_xlabel(
-                "Frames Per Second", fontsize=14, fontname="Arial", color="#424242"
-            )
-        elif "Inference_Time" in metric:
-            ax.set_xlabel(
-                "Inference Time (ms)", fontsize=14, fontname="Arial", color="#424242"
-            )
+            ax.set_xlabel("Frames Per Second", fontsize=14, fontname="Arial", color="#424242")
+        elif "Time_ms" in metric:
+            ax.set_xlabel("Inference Time (ms)", fontsize=14, fontname="Arial", color="#424242")
         else:
             ax.set_xlabel("Error in mm", fontsize=14, fontname="Arial", color="#424242")
 
@@ -227,24 +257,19 @@ def main():
         ax.tick_params(axis="y", labelsize=12, colors="#424242")
         ax.tick_params(axis="x", labelsize=12, colors="#424242")
 
-        # Filter out bbox models visually if they exist by fading them out
         for label in ax.get_yticklabels():
             if "bbox" in label.get_text():
                 label.set_color("#C0C0C0")
-        ax.set_xlim(0, max(sorted_vals) * 1.15)  # Add 15% padding for text
+        if max(sorted_vals) > 0:
+            ax.set_xlim(0, max(sorted_vals) * 1.15) 
         ax.tick_params(axis="y", labelsize=12)
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-
-    # Save the plot
     save_path = os.path.join(script_dir, "model_comparisons.png")
     plt.savefig(save_path, dpi=300, bbox_inches="tight")
     print(f"\nSaved comparison graphs to {save_path}")
 
-    try:
-        plt.show()
-    except:
-        pass
+    pass
 
 
 if __name__ == "__main__":

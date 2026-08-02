@@ -1,5 +1,8 @@
 # FPGA Data Logging Implementation Plan
 
+> [!WARNING]
+> **ABANDONED**: There was a stage where we intended to use the FPGA to collect hardware motor data synchronized to the webcam. **This was never actually implemented.** We ultimately relied entirely on the host PC and python `serial` for data collection. This document remains only for historical reference.
+
 This document contains the implementation plan and necessary context for adding motor command logging to the ML data collection pipeline. We are logging the exact motor actions (Pitch, Roll, and Motor Thetas) that correspond to each camera frame and ball position.
 
 ## Context and Architecture Notes

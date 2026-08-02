@@ -106,9 +106,9 @@ def main():
             "ml_vision/models/yolov8_platform_markers_v1/weights/best_openvino_model",
         )
     )
-    mlp_corrector_v1_xml = os.path.abspath(
+    mlp_corrector_iphone_v1_xml = os.path.abspath(
         os.path.join(
-            script_dir, "ml_vision/models/mlp_corrector_v1/best_mlp_corrector_v1.xml"
+            script_dir, "ml_vision/models/mlp_corrector_iphone_v1/best_mlp_corrector_iphone_v1.xml"
         )
     )
     audio_xml = os.path.abspath(
@@ -123,7 +123,7 @@ def main():
     # Initialize OpenVINO Pipeline for Audio and Corrector (we pass dummy for yolo_xml just to satisfy init)
     yolo_xml_dummy = os.path.join(yolo_ov_dir, "best.xml")
     pipeline = OpenVINOPipeline(
-        yolo_xml_dummy, audio_xml, mlp_corrector_v1_xml, device="CPU"
+        yolo_xml_dummy, audio_xml, mlp_corrector_iphone_v1_xml, device="CPU"
     )
 
     # Initialize Homography Projector
@@ -268,7 +268,7 @@ def main():
                             features[1:12:2] /= 480.0
                             features[12:] /= 100.0
 
-                            pipeline.dispatch_mlp_corrector_v1(features.reshape(1, 14))
+                            pipeline.dispatch_mlp_corrector_iphone_v1(features.reshape(1, 14))
 
                             if display_frame is not None:
                                 # Draw platform corners
@@ -325,10 +325,10 @@ def main():
                                 f"[DEBUG] Missing! classes: {classes}. corners is None? {corners is None}. ball_box is None? {ball_box is None}"
                             )
 
-            # If mlp_corrector_v1 finished, send it to serial
-            cam_coords = pipeline.state.get("mlp_corrector_v1_output")
+            # If mlp_corrector_iphone_v1 finished, send it to serial
+            cam_coords = pipeline.state.get("mlp_corrector_iphone_v1_output")
             if cam_coords is not None:
-                pipeline.state["mlp_corrector_v1_output"] = None
+                pipeline.state["mlp_corrector_iphone_v1_output"] = None
                 cam_x, cam_y = cam_coords
 
                 cmd = pipeline.get_and_clear_audio_command()

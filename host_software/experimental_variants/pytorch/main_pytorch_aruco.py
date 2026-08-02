@@ -92,7 +92,7 @@ def main():
 
     cnn_path = os.path.abspath(
         os.path.join(
-            script_dir, "ml_vision/models/cnn_2d_tracker_v3/expert_tracker_best.pth"
+            script_dir, "ml_vision/models/cnn_2d_tracker_0730_v3/expert_tracker_best.pth"
         )
     )
     cnn_model = load_cnn_tracker(cnn_path, device)

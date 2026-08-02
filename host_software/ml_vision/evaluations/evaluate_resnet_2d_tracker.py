@@ -36,7 +36,7 @@ def main():
     parser.add_argument(
         "--model_path",
         required=True,
-        help="Path to the trained .pth file (e.g. models/resnet18_2d_tracker_v1/expert_tracker_best.pth)",
+        help="Path to the trained .pth file (e.g. models/resnet18_2d_tracker_0728_0728_v1/expert_tracker_best.pth)",
     )
     parser.add_argument(
         "--arch",

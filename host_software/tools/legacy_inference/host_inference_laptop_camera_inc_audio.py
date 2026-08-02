@@ -251,7 +251,7 @@ def main():
     model_path = os.path.abspath(
         os.path.join(
             script_dir,
-            "models/resnet18_expert_tracker_v1_subset/expert_tracker_subset_best.pth",
+            "models/resnet18_expert_tracker_iphone_v1_subset/expert_tracker_subset_best.pth",
         )
     )
 

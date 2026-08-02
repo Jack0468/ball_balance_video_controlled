@@ -63,9 +63,9 @@ def main():
             "ml_vision/models/yolov8_platform_markers_v2/weights/best_openvino_model/best.xml",
         )
     )
-    mlp_corrector_v1_xml = os.path.abspath(
+    mlp_corrector_iphone_v1_xml = os.path.abspath(
         os.path.join(
-            script_dir, "ml_vision/models/mlp_corrector_v1/best_mlp_corrector_v1.xml"
+            script_dir, "ml_vision/models/mlp_corrector_iphone_v1/best_mlp_corrector_iphone_v1.xml"
         )
     )
     audio_xml = os.path.abspath(
@@ -75,7 +75,7 @@ def main():
     )
 
     # Initialize OpenVINO Pipeline (We still provide audio_xml to satisfy init, but won't feed it)
-    pipeline = OpenVINOPipeline(yolo_xml, audio_xml, mlp_corrector_v1_xml, device="CPU")
+    pipeline = OpenVINOPipeline(yolo_xml, audio_xml, mlp_corrector_iphone_v1_xml, device="CPU")
 
     # Initialize Homography Projector
     dst_pts = np.array([[-70, 55], [70, 55], [70, -55], [-70, -55]], dtype=np.float32)
@@ -219,7 +219,7 @@ def main():
                         features[1:12:2] /= 480.0
                         features[12:] /= 100.0
 
-                        pipeline.dispatch_mlp_corrector_v1(features.reshape(1, 14))
+                        pipeline.dispatch_mlp_corrector_iphone_v1(features.reshape(1, 14))
 
                         if display_frame is not None:
                             # Draw platform corners
@@ -242,10 +242,10 @@ def main():
                                 2,
                             )
 
-            # If mlp_corrector_v1 finished, send it to serial
-            cam_coords = pipeline.state.get("mlp_corrector_v1_output")
+            # If mlp_corrector_iphone_v1 finished, send it to serial
+            cam_coords = pipeline.state.get("mlp_corrector_iphone_v1_output")
             if cam_coords is not None:
-                pipeline.state["mlp_corrector_v1_output"] = None
+                pipeline.state["mlp_corrector_iphone_v1_output"] = None
                 cam_x, cam_y = cam_coords
 
                 try:

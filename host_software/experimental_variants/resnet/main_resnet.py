@@ -55,13 +55,13 @@ def main():
     yolo_path = os.path.abspath(
         os.path.join(
             script_dir,
-            "ml_vision/models/yolov8_platform_pose_markers_v4/weights/best.pt",
+            "ml_vision/models/yolov8_platform_pose_markers_0728_v4/weights/best.pt",
         )
     )
     resnet_path = os.path.abspath(
         os.path.join(
             script_dir,
-            "ml_vision/models/resnet18_expert_tracker_v6/expert_tracker_best.pth",
+            "ml_vision/models/resnet18_expert_tracker_0728_v6/expert_tracker_best.pth",
         )
     )
 

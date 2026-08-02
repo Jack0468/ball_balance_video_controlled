@@ -28,7 +28,7 @@ def extract_features():
     )
     parser.add_argument(
         "--model_path",
-        default="../models/yolov8_platform_pose_markers_v4/weights/best.pt",
+        default="../models/yolov8_platform_pose_markers_0728_v4/weights/best.pt",
         help="Path to YOLO model",
     )
     parser.add_argument(

@@ -99,13 +99,13 @@ def main():
 
     cnn_path = os.path.abspath(
         os.path.join(
-            script_dir, "ml_vision/models/cnn_2d_tracker_v3/expert_tracker_best.onnx"
+            script_dir, "ml_vision/models/cnn_2d_tracker_0730_v3/expert_tracker_best.onnx"
         )
     )
     mlp_path = os.path.abspath(
         os.path.join(
             script_dir,
-            "ml_vision/models/mlp_corrector_time_varuco_v1/mlp_corrector_best.onnx",
+            "ml_vision/models/mlp_corrector_time_varuco_0730_v1/mlp_corrector_best.onnx",
         )
     )
 

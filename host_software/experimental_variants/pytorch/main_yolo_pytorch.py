@@ -18,7 +18,7 @@ from ml_vision.core.coordinate_math import HomographyProjector
 
 from src.receivers import USBReceiver, UDPReceiver
 from src.utils import find_stm32_port
-from src.models import load_yolo_model, load_mlp_corrector_v1_model
+from src.models import load_yolo_model, load_mlp_corrector_iphone_v1_model
 
 # --- Configuration ---
 SERIAL_PORT = "COM3"
@@ -61,15 +61,15 @@ def main():
     script_dir = root_dir
     yolo_path = os.path.abspath(
         os.path.join(
-            script_dir, "ml_vision/models/yolov8_platform_pose_v1/weights/best.pt"
+            script_dir, "ml_vision/models/yolov8_platform_pose_iphone_v1/weights/best.pt"
         )
     )
-    mlp_corrector_v1_path = os.path.abspath(
-        os.path.join(script_dir, "ml_vision/models/mlp_corrector_v1/best_corrector.pth")
+    mlp_corrector_iphone_v1_path = os.path.abspath(
+        os.path.join(script_dir, "ml_vision/models/mlp_corrector_iphone_v1/best_corrector.pth")
     )
 
     yolo_model = load_yolo_model(yolo_path, device)
-    mlp_corrector_v1_model = load_mlp_corrector_v1_model(mlp_corrector_v1_path, device)
+    mlp_corrector_iphone_v1_model = load_mlp_corrector_iphone_v1_model(mlp_corrector_iphone_v1_path, device)
 
     # Initialize Homography Projector
     dst_pts = np.array([[-70, 55], [70, 55], [70, -55], [-70, -55]], dtype=np.float32)
@@ -179,7 +179,7 @@ def main():
             input_tensor = torch.tensor(features).unsqueeze(0).to(device)
 
             with torch.no_grad():
-                output = mlp_corrector_v1_model(input_tensor)
+                output = mlp_corrector_iphone_v1_model(input_tensor)
 
             mlp_t = time.perf_counter()
 

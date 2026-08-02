@@ -28,7 +28,7 @@ def main():
     )
     parser.add_argument(
         "--model_path",
-        default="../models/resnet18_expert_tracker_v1/expert_tracker_latest.pth",
+        default="../models/resnet18_expert_tracker_iphone_v1/expert_tracker_latest.pth",
         help="Path to the model checkpoint",
     )
     parser.add_argument(

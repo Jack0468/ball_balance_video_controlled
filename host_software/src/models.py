@@ -16,7 +16,7 @@ def load_yolo_model(model_path, device):
     return model
 
 
-def load_mlp_corrector_v1_model(
+def load_mlp_corrector_iphone_v1_model(
     model_path, device, input_dim=14, hidden_dim=128, output_dim=2
 ):
     """Load an MLP corrector model.
@@ -97,7 +97,7 @@ def load_cnn_expert_model(model_path, device):
     return model
 
 
-def process_vision_frame(frame, yolo_model, mlp_corrector_v1_model, projector, device):
+def process_vision_frame(frame, yolo_model, mlp_corrector_iphone_v1_model, projector, device):
     import numpy as np
 
     results = yolo_model.predict(source=frame, imgsz=320, conf=0.5, verbose=False)
@@ -164,7 +164,7 @@ def process_vision_frame(frame, yolo_model, mlp_corrector_v1_model, projector, d
     input_tensor = torch.tensor(features).unsqueeze(0).to(device)
 
     with torch.no_grad():
-        output = mlp_corrector_v1_model(input_tensor)
+        output = mlp_corrector_iphone_v1_model(input_tensor)
     cam_x, cam_y = output[0].cpu().numpy()
 
     return cam_x, cam_y, marker_coords

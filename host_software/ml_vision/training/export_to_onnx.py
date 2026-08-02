@@ -57,6 +57,45 @@ def export_cnn_tracker(model_path):
     print(f"Success! CNN ONNX model saved to: {output_path}\n")
 
 
+def export_resnet_tracker(model_path, arch="resnet18"):
+    print(f"Loading ResNet Tracker model: {model_path}...")
+    import sys
+    import torch.nn as nn
+    from torchvision import models
+
+    resolved_path = os.path.abspath(os.path.join(os.path.dirname(__file__), model_path))
+
+    if arch == "resnet18":
+        model = models.resnet18(weights=None)
+    elif arch == "resnet50":
+        model = models.resnet50(weights=None)
+
+    num_ftrs = model.fc.in_features
+    model.fc = nn.Linear(num_ftrs, 2)
+
+    checkpoint = torch.load(resolved_path, map_location="cpu", weights_only=False)
+    if "model_state_dict" in checkpoint:
+        model.load_state_dict(checkpoint["model_state_dict"])
+    else:
+        model.load_state_dict(checkpoint)
+    model.eval()
+
+    dummy_input = torch.randn(1, 3, 240, 320)
+    output_path = resolved_path.replace(".pth", ".onnx")
+
+    print(f"Exporting ResNet Tracker to ONNX format...")
+    torch.onnx.export(
+        model,
+        dummy_input,
+        output_path,
+        export_params=True,
+        opset_version=12,
+        do_constant_folding=True,
+        input_names=["input"],
+        output_names=["output"],
+    )
+    print(f"Success! ResNet ONNX model saved to: {output_path}\n")
+
 def export_mlp_corrector(model_path):
     print(f"Loading MLP Time Corrector model: {model_path}...")
     import sys
@@ -99,17 +138,20 @@ def main():
     print("--- Model to ONNX Exporter ---\n")
 
     # 1. Export the standard YOLOv8n Ball Tracker
-    export_model("../models/base_models/yolov8n/weights/yolov8n.pt", is_local_path=True)
+    # export_model("../models/base_models/yolov8n/weights/yolov8n.pt", is_local_path=True)
 
     # 2. Export our custom YOLO-Pose model
-    # export_model('../models/yolov8_platform_pose_v2/weights/best.pt', is_local_path=True)
+    export_model("../models/yolov8_platform_pose_markers_0728_v4/weights/best.pt", is_local_path=True)
 
-    # 3. Export CNN Tracker v3
-    export_cnn_tracker("../models/cnn_2d_tracker_v3/expert_tracker_best.pth")
+    # 3. Export ResNet Expert Tracker
+    export_resnet_tracker("../models/resnet18_expert_tracker_0728_v6/expert_tracker_best.pth", arch="resnet18")
 
-    # 4. Export MLP Corrector Time varuco_v1
+    # 4. Export CNN Tracker v3
+    export_cnn_tracker("../models/cnn_2d_tracker_0730_v3/expert_tracker_best.pth")
+
+    # 5. Export MLP Corrector Time varuco_v1
     export_mlp_corrector(
-        "../models/mlp_corrector_time_varuco_v1/mlp_corrector_best.pth"
+        "../models/mlp_corrector_time_varuco_0730_v1/mlp_corrector_best.pth"
     )
 
     print(

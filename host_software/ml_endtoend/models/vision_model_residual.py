@@ -65,7 +65,7 @@ def load_yolo_model(model_path, device):
     model.to(device)
     return model
 
-def load_mlp_corrector_v1_model(model_path, device):
+def load_mlp_corrector_iphone_v1_model(model_path, device):
     print("Loading MLP Corrector Model...")
     model = CorrectorMLP(input_dim=14, hidden_dim=128, output_dim=2)
     if os.path.exists(model_path):
@@ -82,7 +82,7 @@ def load_mlp_corrector_v1_model(model_path, device):
 # ---------------------------------------------------------------------------
 # 3. The Vision Forward Pass
 # ---------------------------------------------------------------------------
-def process_vision_frame(frame, yolo_model, mlp_corrector_v1_model, projector, device):
+def process_vision_frame(frame, yolo_model, mlp_corrector_iphone_v1_model, projector, device):
     """
     Runs a single frame through YOLO, extracts features, projects homography, 
     and outputs the final physical coordinates via the MLP corrector.
@@ -143,7 +143,7 @@ def process_vision_frame(frame, yolo_model, mlp_corrector_v1_model, projector, d
     
     # Run through the corrector
     with torch.no_grad():
-        output = mlp_corrector_v1_model(input_tensor)
+        output = mlp_corrector_iphone_v1_model(input_tensor)
         
     cam_x, cam_y = output[0].cpu().numpy()
     

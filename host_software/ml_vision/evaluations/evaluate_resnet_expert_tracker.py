@@ -27,9 +27,12 @@ def main():
         "--data_dir", default="../../data/02_silver", help="Path to data directory"
     )
     parser.add_argument(
+        "--csv_name", default="labels_sequential.csv", help="Name of the CSV labels file"
+    )
+    parser.add_argument(
         "--model_path",
         required=True,
-        help="Path to the trained .pth file (e.g. models/resnet18_expert_tracker_v1/expert_tracker_best.pth)",
+        help="Path to the trained .pth file (e.g. models/resnet18_expert_tracker_iphone_v1/expert_tracker_best.pth)",
     )
     parser.add_argument(
         "--arch",
@@ -77,7 +80,7 @@ def main():
     # 2. Load the test subset data
     data_dir = os.path.abspath(args.data_dir)
 
-    csv_path = os.path.join(data_dir, "labels_sequential.csv")
+    csv_path = os.path.join(data_dir, args.csv_name)
     images_dir = os.path.join(data_dir, "images")
 
     print(f"Loading dataset from: {csv_path}")

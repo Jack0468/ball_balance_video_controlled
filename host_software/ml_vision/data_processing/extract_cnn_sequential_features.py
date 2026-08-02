@@ -57,7 +57,7 @@ def main():
     )
     parser.add_argument(
         "--cnn_model",
-        default="../models/cnn_2d_tracker_v3/expert_tracker_best.pth",
+        default="../models/cnn_2d_tracker_0730_v3/expert_tracker_best.pth",
         help="Path to best CNN weights",
     )
     args = parser.parse_args()

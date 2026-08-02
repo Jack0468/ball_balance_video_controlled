@@ -322,7 +322,7 @@ def main():
 
         # Save the latest model at the end of every epoch just in case Colab crashes!
         latest_path = os.path.join(
-            project_dir, "resnet18_expert_tracker_v1/expert_tracker_latest.pth"
+            project_dir, "resnet18_expert_tracker_iphone_v1/expert_tracker_latest.pth"
         )
         torch.save(checkpoint, latest_path)
 
@@ -342,7 +342,7 @@ def main():
     plt.grid(True)
 
     curve_path = os.path.join(
-        project_dir, "resnet18_expert_tracker_v1/training_curve.png"
+        project_dir, "resnet18_expert_tracker_iphone_v1/training_curve.png"
     )
     plt.savefig(curve_path)
     print(f"Saved {curve_path}")
@@ -353,7 +353,7 @@ def main():
         "best_loss": best_loss,
     }
     metrics_path = os.path.join(
-        project_dir, "resnet18_expert_tracker_v1/training_metrics.json"
+        project_dir, "resnet18_expert_tracker_iphone_v1/training_metrics.json"
     )
     with open(metrics_path, "w") as f:
         json.dump(metrics, f, indent=4)

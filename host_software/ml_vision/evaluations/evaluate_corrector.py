@@ -26,15 +26,15 @@ def main():
         "--yolo_path", default="../models/yolov8_platform_markers_v1/weights/best.pt"
     )
     parser.add_argument(
-        "--mlp_corrector_v1_path",
-        default="../models/mlp_corrector_v1/best_mlp_corrector_v1.pth",
+        "--mlp_corrector_iphone_v1_path",
+        default="../models/mlp_corrector_iphone_v1/best_mlp_corrector_iphone_v1.pth",
     )
     args = parser.parse_args()
 
     data_dir = os.path.abspath(os.path.join(script_dir, args.data_dir))
     yolo_path = os.path.abspath(os.path.join(script_dir, args.yolo_path))
-    mlp_corrector_v1_path = os.path.abspath(
-        os.path.join(script_dir, args.mlp_corrector_v1_path)
+    mlp_corrector_iphone_v1_path = os.path.abspath(
+        os.path.join(script_dir, args.mlp_corrector_iphone_v1_path)
     )
 
     csv_path = os.path.join(data_dir, "labels_sequential.csv")
@@ -43,17 +43,17 @@ def main():
     print(f"Loading YOLO Model from {yolo_path}...")
     yolo_model = YOLO(yolo_path)
 
-    print(f"Loading Corrector MLP from {mlp_corrector_v1_path}...")
+    print(f"Loading Corrector MLP from {mlp_corrector_iphone_v1_path}...")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    mlp_corrector_v1 = CorrectorMLP().to(device)
-    if os.path.exists(mlp_corrector_v1_path):
-        mlp_corrector_v1.load_state_dict(
-            torch.load(mlp_corrector_v1_path, map_location=device)
+    mlp_corrector_iphone_v1 = CorrectorMLP().to(device)
+    if os.path.exists(mlp_corrector_iphone_v1_path):
+        mlp_corrector_iphone_v1.load_state_dict(
+            torch.load(mlp_corrector_iphone_v1_path, map_location=device)
         )
-        mlp_corrector_v1.eval()
+        mlp_corrector_iphone_v1.eval()
     else:
         print(
-            f"ERROR: Corrector model not found at {mlp_corrector_v1_path}. Did you run train_mlp_corrector_v1.py?"
+            f"ERROR: Corrector model not found at {mlp_corrector_iphone_v1_path}. Did you run train_mlp_corrector_iphone_v1.py?"
         )
         return
 
@@ -61,7 +61,7 @@ def main():
     df = pd.read_csv(csv_path)
 
     test_frames_path = os.path.join(
-        os.path.dirname(mlp_corrector_v1_path), "test_frames.txt"
+        os.path.dirname(mlp_corrector_iphone_v1_path), "test_frames.txt"
     )
     if os.path.exists(test_frames_path):
         with open(test_frames_path, "r") as f:
@@ -166,7 +166,7 @@ def main():
 
         features_tensor = torch.tensor(features).unsqueeze(0).to(device)
         with torch.no_grad():
-            out = mlp_corrector_v1(features_tensor)
+            out = mlp_corrector_iphone_v1(features_tensor)
 
         pred_x, pred_y = out[0].cpu().numpy()
 
@@ -221,7 +221,7 @@ def main():
     for k, v in metrics.items():
         print(f"{k}: {v:.2f}")
 
-    out_dir = os.path.dirname(mlp_corrector_v1_path)
+    out_dir = os.path.dirname(mlp_corrector_iphone_v1_path)
     json_path = os.path.join(out_dir, "evaluation_metrics.json")
     with open(json_path, "w") as f:
         json.dump(metrics, f, indent=4)

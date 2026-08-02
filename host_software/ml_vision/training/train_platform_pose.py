@@ -35,7 +35,7 @@ def main():
         imgsz=640,
         batch=16,
         project="models",
-        name="yolov8_platform_pose_v1",
+        name="yolov8_platform_pose_iphone_v1",
         exist_ok=True,
         # Heavy augmentations
         perspective=0.001,  # Perspective warp
@@ -48,7 +48,7 @@ def main():
     )
 
     print(
-        "Training complete! Model saved in models/yolov8_platform_pose_v1/weights/best.pt"
+        "Training complete! Model saved in models/yolov8_platform_pose_iphone_v1/weights/best.pt"
     )
 
 

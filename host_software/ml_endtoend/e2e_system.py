@@ -7,7 +7,7 @@ import sounddevice as sd
 
 from models.vision_model_residual import (
     load_yolo_model,
-    load_mlp_corrector_v1_model,
+    load_mlp_corrector_iphone_v1_model,
     process_vision_frame,
 )
 from tools.coordinate_math import HomographyProjector
@@ -39,7 +39,7 @@ def main():
 
     # 1. Load All Models into memory
     yolo_model = load_yolo_model("models/yolo_markers_v3.pt", device)
-    mlp_corrector = load_mlp_corrector_v1_model("models/mlp_corrector.pt", device)
+    mlp_corrector = load_mlp_corrector_iphone_v1_model("models/mlp_corrector.pt", device)
     audio_model = load_audio_model("models/audio_model_weights.pt").to(device)
 
     # Auto-detect STM32 Port

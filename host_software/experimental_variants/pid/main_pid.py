@@ -14,7 +14,7 @@ from src.receivers import USBReceiver, UDPReceiver
 from src.utils import find_stm32_port
 from src.models import (
     load_yolo_model,
-    load_mlp_corrector_v1_model,
+    load_mlp_corrector_iphone_v1_model,
     process_vision_frame,
 )
 from src.state_machine import TargetStateMachine
@@ -62,17 +62,17 @@ def main():
     yolo_path = os.path.abspath(
         os.path.join(
             script_dir,
-            "ml_vision/models/yolov8_platform_pose_markers_v4/weights/best.pt",
+            "ml_vision/models/yolov8_platform_pose_markers_0728_v4/weights/best.pt",
         )
     )
     mlp_corrector_path = os.path.abspath(
         os.path.join(
-            script_dir, "ml_vision/models/mlp_corrector_v6/best_mlp_corrector_v6.pth"
+            script_dir, "ml_vision/models/mlp_corrector_0728_v6/best_mlp_corrector_0728_v6.pth"
         )
     )
 
     yolo_model = load_yolo_model(yolo_path, device)
-    mlp_corrector_v1_model = load_mlp_corrector_v1_model(mlp_corrector_path, device)
+    mlp_corrector_iphone_v1_model = load_mlp_corrector_iphone_v1_model(mlp_corrector_path, device)
 
     # Initialize Homography Projector
     dst_pts = np.array([[-70, 55], [70, 55], [70, -55], [-70, -55]], dtype=np.float32)
@@ -127,7 +127,7 @@ def main():
 
             # Inference Phase
             cam_x, cam_y, marker_coords = process_vision_frame(
-                frame, yolo_model, mlp_corrector_v1_model, projector, device
+                frame, yolo_model, mlp_corrector_iphone_v1_model, projector, device
             )
             yolo_t = time.perf_counter()
             latency_monitor.end_vision()

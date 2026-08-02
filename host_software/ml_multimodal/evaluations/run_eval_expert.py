@@ -15,7 +15,7 @@ from src.receivers import USBReceiver
 from src.utils import find_stm32_port
 from src.models import (
     load_yolo_model,
-    load_mlp_corrector_v1_model,
+    load_mlp_corrector_iphone_v1_model,
     process_vision_frame,
 )
 from src.state_machine import TargetStateMachine
@@ -88,11 +88,11 @@ def main():
     yolo_path = os.path.abspath(
         os.path.join(
             script_dir,
-            "ml_vision/models/yolov8_platform_pose_markers_v1/weights/best.pt",
+            "ml_vision/models/yolov8_platform_pose_markers_iphone_v1/weights/best.pt",
         )
     )
-    mlp_corrector_v1_path = os.path.abspath(
-        os.path.join(script_dir, "ml_vision/models/mlp_corrector_v1/best_corrector.pth")
+    mlp_corrector_iphone_v1_path = os.path.abspath(
+        os.path.join(script_dir, "ml_vision/models/mlp_corrector_iphone_v1/best_corrector.pth")
     )
     audio_model_path = os.path.abspath(
         os.path.join(
@@ -152,7 +152,7 @@ def main():
 
     # Load Models
     yolo_model = load_yolo_model(yolo_path, device)
-    mlp_corrector_v1_model = load_mlp_corrector_v1_model(mlp_corrector_v1_path, device)
+    mlp_corrector_iphone_v1_model = load_mlp_corrector_iphone_v1_model(mlp_corrector_iphone_v1_path, device)
 
     dst_pts = np.array([[-70, 55], [70, 55], [70, -55], [-70, -55]], dtype=np.float32)
     projector = HomographyProjector(dst_pts)
@@ -184,7 +184,7 @@ def main():
                 continue
 
             cam_x, cam_y, marker_coords = process_vision_frame(
-                frame, yolo_model, mlp_corrector_v1_model, projector, device
+                frame, yolo_model, mlp_corrector_iphone_v1_model, projector, device
             )
             if cam_x is None:
                 balanced_start_time = None
@@ -245,7 +245,7 @@ def main():
 
             # 1. Vision Inference
             cam_x, cam_y, marker_coords = process_vision_frame(
-                frame, yolo_model, mlp_corrector_v1_model, projector, device
+                frame, yolo_model, mlp_corrector_iphone_v1_model, projector, device
             )
             if cam_x is None:
                 continue

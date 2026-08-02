@@ -1,59 +1,53 @@
 # ML Vision Data Pipeline
 
-This document explains the end-to-end data processing pipeline used to generate and clean datasets for training the ML Vision models (both ResNet and YOLO architectures) for the VRI 2026 ball-balancing platform.
+This document explains the end-to-end data processing pipelines used to generate and clean datasets for training the ML Vision models for the VRI 2026 ball-balancing platform.
 
 ## Overview
+We employ two distinct data collection pipelines:
+1. **Pipeline A: Webcam Data Collection (Synchronous / Real-Time)**
+2. **Pipeline B: iPhone Data Collection (Legacy / Asynchronous)**
 
-The core challenge of our data pipeline is combining high-frequency hardware telemetry (100Hz+) from the resistive touchscreen with variable-framerate (VFR) video (30fps) from an external camera. Once synchronized, the data must be rigorously cleaned to prevent the models from learning noisy/phantom data, and then normalized to prevent spatial bias.
-
-The pipeline processes data in three distinct stages:
-1. **Synchronization**: Aligning video frames with telemetry.
-2. **Sequential Cleaning**: Removing duplicates and hardware debouncing artifacts.
-3. **Spatial Normalization**: Downsampling to ensure balanced board coverage.
+Regardless of how the data is collected and synchronized, all datasets pass through rigorous cleaning and spatial normalization stages before training.
 
 ---
 
-## Stage 1: Synchronization (`sync_data.py`)
+## 1. Data Collection & Synchronization
 
-The first step in dataset creation is running `host_software/ml_vision/data_processing/sync_data.py`. 
+### Pipeline A: Webcam Data Collection (Current)
+This is the standard, modern method for generating datasets (Datasets 2, 3, and 4). Because the webcam and the serial telemetry are both processed by the same Python script (`host_software/data_collection/collect_webcam_data.py`), the host PC's clock acts as a unified time source.
+- **Data Collection**: The script simultaneously records an `rgb_video.mp4`, logs `telemetry.csv`, and records the exact timestamp of every captured frame in `frame_timestamps.csv`.
+- **Synchronization**: `host_software/data_collection/sync_webcam_telemetry.py` interpolates the frame timestamps directly with the telemetry timestamps, completely bypassing Variable Frame Rate (VFR) and clock drift issues. 
 
-- **Input:** Raw `.MOV` video file and raw `telemetry.csv` (100Hz+).
-- **Process:** It reads the exact presentation timestamp of every single video frame (to account for smartphone VFR) and performs a binary search to find the closest matching telemetry row based on the synchronized `host_timestamp_ms`.
-- **Output:** `labels.csv` (Contains one row for every video frame, but includes duplicate telemetry).
+> **Historical Note on FPGA Logging**: Initially, there was a plan to use the FPGA to directly collect and timestamp webcam data (documented in `fpga_data_logging_plan.md`). **This was never actually implemented.** We ultimately relied strictly on the host PC and USB webcams for data collection.
 
----
-
-## Stage 2: Sequential Cleaning (`clean_sequential_dataset.py`)
-
-Because the telemetry runs much faster than the camera, the initial `labels.csv` is extremely noisy. `host_software/ml_vision/data_processing/clean_sequential_dataset.py` fixes this.
-
-1. **Deduplication:** It first drops duplicate image rows, ensuring there is exactly 1 row per physical video frame (e.g., stripping 240,000 raw rows down to ~56,000 unique frames).
-2. **Frozen Frame Filtering:** The platform's resistive touchscreen uses a 1.5-second debouncer to gracefully handle the ball bouncing or falling off. During this time, the `(touch_x, touch_y)` coordinates are "frozen" on the exact same value. If the ML model is trained on these frozen frames, it will be heavily penalized (up to 147mm Max Error) for not guessing the phantom edge coordinate when staring at an empty board. The script detects and deletes any rows where the physical coordinate does not fluctuate by at least 0.1mm (ADC noise).
-- **Output:** `labels_sequential.csv` (A perfectly clean, chronologically ordered dataset).
-
-> **Note:** To visually verify this cleaned dataset, you can run `play_dataset.py` to generate an MP4 showing the telemetry overlaid on the video frames.
+### Pipeline B: iPhone Data Collection (Legacy)
+This pipeline was used exclusively for **Dataset 1**. iOS devices use Variable Frame Rate (VFR) and are completely detached from the PC's clock.
+- **The Problem**: We cannot assume Frame 150 happened exactly at 5.000 seconds, and we don't know exactly when the iPhone started recording relative to the Python telemetry logger.
+- **The Solution**: A visual timestamp. The Python logger draws a green Unix timestamp on the laptop screen. We point the iPhone at the screen, note the exact frame index and the visible green timestamp, and use that as our anchor.
+- **Synchronization**: `host_software/ml_vision/data_processing/sync_data.py` uses this anchor frame to mathematically align the exact presentation timestamp (`pos_msec`) of every video frame to the closest telemetry row, perfectly negating VFR and clock drift.
 
 ---
 
-## Stage 3: Spatial Normalization (`normalize_spatial_density.py`)
+## 2. Image Preprocessing (`preprocess_dataset.py`)
+For iPhone data, we run a preprocessor to apply a crop box (extracting the platform), resize all frames to standard 640x480, and extract the final images ready for ML training. 
+*(Webcam data is often collected directly at 640x480 with the crop pre-configured via the camera position).*
 
-During raw data collection, the ball naturally spends a disproportionate amount of time near the center of the board. If a CNN is trained on this, it will become biased and lazily guess the center.
+---
 
-- **Process:** `host_software/ml_vision/data_processing/normalize_spatial_density.py` analyzes `labels_sequential.csv`. It grids the platform into 5mm x 5mm cells, calculates the frequency of the majority, and then aggressively downsamples any heavily overlapping coordinates (like the center).
-- **Output:** `labels_normalized.csv` (A perfectly balanced dataset, e.g., reduced from ~56,000 to ~24,000 highly valuable, non-redundant training frames).
+## 3. Sequential Cleaning (`clean_sequential_dataset.py`)
+Because telemetry runs much faster (100Hz+) than the camera (30fps), the raw synchronized labels are noisy.
+1. **Deduplication**: Drops duplicate image rows, ensuring exactly 1 row per physical video frame.
+2. **Frozen Frame Filtering**: The resistive touchscreen has a 1.5s hardware debouncer when the ball is missing. We detect and delete any frames where the physical coordinate does not fluctuate by at least 0.1mm (ADC noise). This prevents models from learning phantom coordinates.
+
+---
+
+## 4. Spatial Normalization (`normalize_spatial_density.py`)
+The ball naturally spends a disproportionate amount of time near the center of the board. If a CNN is trained on this, it becomes biased to guess the center.
+- **Process**: We grid the platform into 5mm x 5mm cells, calculate frequencies, and aggressively downsample redundant overlapping coordinates.
+- **Output**: `labels_normalized.csv` (A perfectly balanced dataset).
 
 ---
 
 ## Dataset Loading Strategy
-
-Depending on which model architecture is being trained, the dataset is loaded differently:
-
-### 1. ResNet18 (Expert Tracker)
-ResNet is a Regression model. It *must* output an `(X, Y)` coordinate, meaning it has no concept of a "missing ball." 
-- **Training Script:** `train_expert_tracker.py`
-- **Data Source:** It is fed `labels_normalized.csv` directly via `ball_dataset.py`. Because we dropped all frozen/empty frames in Stage 2, ResNet only ever trains on clean, valid coordinates.
-
-### 2. YOLOv8 (Future Realtime Architecture)
-YOLO is an Object Detection model. It handles missing balls natively by simply predicting zero bounding boxes.
-- **Generator Script:** `generate_unified_pose_dataset.py`
-- **Data Source:** It takes the cleaned `labels_sequential.csv` and uses homography to project the physical `(touch_x, touch_y)` telemetry into pixel-space bounding boxes, saving them as YOLO `.txt` files in `02_silver_unified_pose`. If the ball is missing from a frame, it simply omits the ball class from the `.txt` file, elegantly teaching YOLO what an empty board looks like.
+- **ResNet18 (Regression)**: Fed `labels_normalized.csv` directly. Because we dropped frozen/empty frames, it only ever trains on clean, valid coordinates.
+- **YOLOv8 (Object Detection)**: Fed the raw `labels_sequential.csv` (which includes missing ball frames). A script (`generate_unified_pose_dataset.py`) projects the physical telemetry into YOLO bounding boxes. If the ball is missing, it omits the class from the label `.txt`, elegantly teaching YOLO what an empty board looks like.

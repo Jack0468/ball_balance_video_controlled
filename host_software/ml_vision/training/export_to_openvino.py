@@ -23,21 +23,21 @@ def export_yolo():
     print("YOLO export complete.")
 
 
-def export_mlp_corrector_v1():
+def export_mlp_corrector_iphone_v1():
     print("Exporting Corrector MLP to OpenVINO...")
-    mlp_corrector_v1_path = os.path.join(
-        "..", "models", "mlp_corrector_v1", "best_mlp_corrector_v1.pth"
+    mlp_corrector_iphone_v1_path = os.path.join(
+        "..", "models", "mlp_corrector_iphone_v1", "best_mlp_corrector_iphone_v1.pth"
     )
-    if not os.path.exists(mlp_corrector_v1_path):
-        print(f"Corrector model not found at {mlp_corrector_v1_path}")
+    if not os.path.exists(mlp_corrector_iphone_v1_path):
+        print(f"Corrector model not found at {mlp_corrector_iphone_v1_path}")
         return
 
     # We must import CorrectorMLP dynamically if src.models isn't enough, but it should be
-    # Actually wait, src.models loads from ml_vision.core.mlp_corrector_v1_mlp
-    from ml_vision.core.mlp_corrector_v1_mlp import CorrectorMLP as CMLP
+    # Actually wait, src.models loads from ml_vision.core.mlp_corrector_iphone_v1_mlp
+    from ml_vision.core.mlp_corrector_iphone_v1_mlp import CorrectorMLP as CMLP
 
     model = CMLP(input_dim=14, hidden_dim=128, output_dim=2)
-    model.load_state_dict(torch.load(mlp_corrector_v1_path, map_location="cpu"))
+    model.load_state_dict(torch.load(mlp_corrector_iphone_v1_path, map_location="cpu"))
     model.eval()
 
     # Convert to OpenVINO
@@ -45,7 +45,7 @@ def export_mlp_corrector_v1():
     ov_model = ov.convert_model(model, example_input=example_input)
 
     output_path = os.path.join(
-        "..", "models", "mlp_corrector_v1", "best_mlp_corrector_v1.xml"
+        "..", "models", "mlp_corrector_iphone_v1", "best_mlp_corrector_iphone_v1.xml"
     )
     ov.save_model(ov_model, output_path)
     print(f"Corrector export complete: {output_path}")
@@ -86,6 +86,6 @@ def export_audio():
 if __name__ == "__main__":
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     export_yolo()
-    export_mlp_corrector_v1()
+    export_mlp_corrector_iphone_v1()
     export_audio()
     print("All exports finished successfully!")

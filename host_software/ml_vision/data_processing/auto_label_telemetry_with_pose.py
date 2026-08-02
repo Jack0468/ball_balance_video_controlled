@@ -34,7 +34,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--model",
-        default="host_software/ml_vision/models/yolov8_platform_corners_v1/weights/best.pt",
+        default="host_software/ml_vision/models/yolov8_platform_corners_0730_v1/weights/best.pt",
     )
     parser.add_argument("--data_dir", default="host_software/data/02_silver")
     args = parser.parse_args()
