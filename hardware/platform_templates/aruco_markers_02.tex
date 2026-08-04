@@ -1,0 +1,70 @@
+\documentclass[a4paper]{article}
+\usepackage[margin=10mm]{geometry}
+\usepackage{tikz}
+\usepackage{graphicx}
+
+\begin{document}
+\thispagestyle{empty}
+\begin{center}
+
+% Print instructions
+\textbf{Print at EXACTLY 100\% scale. Do not "Fit to Page".} \\
+Cut exactly along the outer black boundary (187.5mm x 142.0mm) and tape it to the platform. \\
+\textbf{Sheet 02: Blue Shapes (Circle, Triangle, Square, Hexagon)}
+\vspace{1cm}
+
+\begin{tikzpicture}[x=1mm,y=1mm]
+
+% 1. Draw the outer platform boundary (187.5mm wide, 142.0mm high)
+% TikZ origin (0,0) is Top-Left. We draw downwards to match image coordinates.
+\draw[thick] (0,0) rectangle (187.5, -142.0);
+
+% 2. Place the 6 ArUco markers inset by 12mm from the edges.
+% width=22.5mm so the inner black ArUco square is exactly 15mm.
+
+% Top-Left (ID 0)
+\node at (12, -12) {\includegraphics[width=22.5mm]{aruco/marker_0.png}};
+% Top-Right (ID 1)
+\node at (175.5, -12) {\includegraphics[width=22.5mm]{aruco/marker_1.png}};
+% Bottom-Right (ID 2)
+\node at (175.5, -130) {\includegraphics[width=22.5mm]{aruco/marker_2.png}};
+% Bottom-Left (ID 3)
+\node at (12, -130) {\includegraphics[width=22.5mm]{aruco/marker_3.png}};
+
+% Middle-Left (ID 4)
+\node at (12, -71) {\includegraphics[width=22.5mm]{aruco/marker_4.png}};
+% Middle-Right (ID 5)
+\node at (175.5, -71) {\includegraphics[width=22.5mm]{aruco/marker_5.png}};
+
+% 3. Four blue shapes arranged in a horizontal row
+% Center of platform vertically: -71
+% Horizontal spread: 4 shapes across ~120mm usable width
+% Positions: x = 48.5, 78.5, 108.5, 138.5 (evenly spaced by 30mm)
+% All shapes inscribed within ~8mm effective radius
+
+% Blue Circle (x=48.5)
+\draw[fill=blue, draw=black, thick] (48.5, -71) circle (8mm);
+
+% Blue Triangle (x=78.5) - equilateral, pointing up
+% Side length ~16mm => height ~13.86mm
+\draw[fill=blue, draw=black, thick]
+    (78.5, -71+9.24) -- (78.5-8, -71-4.62) -- (78.5+8, -71-4.62) -- cycle;
+
+% Blue Square (x=108.5) - side ~14mm centered
+\draw[fill=blue, draw=black, thick]
+    (108.5-7, -71+7) rectangle (108.5+7, -71-7);
+
+% Blue Hexagon (x=138.5) - regular, flat-top
+% Outer radius 8mm
+\draw[fill=blue, draw=black, thick]
+    (138.5+8, -71) -- (138.5+4, -71+6.93) -- (138.5-4, -71+6.93)
+    -- (138.5-8, -71) -- (138.5-4, -71-6.93) -- (138.5+4, -71-6.93) -- cycle;
+
+% 4. Dashed center crosshair for visual reference
+\draw[gray, dashed] (93.75, -71) circle (3mm);
+\draw[gray, dashed] (83.75, -71) -- (103.75, -71);
+\draw[gray, dashed] (93.75, -61) -- (93.75, -81);
+
+\end{tikzpicture}
+\end{center}
+\end{document}

@@ -11,7 +11,7 @@ import collections
 import cv2.aruco as aruco
 import onnxruntime as ort
 
-root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if root_dir not in sys.path:
     sys.path.append(root_dir)
 
@@ -30,10 +30,10 @@ PLATFORM_H = 142.0
 # These are the exact millimeter coordinates of the centers of the 6 markers
 # relative to the Top-Left (0,0) corner of the printed PDF bounding box.
 MARKER_PHYSICAL_MM = {
-    0: [12.0, 130.0],
-    1: [175.5, 130.0],
-    2: [175.5, 12.0],
-    3: [12.0, 12.0],
+    0: [12.0, 12.0],
+    1: [175.5, 12.0],
+    2: [175.5, 130.0],
+    3: [12.0, 130.0],
     4: [12.0, 71.0],
     5: [175.5, 71.0],
 }
@@ -99,13 +99,13 @@ def main():
 
     cnn_path = os.path.abspath(
         os.path.join(
-            script_dir, "ml_vision/models/cnn_2d_tracker_0730_v3/expert_tracker_best.onnx"
+            script_dir, "../../ml_vision/models/cnn_2d_tracker_0730_v3/expert_tracker_best.onnx"
         )
     )
     mlp_path = os.path.abspath(
         os.path.join(
             script_dir,
-            "ml_vision/models/mlp_corrector_time_varuco_0730_v1/mlp_corrector_best.onnx",
+            "../../ml_vision/models/mlp_corrector_time_aruco_0730_v1/mlp_corrector_best.onnx",
         )
     )
 
@@ -215,9 +215,13 @@ def main():
                 continue
 
             # --- STAGE 2: Crop to Platform ---
-            M_inv = np.linalg.inv(M)
-            # Project the 4 physical corners of the board back to pixels
-            pixel_corners = cv2.perspectiveTransform(PLATFORM_CORNERS_MM, M_inv)
+            try:
+                M_inv = np.linalg.inv(M)
+                # Project the 4 physical corners of the board back to pixels
+                pixel_corners = cv2.perspectiveTransform(PLATFORM_CORNERS_MM, M_inv)
+            except np.linalg.LinAlgError:
+                print("Degenerate homography matrix (singular) — skipping")
+                continue
 
             xs = pixel_corners[:, 0, 0]
             ys = pixel_corners[:, 0, 1]
