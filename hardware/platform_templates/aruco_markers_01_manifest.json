@@ -1,0 +1,91 @@
+{
+  "sheet": "aruco_markers_01",
+  "platform_width_mm": 187.5,
+  "platform_height_mm": 142.0,
+  "markers": [
+    {
+      "id": 0,
+      "name": "marker_0",
+      "shape": "circle",
+      "center_mm": [12.0, 130.0],
+      "size_mm": 6.0
+    },
+    {
+      "id": 1,
+      "name": "marker_1",
+      "shape": "circle",
+      "center_mm": [175.5, 130.0],
+      "size_mm": 6.0
+    },
+    {
+      "id": 2,
+      "name": "marker_2",
+      "shape": "circle",
+      "center_mm": [175.5, 12.0],
+      "size_mm": 6.0
+    },
+    {
+      "id": 3,
+      "name": "marker_3",
+      "shape": "circle",
+      "center_mm": [12.0, 12.0],
+      "size_mm": 6.0
+    },
+    {
+      "id": 4,
+      "name": "marker_4",
+      "shape": "circle",
+      "center_mm": [12.0, 71.0],
+      "size_mm": 6.0
+    },
+    {
+      "id": 5,
+      "name": "marker_5",
+      "shape": "circle",
+      "center_mm": [175.5, 71.0],
+      "size_mm": 6.0
+    }
+  ],
+  "features": [
+    {
+      "id": "feature_center_blue",
+      "name": "blue_circle",
+      "shape": "circle",
+      "center_mm": [93.75, 71.0],
+      "size_mm": 8.0,
+      "color": "blue"
+    },
+    {
+      "id": "feature_top_black",
+      "name": "black_circle",
+      "shape": "circle",
+      "center_mm": [93.75, 41.0],
+      "size_mm": 8.0,
+      "color": "black"
+    },
+    {
+      "id": "feature_right_red",
+      "name": "red_circle",
+      "shape": "circle",
+      "center_mm": [123.75, 71.0],
+      "size_mm": 8.0,
+      "color": "red"
+    },
+    {
+      "id": "feature_bottom_green",
+      "name": "green_circle",
+      "shape": "circle",
+      "center_mm": [93.75, 101.0],
+      "size_mm": 8.0,
+      "color": "green"
+    },
+    {
+      "id": "feature_left_yellow",
+      "name": "yellow_circle",
+      "shape": "circle",
+      "center_mm": [63.75, 71.0],
+      "size_mm": 8.0,
+      "color": "yellow"
+    }
+  ]
+}

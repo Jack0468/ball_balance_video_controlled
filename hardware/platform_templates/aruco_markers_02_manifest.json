@@ -1,0 +1,83 @@
+{
+  "sheet": "aruco_markers_02",
+  "platform_width_mm": 187.5,
+  "platform_height_mm": 142.0,
+  "markers": [
+    {
+      "id": 0,
+      "name": "marker_0",
+      "shape": "circle",
+      "center_mm": [12.0, 130.0],
+      "size_mm": 6.0
+    },
+    {
+      "id": 1,
+      "name": "marker_1",
+      "shape": "circle",
+      "center_mm": [175.5, 130.0],
+      "size_mm": 6.0
+    },
+    {
+      "id": 2,
+      "name": "marker_2",
+      "shape": "circle",
+      "center_mm": [175.5, 12.0],
+      "size_mm": 6.0
+    },
+    {
+      "id": 3,
+      "name": "marker_3",
+      "shape": "circle",
+      "center_mm": [12.0, 12.0],
+      "size_mm": 6.0
+    },
+    {
+      "id": 4,
+      "name": "marker_4",
+      "shape": "circle",
+      "center_mm": [12.0, 71.0],
+      "size_mm": 6.0
+    },
+    {
+      "id": 5,
+      "name": "marker_5",
+      "shape": "circle",
+      "center_mm": [175.5, 71.0],
+      "size_mm": 6.0
+    }
+  ],
+  "features": [
+    {
+      "id": "feature_circle",
+      "name": "blue_circle",
+      "shape": "circle",
+      "center_mm": [48.5, 71.0],
+      "size_mm": 8.0,
+      "color": "blue"
+    },
+    {
+      "id": "feature_triangle",
+      "name": "blue_triangle",
+      "shape": "triangle",
+      "center_mm": [78.5, 71.0],
+      "size_mm": 8.0,
+      "color": "blue"
+    },
+    {
+      "id": "feature_square",
+      "name": "blue_square",
+      "shape": "square",
+      "center_mm": [108.5, 71.0],
+      "size_mm": 8.0,
+      "color": "blue"
+    },
+    {
+      "id": "feature_hexagon",
+      "name": "blue_hexagon",
+      "shape": "hexagon",
+      "center_mm": [138.5, 71.0],
+      "size_mm": 8.0,
+      "color": "blue"
+    }
+  ]
+}
