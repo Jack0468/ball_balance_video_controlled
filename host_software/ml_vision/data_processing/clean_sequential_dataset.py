@@ -5,14 +5,22 @@ import os
 
 def clean_dataset(data_dir):
     csv_path = os.path.join(data_dir, "labels.csv")
+    fallback_csv_path = os.path.join(data_dir, "synced_telemetry.csv")
     out_path = os.path.join(data_dir, "labels_sequential.csv")
 
-    if not os.path.exists(csv_path):
-        print(f"Error: Could not find {csv_path}")
+    if os.path.exists(csv_path):
+        print(f"Loading {csv_path}...")
+        df = pd.read_csv(csv_path)
+    elif os.path.exists(fallback_csv_path):
+        print(f"Loading {fallback_csv_path}...")
+        df = pd.read_csv(fallback_csv_path)
+    else:
+        print(f"Error: Could not find labels.csv or synced_telemetry.csv in {data_dir}")
         return
 
-    print(f"Loading {csv_path}...")
-    df = pd.read_csv(csv_path)
+    # Auto-generate image_file column for pipeline A (webcam)
+    if "image_file" not in df.columns and "frame_index" in df.columns:
+        df["image_file"] = df["frame_index"].apply(lambda x: f"frame_{int(x):05d}.png")
 
     initial_count = len(df)
     print(f"Initial rows: {initial_count}")

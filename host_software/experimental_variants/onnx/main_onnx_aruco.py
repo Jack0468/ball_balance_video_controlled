@@ -50,6 +50,175 @@ PLATFORM_CORNERS_MM = np.array(
 )
 # ---------------------
 
+# ArUco marker physical positions (mm, centred: origin at platform centre)
+# These are the 4 registration markers used for homography.
+# Any CNN prediction that lands within MARKER_GATE_RADIUS_MM of one of these
+# positions is rejected as a misdetection (Option C).
+_ARUCO_MARKER_CENTRES_MM_RAW = [
+    [12.0, 130.0],   # marker 0
+    [175.5, 130.0],  # marker 1
+    [175.5, 12.0],   # marker 2
+    [12.0, 12.0],    # marker 3
+]
+# Convert to centred coordinates (subtract half-platform dimensions)
+_ARUCO_CENTRES_CENTRED = np.array(
+    [
+        [x - PLATFORM_W / 2.0, y - PLATFORM_H / 2.0]
+        for x, y in _ARUCO_MARKER_CENTRES_MM_RAW
+    ],
+    dtype=np.float32,
+)
+
+
+class PredictionGate:
+    """Two-phase state machine that gates CNN+MLP ball predictions.
+
+    Phase AWAITING_BALL
+    -------------------
+    Active on startup and whenever the ball is removed from the platform.
+    - Marker proximity gate is ACTIVE: any prediction within `marker_radius_mm`
+      of a known ArUco centre is rejected (ball never starts on a marker).
+    - Predictions are accumulated in a sliding window.  Once `seed_window`
+      consecutive predictions all lie within `seed_consistency_mm` of their
+      centroid the ball is considered confirmed and the gate transitions to
+      TRACKING.  The EMA is seeded from the centroid.
+    - While in this phase `filter()` returns reason='no_ball' so the caller
+      knows NOT to transmit to the firmware.
+
+    Phase TRACKING
+    --------------
+    Normal operation once the ball is confirmed on the platform.
+    - Marker gate is DISABLED: the ball can legitimately roll over any of
+      the 6 ArUco markers (only 4 are needed for homography at any time).
+    - Jump gate is ACTIVE: predictions that move more than `jump_threshold_mm`
+      from the EMA in one frame are rejected and the last good position is
+      held.  The EMA is only updated on accepted frames.
+    - If `lost_frames_threshold` consecutive frames are rejected by the jump
+      gate the gate reverts to AWAITING_BALL (ball removed).
+    """
+
+    def __init__(
+        self,
+        marker_centres: np.ndarray,
+        marker_radius_mm: float = 20.0,
+        jump_threshold_mm: float = 30.0,
+        ema_alpha: float = 0.15,
+        seed_window: int = 5,
+        seed_consistency_mm: float = 15.0,
+        lost_frames_threshold: int = 30,
+    ) -> None:
+        self.marker_centres = marker_centres
+        self.marker_radius_mm = marker_radius_mm
+        self.jump_threshold_mm = jump_threshold_mm
+        self.ema_alpha = ema_alpha
+        self.seed_window = seed_window
+        self.seed_consistency_mm = seed_consistency_mm
+        self.lost_frames_threshold = lost_frames_threshold
+
+        # State
+        self._phase: str = "AWAITING_BALL"
+        self._seed_buffer: list[np.ndarray] = []
+        self._ema: np.ndarray | None = None
+        self._last_good: np.ndarray | None = None
+        self._consecutive_jumps: int = 0
+
+    @property
+    def ball_on_platform(self) -> bool:
+        return self._phase == "TRACKING"
+
+    def filter(self, x_mm: float, y_mm: float) -> tuple[float, float, str]:
+        """Apply the appropriate gate(s) for the current phase.
+
+        Returns:
+            (out_x, out_y, reason)
+            reason values:
+              'ok'          — accepted, EMA updated
+              'seeded'      — ball just confirmed, EMA seeded from window centroid
+              'jump_gate'   — rejected (jump too large); last good position returned
+              'no_ball'     — AWAITING_BALL phase; caller should NOT transmit to firmware
+        """
+        candidate = np.array([x_mm, y_mm], dtype=np.float32)
+
+        if self._phase == "AWAITING_BALL":
+            return self._handle_awaiting(candidate)
+        else:  # TRACKING
+            return self._handle_tracking(candidate)
+
+    # ------------------------------------------------------------------
+    # Phase handlers
+    # ------------------------------------------------------------------
+
+    def _handle_awaiting(self, candidate: np.ndarray) -> tuple[float, float, str]:
+        """AWAITING_BALL: collect consistent predictions, marker gate active."""
+        # Marker proximity gate — reject if on a known ArUco marker
+        if self.marker_centres.shape[0] > 0 and self.marker_radius_mm > 0:
+            dists = np.linalg.norm(self.marker_centres - candidate, axis=1)
+            if dists.min() < self.marker_radius_mm:
+                self._seed_buffer.clear()   # reset window on bad sample
+                return 0.0, 0.0, "no_ball"
+
+        # Accumulate into sliding window
+        self._seed_buffer.append(candidate.copy())
+        if len(self._seed_buffer) > self.seed_window:
+            self._seed_buffer.pop(0)
+
+        # Check consistency once window is full
+        if len(self._seed_buffer) == self.seed_window:
+            stack = np.stack(self._seed_buffer)          # (N, 2)
+            centroid = stack.mean(axis=0)
+            max_dist = float(np.linalg.norm(stack - centroid, axis=1).max())
+            if max_dist < self.seed_consistency_mm:
+                # Ball confirmed — seed EMA and transition
+                self._ema = centroid.copy()
+                self._last_good = centroid.copy()
+                self._phase = "TRACKING"
+                self._consecutive_jumps = 0
+                self._seed_buffer.clear()
+                print(
+                    f"\n  ✅ Ball confirmed on platform at "
+                    f"({centroid[0]:+.1f}, {centroid[1]:+.1f}) mm — tracking started\n"
+                )
+                return float(centroid[0]), float(centroid[1]), "seeded"
+
+        # Window not yet consistent — tell caller no ball yet
+        return 0.0, 0.0, "no_ball"
+
+    def _handle_tracking(self, candidate: np.ndarray) -> tuple[float, float, str]:
+        """TRACKING: jump gate only (marker gate disabled — ball may roll over markers)."""
+        if self._ema is not None and self.jump_threshold_mm > 0:
+            jump = float(np.linalg.norm(candidate - self._ema))
+            if jump > self.jump_threshold_mm:
+                self._consecutive_jumps += 1
+                if self._consecutive_jumps >= self.lost_frames_threshold:
+                    # Ball appears to have been removed from the platform
+                    print(
+                        f"\n  🔴 Ball lost (>{self.lost_frames_threshold} consecutive jump "
+                        f"rejections) — reverting to AWAITING_BALL\n"
+                    )
+                    self._phase = "AWAITING_BALL"
+                    self._ema = None
+                    self._last_good = None
+                    self._seed_buffer.clear()
+                    self._consecutive_jumps = 0
+                    return 0.0, 0.0, "no_ball"
+                # Hold last good
+                return self._hold("jump_gate")
+
+        # Accepted
+        self._consecutive_jumps = 0
+        if self._ema is None:
+            self._ema = candidate.copy()
+        else:
+            self._ema = self.ema_alpha * candidate + (1.0 - self.ema_alpha) * self._ema
+        self._last_good = candidate.copy()
+        return float(candidate[0]), float(candidate[1]), "ok"
+
+    def _hold(self, reason: str) -> tuple[float, float, str]:
+        """Return last confirmed position."""
+        if self._last_good is not None:
+            return float(self._last_good[0]), float(self._last_good[1]), reason
+        return 0.0, 0.0, "no_ball"
+
 
 def preprocess_numpy(img):
     # cv2 uses (width, height) for resize
@@ -81,6 +250,47 @@ def main():
         "--headless",
         action="store_true",
         help="Disable GUI display (improves performance)",
+    )
+    parser.add_argument(
+        "--marker-gate-mm",
+        type=float,
+        default=20.0,
+        help="Radius (mm) around ArUco marker centres to reject predictions during startup (0 to disable)",
+    )
+    parser.add_argument(
+        "--jump-gate-mm",
+        type=float,
+        default=30.0,
+        help="Reject predictions that jump more than this distance (mm) from EMA in one frame (0 to disable)",
+    )
+    parser.add_argument(
+        "--gate-ema-alpha",
+        type=float,
+        default=0.15,
+        help="EMA smoothing factor for the jump gate (0=frozen, 1=no smoothing)",
+    )
+    parser.add_argument(
+        "--seed-window",
+        type=int,
+        default=5,
+        help="Number of consecutive consistent frames required to confirm ball on platform",
+    )
+    parser.add_argument(
+        "--seed-consistency-mm",
+        type=float,
+        default=15.0,
+        help="Max spread (mm) across seed-window frames to be considered consistent",
+    )
+    parser.add_argument(
+        "--lost-frames",
+        type=int,
+        default=30,
+        help="Consecutive jump-rejected frames before ball is considered lost (~1s at 30fps)",
+    )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Print status every frame (default: once per second). Adds ~1-2ms overhead per frame.",
     )
     args = parser.parse_args()
 
@@ -158,6 +368,27 @@ def main():
         time.sleep(0.1)
 
     print(f"Starting ArUco -> CNN -> MLP Tracker loop... (press Ctrl+C to quit)")
+
+    # --- Prediction Gate (Option C + Option E) ---
+    gate = PredictionGate(
+        marker_centres=_ARUCO_CENTRES_CENTRED,
+        marker_radius_mm=args.marker_gate_mm,
+        jump_threshold_mm=args.jump_gate_mm,
+        ema_alpha=args.gate_ema_alpha,
+        seed_window=args.seed_window,
+        seed_consistency_mm=args.seed_consistency_mm,
+        lost_frames_threshold=args.lost_frames,
+    )
+    print(
+        f"PredictionGate: marker_gate={args.marker_gate_mm:.0f}mm, "
+        f"jump_gate={args.jump_gate_mm:.0f}mm, "
+        f"seed_window={args.seed_window} frames @ {args.seed_consistency_mm:.0f}mm, "
+        f"lost_threshold={args.lost_frames} frames"
+    )
+    print("  Waiting for ball to be placed on platform...")
+
+    # Throttled-print state (used when --verbose is not set)
+    last_status_t: float = 0.0
 
     # Time-Series History Buffer for the MLP
     history_buffer = collections.deque(maxlen=1)
@@ -306,6 +537,22 @@ def main():
                 deriv_x, deriv_y = 0.0, 0.0
 
             # ----------------------------------------------------------------
+            # Prediction Gate
+            # ----------------------------------------------------------------
+            gated_x, gated_y, gate_reason = gate.filter(final_x, final_y)
+
+            if gate_reason == "no_ball":
+                # Ball not yet confirmed on platform — do NOT transmit to firmware
+                continue
+
+            if gate_reason not in ("ok", "seeded"):
+                print(
+                    f"  ⚠ Gate [{gate_reason}] rejected ({final_x:+.1f}, {final_y:+.1f}) mm "
+                    f"→ holding ({gated_x:+.1f}, {gated_y:+.1f}) mm"
+                )
+            final_x, final_y = gated_x, gated_y
+
+            # ----------------------------------------------------------------
             # Serial Transmission
             # ----------------------------------------------------------------
             try:
@@ -323,11 +570,15 @@ def main():
             end_t = time.perf_counter()
             total_ms = (end_t - start_t) * 1000.0
             fps = 1.0 / (end_t - start_t)
+            phase = "TRACKING" if gate.ball_on_platform else "AWAITING_BALL"
 
-            print(
-                f"Ball: X={final_x:+6.1f} Y={final_y:+6.1f} mm | Target: 0.0,0.0 | "
-                f"FPS: {fps:.1f} | Total={total_ms:.1f}ms (ArUco={aruco_ms:.1f}ms, CNN={cnn_ms:.1f}ms, MLP={mlp_ms:.1f}ms)"
-            )
+            if args.verbose or (end_t - last_status_t) >= 1.0:
+                print(
+                    f"[{phase}] Ball: X={final_x:+6.1f} Y={final_y:+6.1f} mm | "
+                    f"FPS: {fps:.1f} | Total={total_ms:.1f}ms "
+                    f"(ArUco={aruco_ms:.1f}ms, CNN={cnn_ms:.1f}ms, MLP={mlp_ms:.1f}ms)"
+                )
+                last_status_t = end_t
 
             # Optional: Display for debugging
             if not args.headless:
