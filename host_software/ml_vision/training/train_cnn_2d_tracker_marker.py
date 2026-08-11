@@ -446,6 +446,12 @@ def main() -> None:
         "use resize-only, same as validation. Every augmented variant beat baseline in the "
         "trial (see experiments/results/ANALYSIS_2026-08-11.md), so augmentation is on by default.",
     )
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume from output-dir/shared_vision_backbone_resume.pt if present. Safe to "
+        "always pass -- trains from scratch if no checkpoint is found there yet.",
+    )
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
