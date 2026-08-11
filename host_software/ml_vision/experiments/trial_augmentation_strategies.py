@@ -18,6 +18,13 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from host_software.ml_vision.training.train_cnn_2d_tracker_marker import SharedVisionBackbone
+from host_software.ml_vision.training.augmentations import (
+    blur_ops,
+    geometric_jitter_ops,
+    occlusion_ops,
+    photometric_ops,
+    shadow_ops,
+)
 
 
 DEFAULT_CSV = Path("host_software/data/03_gold/shared_vision/labels.csv")
@@ -108,38 +115,6 @@ def resize_only() -> A.Compose:
     )
 
 
-def photometric_ops() -> List[A.BasicTransform]:
-    return [
-        A.RandomBrightnessContrast(brightness_limit=0.25, contrast_limit=0.25, p=0.7),
-        A.HueSaturationValue(hue_shift_limit=10, sat_shift_limit=25, val_shift_limit=15, p=0.5),
-    ]
-
-
-def shadow_ops() -> List[A.BasicTransform]:
-    # Motivated by docs/PROJECT_LOGBOOK.md (2026-07-13): shadows were found to be a
-    # real confound for grey/black marker detection under naive HSV thresholding.
-    return [
-        A.RandomShadow(
-            shadow_roi=(0, 0, 1, 1),
-            num_shadows_limit=(1, 3),
-            shadow_dimension=5,
-            shadow_intensity_range=(0.4, 0.7),
-            p=0.7,
-        ),
-    ] + photometric_ops()
-
-
-def geometric_jitter_ops() -> List[A.BasicTransform]:
-    # Tests robustness to platform/camera "state" variance (slight translation, scale,
-    # rotation). NEVER add A.HorizontalFlip / A.VerticalFlip here -- flipping mirrors
-    # the physical board and swaps left/right marker semantics, permanently forbidden
-    # per docs/PROJECT_LOGBOOK.md (2026-07-16, "The Only Forbidden Augmentation").
-    return [
-        A.Affine(translate_percent=(-0.05, 0.05), scale=(0.9, 1.1), rotate=(-10, 10), p=0.8),
-        A.Perspective(scale=(0.02, 0.05), p=0.4),
-    ]
-
-
 def build_variants() -> Dict[str, A.Compose]:
     def compose(ops: List[A.BasicTransform]) -> A.Compose:
         return A.Compose(
@@ -150,17 +125,21 @@ def build_variants() -> Dict[str, A.Compose]:
     photometric = photometric_ops()
     shadow = shadow_ops()
     geometric = geometric_jitter_ops()
+    blur = blur_ops()
+    occlusion = occlusion_ops()
 
     return {
         "baseline": resize_only(),
         "photometric": compose(photometric),
         "shadow": compose(shadow),
         "geometric_jitter": compose(geometric),
+        "blur": compose(blur),
+        "occlusion": compose(occlusion),
         # Lightweight stand-in for a learned/AutoAugment-style policy -- NOT the
         # RL-searched policy from paper [89]; real policy search is a separate,
         # larger follow-up if this proxy shows the idea has legs.
-        "autoaugment_proxy": compose([A.OneOf(photometric + shadow + geometric, p=0.9)]),
-        "combined": compose(shadow + geometric),
+        "autoaugment_proxy": compose([A.OneOf(photometric + shadow + geometric + blur + occlusion, p=0.9)]),
+        "combined": compose(shadow + geometric + blur + occlusion),
     }
 
 
@@ -371,6 +350,53 @@ def save_report(results_df: pd.DataFrame, output_dir: Path) -> None:
     print(f"Saved comparison chart to {plot_path}")
 
 
+def aggregate_seed_runs(runs: List[pd.DataFrame]) -> pd.DataFrame:
+    """Average each variant's metrics across seeds -- a single seed's ranking can flip
+    on noise alone (see e.g. baseline's 28px-vs-52px swing across epochs in one run)."""
+    combined = pd.concat(runs, ignore_index=True)
+    agg = combined.groupby("variant").agg(
+        ball_px_error_mean=("ball_px_error", "mean"),
+        ball_px_error_std=("ball_px_error", "std"),
+        total_mean=("total", "mean"),
+        total_std=("total", "std"),
+        ball_mean=("ball", "mean"),
+        mask_mean=("mask", "mean"),
+        heatmap_mean=("heatmap", "mean"),
+        n_seeds=("total", "count"),
+    )
+    return agg.sort_values("total_mean").reset_index()
+
+
+def save_multi_seed_report(agg_df: pd.DataFrame, raw_df: pd.DataFrame, output_dir: Path) -> None:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    summary_path = output_dir / f"augmentation_trial_multiseed_{timestamp}_summary.csv"
+    raw_path = output_dir / f"augmentation_trial_multiseed_{timestamp}_raw.csv"
+    agg_df.to_csv(summary_path, index=False)
+    raw_df.to_csv(raw_path, index=False)
+    print(f"\nSaved multi-seed summary to {summary_path}")
+    print(f"Saved per-seed raw results to {raw_path}")
+    print(agg_df.to_string(index=False))
+
+    plt.figure(figsize=(9, 5))
+    plt.bar(
+        agg_df["variant"],
+        agg_df["ball_px_error_mean"],
+        yerr=agg_df["ball_px_error_std"].fillna(0.0),
+        capsize=4,
+        color="steelblue",
+    )
+    plt.ylabel("Val ball position error (px), mean ± std across seeds")
+    plt.title(f"Augmentation Strategy Comparison ({int(agg_df['n_seeds'].iloc[0])} seeds)")
+    plt.xticks(rotation=30, ha="right")
+    plt.tight_layout()
+    plot_path = output_dir / f"augmentation_trial_multiseed_{timestamp}.png"
+    plt.savefig(plot_path, dpi=150)
+    plt.close()
+    print(f"Saved comparison chart to {plot_path}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Compare augmentation strategies on a small subset of Dataset 8 (merged shared-vision data)"
@@ -385,11 +411,18 @@ def main() -> None:
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
+        "--num-seeds",
+        type=int,
+        default=1,
+        help="Run the full sweep this many times (seed, seed+1, ...) and average results, "
+        "since a single seed's ranking can flip on noise alone",
+    )
+    parser.add_argument(
         "--variants",
         nargs="+",
         default=None,
         help="Subset of variant names to run (default: all -- baseline, photometric, shadow, "
-        "geometric_jitter, autoaugment_proxy, combined)",
+        "geometric_jitter, blur, occlusion, autoaugment_proxy, combined)",
     )
     args = parser.parse_args()
 
@@ -398,8 +431,20 @@ def main() -> None:
             f"CSV not found: {args.csv_file}. Run merge_shared_vision_sessions.py first."
         )
 
-    results_df = run_sweep(args)
-    save_report(results_df, args.output_dir)
+    if args.num_seeds > 1:
+        base_seed = args.seed
+        runs = []
+        for i in range(args.num_seeds):
+            args.seed = base_seed + i
+            print(f"\n=== Seed {args.seed} ({i + 1}/{args.num_seeds}) ===")
+            run_df = run_sweep(args)
+            run_df["seed"] = args.seed
+            runs.append(run_df)
+        agg_df = aggregate_seed_runs(runs)
+        save_multi_seed_report(agg_df, pd.concat(runs, ignore_index=True), args.output_dir)
+    else:
+        results_df = run_sweep(args)
+        save_report(results_df, args.output_dir)
 
 
 if __name__ == "__main__":

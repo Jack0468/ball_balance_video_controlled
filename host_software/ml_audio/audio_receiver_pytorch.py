@@ -1,3 +1,4 @@
+import json
 import os
 import threading
 import queue
@@ -110,7 +111,23 @@ class AudioCommandReceiver:
             )
             num_classes = state_dict["dense_bias"].shape[0]
 
-            if num_classes == 7:
+            # Prefer a labels.json next to the checkpoint -- it's the actual
+            # training-time class order (alphabetical, from scanning dataset
+            # class folders). The hardcoded fallbacks below previously drifted
+            # from this for the 12-class case (non-alphabetical order baked
+            # in by hand), which silently decoded live predictions as the
+            # wrong words -- see docs/plans/audio_eval_notebook_refactor_plan.md.
+            labels_path = os.path.join(os.path.dirname(model_path), "labels.json")
+            if os.path.exists(labels_path):
+                with open(labels_path) as f:
+                    loaded_labels = json.load(f)
+                if len(loaded_labels) != num_classes:
+                    raise ValueError(
+                        f"{labels_path} has {len(loaded_labels)} labels but "
+                        f"checkpoint {model_path} has {num_classes} output classes"
+                    )
+                LABEL_NAMES = loaded_labels
+            elif num_classes == 7:
                 LABEL_NAMES = [
                     "_background_",
                     "go_blue",
@@ -123,17 +140,17 @@ class AudioCommandReceiver:
             elif num_classes == 12:
                 LABEL_NAMES = [
                     "_background_",
+                    "backward",
+                    "forward",
                     "go_blue",
                     "go_green",
+                    "go_grey",
                     "go_red",
                     "go_yellow",
                     "hold",
-                    "stop",
-                    "go_grey",
-                    "forward",
-                    "backward",
                     "left",
                     "right",
+                    "stop",
                 ]
 
             self.model = AudioCommandClassifier(num_classes=num_classes)
@@ -144,20 +161,6 @@ class AudioCommandReceiver:
         self.model.to(self.device)
         self.model.eval()
         self.step_seconds = step_seconds
-
-        # Spectral Noise Subtraction
-        self.noise_profile = None
-        self.noise_alpha = (
-            2.5  # Subtraction multiplier (increased for more attenuation)
-        )
-        noise_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "models", "noise_profile.pt"
-        )
-        if os.path.exists(noise_path):
-            print(f"Loading Spectral Noise Profile from {noise_path}...")
-            self.noise_profile = torch.load(
-                noise_path, map_location=self.device, weights_only=True
-            )
 
         self.window_samples = OUTPUT_SEQUENCE_LENGTH
         self.step_samples = int(SAMPLE_RATE * self.step_seconds)
@@ -263,37 +266,37 @@ class AudioCommandReceiver:
             self.audio_buffer = np.roll(self.audio_buffer, -len(new_chunk))
             self.audio_buffer[-len(new_chunk) :] = new_chunk
 
-            aligned = align_speech_to_fixed_length(self.audio_buffer)
-            if aligned is None:
-                self.last_pushed_command = None
+            # Feed the rolling window straight to the model, matching how it
+            # was actually trained/evaluated (fixed-length clip, no
+            # active-region crop, no renormalization, no noise-profile
+            # subtraction -- all three measurably hurt accuracy relative to
+            # this, see docs/plans/audio_eval_notebook_refactor_plan.md).
+            # min_confidence/min_margin below is what filters out the
+            # low-quality mid-word/silence windows that come from not
+            # aligning, not a preprocessing step.
+            spec = waveform_to_spectrogram(self.audio_buffer).to(self.device)
+            with torch.no_grad():
+                logits = self.model(spec)
+                probs = torch.nn.functional.softmax(logits, dim=-1).cpu().numpy()[0]
+
+            top_id = int(np.argmax(probs))
+            top_label = LABEL_NAMES[top_id]
+            top_conf = float(probs[top_id])
+
+            top_two = np.partition(probs, -2)[-2:]
+            margin = float(top_two[-1] - top_two[-2])
+
+            if top_conf >= self.min_confidence and margin >= self.min_margin:
+                if top_label != self.last_pushed_command:
+                    if self.command_queue.full():
+                        try:
+                            self.command_queue.get_nowait()
+                        except queue.Empty:
+                            pass
+                    self.command_queue.put(top_label)
+                    self.last_pushed_command = top_label
             else:
-                spec = waveform_to_spectrogram(
-                    aligned,
-                    noise_profile=self.noise_profile,
-                    noise_alpha=self.noise_alpha,
-                ).to(self.device)
-                with torch.no_grad():
-                    logits = self.model(spec)
-                    probs = torch.nn.functional.softmax(logits, dim=-1).cpu().numpy()[0]
-
-                top_id = int(np.argmax(probs))
-                top_label = LABEL_NAMES[top_id]
-                top_conf = float(probs[top_id])
-
-                top_two = np.partition(probs, -2)[-2:]
-                margin = float(top_two[-1] - top_two[-2])
-
-                if top_conf >= self.min_confidence and margin >= self.min_margin:
-                    if top_label != self.last_pushed_command:
-                        if self.command_queue.full():
-                            try:
-                                self.command_queue.get_nowait()
-                            except queue.Empty:
-                                pass
-                        self.command_queue.put(top_label)
-                        self.last_pushed_command = top_label
-                else:
-                    self.last_pushed_command = None
+                self.last_pushed_command = None
 
     def get_latest_command(self):
         try:

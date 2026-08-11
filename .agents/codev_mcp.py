@@ -1,8 +1,12 @@
 from fastmcp import FastMCP
 import requests
 import os
-import google.generativeai as genai
+from google import genai
 from pathlib import Path
+from dotenv import load_dotenv
+
+# .env lives at the repo root, one level up from this file (.agents/)
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 # Initialize FastMCP with a broader name to reflect its dual purpose
 mcp = FastMCP("VRI_2026_AI_Router")
@@ -29,13 +33,13 @@ def ask_gemini_context(query: str, file_paths: list[str]) -> str:
     """
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        return "System Error: GEMINI_API_KEY environment variable is missing."
-        
-    genai.configure(api_key=api_key)
-    
-    # gemini-1.5-flash is ideal for high-speed, large-context retrieval tasks
-    model = genai.GenerativeModel('gemini-1.5-flash')
-    
+        return "System Error: GEMINI_API_KEY environment variable is missing. Add it to .env at the repo root."
+
+    client = genai.Client(api_key=api_key)
+
+    # gemini-3.6-flash is the current GA model, well-suited for high-speed, large-context retrieval tasks
+    model = "gemini-3.6-flash"
+
     compiled_context = []
     
     for path_str in file_paths:
@@ -59,7 +63,7 @@ def ask_gemini_context(query: str, file_paths: list[str]) -> str:
     )
     
     try:
-        response = model.generate_content(full_prompt)
+        response = client.models.generate_content(model=model, contents=full_prompt)
         return response.text
     except Exception as e:
         return f"Gemini API Error: {str(e)}"

@@ -16,6 +16,8 @@ matplotlib
 albumentations
 cocotb
 fastmcp
+google-genai
+python-dotenv
 resampy
 onnxruntime
 tf2onnx

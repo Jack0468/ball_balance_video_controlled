@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "VRI_2026_AI_Router": {
+      "command": "C:/Users/Admin/.conda/envs/ball_balance_env/python.exe",
+      "args": ["c:/Users/Admin/Documents/Windows_codespace/VRI_2026/.agents/codev_mcp.py"]
+    }
+  }
+}

@@ -1,7 +1,7 @@
 # Audio Evaluation & Notebook Refactor Plan
 
 ## Status
-Draft — planning only, no code changes made yet. Companion to [`.agents/agent_ml_audio.md`](../../../../.agents/agent_ml_audio.md).
+In progress. Corruption audit + quarantine, evaluation-script extraction, and the live receiver's label-order + preprocessing fixes are all done and measured. Live-stream validation shows the real bottleneck is background-training-data quality, not anything left to fix in code — the retrain track (training extraction, retrain, background diversification) is next and is now the load-bearing piece, not a follow-on. Companion to [`.agents/agent_ml_audio.md`](../../../../.agents/agent_ml_audio.md).
 
 ## Context
 
@@ -72,14 +72,21 @@ So: `go_red` is confirmed as the worst offender (matches the manual audit and ex
 
 **One important caveat on `_background_`:** it also flagged high on the "empty" check (96/1290 train, 17/240 val, ~7.4%) — but this is a different phenomenon from the `go_red`-style defect, not the same corruption. A near-silent clip labeled `_background_` isn't mislabeled or broken the way a truncated `go_red` clip is; if anything it's *too* correct — real background noise during robot operation is not silent, so a background class skewed toward near-silence undertrains the model on the actual failure condition (concurrent motor/typing/impact noise). Track this under the background-diversification thread (`Larger Background/Noise-Profile Source` section below), not as dataset corruption to remediate the same way.
 
-**Remediation approach (data-quality fix, not a training/architecture change):**
+**Remediation applied (2026-08-11): quarantine, not regeneration.** Piper TTS (needed to regenerate the synthetic clips cleanly) isn't installed in the project env, and installing it plus downloading the 3 specific voice models (`lessac`, `libritts_r`, `ryan`) was judged disproportionate to fixing 1.9% of the dataset — so we quarantined instead of regenerated. [`data_processing/apply_dataset_quarantine.py`](../../data_processing/apply_dataset_quarantine.py) moved the 254 flagged non-background clips out of `training_v2/{split}/{label}/` into a sibling `data/synthetic+real_dataset_large/_quarantined_corrupt/{split}/{label}/` tree (move, not delete — reversible). `_background_` clips were explicitly excluded, per the caveat above. Manifest: [`data_processing/reports/quarantine_manifest.json`](../../data_processing/reports/quarantine_manifest.json).
 
-- For `go_red`, `stop`, and `hold` flagged clips: cross-reference filename against the TTS-voice-vs-real-speaker convention noted above — regenerate synthetic (`en_US-<voice>-medium`) clips from source voice/text where feasible, drop or flag for re-recording real-speaker (`real_speakerNN`) clips.
-- Leave `backward`, `forward`, `go_blue`, `go_green`, `go_grey`, `go_yellow`, `right` alone — the audit found no evidence of this defect there.
-- Re-run `audit_dataset_corruption.py` after cleanup to confirm flagged counts actually drop to near-zero for the affected classes.
-- Re-run evaluation after retraining to confirm the `go_red`/`go_green` cluster closes and to re-measure `forward`/`hold` with `hold`'s corrupted clips removed — don't assume either closes without re-measuring.
+| Class | Quarantined (train) | Quarantined (val) |
+|---|---|---|
+| `go_red` | 104 | 1 |
+| `stop` | 81 | 0 |
+| `hold` | 58 | 0 |
+| `go_blue` | 4 | 0 |
+| `left` | 2 | 4 |
 
-`audit_dataset_corruption.py` now lives in `data_processing/` as a standing QC script — wire it into the ingestion pipeline during step 4 of the refactor below so this doesn't silently recur as the dataset grows.
+**Verified clean:** re-ran `audit_dataset_corruption.py` after quarantine — every command class now scans at 0 empty / 0 truncated (18,877 clips remaining, only the untouched 113 `_background_` flags remain, tracked separately as above). Dataset is ready to retrain against once `training/train_audio_command_classifier.py` exists (step 3 below).
+
+If 1:1 dataset-size restoration ever becomes worth it, the deferred option is: install `piper-tts`, download the matching voice checkpoints, and regenerate synthetic clips from source voice/text for the quarantined `en_US-<voice>-medium` files; quarantined `real_speakerNN` files can only be dropped or re-recorded, not regenerated. Not pursued now — re-run evaluation after retraining first to see whether it's even needed.
+
+`audit_dataset_corruption.py` and `apply_dataset_quarantine.py` now live in `data_processing/` as standing QC/cleanup scripts — wire the audit check into the ingestion pipeline during step 4 of the refactor below so this doesn't silently recur as the dataset grows.
 
 ## Larger Background/Noise-Profile Source: 23-Minute Lab Recording
 
@@ -92,6 +99,70 @@ It is not labeled at the granularity the classifier needs (i.e., not chopped int
 - **Fold into, not replace, the existing sources** — it adds a new session/environment to the pool; the existing multi-day recordings stay in the mix too.
 
 This work belongs in the `data_processing/` extraction (step 4 below), since it's dataset assembly, not a model or eval change.
+
+## Evaluation Extraction — Done, and a New Finding: Production Preprocessing Doesn't Match Training/Eval
+
+Built [`evaluations/evaluate_audio_classifier.py`](../../evaluations/evaluate_audio_classifier.py): loads `models/pytorch_v3/audio_command_classifier_state_dict_v3.pth` + `labels.json`, runs the val split, persists both raw counts (JSON) and a rendered heatmap (PNG) to `evaluations/reports/` on every run instead of vanishing off a screen. This closes the reproducibility gap that made the original confusion matrix un-followup-able.
+
+**Getting it to reproduce the known acc=0.870 baseline surfaced a real bug, found by direct A/B testing.** The live inference path (`audio_receiver_pytorch.py`) diverges from how this model was actually trained/evaluated on four points simultaneously:
+
+| Divergence | Effect on measured accuracy |
+|---|---|
+| `audio_receiver_pytorch.py` hardcodes its own 12-class label order, which is **not alphabetical** | Using it to interpret predictions collapses accuracy to ~7% |
+| `align_speech_to_fixed_length`'s active-region crop (built for finding speech in a noisy rolling live buffer) | Costs ~7 points when applied to already-isolated, pre-cut dataset clips |
+| Peak-renormalizing each clip to 0.95 | Costs ~2-3 points |
+| Applying the spectral-subtraction noise profile at all | Costs ~30-40 points — it looks tuned for live mic/robot-noise, not clean dataset audio |
+
+`models/pytorch_v3/labels.json` **is** alphabetical (the standard convention for scanning class folders — matches how the dataset folders are actually named/sorted), so it's the correct order; the receiver's hardcoded list is not. Reverting all four to the simple/matching form (`evaluate_audio_classifier.py`'s current defaults: alphabetical labels, direct pad/truncate, no renormalization, no noise profile) reproduces **86.3%** against the recorded 0.870 baseline — the ~0.7pt gap is fully explained by the 5 val clips removed during quarantine, not a remaining methodology error.
+
+**This is a separate, likely-significant finding, not a data-quality issue:** if the deployed receiver really is decoding a 12-class checkpoint with the wrong label order and/or degrading input with the wrong preprocessing, that's a strong independent candidate explanation for "produces incorrect outputs during concurrent robot operation" — arguably more directly than the background-class imbalance this whole effort started from. Needs a decision on priority (see Open Questions).
+
+**Caveat on the go_red/go_green numbers from this run:** this evaluation still used the original `v3` checkpoint, trained before the corruption quarantine — the quarantine only removed 254 clips from `training_v2` (mostly from `train`; only 1 `go_red` clip was in `val`), and training hasn't happened yet. Any change in the `go_red`/`go_green` split seen in this run's output vs. the original matrix reflects the corrected *evaluation methodology*, not the corruption fix. The corruption fix can only be measured once step 4 (training extraction + retrain) is done and this same evaluation script is re-run.
+
+## Stage 1 Fix (Done): Label-Order Bug in the Live Receiver
+
+Per the priority call above, tackled the smaller/unambiguous fix first, measured it, then moved to the bigger retrain track (step 4+). The label-order bug was a clean, low-risk fix (unlike the crop/renorm/noise-profile questions, which involve real design trade-offs for live streaming vs. offline clips and weren't touched here).
+
+**Fix:** [`audio_receiver_pytorch.py`](../../audio_receiver_pytorch.py)'s `AudioCommandReceiver.__init__` now loads `labels.json` from the same directory as whatever checkpoint `model_path` points to, and uses that as the authoritative class order — matching how the model was actually trained (alphabetical, from scanning dataset class folders) instead of the hand-maintained list that had drifted out of sync for the 12-class case. Falls back to corrected (now-alphabetical) hardcoded lists only if no sibling `labels.json` exists, for older checkpoints that don't ship one. Confirmed the 7-class hardcoded fallback was already correct — only the 12-class one had drifted.
+
+**Measured impact (same checkpoint, same otherwise-unchanged production-style preprocessing — active-region crop, peak renormalization, and spectral-subtraction noise profile all still applied, on val split):**
+
+| Stage | Label order | Accuracy |
+|---|---|---|
+| Before (the bug) | receiver's hardcoded (wrong) order | 7.4% (169/2269) |
+| After (this fix) | alphabetical, from `labels.json` | 47.9% (1086/2269) |
+
+**+40.5 points from this one fix alone**, with everything else about the production pipeline untouched. Confirms this was a real, live bug — not just an artifact of the offline evaluation methodology — and that it was likely a significant contributor to "incorrect outputs during concurrent robot operation" on its own.
+
+**Not yet closed:** 47.9% is still far below the 86.3% achieved with the idealized offline pipeline (no crop, no renorm, no noise profile). That gap is the second, harder piece — the crop/renorm/noise-profile mismatch — which is the next thing to work through, likely in tandem with the retrain track below rather than as a quick fix, since it involves an actual design decision (see Open Questions).
+
+## Stage 2 Fix (Done, but Did Not Close the Real Gap): Simplify Live Preprocessing to Match Training
+
+Decision: simplify the live receiver to match training (rather than retrain to match the receiver's crop/renorm/noise-profile pipeline). Implemented in [`audio_receiver_pytorch.py`](../../audio_receiver_pytorch.py): `_process_loop` now feeds the rolling audio buffer straight to `waveform_to_spectrogram` with no `align_speech_to_fixed_length` crop, no peak renormalization, and no noise-profile subtraction — the noise-profile loading code in `__init__` was removed outright rather than left dead. `min_confidence`/`min_margin` gating stays; that's a downstream accept/reject decision, not a preprocessing step, and doesn't need to match training.
+
+**Cross-check before implementing:** `final_tester_audio.py`, a separate/legacy self-contained script, comments that its own crop+renormalize step is "same as the bronze -> silver step that built the train set" — which would have argued against this fix. Checked it before proceeding: its STFT uses n_fft=256 (129 freq bins), not the 255/128-bin convention `generate_noise_profile.py` and `audio_receiver_pytorch.py` actually use — even though its model class shapes are checkpoint-compatible with `v3.pth`. Since my empirical A/B testing already reproduced the known 0.870 baseline using the 255/128 convention (impossible if that convention were actually wrong, per how badly the wrong label order tanked accuracy), treated that comment as an unverified assumption from a disconnected/earlier script rather than counter-evidence, and proceeded.
+
+**Offline per-clip result:** using this exact simplified pipeline is what already produced 86.3% in the evaluation-extraction section above (`evaluate_audio_classifier.py`'s defaults now match `_process_loop` exactly).
+
+**Live continuous-stream result: only 4/11 (36%).** Built [`evaluations/evaluate_live_receiver_stream.py`](../../evaluations/evaluate_live_receiver_stream.py), which drives the actual `AudioCommandReceiver` (not a reimplementation) through `data/02_silver/master_evaluation_audio.wav` in its real file-playback mode — the same 11-command-at-10s-intervals sequence `create_master_audio.py` built, overlaid on looped background noise. Report: `evaluations/reports/live_stream_eval_20260811T033925Z.json`.
+
+| t | expected | detected |
+|---|---|---|
+| 0s | go_grey | *(miss)* |
+| 10s | go_blue | go_blue ✓ |
+| 20s | go_green | *(miss)* |
+| 30s | go_yellow | go_yellow ✓ |
+| 40s | go_red | go_red ✓ |
+| 50s | forward | *(miss)* |
+| 60s | left | *(miss — detected go_red instead, a real misclassification)* |
+| 70s | right | *(miss)* |
+| 80s | backward | *(miss)* |
+| 90s | hold | *(miss)* |
+| 100s | stop | stop ✓ |
+
+Looking at every command the receiver latched across the full 120s (not just the 11 target windows): it output `_background_` almost continuously — dozens of times throughout, including during windows where a command word is clearly present — with only 5 non-background detections in the entire stream. This is not a preprocessing-pipeline problem anymore; it's the original background-class issue this whole investigation started from (see "Background leaks into movement commands" in the confusion-matrix analysis above), now showing up directly: `master_evaluation_audio.wav` mixes background noise under every command, continuously, which is the realistic operating condition — and the model, trained on a background class that's only ~9.5% of the data from 4 source recordings, isn't robust to command-plus-noise mixtures at all. It defaults to background almost everywhere.
+
+**Conclusion: Stage 1 + Stage 2 fixed two real, confirmed bugs (wrong label order, mismatched preprocessing) and both were worth fixing, but neither is the dominant lever on real-world performance.** The 86.3% clean-clip number was necessary to establish as a correct baseline, but it doesn't predict live behavior — noisy-condition performance is bottlenecked by the background-training-data problem identified back in the corruption/background-diversification sections. That makes the retrain track (steps 4-7, especially the background-diversification work with the 23-minute recording) the load-bearing fix, not an optional follow-on. Re-run `evaluate_live_receiver_stream.py` after that retrain to see if this closes.
 
 ## Proposed Modular Refactor
 
@@ -109,17 +180,20 @@ Target layout for `host_software/ml_audio/`, mirroring the `ml_vision` conventio
 
 ## Proposed Order of Work
 
-1. Extend the corruption audit beyond `go_red` — build the automated QC check (duration/VAD/energy) and run it across all 12 classes to find the true extent of the problem before deciding on remediation scope.
-2. Extract evaluation logic first (lowest risk, highest immediate value) into `evaluations/evaluate_audio_classifier.py`, persisting the confusion matrix on every run — needed as the baseline to confirm the corruption fix actually closes the `go_red`/`go_green` gap once applied.
-3. Extract training logic into `training/train_audio_command_classifier.py`, targeting the 12-class layout (matching the actual deployed model), not the notebook's 6-class one.
-4. Extract data loading/labeling into `data_processing/`, including:
-   - An ingestion path that reads the existing `synthetic+real_dataset_large/training_v2/{train,val}/<class>/` folder structure directly as the dataset contract (no generating source code to match against — the folder layout is ground truth).
-   - The automated corruption-detection QC check from step 1, wired in as a standing pipeline step.
+1. ~~Extend the corruption audit beyond `go_red`~~ — **done.** `audit_dataset_corruption.py` scanned all 12 classes/both splits; found corruption concentrated in `go_red`/`stop`/`hold`/`go_blue`/`left`, zero elsewhere.
+2. ~~Apply remediation~~ — **done.** `apply_dataset_quarantine.py` moved the 254 flagged non-background clips to `_quarantined_corrupt/`; re-audit confirms 0 empty/truncated across every command class. `_background_`'s flags were left in place (tracked separately, not corruption).
+3. ~~Extract evaluation logic~~ — **done.** `evaluations/evaluate_audio_classifier.py` persists confusion matrix JSON + PNG on every run, and reproduces the known 0.870 baseline (86.3% on the post-quarantine val set).
+4. ~~Fix live receiver label order (Stage 1)~~ — **done.** 7.4% → 47.9% on the production-preprocessing-otherwise-unchanged test. Real bug, real fix.
+5. ~~Simplify live receiver preprocessing to match training (Stage 2)~~ — **done**, but revealed the real bottleneck isn't preprocessing: live continuous-stream test (`evaluate_live_receiver_stream.py` against `master_evaluation_audio.wav`) only detects 4/11 commands correctly, with `_background_` dominating almost the entire stream. Root cause traces back to the background-training-data problem, not anything fixable in the receiver code.
+6. **Next: the retrain track, now confirmed as the load-bearing fix rather than an optional follow-on.** Extract training logic into `training/train_audio_command_classifier.py`, targeting the 12-class layout (matching the actual deployed model), not the notebook's 6-class one. Retrain against the now-quarantined dataset.
+7. Re-run `evaluate_audio_classifier.py` (offline) and `evaluate_live_receiver_stream.py` (live) after retraining — offline to confirm `go_red`/`go_green` and `forward`/`hold` movement, live to check whether the 4/11 number moves at all, since that's the one that actually reflects the reported bug.
+8. Extract data loading/labeling into `data_processing/`, including:
+   - An ingestion path that reads the existing `synthetic+real_dataset_large/training_v2/{train,val}/<class>/` folder structure directly as the dataset contract (no generating source code to match against — the folder layout is ground truth), naturally skipping `_quarantined_corrupt/` since it sits outside `training_v2/`.
+   - The corruption-detection audit wired in as a standing pipeline QC step, not a one-off.
    - Segmentation + sub-labeling tooling for the new 23-minute lab recording.
-5. Apply remediation (regenerate/drop/re-record corrupted clips per class), retrain, and re-run evaluation to confirm the `go_red`/`go_green` cluster actually closes.
-6. Only after the above land: execute the background-source-diversification + noise-profile-rebuild plan (now including the 23-minute recording as a new source alongside the existing multi-day recordings), and revisit `forward`/`hold` — check it for the same kind of corruption before assuming it's a genuine feature-space problem.
+9. **Prioritize the background-source-diversification + noise-profile-rebuild work** (now including the 23-minute recording as a new source alongside the existing multi-day recordings) as part of the retrain in step 6-7, given the live-stream test shows this is the actual bottleneck, not a nice-to-have.
 
 ## Open Questions
 
-- Full extent of dataset corruption — confirmed in `go_red`, unknown elsewhere. Blocks step 1.
-- Ball-drop/typing-as-distinct-label question from prior discussion remains open, deferred until `evaluations/` exists to quantify rather than guess.
+- Whether retraining with better background diversity actually closes the 4/11 live-stream gap, or whether the model architecture itself (Conv1D×3 + Dense, ~13.5K params) is too small to separate command-plus-noise mixtures reliably — won't know until step 6-7 is done and re-measured.
+- Ball-drop/typing-as-distinct-label question from prior discussion remains open, deferred until per-sub-type eval reporting exists to quantify rather than guess.

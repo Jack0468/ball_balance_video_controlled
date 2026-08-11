@@ -139,9 +139,10 @@ All code additions MUST be placed in the correct directory. Never dump scripts i
 - `host_software/data_collection/`: Python scripts for webcam and STM32 interaction. Key files: `collect_webcam_data.py`, `sync_webcam_telemetry.py`.
 
 ### 3. Documentation
-- `docs/plans/`: Architecture and implementation plans. **Always read the relevant plan before writing code.**
+- `docs/plans/`: Cross-cutting architecture and implementation plans. **Always read the relevant plan before writing code.**
   - `implementation_plan_shared_backbone_cnn.md` — Active implementation plan for the vision system.
   - `ml_system_parameter_budget.md` — FPGA resource budget. Consult this before designing any model.
+- Module-local plans live under `host_software/<module>/docs/plans/`, mirroring the pattern above at module scope. Current example: `host_software/ml_audio/docs/plans/audio_eval_notebook_refactor_plan.md` — the active plan for the audio module's `core/`/`training/`/`evaluations/` refactor and dataset-corruption remediation. Read it before assigning further audio work.
 
 ### 4. Deprecated / Off-limits Directories
 - `host_software/experimental_variants/`: Legacy experimental scripts. Read for reference only; do not add new files here.
@@ -239,7 +240,7 @@ When processing or generating datasets, be aware of these pipeline rules (from `
 - Target: ZedBoard (Xilinx XC7Z020-1CSG484CES).
 - Investigate the existing STM32 `ml_control` architecture first — understand how it currently combines/serves model weights before planning the FPGA equivalent.
 - Treat ML inference as a "black box" — define hard-coded I/O contracts first.
-- Use the `CodeV_Local` MCP tool for all Verilog/HLS translation tasks.
+- The `CodeV_Local` MCP tool (`generate_verilog`) exists for Verilog/HLS translation, but is currently **not to be invoked** — this machine does not have enough local compute to run the CodeV-DS-6.7B model. Leave the infrastructure in place for when that capacity exists; do not attempt Verilog translation via this tool until told the compute constraint is resolved.
 - FPGA verification sequence:
   1. Write and check testbenches digitally first, before flashing any physical hardware.
   2. Verify camera input (VGA display/monitor sanity check, then route frame via UART/UDP to laptop for single-frame analysis).
@@ -250,5 +251,6 @@ When processing or generating datasets, be aware of these pipeline rules (from `
 ---
 
 ## Agent Capabilities
-- **Verilog Translation:** An MCP server (`CodeV_Local`) is available. When translating Python algorithms to FPGA Verilog, you MUST use the `generate_verilog` MCP tool (powered by the local CodeV-DS-6.7B LLM running via Ollama).
+- **Verilog Translation (NOT CURRENTLY AVAILABLE):** An MCP server (`VRI_2026_AI_Router`) exposing `generate_verilog` (powered by the local CodeV-DS-6.7B LLM running via Ollama) is wired up in `.agents/codev_mcp.py` and registered project-wide via `.mcp.json`, but this machine lacks the local compute to actually run it. Treat this as infrastructure held in reserve for Phase 5 (FPGA Port), not a tool to call today — do not invoke `generate_verilog` until the compute constraint is resolved.
+- **Large-File / Log Review (`ask_gemini_context`):** Same MCP server, for condensing large files/logs before writing implementation logic (see `.agents/agent_main.md` §2). Requires a `GEMINI_API_KEY` in `.env` at the repo root — get one free at [aistudio.google.com/apikey](https://aistudio.google.com/apikey), no paid plan required.
 - **LaTeX Sheets:** Platform templates are generated procedurally in LaTeX. When adding new sheets, derive all coordinates from the physical platform dimensions (187.5 × 142.0 mm) and update `ground_truth_manifest.json` to match.

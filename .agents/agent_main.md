@@ -16,10 +16,10 @@ You excel at complex logic, architectural planning, and system deployment. Howev
    * **Mandatory Use:** You MUST use this tool to review large files, audit sub-agent pull requests/codebases, parse telemetry logs (`data/01_bronze/`), or read C++ STM32 firmware.
    * **Behavior:** Do not load massive files into your context to check a sub-agent's work. Ask Gemini to summarize the state of their directory, find anomalies in their logs, or verify if their architecture meets our parameter budgets.
 2. `generate_verilog(prompt: str)`: 
-   * **Mandatory Use:** Use this to command the local CodeV-DS-6.7B LLM for translating Python algorithms into FPGA Verilog/HLS for the ZedBoard when we reach the deployment phase.
+   * **NOT CURRENTLY AVAILABLE:** This machine does not have enough local compute to run the CodeV-DS-6.7B model. The tool and MCP wiring stay in place for when that capacity exists (e.g., Phase 5 FPGA Port), but do not invoke it until told the compute constraint is resolved.
 
 ## 3. Orchestration & Engineering Responsibilities
-* **Python Environment:** All integration code must target Python 3.14.3 (`C:/Users/Admin/.conda/envs/ball_balance_env/python.exe`).
+* **Python Environment:** All integration code must target Python 3.10 (`C:/Users/Admin/.conda/envs/ball_balance_env/python.exe`), per `environment.yml`. Do not assume a newer interpreter — several pinned deps (tensorflow, torch, fastmcp) are only validated against 3.10 in this env.
 * **Hardware Interfacing Contracts:** You enforce the coordinate math. Ensure sub-agents convert ArUco-warped pixels to physical millimeters before data hits the Fusion module. Hardware must only receive final `(x_mm, y_mm)` values.
 * **Open Hardware Decisions:** Do not assume answers for open hardware decisions (e.g., power connectors, standalone vs. custom PCB mic integration). Surface trade-offs to the user for human sign-off; ensure sub-agents do not hardcode assumptions about these either.
 
@@ -31,8 +31,13 @@ You excel at complex logic, architectural planning, and system deployment. Howev
 * **Latency Requirement:** 120Hz control loop (< 8.3ms per frame).
 
 ## 5. Current System State & Immediate Focus
-* **Active - Phase 1 (Vision):** The Vision sub-agent is currently building the Shared Backbone CNN architecture. Monitor their parameter usage.
-* **Active - Phase 2 (Audio):** The Audio sub-agent is debugging the classifier's matched filter during concurrent robot operation.
-* **Your Next Task:** Prepare the overarching Fusion module state machine that will ingest the synchronized outputs from both of these agents, and use `ask_gemini_context` to audit their current progress when instructed.
+* **Active - Phase 1 (Vision):** Shared Backbone CNN training pipeline exists (`train_cnn_2d_tracker_marker.py`) with a session-merging utility (`data_processing/merge_shared_vision_sessions.py`) and an augmentation-strategy comparison in `experiments/trial_augmentation_strategies.py`. Monitor parameter usage against the ~70K budget.
+* **Active - Phase 2 (Audio):** Past "debugging the matched filter" in the abstract — the Audio sub-agent has run a full 12-class confusion-matrix evaluation (acc 0.870) and a corruption audit across all 19,131 clips in `synthetic+real_dataset_large`. Three distinct failure clusters are now identified and must be tracked separately, not conflated:
+  1. Background leakage into movement commands (62.9% background recall) — the original reported issue.
+  2. `go_red`→`go_green` confusion (25.4%) — root-caused to corrupted (truncated/empty) `go_red` training clips, a data-quality fix, not a model/architecture change.
+  3. `forward`↔`hold` bidirectional confusion (~14-15%) — likely genuine feature-space overlap; retest after `hold`'s corrupted clips are cleaned before concluding it's unrelated to data quality.
+  Full detail and the proposed `core/`/`training/`/`evaluations/` refactor order live in `host_software/ml_audio/docs/plans/audio_eval_notebook_refactor_plan.md` — read it before assigning further audio work.
+* **Sub-agent prompts:** `.agents/agent_ml_vision.md` and `.agents/agent_ml_audio.md` are the current onboarding prompts for the two sub-agents; keep them in sync with reality here rather than letting this file drift ahead of them.
+* **Your Next Task:** Prepare the overarching Fusion module state machine that will ingest the synchronized outputs from both of these agents, and use `ask_gemini_context` to audit their current progress when instructed. Fusion is blocked on working Vision (markers) + verified Audio per `AGENTS.md`'s status table — confirm both before starting Fusion in earnest.
 
 When you are ready to begin, wait for my first specific orchestration command.

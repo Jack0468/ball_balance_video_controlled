@@ -4,15 +4,16 @@ from pathlib import Path
 from typing import Tuple
 
 import matplotlib.pyplot as plt
+import pandas as pd
 import torch
 import torch.backends.cudnn as cudnn
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from torch.utils.data import DataLoader, Subset
-from torchvision import transforms
+from torch.utils.data import DataLoader
 
 from host_software.ml_vision.training.shared_vision_dataset import SharedVisionDataset
+from host_software.ml_vision.training.augmentations import build_eval_transform, build_train_transform
 
 
 class SharedVisionBackbone(nn.Module):
@@ -86,6 +87,107 @@ class SharedVisionBackbone(nn.Module):
         return ball_xy, mask_logits, heatmap_logits
 
 
+def temporal_split(
+    df: pd.DataFrame, val_fraction: float = 0.2, sort_col: str = "frame_index"
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Per-session temporal split: within each session, train on the earliest
+    (1 - val_fraction) fraction of frames (by sort_col) and validate on the latest
+    val_fraction. Consecutive frames are near-duplicates (the ball barely moves
+    frame to frame), so a random row-level split leaks near-identical frames
+    between train/val and inflates validation accuracy -- see
+    docs/PROJECT_LOGBOOK.md (2026-07-13, "Temporal Dataset Restrictions").
+    Splitting per-session (rather than on the whole concatenated dataset) also
+    guarantees every session contributes a held-out slice, not just whichever
+    session happens to land at the tail of the file.
+    """
+    if "session" not in df.columns:
+        raise ValueError(
+            "temporal_split requires a 'session' column (produced by merge_shared_vision_sessions.py)"
+        )
+    if sort_col not in df.columns:
+        raise ValueError(f"temporal_split requires a '{sort_col}' column to order frames chronologically")
+
+    train_parts, val_parts = [], []
+    for _, group in df.groupby("session"):
+        group = group.sort_values(sort_col).reset_index(drop=True)
+        split_idx = int(len(group) * (1 - val_fraction))
+        split_idx = min(max(split_idx, 1), len(group) - 1) if len(group) > 1 else len(group)
+        train_parts.append(group.iloc[:split_idx])
+        val_parts.append(group.iloc[split_idx:])
+
+    train_df = pd.concat(train_parts, ignore_index=True)
+    val_df = pd.concat(val_parts, ignore_index=True)
+    return train_df, val_df
+
+
+def evaluate_per_session(
+    model: SharedVisionBackbone,
+    val_df: pd.DataFrame,
+    images_dir: str,
+    mask_dir: str,
+    input_size: Tuple[int, int],
+    batch_size: int,
+    num_workers: int,
+    device: torch.device,
+) -> pd.DataFrame:
+    """Break the validation loss down by session, so a strong aggregate score can't
+    hide the model doing badly on one specific sheet (e.g. the blank platform vs. the
+    mixed-marker sheets)."""
+    eval_transform = build_eval_transform(input_size)
+    criterion_ball = nn.HuberLoss(delta=2.0)
+    criterion_mask = nn.BCEWithLogitsLoss()
+    criterion_heatmap = nn.MSELoss()
+    px_scale = torch.tensor([input_size[1], input_size[0]], device=device, dtype=torch.float32)
+
+    model.eval()
+    rows = []
+    for session_name in sorted(val_df["session"].unique()):
+        session_df = val_df[val_df["session"] == session_name].reset_index(drop=True)
+        dataset = SharedVisionDataset(
+            csv_file="",  # unused -- labels_df takes precedence
+            root_dir=images_dir,
+            mask_dir=mask_dir,
+            input_size=input_size,
+            transform=eval_transform,
+            labels_df=session_df,
+        )
+        loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+
+        ball_sum, mask_sum, heatmap_sum, n_batches = 0.0, 0.0, 0.0, 0
+        px_error_sum, n_samples = 0.0, 0
+        with torch.no_grad():
+            for images, ball_xy, masks, heatmap_targets in loader:
+                images, ball_xy, masks, heatmap_targets = (
+                    images.to(device), ball_xy.to(device), masks.to(device), heatmap_targets.to(device)
+                )
+                pred_ball_xy, pred_mask_logits, pred_heatmap_logits = model(images)
+                ball_sum += criterion_ball(pred_ball_xy, ball_xy).item()
+                mask_sum += criterion_mask(pred_mask_logits, masks).item()
+                heatmap_sum += criterion_heatmap(torch.sigmoid(pred_heatmap_logits), heatmap_targets).item()
+                n_batches += 1
+
+                px_error = (pred_ball_xy - ball_xy) * px_scale
+                px_error_sum += px_error.norm(dim=1).sum().item()
+                n_samples += images.size(0)
+
+        ball_loss = ball_sum / max(n_batches, 1)
+        mask_loss = mask_sum / max(n_batches, 1)
+        heatmap_loss = heatmap_sum / max(n_batches, 1)
+        rows.append(
+            {
+                "session": session_name,
+                "n_val_rows": len(session_df),
+                "ball_px_error": px_error_sum / max(n_samples, 1),
+                "ball_loss": ball_loss,
+                "mask_loss": mask_loss,
+                "heatmap_loss": heatmap_loss,
+                "total_loss": ball_loss + 0.5 * mask_loss + 0.1 * heatmap_loss,
+            }
+        )
+
+    return pd.DataFrame(rows).sort_values("ball_px_error").reset_index(drop=True)
+
+
 def train_model(args: argparse.Namespace) -> None:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.manual_seed(7)
@@ -96,32 +198,41 @@ def train_model(args: argparse.Namespace) -> None:
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    transform = transforms.Compose(
-        [
-            transforms.Resize(args.input_size),
-            transforms.ToTensor(),
-        ]
-    )
+    labels_df = pd.read_csv(args.csv_file)
+    if len(labels_df) < 2:
+        raise ValueError("Dataset must contain at least two samples for train/test splitting")
 
-    dataset = SharedVisionDataset(
+    # Temporal, per-session split -- NOT a random shuffle. Consecutive frames are
+    # near-duplicates, so a random split would leak near-identical frames between
+    # train/val and inflate validation accuracy. Splitting within each session
+    # (train = earliest frames, val = latest frames) also guarantees every session
+    # contributes a held-out slice. See temporal_split() docstring for details.
+    train_df, test_df = temporal_split(labels_df, val_fraction=args.val_fraction)
+
+    input_size = tuple(args.input_size)
+    # OneOf{photometric, shadow, geometric_jitter} -- picked from the augmentation trial
+    # (host_software/ml_vision/experiments/, see experiments/results/ANALYSIS_2026-08-11.md).
+    # Validation always stays on build_eval_transform (resize-only) so metrics reflect
+    # generalisation to clean data, not re-augmented eval noise.
+    train_transform = build_eval_transform(input_size) if args.no_augment else build_train_transform(input_size)
+    eval_transform = build_eval_transform(input_size)
+
+    train_dataset = SharedVisionDataset(
         csv_file=args.csv_file,
         root_dir=args.images_dir,
         mask_dir=args.mask_dir,
-        input_size=tuple(args.input_size),
-        transform=transform,
+        input_size=input_size,
+        transform=train_transform,
+        labels_df=train_df,
     )
-
-    if len(dataset) < 2:
-        raise ValueError("Dataset must contain at least two samples for train/test splitting")
-
-    train_size = int(0.8 * len(dataset))
-    # Shuffle before splitting to prevent chronological train/test leakage
-    indices = torch.randperm(len(dataset), generator=torch.Generator().manual_seed(42)).tolist()
-    train_indices = indices[:train_size]
-    test_indices = indices[train_size:]
-
-    train_dataset = Subset(dataset, train_indices)
-    test_dataset = Subset(dataset, test_indices)
+    test_dataset = SharedVisionDataset(
+        csv_file=args.csv_file,
+        root_dir=args.images_dir,
+        mask_dir=args.mask_dir,
+        input_size=input_size,
+        transform=eval_transform,
+        labels_df=test_df,
+    )
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers)
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers)
@@ -204,6 +315,17 @@ def train_model(args: argparse.Namespace) -> None:
     if best_ckpt.exists():
         model.load_state_dict(torch.load(best_ckpt, map_location=device))
     model.eval()
+
+    # Per-session breakdown on the held-out temporal slice -- a strong aggregate score
+    # can hide the model doing badly on one specific sheet.
+    per_session_df = evaluate_per_session(
+        model, test_df, args.images_dir, args.mask_dir, input_size, args.batch_size, args.num_workers, device
+    )
+    per_session_path = output_dir / "per_session_eval.csv"
+    per_session_df.to_csv(per_session_path, index=False)
+    print(f"\nPer-session validation performance (saved to {per_session_path}):")
+    print(per_session_df.to_string(index=False))
+
     h, w = tuple(args.input_size)
     dummy_input = torch.zeros(1, 3, h, w, device=device)
     onnx_path = output_dir / "shared_vision_backbone_best.onnx"
@@ -246,9 +368,22 @@ def main() -> None:
     parser.add_argument("--epochs", type=int, default=50)
     parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--lr", type=float, default=1e-3)
+    parser.add_argument(
+        "--val-fraction",
+        type=float,
+        default=0.2,
+        help="Fraction of each session's frames (by frame_index, chronologically latest) held out for validation",
+    )
     parser.add_argument("--patience", type=int, default=3, help="ReduceLROnPlateau patience")
     parser.add_argument("--early-stop-patience", type=int, default=10, help="Early stopping patience")
     parser.add_argument("--num-workers", type=int, default=0, help="DataLoader worker processes (0=main thread)")
+    parser.add_argument(
+        "--no-augment",
+        action="store_true",
+        help="Disable training-time augmentation (OneOf{photometric, shadow, geometric_jitter}); "
+        "use resize-only, same as validation. Every augmented variant beat baseline in the "
+        "trial (see experiments/results/ANALYSIS_2026-08-11.md), so augmentation is on by default.",
+    )
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 

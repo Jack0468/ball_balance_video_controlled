@@ -1,16 +1,23 @@
 import os
 from typing import Optional, Tuple
 
+import albumentations as A
+import cv2
 import numpy as np
 import pandas as pd
 import torch
-from PIL import Image
 from torch.utils.data import Dataset
-from torchvision import transforms
+
+from host_software.ml_vision.training.augmentations import build_eval_transform
 
 
 class SharedVisionDataset(Dataset):
-    """Load paired image, ball coordinate, and marker mask targets for the shared backbone training task."""
+    """Load paired image, ball coordinate, and marker mask targets for the shared backbone training task.
+
+    Applies its transform jointly to (image, mask, ball keypoint) via albumentations,
+    so geometric augmentation (translation/rotation/perspective) can't desync the mask
+    or ball-position label from what the augmented image actually shows.
+    """
 
     def __init__(
         self,
@@ -18,13 +25,14 @@ class SharedVisionDataset(Dataset):
         root_dir: str,
         mask_dir: Optional[str] = None,
         input_size: Tuple[int, int] = (128, 128),
-        transform: Optional[transforms.Compose] = None,
+        transform: Optional[A.Compose] = None,
+        labels_df: Optional[pd.DataFrame] = None,
     ) -> None:
-        self.labels_df = pd.read_csv(csv_file)
+        self.labels_df = labels_df.reset_index(drop=True) if labels_df is not None else pd.read_csv(csv_file)
         self.root_dir = root_dir
         self.mask_dir = mask_dir or os.path.join(root_dir, "masks")
         self.input_size = input_size
-        self.transform = transform
+        self.transform = transform or build_eval_transform(input_size)
 
     def __len__(self) -> int:
         return len(self.labels_df)
@@ -43,54 +51,37 @@ class SharedVisionDataset(Dataset):
         image_path = os.path.join(self.root_dir, row["image_file"])
         mask_path = os.path.join(self.mask_dir, row["image_file"])
 
-        image = Image.open(image_path).convert("RGB")
-        mask = Image.open(mask_path).convert("L")
+        image = cv2.cvtColor(cv2.imread(image_path), cv2.COLOR_BGR2RGB)
+        mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
 
-        # Resize mask to target resolution (nearest-neighbour preserves binary values)
-        mask = mask.resize((self.input_size[1], self.input_size[0]), Image.NEAREST)
+        ball_x = float(row.get("ball_x_px", 0.0))
+        ball_y = float(row.get("ball_y_px", 0.0))
 
-        # Apply the full transform pipeline (Resize + ToTensor handled by transform)
-        if self.transform is not None:
-            image_tensor = self.transform(image)
-        else:
-            image_tensor = transforms.Compose([
-                transforms.Resize((self.input_size[0], self.input_size[1])),
-                transforms.ToTensor(),
-            ])(image)
+        # A.Resize (always the first step in the transform) rescales the keypoint along
+        # with the image, so ball_x/ball_y just need to be in the *source* image's pixel
+        # space -- no separate warp_w/warp_h rescaling step needed.
+        transformed = self.transform(image=image, mask=mask, keypoints=[(ball_x, ball_y)])
+        t_image = transformed["image"]
+        t_mask = transformed["mask"]
+        kp_x, kp_y = transformed["keypoints"][0]
 
-        mask_tensor = transforms.ToTensor()(mask)  # → (1, H, W), values in [0,1]
-        if mask_tensor.dim() == 3:
-            mask_tensor = mask_tensor[0:1, :, :]  # ensure single channel
+        h, w = self.input_size
+        image_tensor = torch.from_numpy(t_image.transpose(2, 0, 1)).float() / 255.0
+        mask_tensor = torch.from_numpy(t_mask).float().unsqueeze(0) / 255.0
 
-        # Ball pixel coordinates in the *original* warped frame, mapped to CNN input resolution
-        # input_size is (H, W), ball_x is horizontal → divide by W (input_size[1])
-        # ball_y is vertical → divide by H (input_size[0])
-        ball_x_orig = float(row.get("ball_x_px", 0.0))
-        ball_y_orig = float(row.get("ball_y_px", 0.0))
+        # Normalise to [0, 1] -- x divided by W, y divided by H
+        ball_xy = torch.tensor([kp_x / w, kp_y / h], dtype=torch.float32)
 
-        # Scale pixel coords from original warp resolution to CNN input resolution
-        orig_w = float(row.get("warp_w", self.input_size[1]))
-        orig_h = float(row.get("warp_h", self.input_size[0]))
-        ball_x_scaled = ball_x_orig * (self.input_size[1] / orig_w)
-        ball_y_scaled = ball_y_orig * (self.input_size[0] / orig_h)
-
-        # Normalise to [0, 1] — x divided by W, y divided by H
-        ball_xy = torch.tensor(
-            [ball_x_scaled / self.input_size[1], ball_y_scaled / self.input_size[0]],
-            dtype=torch.float32,
-        )
-
-        # Generate Gaussian heatmap target for the marker heatmap head
-        # Uses the mask centroid as the heatmap centre if available
-        # (falls back to image centre if mask is empty)
-        mask_np = np.array(mask_tensor[0].numpy())
+        # Generate Gaussian heatmap target for the marker heatmap head, centred on the
+        # (post-augmentation) mask centroid -- falls back to image centre if mask is empty.
+        mask_np = mask_tensor[0].numpy()
         ys_nonzero, xs_nonzero = np.where(mask_np > 0.5)
         if len(xs_nonzero) > 0:
             heatmap_cx = float(xs_nonzero.mean())
             heatmap_cy = float(ys_nonzero.mean())
         else:
-            heatmap_cx = self.input_size[1] / 2.0
-            heatmap_cy = self.input_size[0] / 2.0
+            heatmap_cx = w / 2.0
+            heatmap_cy = h / 2.0
         heatmap_target = self._make_gaussian_heatmap(heatmap_cx, heatmap_cy)
 
         return image_tensor, ball_xy, mask_tensor, heatmap_target
