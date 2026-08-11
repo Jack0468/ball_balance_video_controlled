@@ -2,48 +2,49 @@
   "sheet": "aruco_markers_01",
   "platform_width_mm": 187.5,
   "platform_height_mm": 142.0,
-  "markers": [
+  "coordinate_convention": "Y=0 at top-left, Y increases downward. Matches TikZ source in aruco_markers_01.tex.",
+  "aruco_markers": [
     {
       "id": 0,
       "name": "marker_0",
-      "shape": "circle",
-      "center_mm": [12.0, 130.0],
-      "size_mm": 6.0
+      "role": "top-left-corner",
+      "center_mm": [12.0, 12.0],
+      "size_mm": 22.5
     },
     {
       "id": 1,
       "name": "marker_1",
-      "shape": "circle",
-      "center_mm": [175.5, 130.0],
-      "size_mm": 6.0
+      "role": "top-right-corner",
+      "center_mm": [175.5, 12.0],
+      "size_mm": 22.5
     },
     {
       "id": 2,
       "name": "marker_2",
-      "shape": "circle",
-      "center_mm": [175.5, 12.0],
-      "size_mm": 6.0
+      "role": "bottom-right-corner",
+      "center_mm": [175.5, 130.0],
+      "size_mm": 22.5
     },
     {
       "id": 3,
       "name": "marker_3",
-      "shape": "circle",
-      "center_mm": [12.0, 12.0],
-      "size_mm": 6.0
+      "role": "bottom-left-corner",
+      "center_mm": [12.0, 130.0],
+      "size_mm": 22.5
     },
     {
       "id": 4,
       "name": "marker_4",
-      "shape": "circle",
+      "role": "mid-left-edge",
       "center_mm": [12.0, 71.0],
-      "size_mm": 6.0
+      "size_mm": 22.5
     },
     {
       "id": 5,
       "name": "marker_5",
-      "shape": "circle",
+      "role": "mid-right-edge",
       "center_mm": [175.5, 71.0],
-      "size_mm": 6.0
+      "size_mm": 22.5
     }
   ],
   "features": [

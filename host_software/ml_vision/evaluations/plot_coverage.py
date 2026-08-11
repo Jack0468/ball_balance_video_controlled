@@ -29,7 +29,7 @@ def plot_coverage(csv_path):
     # We define a "unit area" as a 10x10mm grid cell within the safe zone [-80, 80] x [-60, 60]
     safe_x_range = [-80, 80]
     safe_y_range = [-60, 60]
-    grid_size_mm = 10.0
+    grid_size_mm = 2.5
 
     x_bins = int((safe_x_range[1] - safe_x_range[0]) / grid_size_mm)
     y_bins = int((safe_y_range[1] - safe_y_range[0]) / grid_size_mm)
@@ -49,8 +49,8 @@ def plot_coverage(csv_path):
         safe_x, safe_y, bins=[x_bins, y_bins], range=[safe_x_range, safe_y_range]
     )
 
-    # Goal: We want a minimum of 10 frames in every 10x10mm area
-    MIN_SAMPLES_PER_UNIT = 10
+    # Goal: We want a minimum of 1 frame in every 2.5x2.5mm area
+    MIN_SAMPLES_PER_UNIT = 1
     total_cells = x_bins * y_bins
     cells_meeting_goal = np.sum(H >= MIN_SAMPLES_PER_UNIT)
     coverage_percentage = (cells_meeting_goal / total_cells) * 100.0
@@ -68,10 +68,33 @@ def plot_coverage(csv_path):
     print(f"Coverage Score: {coverage_percentage:.2f}%")
     print("-" * 50)
 
-    plt.figure(figsize=(12, 5))
+    # A single pass/fail threshold says little once most sessions clear it
+    # comfortably -- report the full per-cell density distribution too, so
+    # sessions can be compared against each other rather than just against 10.
+    flat_H = H.flatten()
+    empty_cells = int(np.sum(flat_H == 0))
+    print("CELL DENSITY DISTRIBUTION (samples per grid cell):")
+    print(f"  Empty cells (0 samples): {empty_cells}/{total_cells}")
+    print(f"  Min:    {int(flat_H.min())}")
+    print(f"  P25:    {np.percentile(flat_H, 25):.1f}")
+    print(f"  Median: {np.median(flat_H):.1f}")
+    print(f"  Mean:   {flat_H.mean():.1f}")
+    print(f"  P75:    {np.percentile(flat_H, 75):.1f}")
+    print(f"  Max:    {int(flat_H.max())}")
+    print(f"  Std:    {flat_H.std():.1f}")
+    print("-" * 50)
+    print("COVERAGE AT OTHER THRESHOLDS:")
+    dynamic_thresholds = sorted(set(int(round(t)) for t in np.linspace(flat_H.min(), flat_H.max(), 5)))
+    for threshold in dynamic_thresholds:
+        cells_meeting = int(np.sum(flat_H >= threshold))
+        pct = (cells_meeting / total_cells) * 100.0
+        print(f"  >= {threshold:>3} samples/cell: {cells_meeting}/{total_cells} cells ({pct:.2f}%)")
+    print("-" * 50)
+
+    plt.figure(figsize=(18, 5))
 
     # 1. Scatter Plot (Trajectory)
-    plt.subplot(1, 2, 1)
+    plt.subplot(1, 3, 1)
     plt.scatter(x, y, s=1, alpha=0.3, color="blue")
     plt.xlim(-100, 100)
     plt.ylim(-75, 75)
@@ -90,7 +113,7 @@ def plot_coverage(csv_path):
     plt.gca().set_aspect("equal", adjustable="box")
 
     # 2. 2D Histogram (Heatmap of Time Spent)
-    plt.subplot(1, 2, 2)
+    plt.subplot(1, 3, 2)
     h = plt.hist2d(
         x, y, bins=(80, 60), range=[[-100, 100], [-75, 75]], cmap="inferno", cmin=1
     )
@@ -104,12 +127,25 @@ def plot_coverage(csv_path):
         label="Safe Zone Perimeter",
     )
     plt.title(
-        f"Spatial Coverage Density\nGoal Met: {coverage_percentage:.1f}% (>={MIN_SAMPLES_PER_UNIT} samples per 10x10mm)"
+        f"Spatial Coverage Density\nGoal Met: {coverage_percentage:.1f}% (>={MIN_SAMPLES_PER_UNIT} samples per {grid_size_mm}x{grid_size_mm}mm)"
     )
     plt.xlabel(x_col)
     plt.ylabel(y_col)
     plt.gca().set_aspect("equal", adjustable="box")
     plt.legend(loc="upper right")
+
+    # 3. Distribution of per-cell sample counts (how dense is a "typical" cell,
+    # not just whether it clears one fixed threshold)
+    plt.subplot(1, 3, 3)
+    plt.hist(flat_H, bins=30, color="steelblue", edgecolor="black", alpha=0.8)
+    plt.axvline(np.median(flat_H), color="green", linestyle="--", label=f"Median: {np.median(flat_H):.0f}")
+    plt.axvline(flat_H.mean(), color="orange", linestyle="--", label=f"Mean: {flat_H.mean():.1f}")
+    plt.axvline(MIN_SAMPLES_PER_UNIT, color="red", linestyle=":", label=f"Goal: {MIN_SAMPLES_PER_UNIT}")
+    plt.title("Per-Cell Sample Count Distribution")
+    plt.xlabel("Samples in cell")
+    plt.ylabel("Number of cells")
+    plt.legend(loc="upper right")
+    plt.grid(True, linestyle=":", alpha=0.6)
 
     plt.tight_layout()
 

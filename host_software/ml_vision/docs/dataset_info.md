@@ -89,8 +89,9 @@ Part of new set that has the same aruco features. BUT no coloured markers are in
 
 see aruco_markers_00.tex file for reference
 
-## Processing log
+### Processing log
 
+```text
 clean_sequential_dataset.py - >
 Initial rows: 28794
 Removed 0 duplicate image rows.
@@ -103,12 +104,13 @@ Grid cell frequencies - min: 1, max: 228, median: 20
 Frequency outlier threshold (Q3 + 1.5*IQR): 66.5
 Target majority frequency: 20
 Rows after normalization: 14840 (dropped 7794)
+```
 
 ### Coverage Diagnostics
 
-- **Coverage Score**: xxxx% (x/192 cells met the goal of 10 samples per 10x10mm)
+- **Coverage Score**: 99.48% (191/192 cells met the goal of 10 samples per 10x10mm)
 
-![Dataset 3 Coverage Diagnostics](../../data/02_silver/session_20260810_104132/diagnostics/cnn_sequential_features_coverage_plot.png)
+![Dataset 4 Coverage Diagnostics](../../data/01_bronze/session_20260810_104132/shared_vision_labels_coverage_plot.png)
 
 ## Dataset 5: Aruco Markers + Hard coded camera + coloured circles
 
@@ -120,8 +122,9 @@ This dataset is taken from the **same hard-coded angle** as Dataset 2 and 3, but
 Part of new set that has the same aruco features. coloured markers are included as the coloured circles
 see aruco_markers_01.tex file for reference
 
-## Processing log
+### Processing log
 
+```text
 Loading host_software\data\01_bronze\session_20260810_110239\synced_telemetry.csv...
 Initial rows: 20850
 Removed 0 duplicate image rows.
@@ -136,16 +139,17 @@ Frequency outlier threshold (Q3 + 1.5*IQR): 48.0
 Target majority frequency: 15
 Rows after normalization: 10992 (dropped 7014)
 Saved normalized dataset to: host_software\data\01_bronze\session_20260810_110239\labels_normalized.csv
+```
 
 ### Coverage Diagnostics
 
-- **Coverage Score**: xxxxx% (x/192 cells met the goal of 10 samples per 10x10mm)
+- **Coverage Score**: 100.00% (192/192 cells met the goal of 10 samples per 10x10mm)
 
-![Dataset 3 Coverage Diagnostics](../../data/02_silver/session_20260810_110239/diagnostics/cnn_sequential_features_coverage_plot.png)
+![Dataset 5 Coverage Diagnostics](../../data/01_bronze/session_20260810_110239/shared_vision_labels_coverage_plot.png)
 
 ## Dataset 6: Aruco Markers + Hard coded camera + Blue Shapes
 
-**Location:** `host_software\data\02_silver\session_20260810_112047`
+**Location:** `host_software\data\01_bronze\session_20260810_112047`
 **Model Tag:** ``
 
 This dataset is taken from the **same hard-coded angle** as Dataset 2 and 3, but the platform features a different piece of paper with Aruco markers. We used Aruco marker tracking to precisely determine the homography and location of the platform.
@@ -153,8 +157,9 @@ This dataset is taken from the **same hard-coded angle** as Dataset 2 and 3, but
 Part of new set that has the same aruco features. coloured markers are included as the blue shapes
 see aruco_markers_02.tex file for reference
 
-## processing log
+### processing log
 
+```text
 Loading .\host_software\data\01_bronze\session_20260810_112047\synced_telemetry.csv...
 Initial rows: 26677
 Removed 0 duplicate image rows.
@@ -169,16 +174,17 @@ Frequency outlier threshold (Q3 + 1.5*IQR): 64.0
 Target majority frequency: 19
 Rows after normalization: 14118 (dropped 8932)
 Saved normalized dataset to: host_software\data\01_bronze\session_20260810_112047\labels_normalized.csv
+```
 
 ### Coverage Diagnostics
 
-- **Coverage Score**: xxx% (/192 cells met the goal of 10 samples per 10x10mm)
+- **Coverage Score**: 100.00% (192/192 cells met the goal of 10 samples per 10x10mm)
 
-![Dataset 3 Coverage Diagnostics](../../data/02_silver/session_20260810_112047/diagnostics/cnn_sequential_features_coverage_plot.png)
+![Dataset 6 Coverage Diagnostics](../../data/01_bronze/session_20260810_112047/shared_vision_labels_coverage_plot.png)
 
 ## Dataset 7: Aruco Markers + Hard coded camera + Multi-coloured Shapes
 
-**Location:** `host_software\data\02_silver\session_20260810_114330`
+**Location:** `host_software\data\01_bronze\session_20260810_114330`
 **Model Tag:** ``
 
 This dataset is taken from the **same hard-coded angle** as Dataset 2 and 3, but the platform features a different piece of paper with Aruco markers. We used Aruco marker tracking to precisely determine the homography and location of the platform.
@@ -186,8 +192,9 @@ This dataset is taken from the **same hard-coded angle** as Dataset 2 and 3, but
 Part of new set that has the same aruco features. Multi-coloured markers are included
 see aruco_markers_03.tex file for reference
 
-## Processing log
+### Processing log
 
+```text
 Loading .\host_software\data\01_bronze\session_20260810_114330\synced_telemetry.csv...
 Initial rows: 26759
 Removed 0 duplicate image rows.
@@ -202,9 +209,63 @@ Frequency outlier threshold (Q3 + 1.5*IQR): 55.0
 Target majority frequency: 17
 Rows after normalization: 12888 (dropped 10476)
 Saved normalized dataset to: host_software\data\01_bronze\session_20260810_114330\labels_normalized.csv
+```
 
 ### Coverage Diagnostics
 
-- **Coverage Score**: xxx% (/192 cells met the goal of 10 samples per 10x10mm)
+- **Coverage Score**: 99.48% (191/192 cells met the goal of 10 samples per 10x10mm)
 
-![Dataset 3 Coverage Diagnostics](../../data/02_silver/session_20260810_114330/diagnostics/cnn_sequential_features_coverage_plot.png)
+![Dataset 7 Coverage Diagnostics](../../data/01_bronze/session_20260810_114330/shared_vision_labels_coverage_plot.png)
+
+## Dataset 8: Combined dataset for multi-head CNN
+
+**Location:** `host_software\data\03_gold\shared_vision`
+**Model Tag:** ``
+
+This dataset is a combination of the four previous datasets.
+
+### Processing log
+
+```text
+Merged dataset written to host_software\data\03_gold\shared_vision
+Per-session row counts:
+  session_20260810_104132: 14834 merged (source had 14834)
+  session_20260810_110239: 10988 merged (source had 10988)
+  session_20260810_112047: 14067 merged (source had 14067)
+  session_20260810_114330: 12883 merged (source had 12883)
+OK: 52772 rows across 4 sessions; all images/masks present; no filename collisions.
+```
+
+### Coverage Diagnostics
+
+- **Coverage Score**: 100.00% (192/192 cells met the goal of 10 samples per 10x10mm)
+
+```text
+--------------------------------------------------
+COVERAGE METRICS:
+Total safe zone area evaluated: -80 to 80 (X), -60 to 60 (Y)
+Grid size: 2.5x2.5 mm (3072 total grid cells)
+Goal: Minimum 1 samples per grid cell
+Result: 3070/3072 cells met the goal.
+Coverage Score: 99.93%
+--------------------------------------------------
+CELL DENSITY DISTRIBUTION (samples per grid cell):
+  Empty cells (0 samples): 2/3072
+  Min:    0
+  P25:    12.0
+  Median: 15.0
+  Mean:   15.4
+  P75:    19.0
+  Max:    37
+  Std:    5.7
+--------------------------------------------------
+COVERAGE AT OTHER THRESHOLDS:
+  >=   0 samples/cell: 3072/3072 cells (100.00%)
+  >=   9 samples/cell: 2717/3072 cells (88.44%)
+  >=  18 samples/cell: 1109/3072 cells (36.10%)
+  >=  28 samples/cell: 53/3072 cells (1.73%)
+  >=  37 samples/cell: 2/3072 cells (0.07%)
+--------------------------------------------------
+```
+
+![Combined Dataset Coverage Diagnostics](../../data/03_gold/shared_vision/labels_coverage_plot.png)
