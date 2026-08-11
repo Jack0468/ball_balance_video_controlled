@@ -39,6 +39,9 @@ host_software/data/*_unified_pose/
 host_software/data/yolo_raw_dataset/
 host_software/data_collection/data/
 host_software/data/
+
+host_software/ml_audio/data/
+
 *.csv
 evaluation_results/
 
@@ -69,3 +72,4 @@ hardware/cad/Parts
 docs/poster_draft.md
 
 report/
+docs/plans

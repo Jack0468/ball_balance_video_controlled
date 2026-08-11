@@ -1,5 +1,21 @@
 from collections import deque
 
+# Physical platform dimensions (mm) — used to derive nudge step and clamp bounds.
+# Source of truth: hardware/platform_templates/ground_truth_manifest.json
+_PLATFORM_W = 187.5
+_PLATFORM_H = 142.0
+
+# Nudge step: 15% of each axis's full range.
+# X axis: 0.15 × 187.5 mm ≈ 28 mm per command
+# Y axis: 0.15 × 142.0 mm ≈ 21 mm per command
+_NUDGE_X = 0.15 * _PLATFORM_W   # ~28.1 mm
+_NUDGE_Y = 0.15 * _PLATFORM_H   # ~21.3 mm
+
+# Clamp: 10% inset from the platform edge (90% of each half-range in centred coords).
+# X: ±(0.90 × 93.75) = ±84.4 mm   Y: ±(0.90 × 71.0) = ±63.9 mm
+_CLAMP_X = 0.90 * (_PLATFORM_W / 2.0)   # ~84.4 mm
+_CLAMP_Y = 0.90 * (_PLATFORM_H / 2.0)   # ~63.9 mm
+
 
 class TargetStateMachine:
     def __init__(self, history_size=10):
@@ -82,19 +98,26 @@ class TargetStateMachine:
                 self.hold_x = float(cam_x)
                 self.hold_y = float(cam_y)
 
-            step = 5.0  # mm, applied once per command edge
+            # Camera is mounted with a 180° rotation relative to the platform:
+            # physical top-left corner (marker 0) appears at camera bottom-right.
+            # Consequence: camera X and physical X are INVERTED.
+            #   camera-left  → physical +X  →  hold_x += nudge
+            #   camera-right → physical -X  →  hold_x -= nudge
+            # Y axis is NOT inverted for these commands:
+            #   camera-up (forward)   → physical +Y → hold_y += nudge
+            #   camera-down (backward)→ physical -Y → hold_y -= nudge
             if command == "forward":
-                self.hold_y += step
+                self.hold_y += _NUDGE_Y
             elif command == "backward":
-                self.hold_y -= step
+                self.hold_y -= _NUDGE_Y
             elif command == "left":
-                self.hold_x -= step
+                self.hold_x += _NUDGE_X   # ← camera-left = physical +X
             elif command == "right":
-                self.hold_x += step
+                self.hold_x -= _NUDGE_X   # ← camera-right = physical -X
 
-            # Clamp to platform bounds.
-            self.hold_x = max(-70.0, min(70.0, self.hold_x))
-            self.hold_y = max(-55.0, min(55.0, self.hold_y))
+            # Clamp to 90% of platform half-range (10% inset from edge).
+            self.hold_x = max(-_CLAMP_X, min(_CLAMP_X, self.hold_x))
+            self.hold_y = max(-_CLAMP_Y, min(_CLAMP_Y, self.hold_y))
             self._on_target_frames = 0
             print(
                 f"[{command.upper()}] Nudged target to ({self.hold_x:.1f}, {self.hold_y:.1f})"

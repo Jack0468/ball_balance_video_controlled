@@ -6,7 +6,7 @@
 // PID Constants
 #define kp 0.25           //.8
 #define ki 0.1           //.2
-#define kd 0.05           //.09
+#define kd 0.06           //.09 (turn up from 0.05 to 0.06 on 10/08/2026)
 #define kv 0.0           //.05
 #define kp_adj 0.3       // restored to original
 #define ki_adj 0.3       // restored to original

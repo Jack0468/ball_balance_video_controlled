@@ -1,0 +1,248 @@
+{
+  "generated_at": "20260811T033925Z",
+  "model": "models\\pytorch_v3\\audio_command_classifier_state_dict_v3.pth",
+  "stream": "data\\02_silver\\master_evaluation_audio.wav",
+  "correct": 4,
+  "total": 11,
+  "results": [
+    {
+      "window_start_sec": 0,
+      "expected": "go_grey",
+      "detected": null,
+      "detected_at_sec": null,
+      "correct": false
+    },
+    {
+      "window_start_sec": 10,
+      "expected": "go_blue",
+      "detected": "go_blue",
+      "detected_at_sec": 10.85,
+      "correct": true
+    },
+    {
+      "window_start_sec": 20,
+      "expected": "go_green",
+      "detected": null,
+      "detected_at_sec": null,
+      "correct": false
+    },
+    {
+      "window_start_sec": 30,
+      "expected": "go_yellow",
+      "detected": "go_yellow",
+      "detected_at_sec": 31.21,
+      "correct": true
+    },
+    {
+      "window_start_sec": 40,
+      "expected": "go_red",
+      "detected": "go_red",
+      "detected_at_sec": 42.27,
+      "correct": true
+    },
+    {
+      "window_start_sec": 50,
+      "expected": "forward",
+      "detected": null,
+      "detected_at_sec": null,
+      "correct": false
+    },
+    {
+      "window_start_sec": 60,
+      "expected": "left",
+      "detected": null,
+      "detected_at_sec": null,
+      "correct": false
+    },
+    {
+      "window_start_sec": 70,
+      "expected": "right",
+      "detected": null,
+      "detected_at_sec": null,
+      "correct": false
+    },
+    {
+      "window_start_sec": 80,
+      "expected": "backward",
+      "detected": null,
+      "detected_at_sec": null,
+      "correct": false
+    },
+    {
+      "window_start_sec": 90,
+      "expected": "hold",
+      "detected": null,
+      "detected_at_sec": null,
+      "correct": false
+    },
+    {
+      "window_start_sec": 100,
+      "expected": "stop",
+      "detected": "stop",
+      "detected_at_sec": 102.93,
+      "correct": true
+    }
+  ],
+  "all_detections": [
+    {
+      "t": 1.92,
+      "cmd": "_background_"
+    },
+    {
+      "t": 2.97,
+      "cmd": "_background_"
+    },
+    {
+      "t": 3.34,
+      "cmd": "_background_"
+    },
+    {
+      "t": 7.81,
+      "cmd": "_background_"
+    },
+    {
+      "t": 10.85,
+      "cmd": "go_blue"
+    },
+    {
+      "t": 12.09,
+      "cmd": "_background_"
+    },
+    {
+      "t": 16.2,
+      "cmd": "_background_"
+    },
+    {
+      "t": 18.98,
+      "cmd": "_background_"
+    },
+    {
+      "t": 20.04,
+      "cmd": "_background_"
+    },
+    {
+      "t": 22.52,
+      "cmd": "_background_"
+    },
+    {
+      "t": 24.13,
+      "cmd": "_background_"
+    },
+    {
+      "t": 31.21,
+      "cmd": "go_yellow"
+    },
+    {
+      "t": 32.63,
+      "cmd": "_background_"
+    },
+    {
+      "t": 35.3,
+      "cmd": "_background_"
+    },
+    {
+      "t": 36.73,
+      "cmd": "_background_"
+    },
+    {
+      "t": 38.96,
+      "cmd": "_background_"
+    },
+    {
+      "t": 42.27,
+      "cmd": "go_red"
+    },
+    {
+      "t": 43.33,
+      "cmd": "_background_"
+    },
+    {
+      "t": 49.47,
+      "cmd": "_background_"
+    },
+    {
+      "t": 50.09,
+      "cmd": "_background_"
+    },
+    {
+      "t": 50.89,
+      "cmd": "_background_"
+    },
+    {
+      "t": 52.76,
+      "cmd": "_background_"
+    },
+    {
+      "t": 62.12,
+      "cmd": "go_red"
+    },
+    {
+      "t": 62.55,
+      "cmd": "go_red"
+    },
+    {
+      "t": 63.36,
+      "cmd": "_background_"
+    },
+    {
+      "t": 69.74,
+      "cmd": "_background_"
+    },
+    {
+      "t": 73.21,
+      "cmd": "_background_"
+    },
+    {
+      "t": 79.49,
+      "cmd": "_background_"
+    },
+    {
+      "t": 80.48,
+      "cmd": "_background_"
+    },
+    {
+      "t": 80.92,
+      "cmd": "_background_"
+    },
+    {
+      "t": 83.34,
+      "cmd": "_background_"
+    },
+    {
+      "t": 83.97,
+      "cmd": "_background_"
+    },
+    {
+      "t": 90.24,
+      "cmd": "_background_"
+    },
+    {
+      "t": 94.55,
+      "cmd": "_background_"
+    },
+    {
+      "t": 95.36,
+      "cmd": "_background_"
+    },
+    {
+      "t": 95.98,
+      "cmd": "_background_"
+    },
+    {
+      "t": 97.22,
+      "cmd": "_background_"
+    },
+    {
+      "t": 97.84,
+      "cmd": "_background_"
+    },
+    {
+      "t": 102.93,
+      "cmd": "stop"
+    },
+    {
+      "t": 103.74,
+      "cmd": "_background_"
+    }
+  ]
+}

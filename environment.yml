@@ -25,6 +25,8 @@ dependencies:
       - pyyaml
       - requests
       - fastmcp
+      - google-genai
+      - python-dotenv
       - resampy
       - onnxruntime
       - tf2onnx

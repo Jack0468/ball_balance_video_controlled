@@ -1,0 +1,1790 @@
+{
+  "generated_at": "2026-08-11T02:51:10.827030+00:00",
+  "source_report": "data_processing\\reports\\dataset_corruption_audit.json",
+  "excluded_labels": [
+    "_background_"
+  ],
+  "moved_count": 254,
+  "skipped_missing_count": 0,
+  "moved": [
+    {
+      "label": "go_blue",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_blue\\real_speaker04__go_blue__Recording (4)_002.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_blue\\real_speaker04__go_blue__Recording (4)_002.wav"
+    },
+    {
+      "label": "go_blue",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_blue\\real_speaker04__go_blue__Recording (4)_006.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_blue\\real_speaker04__go_blue__Recording (4)_006.wav"
+    },
+    {
+      "label": "go_blue",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_blue\\real_speaker04__go_blue__Recording (4)_019.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_blue\\real_speaker04__go_blue__Recording (4)_019.wav"
+    },
+    {
+      "label": "go_blue",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_blue\\real_speaker04__go_blue__Recording (4)_020.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_blue\\real_speaker04__go_blue__Recording (4)_020.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_000.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_000.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_001.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_001.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_002.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_002.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_003.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_003.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_004.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_004.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_005.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_005.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_006.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_006.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_007.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_007.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_008.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_008.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_009.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_009.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_010.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_010.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_011.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_011.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_012.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_012.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_013.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_013.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_014.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_014.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_015.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_015.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_016.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_016.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_017.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_017.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_018.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_018.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_019.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_019.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_020.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_020.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_021.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_021.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_022.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_022.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_023.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_023.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_024.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__001_024.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_000.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_000.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_001.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_001.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_002.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_002.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_003.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_003.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_004.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_004.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_005.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_005.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_006.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_006.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_007.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_007.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_008.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_008.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_009.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_009.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_010.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_010.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_011.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_011.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_012.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_012.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_013.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_013.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_014.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_014.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_015.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_015.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_016.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_016.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_017.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_017.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_018.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_018.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_019.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_019.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_020.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_020.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_021.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_021.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_022.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_022.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_023.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_023.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_024.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__002_024.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__003_001.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__003_001.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__003_003.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__003_003.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__003_006.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__003_006.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__003_009.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__003_009.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__003_010.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__003_010.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__003_011.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__003_011.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__003_014.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__003_014.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__003_015.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__003_015.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__003_016.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__003_016.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__003_018.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__003_018.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__003_020.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__003_020.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__003_021.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__003_021.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__003_023.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__003_023.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_000.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_000.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_001.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_001.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_003.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_003.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_004.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_004.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_005.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_005.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_006.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_006.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_007.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_007.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_009.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_009.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_010.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_010.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_012.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_012.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_015.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_015.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_016.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_016.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_017.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_017.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_020.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_020.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_021.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_021.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_022.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_022.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_023.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_023.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_024.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__007_024.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__010_002.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__010_002.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__010_003.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__010_003.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__010_004.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__010_004.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__010_007.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__010_007.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__010_013.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__010_013.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__010_019.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__010_019.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__010_022.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__010_022.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__012_000.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__012_000.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__012_002.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__012_002.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__012_021.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__012_021.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__013_001.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__013_001.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__013_002.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__013_002.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__013_012.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__013_012.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__013_023.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__013_023.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__015_018.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__015_018.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__019_000.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__019_000.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__019_005.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__019_005.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__019_011.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__019_011.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__019_014.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__019_014.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__020_000.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__020_000.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__020_006.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__020_006.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__020_021.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__020_021.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__020_024.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\go_red\\real_speaker02__go_red__speaker02__go_red__020_024.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (10)_000.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (10)_000.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (13)_000.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (13)_000.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (13)_001.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (13)_001.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (13)_002.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (13)_002.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (13)_003.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (13)_003.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (13)_004.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (13)_004.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (13)_005.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (13)_005.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (13)_006.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (13)_006.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (13)_007.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (13)_007.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (13)_008.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (13)_008.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (13)_009.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (13)_009.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (13)_010.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (13)_010.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (13)_011.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (13)_011.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (13)_012.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (13)_012.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (13)_013.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (13)_013.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (13)_014.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (13)_014.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (13)_015.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (13)_015.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (13)_016.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (13)_016.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (13)_017.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (13)_017.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (13)_018.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (13)_018.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (13)_019.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (13)_019.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (13)_020.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (13)_020.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (13)_021.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (13)_021.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (13)_022.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (13)_022.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (13)_023.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (13)_023.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (13)_024.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (13)_024.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (14)_000.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (14)_000.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (14)_001.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (14)_001.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (14)_002.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (14)_002.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (14)_003.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (14)_003.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (14)_004.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (14)_004.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (14)_005.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (14)_005.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (14)_006.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (14)_006.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (14)_007.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (14)_007.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (14)_008.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (14)_008.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (14)_009.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (14)_009.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (14)_010.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (14)_010.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (14)_011.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (14)_011.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (14)_012.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (14)_012.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (14)_013.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (14)_013.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (14)_014.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (14)_014.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (14)_015.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (14)_015.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (14)_016.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (14)_016.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (14)_017.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (14)_017.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (14)_018.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (14)_018.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (14)_019.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (14)_019.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (14)_020.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (14)_020.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (14)_021.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (14)_021.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (14)_022.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (14)_022.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (14)_023.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (14)_023.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (14)_024.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (14)_024.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (15)_018.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (15)_018.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (15)_024.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (15)_024.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (21)_007.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (21)_007.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (21)_009.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (21)_009.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (21)_010.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (21)_010.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (21)_012.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (21)_012.wav"
+    },
+    {
+      "label": "hold",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\hold\\real_speaker04__hold__Recording (21)_014.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\hold\\real_speaker04__hold__Recording (21)_014.wav"
+    },
+    {
+      "label": "left",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\left\\en_US-joe-medium__left__00070.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\left\\en_US-joe-medium__left__00070.wav"
+    },
+    {
+      "label": "left",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\left\\en_US-joe-medium__left__00135.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\left\\en_US-joe-medium__left__00135.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker02__stop__speaker02__stop__009_016.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker02__stop__speaker02__stop__009_016.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker02__stop__speaker02__stop__010_006.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker02__stop__speaker02__stop__010_006.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker02__stop__speaker02__stop__010_010.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker02__stop__speaker02__stop__010_010.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker02__stop__speaker02__stop__010_020.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker02__stop__speaker02__stop__010_020.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker02__stop__speaker02__stop__011_000.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker02__stop__speaker02__stop__011_000.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker02__stop__speaker02__stop__011_001.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker02__stop__speaker02__stop__011_001.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker02__stop__speaker02__stop__011_005.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker02__stop__speaker02__stop__011_005.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker02__stop__speaker02__stop__011_006.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker02__stop__speaker02__stop__011_006.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker02__stop__speaker02__stop__011_007.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker02__stop__speaker02__stop__011_007.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker02__stop__speaker02__stop__011_009.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker02__stop__speaker02__stop__011_009.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker02__stop__speaker02__stop__011_010.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker02__stop__speaker02__stop__011_010.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker02__stop__speaker02__stop__011_011.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker02__stop__speaker02__stop__011_011.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker02__stop__speaker02__stop__011_012.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker02__stop__speaker02__stop__011_012.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker02__stop__speaker02__stop__011_014.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker02__stop__speaker02__stop__011_014.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker02__stop__speaker02__stop__011_015.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker02__stop__speaker02__stop__011_015.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker02__stop__speaker02__stop__011_017.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker02__stop__speaker02__stop__011_017.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker02__stop__speaker02__stop__011_021.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker02__stop__speaker02__stop__011_021.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker02__stop__speaker02__stop__011_023.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker02__stop__speaker02__stop__011_023.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker02__stop__speaker02__stop__011_024.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker02__stop__speaker02__stop__011_024.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker02__stop__speaker02__stop__012_000.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker02__stop__speaker02__stop__012_000.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker02__stop__speaker02__stop__012_003.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker02__stop__speaker02__stop__012_003.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker02__stop__speaker02__stop__012_004.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker02__stop__speaker02__stop__012_004.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker02__stop__speaker02__stop__012_005.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker02__stop__speaker02__stop__012_005.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker02__stop__speaker02__stop__012_007.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker02__stop__speaker02__stop__012_007.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker02__stop__speaker02__stop__012_011.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker02__stop__speaker02__stop__012_011.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker02__stop__speaker02__stop__012_017.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker02__stop__speaker02__stop__012_017.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker02__stop__speaker02__stop__012_018.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker02__stop__speaker02__stop__012_018.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker02__stop__speaker02__stop__012_019.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker02__stop__speaker02__stop__012_019.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker02__stop__speaker02__stop__012_020.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker02__stop__speaker02__stop__012_020.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker02__stop__speaker02__stop__012_021.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker02__stop__speaker02__stop__012_021.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker02__stop__speaker02__stop__012_024.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker02__stop__speaker02__stop__012_024.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (7)_000.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (7)_000.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (7)_001.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (7)_001.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (7)_002.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (7)_002.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (7)_003.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (7)_003.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (7)_004.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (7)_004.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (7)_005.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (7)_005.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (7)_006.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (7)_006.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (7)_007.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (7)_007.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (7)_008.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (7)_008.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (7)_009.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (7)_009.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (7)_010.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (7)_010.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (7)_011.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (7)_011.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (7)_012.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (7)_012.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (7)_013.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (7)_013.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (7)_014.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (7)_014.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (7)_015.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (7)_015.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (7)_016.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (7)_016.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (7)_017.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (7)_017.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (7)_018.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (7)_018.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (7)_019.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (7)_019.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (7)_020.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (7)_020.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (7)_021.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (7)_021.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (7)_022.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (7)_022.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (7)_023.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (7)_023.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (7)_024.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (7)_024.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (9)_000.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (9)_000.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (9)_001.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (9)_001.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (9)_002.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (9)_002.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (9)_003.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (9)_003.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (9)_004.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (9)_004.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (9)_005.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (9)_005.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (9)_006.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (9)_006.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (9)_007.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (9)_007.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (9)_008.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (9)_008.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (9)_009.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (9)_009.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (9)_010.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (9)_010.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (9)_011.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (9)_011.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (9)_012.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (9)_012.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (9)_013.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (9)_013.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (9)_014.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (9)_014.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (9)_015.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (9)_015.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (9)_016.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (9)_016.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (9)_017.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (9)_017.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (9)_018.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (9)_018.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (9)_019.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (9)_019.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (9)_020.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (9)_020.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (9)_021.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (9)_021.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (9)_022.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (9)_022.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (9)_023.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (9)_023.wav"
+    },
+    {
+      "label": "stop",
+      "split": "train",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\train\\stop\\real_speaker04__stop__Recording (9)_024.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\train\\stop\\real_speaker04__stop__Recording (9)_024.wav"
+    },
+    {
+      "label": "go_red",
+      "split": "val",
+      "reason": "empty",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\val\\go_red\\real_speaker05__go_red__Gr10_000.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\val\\go_red\\real_speaker05__go_red__Gr10_000.wav"
+    },
+    {
+      "label": "left",
+      "split": "val",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\val\\left\\en_GB-northern_english_male-medium__left__00002.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\val\\left\\en_GB-northern_english_male-medium__left__00002.wav"
+    },
+    {
+      "label": "left",
+      "split": "val",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\val\\left\\en_GB-northern_english_male-medium__left__00036.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\val\\left\\en_GB-northern_english_male-medium__left__00036.wav"
+    },
+    {
+      "label": "left",
+      "split": "val",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\val\\left\\en_GB-northern_english_male-medium__left__00105.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\val\\left\\en_GB-northern_english_male-medium__left__00105.wav"
+    },
+    {
+      "label": "left",
+      "split": "val",
+      "reason": "truncated",
+      "from": "data\\synthetic+real_dataset_large\\training_v2\\val\\left\\en_GB-northern_english_male-medium__left__00112.wav",
+      "to": "data\\synthetic+real_dataset_large\\_quarantined_corrupt\\val\\left\\en_GB-northern_english_male-medium__left__00112.wav"
+    }
+  ],
+  "skipped_missing": []
+}

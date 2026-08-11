@@ -1,11 +1,44 @@
 """
 preprocessor.py
 
-Handles the preprocessing pipeline:
-1. Undistort frames (optional, if calibration data is provided).
-2. Adjust exposure/lighting.
-3. Detect ArUco markers to find platform corners.
-4. Perform perspective transformation to get a top-down view of the platform.
+⚠️  LEGACY / EXPERIMENTAL — DO NOT USE IN NEW WORK  ⚠️
+
+This module was written during the early experimental phase of the project
+when Canny edge detection and HSV colour masking were being investigated as
+camera-agnostic alternatives to fiducial markers.
+
+It has been SUPERSEDED by the ArUco homography pipeline, which is used in
+all working inference scripts (main_onnx_aruco.py) and all new data-labelling
+scripts (auto_label_shared_vision.py).
+
+Known issues with this module:
+  1. GEOMETRIC ERROR: get_perspective_transform() always warps the platform
+     to a SQUARE output (500×500 px), even though the physical platform is a
+     RECTANGLE (187.5 × 142.0 mm). This stretches coordinates incorrectly
+     and makes any downstream mm mapping wrong.
+  2. FRAGILE DETECTION: The HSV mask targets a white/grey platform colour.
+     Any change in lighting, camera gain, or platform colour breaks detection.
+  3. UNUSED IN PRODUCTION: This class is only referenced in legacy test
+     scripts (realtime_pipeline_test.py, cascaded_pipeline_test.py,
+     test_preprocessor.py). It is not part of the data collection or
+     inference pipelines.
+
+CORRECT APPROACH for all new work:
+  Use cv2.aruco + cv2.findHomography to obtain a pixel↔mm mapping (M),
+  then call cv2.warpPerspective with an aspect-ratio-preserving dst rectangle:
+
+    WARP_W = 500
+    WARP_H = int(round(500 * PLATFORM_H / PLATFORM_W))  # ~379 px
+    warped  = cv2.warpPerspective(frame, M_warp, (WARP_W, WARP_H))
+    cnn_in  = cv2.resize(warped, (128, 128))
+
+  See: docs/plans/preprocessor_architecture_review.md for full analysis.
+
+Original pipeline this module attempted to implement:
+  1. Undistort frames (optional, if calibration data is provided).
+  2. Adjust exposure/lighting.
+  3. Detect platform via HSV + contour to find platform corners.
+  4. Perform perspective transformation to get a top-down view.
 """
 
 import cv2

@@ -59,6 +59,13 @@ void DataCollectionStateMachine::getNextTarget(double &out_x, double &out_y, boo
         last_ball_detected_ms = now;
     }
     
+    static unsigned long last_ewma_ms = 0;
+    bool update_ewma = false;
+    if (now - last_ewma_ms >= 33) {
+        update_ewma = true;
+        last_ewma_ms = now;
+    }
+    
     // If ball goes missing for > 1500ms, automatically hijack the state machine into recovery mode!
     // This perfectly debounces touchscreen ADC noise or bouncing.
     if ((now - last_ball_detected_ms > 1500) && !in_recovery) {
@@ -81,14 +88,14 @@ void DataCollectionStateMachine::getNextTarget(double &out_x, double &out_y, boo
         double err_x = abs(current_ball_x - target_x);
         double err_y = abs(current_ball_y - target_y);
         
-        // Update EWMA error metrics (alpha = 0.015 gives roughly 8 seconds of settling memory)
-        if (ball_detected) {
-            ewma_err_x = 0.015 * err_x + 0.985 * ewma_err_x;
-            ewma_err_y = 0.015 * err_y + 0.985 * ewma_err_y;
+        // Update EWMA error metrics (alpha = 0.05 gives roughly 0.6 seconds of settling memory)
+        if (ball_detected && update_ewma) {
+            ewma_err_x = 0.05 * err_x + 0.95 * ewma_err_x;
+            ewma_err_y = 0.05 * err_y + 0.95 * ewma_err_y;
         }
         
-        // Once the moving average drops below 3.0mm, we consider it completely settled
-        if (ewma_err_x < 3.0 && ewma_err_y < 3.0) {
+        // Once the moving average drops below 5.0mm, we consider it completely settled
+        if (ewma_err_x < 5.0 && ewma_err_y < 5.0) {
             if (in_recovery) {
                 state = state_before_recovery;
                 in_recovery = false;
@@ -108,10 +115,10 @@ void DataCollectionStateMachine::getNextTarget(double &out_x, double &out_y, boo
         double err_x = abs(current_ball_x - target_x);
         double err_y = abs(current_ball_y - target_y);
         
-        // Update EWMA error metrics (alpha = 0.015 gives roughly 8 seconds of settling memory)
-        if (ball_detected) {
-            ewma_err_x = 0.015 * err_x + 0.985 * ewma_err_x;
-            ewma_err_y = 0.015 * err_y + 0.985 * ewma_err_y;
+        // Update EWMA error metrics (alpha = 0.05 gives roughly 0.6 seconds of settling memory)
+        if (ball_detected && update_ewma) {
+            ewma_err_x = 0.05 * err_x + 0.95 * ewma_err_x;
+            ewma_err_y = 0.05 * err_y + 0.95 * ewma_err_y;
         }
         
         // Change target as soon as the raw error is within 15mm, to keep it moving continuously!
@@ -151,12 +158,12 @@ void DataCollectionStateMachine::getNextTarget(double &out_x, double &out_y, boo
             double err_x = abs(current_ball_x - target_x);
             double err_y = abs(current_ball_y - target_y);
             
-            if (ball_detected) {
-                ewma_err_x = 0.015 * err_x + 0.985 * ewma_err_x;
-                ewma_err_y = 0.015 * err_y + 0.985 * ewma_err_y;
+            if (ball_detected && update_ewma) {
+                ewma_err_x = 0.05 * err_x + 0.95 * ewma_err_x;
+                ewma_err_y = 0.05 * err_y + 0.95 * ewma_err_y;
             }
             
-            if (ewma_err_x < 3.0 && ewma_err_y < 3.0) {
+            if (ewma_err_x < 5.0 && ewma_err_y < 5.0) {
                 waiting_at_start = false;
                 state_start_time_ms = now; // Restart the phase timer so we get the full duration!
                 ewma_err_x = 100.0;
@@ -213,12 +220,12 @@ void DataCollectionStateMachine::getNextTarget(double &out_x, double &out_y, boo
             double err_x = abs(current_ball_x - target_x);
             double err_y = abs(current_ball_y - target_y);
             
-            if (ball_detected) {
-                ewma_err_x = 0.015 * err_x + 0.985 * ewma_err_x;
-                ewma_err_y = 0.015 * err_y + 0.985 * ewma_err_y;
+            if (ball_detected && update_ewma) {
+                ewma_err_x = 0.05 * err_x + 0.95 * ewma_err_x;
+                ewma_err_y = 0.05 * err_y + 0.95 * ewma_err_y;
             }
             
-            if (ewma_err_x < 3.0 && ewma_err_y < 3.0) {
+            if (ewma_err_x < 5.0 && ewma_err_y < 5.0) {
                 waiting_at_start = false;
                 sweep_distance = 0.0;
                 last_sweep_update_ms = now;
@@ -276,9 +283,9 @@ void DataCollectionStateMachine::getNextTarget(double &out_x, double &out_y, boo
             double err_x = abs(current_ball_x - target_x);
             double err_y = abs(current_ball_y - target_y);
             
-            if (ball_detected) {
-                ewma_err_x = 0.015 * err_x + 0.985 * ewma_err_x;
-                ewma_err_y = 0.015 * err_y + 0.985 * ewma_err_y;
+            if (ball_detected && update_ewma) {
+                ewma_err_x = 0.05 * err_x + 0.95 * ewma_err_x;
+                ewma_err_y = 0.05 * err_y + 0.95 * ewma_err_y;
             }
             
             if (ewma_err_x < 5.0 && ewma_err_y < 5.0) {
