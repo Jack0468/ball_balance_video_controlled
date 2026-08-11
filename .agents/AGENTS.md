@@ -51,7 +51,7 @@ STM32 / FPGA → PID → Inverse Kinematics → Stepper Motor Pulses
 | Vision (Markers) | 🔧 In Progress | **Shared Backbone CNN planned** — see `implementation_plan_shared_backbone_cnn.md` |
 | Audio | ⚠️ Needs Debug | Produces incorrect outputs during concurrent robot operation; matched filter suspected |
 | Fusion | ⬜ Not Started | Requires working vision (markers) + verified audio |
-| FPGA Port | ⬜ Not Started | Awaiting compact CNN model (~70K params); CodeV MCP available for Verilog translation |
+| FPGA Port | 🔧 In Progress | ZedBoard/Zynq (XC7Z020), Vitis/Vivado 2025.2. Basic UDP communication has been established before, but a working video stream from FPGA to laptop has not yet been formulated; vision-weight compilation and PID/IK integration are also open. See `.agents/agent_fpga.md` |
 | Hardware (Tripod) | ⬜ Not Started | Camera/mic mount design needed |
 | Hardware (Power) | ⬜ Not Started | 24V 6A supply, FPGA power, PCB consolidation TBD |
 
@@ -148,6 +148,15 @@ All code additions MUST be placed in the correct directory. Never dump scripts i
 - `host_software/experimental_variants/`: Legacy experimental scripts. Read for reference only; do not add new files here.
 - `host_software/new_vla_files/`, `host_software/ml_multimodal/`: Inactive modules. Do not modify.
 - `host_software/ml_audio/`: Active — reactivated under Roadmap Phase 2 ("Audio Verification"). See `.agents/agent_ml_audio.md`.
+- `host_software/ml_endtoend/`: Orphaned early end-to-end integration snapshot (committed once, 2026-08-02, never touched since). Not formally deprecated but not part of the active architecture either — read-only reference at most.
+
+### 5. FPGA (`fpga/`)
+- Current architecture: ZedBoard (Xilinx Zynq-7000, XC7Z020-1CSG484CES), built with **Vitis/Vivado 2025.2**. Migrated from an Opal Kelly XEM3010 (Spartan-3) board on 21/07/2026 after a fatal clocking limitation (no GCLK pins available for the camera pixel clock) — see `docs/PROJECT_LOGBOOK.md`.
+- **Ground-truth docs:** `docs/PROJECT_LOGBOOK.md`, `docs/HARDWARE_AND_SOFTWARE_PREREQUISITES.md`, `docs/udp_research_guide.md`, `fpga/docs/*.md`. **Stale/legacy docs (Opal Kelly-era, historical reference only):** `docs/SYSTEM_ARCHITECTURE.md`, `docs/IMPLEMENTATION_GUIDE.md`, `docs/VITIS_TO_ISE_GUIDE.md`. `docs/HLS_DATA_TYPES.md` is the exception among the older docs — its float-vs-`ap_fixed<W,I>` reasoning is toolchain-agnostic and still applies.
+- `fpga/hls_hardware/`: HLS C++ control law (PID + inverse kinematics), using `ap_fixed<32,16>`. Written but **not yet wired into** `fpga/vitis/src/main.c`.
+- `fpga/camera_i2c/`, `fpga/zynq_camera_sys/`, `fpga/vitis/src/`: OV7670 → AXI VDMA → UDP camera pipeline. Basic UDP communication (ping-level) has been established before, but a working end-to-end video stream from the FPGA to the laptop has **not** yet been formulated — this is still open, not done. See `docs/udp_research_guide.md` for the current debugging state (six untested hypotheses for the intermittent bare-metal UDP failures).
+- `fpga/main_controller/`, `fpga/camera_i2c/legacy_xem3010/`: legacy Opal Kelly Verilog. Reference only, not the current build path.
+- See `.agents/agent_fpga.md` for the active FPGA sub-agent's scope and mandate.
 
 ---
 
@@ -236,10 +245,12 @@ When processing or generating datasets, be aware of these pipeline rules (from `
 - Goal: collect training data from the actual mounted camera angle.
 - Requires solving video transport off the FPGA — either UDP streaming over the FPGA's Ethernet port, or an STM32-buffered stream into the PC as a fallback. Neither is chosen yet.
 
-### Phase 5 — FPGA Port
-- Target: ZedBoard (Xilinx XC7Z020-1CSG484CES).
+### Phase 5 — FPGA Port (ACTIVE — owned by `.agents/agent_fpga.md`)
+- Target: ZedBoard (Xilinx XC7Z020-1CSG484CES), Vitis/Vivado **2025.2**. See `AGENTS.md` §"Repository Structure Rules → 5. FPGA" for which docs are current vs. legacy (Opal Kelly-era) ground truth.
+- Video transport off the FPGA is **not yet solved**: basic UDP communication has been established before, but a working camera→FPGA→UDP→laptop video stream has not been formulated. This blocks Phase 4.5 (angle-specific data collection) if that path is needed, and is open work for `agent_fpga`. See `docs/udp_research_guide.md` for the current debugging state.
 - Investigate the existing STM32 `ml_control` architecture first — understand how it currently combines/serves model weights before planning the FPGA equivalent.
 - Treat ML inference as a "black box" — define hard-coded I/O contracts first.
+- Concrete open items for `agent_fpga`, in order: (1) vision model → FPGA weight compilation (no export path exists yet for the ~64K-param shared backbone CNN), (2) wiring the already-written `fpga/hls_hardware/` PID+IK HLS core into the live application, (3) resolving the video-streaming gap above.
 - The `CodeV_Local` MCP tool (`generate_verilog`) exists for Verilog/HLS translation, but is currently **not to be invoked** — this machine does not have enough local compute to run the CodeV-DS-6.7B model. Leave the infrastructure in place for when that capacity exists; do not attempt Verilog translation via this tool until told the compute constraint is resolved.
 - FPGA verification sequence:
   1. Write and check testbenches digitally first, before flashing any physical hardware.

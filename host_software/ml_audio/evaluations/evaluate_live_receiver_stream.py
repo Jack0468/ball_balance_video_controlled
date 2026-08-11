@@ -20,6 +20,7 @@ started from. Takes ~2 minutes wall-clock since the receiver simulates
 real-time cadence on purpose (that's the point of testing it this way).
 """
 
+import argparse
 import json
 import os
 import sys
@@ -57,7 +58,14 @@ STREAM_DURATION_SEC = 120
 
 
 def main() -> None:
-    receiver = AudioCommandReceiver(DEFAULT_MODEL, source_file=DEFAULT_STREAM)
+    parser = argparse.ArgumentParser(
+        description="Drive the live AudioCommandReceiver through a continuous stream."
+    )
+    parser.add_argument("--model", default=DEFAULT_MODEL)
+    parser.add_argument("--stream", default=DEFAULT_STREAM)
+    args = parser.parse_args()
+
+    receiver = AudioCommandReceiver(args.model, source_file=args.stream)
 
     # (elapsed_seconds, command) for every distinct command the receiver latched.
     detections: list[tuple[float, str]] = []
@@ -99,8 +107,8 @@ def main() -> None:
         json.dump(
             {
                 "generated_at": timestamp,
-                "model": os.path.relpath(DEFAULT_MODEL, ML_AUDIO_DIR),
-                "stream": os.path.relpath(DEFAULT_STREAM, ML_AUDIO_DIR),
+                "model": os.path.relpath(args.model, ML_AUDIO_DIR),
+                "stream": os.path.relpath(args.stream, ML_AUDIO_DIR),
                 "correct": correct,
                 "total": total,
                 "results": results,
