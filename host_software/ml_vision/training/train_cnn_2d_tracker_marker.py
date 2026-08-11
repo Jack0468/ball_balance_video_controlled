@@ -1,7 +1,7 @@
 import argparse
 import csv
 from pathlib import Path
-from typing import Tuple
+from typing import List, Tuple
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -188,6 +188,34 @@ def evaluate_per_session(
     return pd.DataFrame(rows).sort_values("ball_px_error").reset_index(drop=True)
 
 
+def _append_training_log_row(output_dir: Path, epoch: int, train_loss: float, test_loss: float, header: bool) -> None:
+    """Write one epoch's row immediately rather than buffering the whole log in memory,
+    so a mid-training crash doesn't lose the history for epochs that already finished."""
+    mode = "w" if header else "a"
+    with (output_dir / "training_log.csv").open(mode, newline="", encoding="utf-8") as handle:
+        writer = csv.writer(handle)
+        if header:
+            writer.writerow(["Epoch", "Train_Loss", "Test_Loss"])
+        writer.writerow([epoch, train_loss, test_loss])
+
+
+def _plot_training_curve(history_train_loss: List[float], history_test_loss: List[float], output_dir: Path) -> None:
+    """Regenerated every epoch (cheap for a line plot this small) so training_curve.png
+    reflects progress even if the run never reaches args.epochs. Sized off len(history)
+    rather than args.epochs -- early stopping means those can differ."""
+    plt.figure(figsize=(10, 6))
+    epochs_range = range(1, len(history_train_loss) + 1)
+    plt.plot(epochs_range, history_train_loss, label="Train Loss")
+    plt.plot(epochs_range, history_test_loss, label="Test Loss")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.title("Shared Vision Backbone Training Curve")
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(output_dir / "training_curve.png")
+    plt.close()
+
+
 def train_model(args: argparse.Namespace) -> None:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.manual_seed(7)
@@ -197,6 +225,7 @@ def train_model(args: argparse.Namespace) -> None:
 
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+    resume_path = output_dir / "shared_vision_backbone_resume.pt"
 
     labels_df = pd.read_csv(args.csv_file)
     if len(labels_df) < 2:
@@ -246,12 +275,36 @@ def train_model(args: argparse.Namespace) -> None:
     criterion_mask = nn.BCEWithLogitsLoss()
     criterion_heatmap = nn.MSELoss()  # target is a Gaussian, not the binary mask
 
-    history_train_loss = []
-    history_test_loss = []
+    start_epoch = 0
+    history_train_loss: List[float] = []
+    history_test_loss: List[float] = []
     best_loss = float("inf")
     epochs_no_improve = 0
 
-    for epoch in range(args.epochs):
+    # --resume picks this back up after a Colab disconnect/crash -- reloads model,
+    # optimizer, and scheduler state (not just weights, so AdamW's momentum/variance
+    # buffers and the LR schedule don't restart cold) plus the loss history, and
+    # continues from the next epoch instead of retraining from scratch. Safe to always
+    # pass --resume: if no checkpoint exists yet, this just falls through and trains fresh.
+    if args.resume and resume_path.exists():
+        checkpoint = torch.load(resume_path, map_location=device)
+        model.load_state_dict(checkpoint["model_state_dict"])
+        optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
+        scaler.load_state_dict(checkpoint["scaler_state_dict"])
+        start_epoch = checkpoint["epoch"] + 1
+        best_loss = checkpoint["best_loss"]
+        epochs_no_improve = checkpoint["epochs_no_improve"]
+        history_train_loss = checkpoint["history_train_loss"]
+        history_test_loss = checkpoint["history_test_loss"]
+        print(f"Resumed from {resume_path} at epoch {start_epoch} (best_loss={best_loss:.4f})")
+    elif args.resume:
+        print(f"--resume was set but no checkpoint found at {resume_path}; training from scratch.")
+
+    if start_epoch >= args.epochs:
+        print(f"Resume checkpoint is already at epoch {start_epoch} >= --epochs {args.epochs}; nothing to train.")
+
+    for epoch in range(start_epoch, args.epochs):
         model.train()
         running_loss = 0.0
         for images, ball_xy, masks, heatmap_targets in train_loader:
@@ -304,9 +357,35 @@ def train_model(args: argparse.Namespace) -> None:
             torch.save(model.state_dict(), output_dir / "shared_vision_backbone_best.pt")
         else:
             epochs_no_improve += 1
-            if epochs_no_improve >= args.early_stop_patience:
-                print(f"Early stopping triggered after {epoch + 1} epochs (no improvement for {args.early_stop_patience} epochs).")
-                break
+
+        # Per-epoch log row + curve refresh + full training-state checkpoint, all written
+        # immediately -- so a mid-training Colab crash loses at most the in-progress epoch,
+        # not the whole run. shared_vision_backbone_resume.pt carries optimizer/scheduler
+        # state and history (for --resume); shared_vision_backbone_best.pt above stays a
+        # plain model state_dict so evaluate_shared_vision_backbone.py / ONNX export don't
+        # need to know about the resume format.
+        _append_training_log_row(
+            output_dir, epoch + 1, train_loss, test_loss, header=(epoch == 0 and start_epoch == 0)
+        )
+        _plot_training_curve(history_train_loss, history_test_loss, output_dir)
+        torch.save(
+            {
+                "epoch": epoch,
+                "model_state_dict": model.state_dict(),
+                "optimizer_state_dict": optimizer.state_dict(),
+                "scheduler_state_dict": scheduler.state_dict(),
+                "scaler_state_dict": scaler.state_dict(),
+                "best_loss": best_loss,
+                "epochs_no_improve": epochs_no_improve,
+                "history_train_loss": history_train_loss,
+                "history_test_loss": history_test_loss,
+            },
+            resume_path,
+        )
+
+        if epochs_no_improve >= args.early_stop_patience:
+            print(f"Early stopping triggered after {epoch + 1} epochs (no improvement for {args.early_stop_patience} epochs).")
+            break
 
     torch.save(model.state_dict(), output_dir / "shared_vision_backbone.pt")
 
@@ -339,23 +418,6 @@ def train_model(args: argparse.Namespace) -> None:
         opset_version=17,
     )
     print(f"ONNX model exported to: {onnx_path}")
-
-    plt.figure(figsize=(10, 6))
-    plt.plot(range(1, args.epochs + 1), history_train_loss, label="Train Loss")
-    plt.plot(range(1, args.epochs + 1), history_test_loss, label="Test Loss")
-    plt.xlabel("Epoch")
-    plt.ylabel("Loss")
-    plt.title("Shared Vision Backbone Training Curve")
-    plt.legend()
-    plt.grid(True)
-    plt.savefig(output_dir / "training_curve.png")
-    plt.close()
-
-    with (output_dir / "training_log.csv").open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.writer(handle)
-        writer.writerow(["Epoch", "Train_Loss", "Test_Loss"])
-        for epoch_idx, (train_loss_value, test_loss_value) in enumerate(zip(history_train_loss, history_test_loss), start=1):
-            writer.writerow([epoch_idx, train_loss_value, test_loss_value])
 
 
 def main() -> None:
