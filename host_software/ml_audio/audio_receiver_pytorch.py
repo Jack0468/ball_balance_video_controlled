@@ -7,6 +7,14 @@ import numpy as np
 import sounddevice as sd
 import torch
 from ml_audio.audio_command_classifier_pytorch import AudioCommandClassifier
+from ml_audio.audio_dsp import (  # noqa: F401  (re-exported for existing importers)
+    HOP_LENGTH,
+    MODEL_WINDOW_SECONDS,
+    N_FFT,
+    OUTPUT_SEQUENCE_LENGTH,
+    SAMPLE_RATE,
+    waveform_to_spectrogram,
+)
 
 try:
     import soundfile as sf
@@ -18,12 +26,6 @@ except ImportError:
         from scipy.io import wavfile
     except ImportError:
         wavfile = None
-
-SAMPLE_RATE = 16_000
-MODEL_WINDOW_SECONDS = 1.25
-OUTPUT_SEQUENCE_LENGTH = int(SAMPLE_RATE * MODEL_WINDOW_SECONDS)
-N_FFT = 255
-HOP_LENGTH = 128
 
 LABEL_NAMES = [
     "go_blue",
@@ -70,33 +72,6 @@ def align_speech_to_fixed_length(audio, target_samples=OUTPUT_SEQUENCE_LENGTH):
         audio = audio / peak * 0.95
 
     return audio.astype(np.float32)
-
-
-def waveform_to_spectrogram(waveform, noise_profile=None, noise_alpha=1.5):
-    waveform_pt = torch.tensor(waveform, dtype=torch.float32).unsqueeze(0)
-    window = torch.hann_window(N_FFT)
-    spec = torch.stft(
-        waveform_pt,
-        n_fft=N_FFT,
-        hop_length=HOP_LENGTH,
-        window=window,
-        return_complex=True,
-        center=False,
-    )
-
-    # Convert to absolute magnitude spectrum
-    spec = spec.abs()
-
-    # Apply Spectral Subtraction if profile exists
-    if noise_profile is not None:
-        # noise_profile is [1, 128], we need [1, 128, 1] to broadcast over the time dimension
-        spec = spec - (noise_profile.unsqueeze(-1) * noise_alpha)
-        spec = torch.clamp(spec, min=0.0)
-
-    # PyTorch stft returns [batch, freqs, frames]. TF returns [batch, frames, freqs].
-    spec = spec.transpose(1, 2)
-    spec = torch.log(spec + 1e-6)
-    return spec
 
 
 class AudioCommandReceiver:

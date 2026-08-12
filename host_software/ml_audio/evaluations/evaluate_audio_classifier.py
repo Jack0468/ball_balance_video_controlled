@@ -57,7 +57,7 @@ if HOST_SOFTWARE_DIR not in sys.path:
     sys.path.insert(0, HOST_SOFTWARE_DIR)
 
 from ml_audio.audio_command_classifier_pytorch import AudioCommandClassifier  # noqa: E402
-from ml_audio.audio_receiver_pytorch import (  # noqa: E402
+from ml_audio.audio_dsp import (  # noqa: E402
     OUTPUT_SEQUENCE_LENGTH,
     SAMPLE_RATE,
     waveform_to_spectrogram,

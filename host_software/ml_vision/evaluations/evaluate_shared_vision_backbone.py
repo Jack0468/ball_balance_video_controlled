@@ -37,6 +37,18 @@ from host_software.ml_vision.training.train_cnn_2d_tracker_marker import (
     temporal_split,
 )
 
+# Physical platform dimensions -- same constants as auto_label_shared_vision.py
+# (host_software/ml_vision/data_processing/auto_label_shared_vision.py), which is
+# where ball_x_px/ball_y_px are originally derived FROM touch_x/touch_y. The warp
+# step there always maps the fixed mm rectangle [-margin, W+margin] x [-margin,
+# H+margin] onto the model's full pixel frame (build_paper_corners() + warp_to_platform()),
+# so -- unlike a homography, which varies per frame -- this per-axis mm/px scale is
+# exact and constant, not an approximation, as long as --input-size here matches the
+# resolution the dataset's images/labels were generated at (128x128 by default).
+TOUCHPAD_W_MM = 187.5
+TOUCHPAD_H_MM = 142.0
+PAPER_MARGIN_MM = 6.0
+
 
 def mask_iou_dice(pred_logits: torch.Tensor, target: torch.Tensor, threshold: float = 0.5) -> Tuple[float, float]:
     """Summed IoU and Dice over a batch of binary masks, thresholded at `threshold`."""
@@ -87,7 +99,14 @@ def evaluate(args: argparse.Namespace) -> None:
     px_scale = torch.tensor([input_size[1], input_size[0]], device=device, dtype=torch.float32)
     heatmap_criterion = torch.nn.MSELoss(reduction="sum")
 
+    # mm/px scale: physical mm span of the full frame (touchpad + margin on both
+    # sides) divided by the pixel width/height being evaluated at -- see the
+    # TOUCHPAD_W_MM/TOUCHPAD_H_MM/PAPER_MARGIN_MM comment above.
+    mm_per_px_x = (TOUCHPAD_W_MM + 2 * PAPER_MARGIN_MM) / input_size[1]
+    mm_per_px_y = (TOUCHPAD_H_MM + 2 * PAPER_MARGIN_MM) / input_size[0]
+
     px_errors = []
+    error_x_px, error_y_px = [], []
     iou_sum, dice_sum, n_masks = 0.0, 0.0, 0
     heatmap_sq_error_sum, n_heatmap_px = 0.0, 0
     inference_times_ms = []
@@ -108,6 +127,8 @@ def evaluate(args: argparse.Namespace) -> None:
 
             px_error = (pred_ball_xy - ball_xy) * px_scale
             px_errors.extend(px_error.norm(dim=1).cpu().numpy().tolist())
+            error_x_px.extend(px_error[:, 0].cpu().numpy().tolist())
+            error_y_px.extend(px_error[:, 1].cpu().numpy().tolist())
 
             batch_iou, batch_dice = mask_iou_dice(pred_mask_logits, masks)
             iou_sum += batch_iou
@@ -118,7 +139,18 @@ def evaluate(args: argparse.Namespace) -> None:
             n_heatmap_px += heatmap_targets.numel()
 
     px_errors = np.array(px_errors)
+    error_x_px = np.array(error_x_px)
+    error_y_px = np.array(error_y_px)
     inference_times_ms = np.array(inference_times_ms)
+
+    # mm versions of the same errors -- per-axis scale, not the Euclidean px error
+    # times a single average factor, since mm_per_px_x != mm_per_px_y (platform
+    # isn't square). Same metric names/style as evaluate_cnn_2d_tracker.py,
+    # evaluate_resnet_expert_tracker.py, and models/*/evaluation_metrics.json
+    # (e.g. mlp_corrector_0728_v6), so results are directly comparable across models.
+    error_x_mm = error_x_px * mm_per_px_x
+    error_y_mm = error_y_px * mm_per_px_y
+    euclidean_error_mm = np.sqrt(error_x_mm**2 + error_y_mm**2)
 
     metrics = {
         "num_val_samples": int(len(dataset)),
@@ -126,6 +158,13 @@ def evaluate(args: argparse.Namespace) -> None:
         "ball_px_error_median": float(np.median(px_errors)),
         "ball_px_error_p95": float(np.percentile(px_errors, 95)),
         "ball_px_error_max": float(px_errors.max()),
+        "MAE_X_mm": float(np.mean(np.abs(error_x_mm))),
+        "MAE_Y_mm": float(np.mean(np.abs(error_y_mm))),
+        "RMSE_X_mm": float(np.sqrt(np.mean(error_x_mm**2))),
+        "RMSE_Y_mm": float(np.sqrt(np.mean(error_y_mm**2))),
+        "Mean_Euclidean_Error_mm": float(np.mean(euclidean_error_mm)),
+        "Max_Euclidean_Error_mm": float(np.max(euclidean_error_mm)),
+        "95th_Percentile_Error_mm": float(np.percentile(euclidean_error_mm, 95)),
         "mask_iou_mean": float(iou_sum / max(n_masks, 1)),
         "mask_dice_mean": float(dice_sum / max(n_masks, 1)),
         "heatmap_mse": float(heatmap_sq_error_sum / max(n_heatmap_px, 1)),

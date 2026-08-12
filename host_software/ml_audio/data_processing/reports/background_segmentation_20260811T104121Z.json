@@ -1,0 +1,5298 @@
+{
+  "source": "data\\01_background_noise\\lab_background_sound_01.wav",
+  "clips": [
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000000.wav",
+      "source_window_index": 0
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000001.wav",
+      "source_window_index": 1
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000002.wav",
+      "source_window_index": 2
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000003.wav",
+      "source_window_index": 3
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000000.wav",
+      "source_window_index": 4
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000004.wav",
+      "source_window_index": 5
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000001.wav",
+      "source_window_index": 6
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000002.wav",
+      "source_window_index": 8
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000005.wav",
+      "source_window_index": 9
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000006.wav",
+      "source_window_index": 10
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000007.wav",
+      "source_window_index": 11
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000003.wav",
+      "source_window_index": 14
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000008.wav",
+      "source_window_index": 15
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000009.wav",
+      "source_window_index": 16
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000010.wav",
+      "source_window_index": 17
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000011.wav",
+      "source_window_index": 18
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000012.wav",
+      "source_window_index": 19
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000013.wav",
+      "source_window_index": 20
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000014.wav",
+      "source_window_index": 21
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000015.wav",
+      "source_window_index": 22
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000016.wav",
+      "source_window_index": 23
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000017.wav",
+      "source_window_index": 24
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000018.wav",
+      "source_window_index": 25
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000019.wav",
+      "source_window_index": 26
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000020.wav",
+      "source_window_index": 27
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000004.wav",
+      "source_window_index": 28
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000021.wav",
+      "source_window_index": 29
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000022.wav",
+      "source_window_index": 30
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000023.wav",
+      "source_window_index": 31
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000024.wav",
+      "source_window_index": 32
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000025.wav",
+      "source_window_index": 33
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000026.wav",
+      "source_window_index": 34
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000027.wav",
+      "source_window_index": 35
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000028.wav",
+      "source_window_index": 36
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000005.wav",
+      "source_window_index": 37
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000006.wav",
+      "source_window_index": 38
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000029.wav",
+      "source_window_index": 39
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000030.wav",
+      "source_window_index": 40
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000031.wav",
+      "source_window_index": 41
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000032.wav",
+      "source_window_index": 42
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000033.wav",
+      "source_window_index": 43
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000034.wav",
+      "source_window_index": 44
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000035.wav",
+      "source_window_index": 45
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000036.wav",
+      "source_window_index": 46
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000037.wav",
+      "source_window_index": 47
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000007.wav",
+      "source_window_index": 48
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000038.wav",
+      "source_window_index": 49
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000039.wav",
+      "source_window_index": 50
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000008.wav",
+      "source_window_index": 51
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000040.wav",
+      "source_window_index": 52
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000041.wav",
+      "source_window_index": 53
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000042.wav",
+      "source_window_index": 54
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000043.wav",
+      "source_window_index": 55
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000044.wav",
+      "source_window_index": 56
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000009.wav",
+      "source_window_index": 57
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000045.wav",
+      "source_window_index": 58
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000046.wav",
+      "source_window_index": 59
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000047.wav",
+      "source_window_index": 61
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000048.wav",
+      "source_window_index": 62
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000049.wav",
+      "source_window_index": 63
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000010.wav",
+      "source_window_index": 64
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000011.wav",
+      "source_window_index": 65
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000050.wav",
+      "source_window_index": 66
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000051.wav",
+      "source_window_index": 67
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000052.wav",
+      "source_window_index": 68
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000053.wav",
+      "source_window_index": 69
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000054.wav",
+      "source_window_index": 70
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000055.wav",
+      "source_window_index": 71
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000012.wav",
+      "source_window_index": 72
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000056.wav",
+      "source_window_index": 73
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000057.wav",
+      "source_window_index": 74
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000058.wav",
+      "source_window_index": 75
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000059.wav",
+      "source_window_index": 76
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000060.wav",
+      "source_window_index": 77
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000061.wav",
+      "source_window_index": 78
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000062.wav",
+      "source_window_index": 79
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000063.wav",
+      "source_window_index": 80
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000064.wav",
+      "source_window_index": 81
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000013.wav",
+      "source_window_index": 82
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000065.wav",
+      "source_window_index": 83
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000066.wav",
+      "source_window_index": 84
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000014.wav",
+      "source_window_index": 85
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000067.wav",
+      "source_window_index": 86
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000068.wav",
+      "source_window_index": 87
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000069.wav",
+      "source_window_index": 88
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000070.wav",
+      "source_window_index": 89
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000071.wav",
+      "source_window_index": 90
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000072.wav",
+      "source_window_index": 91
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000015.wav",
+      "source_window_index": 92
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000073.wav",
+      "source_window_index": 93
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000074.wav",
+      "source_window_index": 94
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000075.wav",
+      "source_window_index": 95
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000016.wav",
+      "source_window_index": 96
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000076.wav",
+      "source_window_index": 97
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000077.wav",
+      "source_window_index": 98
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000078.wav",
+      "source_window_index": 99
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000079.wav",
+      "source_window_index": 100
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000080.wav",
+      "source_window_index": 101
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000017.wav",
+      "source_window_index": 102
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000081.wav",
+      "source_window_index": 103
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000082.wav",
+      "source_window_index": 104
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000083.wav",
+      "source_window_index": 105
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000084.wav",
+      "source_window_index": 106
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000085.wav",
+      "source_window_index": 107
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000086.wav",
+      "source_window_index": 108
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000087.wav",
+      "source_window_index": 109
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000088.wav",
+      "source_window_index": 110
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000089.wav",
+      "source_window_index": 111
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000090.wav",
+      "source_window_index": 112
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000018.wav",
+      "source_window_index": 113
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000091.wav",
+      "source_window_index": 114
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000092.wav",
+      "source_window_index": 115
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000093.wav",
+      "source_window_index": 116
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000094.wav",
+      "source_window_index": 117
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000095.wav",
+      "source_window_index": 118
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000019.wav",
+      "source_window_index": 119
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000096.wav",
+      "source_window_index": 120
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000097.wav",
+      "source_window_index": 121
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000098.wav",
+      "source_window_index": 122
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000099.wav",
+      "source_window_index": 123
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000100.wav",
+      "source_window_index": 124
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000101.wav",
+      "source_window_index": 125
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000102.wav",
+      "source_window_index": 126
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000103.wav",
+      "source_window_index": 127
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000104.wav",
+      "source_window_index": 128
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000020.wav",
+      "source_window_index": 129
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000105.wav",
+      "source_window_index": 130
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000106.wav",
+      "source_window_index": 131
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000021.wav",
+      "source_window_index": 132
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000107.wav",
+      "source_window_index": 133
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000108.wav",
+      "source_window_index": 134
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000022.wav",
+      "source_window_index": 135
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000109.wav",
+      "source_window_index": 136
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000110.wav",
+      "source_window_index": 137
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000111.wav",
+      "source_window_index": 138
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000112.wav",
+      "source_window_index": 139
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000113.wav",
+      "source_window_index": 140
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000023.wav",
+      "source_window_index": 141
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000114.wav",
+      "source_window_index": 142
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000115.wav",
+      "source_window_index": 143
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000024.wav",
+      "source_window_index": 144
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000116.wav",
+      "source_window_index": 145
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000117.wav",
+      "source_window_index": 146
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000025.wav",
+      "source_window_index": 147
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000026.wav",
+      "source_window_index": 148
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000118.wav",
+      "source_window_index": 149
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000119.wav",
+      "source_window_index": 150
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000027.wav",
+      "source_window_index": 151
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000120.wav",
+      "source_window_index": 152
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000121.wav",
+      "source_window_index": 153
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000122.wav",
+      "source_window_index": 154
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000123.wav",
+      "source_window_index": 155
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000124.wav",
+      "source_window_index": 156
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000125.wav",
+      "source_window_index": 157
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000126.wav",
+      "source_window_index": 158
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000127.wav",
+      "source_window_index": 159
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000128.wav",
+      "source_window_index": 160
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000129.wav",
+      "source_window_index": 161
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000130.wav",
+      "source_window_index": 162
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000131.wav",
+      "source_window_index": 163
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000028.wav",
+      "source_window_index": 164
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000132.wav",
+      "source_window_index": 165
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000133.wav",
+      "source_window_index": 166
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000134.wav",
+      "source_window_index": 167
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000135.wav",
+      "source_window_index": 168
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000136.wav",
+      "source_window_index": 169
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000137.wav",
+      "source_window_index": 170
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000138.wav",
+      "source_window_index": 171
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000029.wav",
+      "source_window_index": 172
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000139.wav",
+      "source_window_index": 173
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000140.wav",
+      "source_window_index": 174
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000141.wav",
+      "source_window_index": 175
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000142.wav",
+      "source_window_index": 176
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000143.wav",
+      "source_window_index": 177
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000144.wav",
+      "source_window_index": 178
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000030.wav",
+      "source_window_index": 179
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000145.wav",
+      "source_window_index": 180
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000146.wav",
+      "source_window_index": 181
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000147.wav",
+      "source_window_index": 182
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000148.wav",
+      "source_window_index": 183
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000149.wav",
+      "source_window_index": 184
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000150.wav",
+      "source_window_index": 185
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000151.wav",
+      "source_window_index": 186
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000152.wav",
+      "source_window_index": 187
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000153.wav",
+      "source_window_index": 188
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000154.wav",
+      "source_window_index": 189
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000155.wav",
+      "source_window_index": 190
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000156.wav",
+      "source_window_index": 191
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000157.wav",
+      "source_window_index": 192
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000158.wav",
+      "source_window_index": 193
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000159.wav",
+      "source_window_index": 194
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000160.wav",
+      "source_window_index": 195
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000161.wav",
+      "source_window_index": 196
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000162.wav",
+      "source_window_index": 197
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000163.wav",
+      "source_window_index": 198
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000164.wav",
+      "source_window_index": 199
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000165.wav",
+      "source_window_index": 200
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000166.wav",
+      "source_window_index": 201
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000167.wav",
+      "source_window_index": 202
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000168.wav",
+      "source_window_index": 204
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000169.wav",
+      "source_window_index": 205
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000170.wav",
+      "source_window_index": 206
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000171.wav",
+      "source_window_index": 207
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000172.wav",
+      "source_window_index": 208
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000173.wav",
+      "source_window_index": 209
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000031.wav",
+      "source_window_index": 210
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000174.wav",
+      "source_window_index": 211
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000175.wav",
+      "source_window_index": 212
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000176.wav",
+      "source_window_index": 213
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000032.wav",
+      "source_window_index": 214
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000177.wav",
+      "source_window_index": 215
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000178.wav",
+      "source_window_index": 216
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000179.wav",
+      "source_window_index": 217
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000180.wav",
+      "source_window_index": 218
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000181.wav",
+      "source_window_index": 219
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000182.wav",
+      "source_window_index": 220
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000183.wav",
+      "source_window_index": 221
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000033.wav",
+      "source_window_index": 222
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000184.wav",
+      "source_window_index": 223
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000034.wav",
+      "source_window_index": 224
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000185.wav",
+      "source_window_index": 225
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000186.wav",
+      "source_window_index": 226
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000187.wav",
+      "source_window_index": 227
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000035.wav",
+      "source_window_index": 228
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000188.wav",
+      "source_window_index": 229
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000189.wav",
+      "source_window_index": 230
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000190.wav",
+      "source_window_index": 231
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000191.wav",
+      "source_window_index": 232
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000192.wav",
+      "source_window_index": 233
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000036.wav",
+      "source_window_index": 234
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000193.wav",
+      "source_window_index": 235
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000037.wav",
+      "source_window_index": 236
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000194.wav",
+      "source_window_index": 237
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000195.wav",
+      "source_window_index": 238
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000196.wav",
+      "source_window_index": 239
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000197.wav",
+      "source_window_index": 240
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000198.wav",
+      "source_window_index": 241
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000199.wav",
+      "source_window_index": 242
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000200.wav",
+      "source_window_index": 243
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000201.wav",
+      "source_window_index": 244
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000038.wav",
+      "source_window_index": 245
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000202.wav",
+      "source_window_index": 246
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000203.wav",
+      "source_window_index": 247
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000039.wav",
+      "source_window_index": 248
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000204.wav",
+      "source_window_index": 249
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000205.wav",
+      "source_window_index": 250
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000206.wav",
+      "source_window_index": 251
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000207.wav",
+      "source_window_index": 252
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000208.wav",
+      "source_window_index": 253
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000209.wav",
+      "source_window_index": 254
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000040.wav",
+      "source_window_index": 255
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000210.wav",
+      "source_window_index": 256
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000211.wav",
+      "source_window_index": 257
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000041.wav",
+      "source_window_index": 258
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000212.wav",
+      "source_window_index": 259
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000042.wav",
+      "source_window_index": 260
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000213.wav",
+      "source_window_index": 261
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000214.wav",
+      "source_window_index": 262
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000043.wav",
+      "source_window_index": 263
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000215.wav",
+      "source_window_index": 264
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000216.wav",
+      "source_window_index": 265
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000044.wav",
+      "source_window_index": 266
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000217.wav",
+      "source_window_index": 267
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000218.wav",
+      "source_window_index": 268
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000045.wav",
+      "source_window_index": 269
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000219.wav",
+      "source_window_index": 270
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000220.wav",
+      "source_window_index": 271
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000221.wav",
+      "source_window_index": 272
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000222.wav",
+      "source_window_index": 273
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000046.wav",
+      "source_window_index": 274
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000223.wav",
+      "source_window_index": 275
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000224.wav",
+      "source_window_index": 276
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000225.wav",
+      "source_window_index": 277
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000226.wav",
+      "source_window_index": 278
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000227.wav",
+      "source_window_index": 279
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000047.wav",
+      "source_window_index": 280
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000228.wav",
+      "source_window_index": 281
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000229.wav",
+      "source_window_index": 282
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000048.wav",
+      "source_window_index": 283
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000230.wav",
+      "source_window_index": 284
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000231.wav",
+      "source_window_index": 285
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000232.wav",
+      "source_window_index": 286
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000233.wav",
+      "source_window_index": 287
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000234.wav",
+      "source_window_index": 288
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000049.wav",
+      "source_window_index": 289
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000235.wav",
+      "source_window_index": 290
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000236.wav",
+      "source_window_index": 291
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000237.wav",
+      "source_window_index": 292
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000238.wav",
+      "source_window_index": 293
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000239.wav",
+      "source_window_index": 294
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000240.wav",
+      "source_window_index": 295
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000241.wav",
+      "source_window_index": 296
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000242.wav",
+      "source_window_index": 297
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000243.wav",
+      "source_window_index": 298
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000244.wav",
+      "source_window_index": 299
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000245.wav",
+      "source_window_index": 300
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000246.wav",
+      "source_window_index": 301
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000247.wav",
+      "source_window_index": 302
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000248.wav",
+      "source_window_index": 303
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000249.wav",
+      "source_window_index": 304
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000250.wav",
+      "source_window_index": 305
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000251.wav",
+      "source_window_index": 306
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000252.wav",
+      "source_window_index": 307
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000253.wav",
+      "source_window_index": 308
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000050.wav",
+      "source_window_index": 309
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000254.wav",
+      "source_window_index": 310
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000255.wav",
+      "source_window_index": 311
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000256.wav",
+      "source_window_index": 312
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000257.wav",
+      "source_window_index": 313
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000258.wav",
+      "source_window_index": 314
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000051.wav",
+      "source_window_index": 315
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000259.wav",
+      "source_window_index": 316
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000260.wav",
+      "source_window_index": 317
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000261.wav",
+      "source_window_index": 318
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000262.wav",
+      "source_window_index": 319
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000263.wav",
+      "source_window_index": 320
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000264.wav",
+      "source_window_index": 321
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000265.wav",
+      "source_window_index": 322
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000266.wav",
+      "source_window_index": 323
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000267.wav",
+      "source_window_index": 324
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000268.wav",
+      "source_window_index": 325
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000269.wav",
+      "source_window_index": 326
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000270.wav",
+      "source_window_index": 327
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000271.wav",
+      "source_window_index": 328
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000272.wav",
+      "source_window_index": 329
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000273.wav",
+      "source_window_index": 330
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000274.wav",
+      "source_window_index": 331
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000275.wav",
+      "source_window_index": 332
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000276.wav",
+      "source_window_index": 333
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000277.wav",
+      "source_window_index": 334
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000278.wav",
+      "source_window_index": 335
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000279.wav",
+      "source_window_index": 336
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000280.wav",
+      "source_window_index": 337
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000281.wav",
+      "source_window_index": 338
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000052.wav",
+      "source_window_index": 339
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000282.wav",
+      "source_window_index": 340
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000283.wav",
+      "source_window_index": 341
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000284.wav",
+      "source_window_index": 342
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000285.wav",
+      "source_window_index": 343
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000286.wav",
+      "source_window_index": 344
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000287.wav",
+      "source_window_index": 345
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000288.wav",
+      "source_window_index": 346
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000289.wav",
+      "source_window_index": 347
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000290.wav",
+      "source_window_index": 348
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000291.wav",
+      "source_window_index": 349
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000292.wav",
+      "source_window_index": 350
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000293.wav",
+      "source_window_index": 351
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000294.wav",
+      "source_window_index": 352
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000295.wav",
+      "source_window_index": 353
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000296.wav",
+      "source_window_index": 354
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000297.wav",
+      "source_window_index": 355
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000298.wav",
+      "source_window_index": 356
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000053.wav",
+      "source_window_index": 357
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000054.wav",
+      "source_window_index": 358
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000055.wav",
+      "source_window_index": 359
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000299.wav",
+      "source_window_index": 360
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000300.wav",
+      "source_window_index": 361
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000301.wav",
+      "source_window_index": 362
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000302.wav",
+      "source_window_index": 363
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000056.wav",
+      "source_window_index": 364
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000303.wav",
+      "source_window_index": 365
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000057.wav",
+      "source_window_index": 366
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000304.wav",
+      "source_window_index": 367
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000305.wav",
+      "source_window_index": 368
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000058.wav",
+      "source_window_index": 369
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000306.wav",
+      "source_window_index": 370
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000307.wav",
+      "source_window_index": 371
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000308.wav",
+      "source_window_index": 372
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000059.wav",
+      "source_window_index": 373
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000309.wav",
+      "source_window_index": 374
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000310.wav",
+      "source_window_index": 375
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000311.wav",
+      "source_window_index": 376
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000060.wav",
+      "source_window_index": 377
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000312.wav",
+      "source_window_index": 378
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000061.wav",
+      "source_window_index": 379
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000313.wav",
+      "source_window_index": 380
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000314.wav",
+      "source_window_index": 381
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000315.wav",
+      "source_window_index": 382
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000316.wav",
+      "source_window_index": 383
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000317.wav",
+      "source_window_index": 384
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000318.wav",
+      "source_window_index": 385
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000319.wav",
+      "source_window_index": 386
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000320.wav",
+      "source_window_index": 387
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000321.wav",
+      "source_window_index": 388
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000322.wav",
+      "source_window_index": 390
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000323.wav",
+      "source_window_index": 391
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000324.wav",
+      "source_window_index": 393
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000325.wav",
+      "source_window_index": 394
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000326.wav",
+      "source_window_index": 396
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000327.wav",
+      "source_window_index": 397
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000062.wav",
+      "source_window_index": 398
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000328.wav",
+      "source_window_index": 399
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000063.wav",
+      "source_window_index": 400
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000329.wav",
+      "source_window_index": 401
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000330.wav",
+      "source_window_index": 402
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000331.wav",
+      "source_window_index": 403
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000332.wav",
+      "source_window_index": 404
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000333.wav",
+      "source_window_index": 405
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000334.wav",
+      "source_window_index": 406
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000335.wav",
+      "source_window_index": 407
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000336.wav",
+      "source_window_index": 408
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000337.wav",
+      "source_window_index": 409
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000064.wav",
+      "source_window_index": 410
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000338.wav",
+      "source_window_index": 411
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000339.wav",
+      "source_window_index": 412
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000340.wav",
+      "source_window_index": 413
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000341.wav",
+      "source_window_index": 414
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000342.wav",
+      "source_window_index": 415
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000343.wav",
+      "source_window_index": 416
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000065.wav",
+      "source_window_index": 417
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000066.wav",
+      "source_window_index": 418
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000344.wav",
+      "source_window_index": 419
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000345.wav",
+      "source_window_index": 420
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000346.wav",
+      "source_window_index": 421
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000347.wav",
+      "source_window_index": 422
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000348.wav",
+      "source_window_index": 423
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000349.wav",
+      "source_window_index": 424
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000350.wav",
+      "source_window_index": 425
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000351.wav",
+      "source_window_index": 426
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000352.wav",
+      "source_window_index": 427
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000353.wav",
+      "source_window_index": 428
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000354.wav",
+      "source_window_index": 429
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000355.wav",
+      "source_window_index": 430
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000356.wav",
+      "source_window_index": 431
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000357.wav",
+      "source_window_index": 432
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000358.wav",
+      "source_window_index": 433
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000067.wav",
+      "source_window_index": 434
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000359.wav",
+      "source_window_index": 435
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000360.wav",
+      "source_window_index": 436
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000361.wav",
+      "source_window_index": 437
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000362.wav",
+      "source_window_index": 438
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000068.wav",
+      "source_window_index": 439
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000363.wav",
+      "source_window_index": 440
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000364.wav",
+      "source_window_index": 441
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000365.wav",
+      "source_window_index": 442
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000366.wav",
+      "source_window_index": 443
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000367.wav",
+      "source_window_index": 444
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000368.wav",
+      "source_window_index": 445
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000069.wav",
+      "source_window_index": 446
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000070.wav",
+      "source_window_index": 447
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000369.wav",
+      "source_window_index": 448
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000370.wav",
+      "source_window_index": 449
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000371.wav",
+      "source_window_index": 450
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000372.wav",
+      "source_window_index": 451
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000373.wav",
+      "source_window_index": 452
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000374.wav",
+      "source_window_index": 453
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000375.wav",
+      "source_window_index": 454
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000376.wav",
+      "source_window_index": 455
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000377.wav",
+      "source_window_index": 456
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000071.wav",
+      "source_window_index": 457
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000072.wav",
+      "source_window_index": 458
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000378.wav",
+      "source_window_index": 459
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000379.wav",
+      "source_window_index": 460
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000380.wav",
+      "source_window_index": 461
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000073.wav",
+      "source_window_index": 462
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000381.wav",
+      "source_window_index": 463
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000382.wav",
+      "source_window_index": 464
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000383.wav",
+      "source_window_index": 465
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000384.wav",
+      "source_window_index": 466
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000385.wav",
+      "source_window_index": 467
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000386.wav",
+      "source_window_index": 468
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000387.wav",
+      "source_window_index": 469
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000388.wav",
+      "source_window_index": 470
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000389.wav",
+      "source_window_index": 471
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000074.wav",
+      "source_window_index": 472
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000075.wav",
+      "source_window_index": 473
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000076.wav",
+      "source_window_index": 474
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000390.wav",
+      "source_window_index": 475
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000391.wav",
+      "source_window_index": 476
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000392.wav",
+      "source_window_index": 477
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000077.wav",
+      "source_window_index": 478
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000393.wav",
+      "source_window_index": 479
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000078.wav",
+      "source_window_index": 480
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000394.wav",
+      "source_window_index": 481
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000079.wav",
+      "source_window_index": 482
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000395.wav",
+      "source_window_index": 483
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000396.wav",
+      "source_window_index": 484
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000080.wav",
+      "source_window_index": 485
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000397.wav",
+      "source_window_index": 486
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000398.wav",
+      "source_window_index": 487
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000399.wav",
+      "source_window_index": 488
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000400.wav",
+      "source_window_index": 489
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000401.wav",
+      "source_window_index": 490
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000402.wav",
+      "source_window_index": 491
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000403.wav",
+      "source_window_index": 492
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000404.wav",
+      "source_window_index": 493
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000405.wav",
+      "source_window_index": 494
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000406.wav",
+      "source_window_index": 495
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000407.wav",
+      "source_window_index": 496
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000408.wav",
+      "source_window_index": 497
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000409.wav",
+      "source_window_index": 498
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000081.wav",
+      "source_window_index": 499
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000410.wav",
+      "source_window_index": 500
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000411.wav",
+      "source_window_index": 501
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000412.wav",
+      "source_window_index": 502
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000413.wav",
+      "source_window_index": 503
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000414.wav",
+      "source_window_index": 504
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000082.wav",
+      "source_window_index": 505
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000415.wav",
+      "source_window_index": 506
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000416.wav",
+      "source_window_index": 507
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000417.wav",
+      "source_window_index": 508
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000418.wav",
+      "source_window_index": 509
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000419.wav",
+      "source_window_index": 510
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000420.wav",
+      "source_window_index": 511
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000421.wav",
+      "source_window_index": 512
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000422.wav",
+      "source_window_index": 513
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000423.wav",
+      "source_window_index": 514
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000424.wav",
+      "source_window_index": 515
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000425.wav",
+      "source_window_index": 516
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000426.wav",
+      "source_window_index": 517
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000427.wav",
+      "source_window_index": 518
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000083.wav",
+      "source_window_index": 519
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000084.wav",
+      "source_window_index": 520
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000428.wav",
+      "source_window_index": 521
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000429.wav",
+      "source_window_index": 522
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000430.wav",
+      "source_window_index": 523
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000085.wav",
+      "source_window_index": 524
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000431.wav",
+      "source_window_index": 525
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000432.wav",
+      "source_window_index": 526
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000433.wav",
+      "source_window_index": 527
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000434.wav",
+      "source_window_index": 528
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000435.wav",
+      "source_window_index": 529
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000436.wav",
+      "source_window_index": 530
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000437.wav",
+      "source_window_index": 531
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000438.wav",
+      "source_window_index": 532
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000086.wav",
+      "source_window_index": 533
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000439.wav",
+      "source_window_index": 534
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000087.wav",
+      "source_window_index": 535
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000088.wav",
+      "source_window_index": 536
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000440.wav",
+      "source_window_index": 537
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000441.wav",
+      "source_window_index": 538
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000442.wav",
+      "source_window_index": 539
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000443.wav",
+      "source_window_index": 540
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000444.wav",
+      "source_window_index": 541
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000445.wav",
+      "source_window_index": 542
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000446.wav",
+      "source_window_index": 543
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000447.wav",
+      "source_window_index": 544
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000448.wav",
+      "source_window_index": 545
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000449.wav",
+      "source_window_index": 546
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000089.wav",
+      "source_window_index": 547
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000450.wav",
+      "source_window_index": 548
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000451.wav",
+      "source_window_index": 549
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000452.wav",
+      "source_window_index": 550
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000090.wav",
+      "source_window_index": 552
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000453.wav",
+      "source_window_index": 553
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000091.wav",
+      "source_window_index": 554
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000454.wav",
+      "source_window_index": 555
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000455.wav",
+      "source_window_index": 556
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000456.wav",
+      "source_window_index": 557
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000457.wav",
+      "source_window_index": 558
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000458.wav",
+      "source_window_index": 559
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000092.wav",
+      "source_window_index": 560
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000093.wav",
+      "source_window_index": 561
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000459.wav",
+      "source_window_index": 562
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000094.wav",
+      "source_window_index": 563
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000460.wav",
+      "source_window_index": 564
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000461.wav",
+      "source_window_index": 565
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000462.wav",
+      "source_window_index": 566
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000463.wav",
+      "source_window_index": 567
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000464.wav",
+      "source_window_index": 568
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000465.wav",
+      "source_window_index": 569
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000466.wav",
+      "source_window_index": 570
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000467.wav",
+      "source_window_index": 571
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000468.wav",
+      "source_window_index": 572
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000469.wav",
+      "source_window_index": 573
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000470.wav",
+      "source_window_index": 574
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000095.wav",
+      "source_window_index": 575
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000471.wav",
+      "source_window_index": 576
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000472.wav",
+      "source_window_index": 577
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000473.wav",
+      "source_window_index": 578
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000474.wav",
+      "source_window_index": 579
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000475.wav",
+      "source_window_index": 580
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000476.wav",
+      "source_window_index": 581
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000477.wav",
+      "source_window_index": 582
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000478.wav",
+      "source_window_index": 583
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000479.wav",
+      "source_window_index": 584
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000480.wav",
+      "source_window_index": 585
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000481.wav",
+      "source_window_index": 586
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000482.wav",
+      "source_window_index": 587
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000096.wav",
+      "source_window_index": 588
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000483.wav",
+      "source_window_index": 589
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000484.wav",
+      "source_window_index": 590
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000485.wav",
+      "source_window_index": 591
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000486.wav",
+      "source_window_index": 592
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000487.wav",
+      "source_window_index": 593
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000097.wav",
+      "source_window_index": 594
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000098.wav",
+      "source_window_index": 595
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000488.wav",
+      "source_window_index": 596
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000099.wav",
+      "source_window_index": 597
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000489.wav",
+      "source_window_index": 598
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000100.wav",
+      "source_window_index": 599
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000490.wav",
+      "source_window_index": 600
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000491.wav",
+      "source_window_index": 601
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000492.wav",
+      "source_window_index": 602
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000101.wav",
+      "source_window_index": 603
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000493.wav",
+      "source_window_index": 604
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000494.wav",
+      "source_window_index": 605
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000495.wav",
+      "source_window_index": 606
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000496.wav",
+      "source_window_index": 607
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000497.wav",
+      "source_window_index": 608
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000498.wav",
+      "source_window_index": 609
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000499.wav",
+      "source_window_index": 610
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000102.wav",
+      "source_window_index": 611
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000500.wav",
+      "source_window_index": 612
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000501.wav",
+      "source_window_index": 613
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000502.wav",
+      "source_window_index": 614
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000503.wav",
+      "source_window_index": 615
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000103.wav",
+      "source_window_index": 616
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000504.wav",
+      "source_window_index": 617
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000505.wav",
+      "source_window_index": 618
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000506.wav",
+      "source_window_index": 619
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000507.wav",
+      "source_window_index": 620
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000508.wav",
+      "source_window_index": 621
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000104.wav",
+      "source_window_index": 622
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000509.wav",
+      "source_window_index": 623
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000510.wav",
+      "source_window_index": 624
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000511.wav",
+      "source_window_index": 625
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000512.wav",
+      "source_window_index": 626
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000513.wav",
+      "source_window_index": 627
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000514.wav",
+      "source_window_index": 628
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000515.wav",
+      "source_window_index": 629
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000516.wav",
+      "source_window_index": 630
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000517.wav",
+      "source_window_index": 631
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000105.wav",
+      "source_window_index": 632
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000518.wav",
+      "source_window_index": 633
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000519.wav",
+      "source_window_index": 634
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000520.wav",
+      "source_window_index": 635
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000521.wav",
+      "source_window_index": 636
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000522.wav",
+      "source_window_index": 637
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000523.wav",
+      "source_window_index": 638
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000524.wav",
+      "source_window_index": 639
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000106.wav",
+      "source_window_index": 640
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000525.wav",
+      "source_window_index": 641
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000526.wav",
+      "source_window_index": 642
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000527.wav",
+      "source_window_index": 643
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000528.wav",
+      "source_window_index": 644
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000107.wav",
+      "source_window_index": 645
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000108.wav",
+      "source_window_index": 646
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000529.wav",
+      "source_window_index": 647
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000530.wav",
+      "source_window_index": 648
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000531.wav",
+      "source_window_index": 649
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000532.wav",
+      "source_window_index": 650
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000533.wav",
+      "source_window_index": 651
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000534.wav",
+      "source_window_index": 652
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000535.wav",
+      "source_window_index": 653
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000536.wav",
+      "source_window_index": 654
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000537.wav",
+      "source_window_index": 655
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000538.wav",
+      "source_window_index": 656
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000539.wav",
+      "source_window_index": 657
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000540.wav",
+      "source_window_index": 658
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000541.wav",
+      "source_window_index": 659
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000542.wav",
+      "source_window_index": 660
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000543.wav",
+      "source_window_index": 661
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000544.wav",
+      "source_window_index": 662
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000545.wav",
+      "source_window_index": 663
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000546.wav",
+      "source_window_index": 664
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000547.wav",
+      "source_window_index": 665
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000548.wav",
+      "source_window_index": 666
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000549.wav",
+      "source_window_index": 667
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000550.wav",
+      "source_window_index": 668
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000551.wav",
+      "source_window_index": 669
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000552.wav",
+      "source_window_index": 670
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000553.wav",
+      "source_window_index": 671
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000554.wav",
+      "source_window_index": 672
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000555.wav",
+      "source_window_index": 673
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000556.wav",
+      "source_window_index": 674
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000557.wav",
+      "source_window_index": 675
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000558.wav",
+      "source_window_index": 676
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000559.wav",
+      "source_window_index": 677
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000560.wav",
+      "source_window_index": 678
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000561.wav",
+      "source_window_index": 679
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000562.wav",
+      "source_window_index": 680
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000563.wav",
+      "source_window_index": 682
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000564.wav",
+      "source_window_index": 683
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000565.wav",
+      "source_window_index": 684
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000566.wav",
+      "source_window_index": 685
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000567.wav",
+      "source_window_index": 686
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000568.wav",
+      "source_window_index": 687
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000569.wav",
+      "source_window_index": 691
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000570.wav",
+      "source_window_index": 701
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000109.wav",
+      "source_window_index": 714
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000571.wav",
+      "source_window_index": 715
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000572.wav",
+      "source_window_index": 721
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000573.wav",
+      "source_window_index": 733
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000574.wav",
+      "source_window_index": 735
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000575.wav",
+      "source_window_index": 739
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000576.wav",
+      "source_window_index": 740
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000110.wav",
+      "source_window_index": 741
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000577.wav",
+      "source_window_index": 742
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000578.wav",
+      "source_window_index": 743
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000579.wav",
+      "source_window_index": 744
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000580.wav",
+      "source_window_index": 745
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000581.wav",
+      "source_window_index": 748
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000582.wav",
+      "source_window_index": 752
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000583.wav",
+      "source_window_index": 753
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000584.wav",
+      "source_window_index": 754
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000585.wav",
+      "source_window_index": 755
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000586.wav",
+      "source_window_index": 756
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000587.wav",
+      "source_window_index": 757
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000588.wav",
+      "source_window_index": 758
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000589.wav",
+      "source_window_index": 759
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000590.wav",
+      "source_window_index": 760
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000591.wav",
+      "source_window_index": 761
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000592.wav",
+      "source_window_index": 762
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000593.wav",
+      "source_window_index": 763
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000594.wav",
+      "source_window_index": 764
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000595.wav",
+      "source_window_index": 765
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000596.wav",
+      "source_window_index": 766
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000111.wav",
+      "source_window_index": 767
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000597.wav",
+      "source_window_index": 768
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000598.wav",
+      "source_window_index": 769
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000599.wav",
+      "source_window_index": 770
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000600.wav",
+      "source_window_index": 771
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000601.wav",
+      "source_window_index": 772
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000602.wav",
+      "source_window_index": 773
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000603.wav",
+      "source_window_index": 774
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000604.wav",
+      "source_window_index": 775
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000605.wav",
+      "source_window_index": 776
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000606.wav",
+      "source_window_index": 777
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000607.wav",
+      "source_window_index": 778
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000608.wav",
+      "source_window_index": 779
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000609.wav",
+      "source_window_index": 780
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000610.wav",
+      "source_window_index": 781
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000611.wav",
+      "source_window_index": 782
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000612.wav",
+      "source_window_index": 783
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000613.wav",
+      "source_window_index": 784
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000614.wav",
+      "source_window_index": 785
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000615.wav",
+      "source_window_index": 786
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000616.wav",
+      "source_window_index": 787
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000617.wav",
+      "source_window_index": 788
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000618.wav",
+      "source_window_index": 789
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000619.wav",
+      "source_window_index": 790
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000620.wav",
+      "source_window_index": 791
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000621.wav",
+      "source_window_index": 792
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000622.wav",
+      "source_window_index": 793
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000623.wav",
+      "source_window_index": 794
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000624.wav",
+      "source_window_index": 795
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000625.wav",
+      "source_window_index": 796
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000626.wav",
+      "source_window_index": 797
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000627.wav",
+      "source_window_index": 798
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000628.wav",
+      "source_window_index": 799
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000629.wav",
+      "source_window_index": 800
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000630.wav",
+      "source_window_index": 801
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000631.wav",
+      "source_window_index": 802
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000632.wav",
+      "source_window_index": 803
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000633.wav",
+      "source_window_index": 804
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000634.wav",
+      "source_window_index": 805
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000635.wav",
+      "source_window_index": 806
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000636.wav",
+      "source_window_index": 807
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000637.wav",
+      "source_window_index": 808
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000638.wav",
+      "source_window_index": 809
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000639.wav",
+      "source_window_index": 810
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000640.wav",
+      "source_window_index": 811
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000641.wav",
+      "source_window_index": 812
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000642.wav",
+      "source_window_index": 813
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000643.wav",
+      "source_window_index": 814
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000644.wav",
+      "source_window_index": 815
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000645.wav",
+      "source_window_index": 816
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000646.wav",
+      "source_window_index": 817
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000647.wav",
+      "source_window_index": 818
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000648.wav",
+      "source_window_index": 819
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000649.wav",
+      "source_window_index": 820
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000650.wav",
+      "source_window_index": 821
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000651.wav",
+      "source_window_index": 822
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000652.wav",
+      "source_window_index": 823
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000653.wav",
+      "source_window_index": 824
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000654.wav",
+      "source_window_index": 825
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000655.wav",
+      "source_window_index": 826
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000656.wav",
+      "source_window_index": 827
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000657.wav",
+      "source_window_index": 828
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000658.wav",
+      "source_window_index": 829
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000659.wav",
+      "source_window_index": 830
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000112.wav",
+      "source_window_index": 831
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000660.wav",
+      "source_window_index": 832
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000113.wav",
+      "source_window_index": 833
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000661.wav",
+      "source_window_index": 834
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000114.wav",
+      "source_window_index": 835
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000115.wav",
+      "source_window_index": 836
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000116.wav",
+      "source_window_index": 837
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000662.wav",
+      "source_window_index": 838
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000663.wav",
+      "source_window_index": 839
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000664.wav",
+      "source_window_index": 840
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000665.wav",
+      "source_window_index": 841
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000666.wav",
+      "source_window_index": 842
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000667.wav",
+      "source_window_index": 843
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000668.wav",
+      "source_window_index": 844
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000669.wav",
+      "source_window_index": 845
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000670.wav",
+      "source_window_index": 846
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000671.wav",
+      "source_window_index": 847
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000117.wav",
+      "source_window_index": 848
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000672.wav",
+      "source_window_index": 849
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000673.wav",
+      "source_window_index": 850
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000674.wav",
+      "source_window_index": 851
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000675.wav",
+      "source_window_index": 852
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000676.wav",
+      "source_window_index": 853
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000677.wav",
+      "source_window_index": 854
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000678.wav",
+      "source_window_index": 855
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000118.wav",
+      "source_window_index": 856
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000679.wav",
+      "source_window_index": 857
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000119.wav",
+      "source_window_index": 858
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000680.wav",
+      "source_window_index": 859
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000681.wav",
+      "source_window_index": 860
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000682.wav",
+      "source_window_index": 861
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000683.wav",
+      "source_window_index": 862
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000120.wav",
+      "source_window_index": 863
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000684.wav",
+      "source_window_index": 864
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000685.wav",
+      "source_window_index": 865
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000686.wav",
+      "source_window_index": 866
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000121.wav",
+      "source_window_index": 867
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000687.wav",
+      "source_window_index": 868
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000122.wav",
+      "source_window_index": 869
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000123.wav",
+      "source_window_index": 870
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000688.wav",
+      "source_window_index": 871
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000689.wav",
+      "source_window_index": 872
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000690.wav",
+      "source_window_index": 873
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000691.wav",
+      "source_window_index": 874
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000692.wav",
+      "source_window_index": 875
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000693.wav",
+      "source_window_index": 876
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000694.wav",
+      "source_window_index": 877
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000695.wav",
+      "source_window_index": 878
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000696.wav",
+      "source_window_index": 879
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000124.wav",
+      "source_window_index": 880
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000697.wav",
+      "source_window_index": 881
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000698.wav",
+      "source_window_index": 882
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000699.wav",
+      "source_window_index": 883
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000125.wav",
+      "source_window_index": 884
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000700.wav",
+      "source_window_index": 885
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000701.wav",
+      "source_window_index": 886
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000702.wav",
+      "source_window_index": 887
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000703.wav",
+      "source_window_index": 888
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000704.wav",
+      "source_window_index": 889
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000705.wav",
+      "source_window_index": 890
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000706.wav",
+      "source_window_index": 891
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000126.wav",
+      "source_window_index": 892
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000707.wav",
+      "source_window_index": 893
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000708.wav",
+      "source_window_index": 894
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000709.wav",
+      "source_window_index": 895
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000710.wav",
+      "source_window_index": 896
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000711.wav",
+      "source_window_index": 897
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000712.wav",
+      "source_window_index": 898
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000713.wav",
+      "source_window_index": 899
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000714.wav",
+      "source_window_index": 900
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000715.wav",
+      "source_window_index": 901
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000716.wav",
+      "source_window_index": 902
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000717.wav",
+      "source_window_index": 903
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000718.wav",
+      "source_window_index": 904
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000719.wav",
+      "source_window_index": 905
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000720.wav",
+      "source_window_index": 906
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000721.wav",
+      "source_window_index": 907
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000722.wav",
+      "source_window_index": 908
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000723.wav",
+      "source_window_index": 909
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000724.wav",
+      "source_window_index": 910
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000725.wav",
+      "source_window_index": 911
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000726.wav",
+      "source_window_index": 912
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000127.wav",
+      "source_window_index": 913
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000727.wav",
+      "source_window_index": 914
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000128.wav",
+      "source_window_index": 915
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000728.wav",
+      "source_window_index": 916
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000729.wav",
+      "source_window_index": 917
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000730.wav",
+      "source_window_index": 918
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000731.wav",
+      "source_window_index": 919
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000732.wav",
+      "source_window_index": 920
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000733.wav",
+      "source_window_index": 921
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000734.wav",
+      "source_window_index": 922
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000735.wav",
+      "source_window_index": 923
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000736.wav",
+      "source_window_index": 924
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000737.wav",
+      "source_window_index": 925
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000738.wav",
+      "source_window_index": 926
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000739.wav",
+      "source_window_index": 927
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000740.wav",
+      "source_window_index": 928
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000741.wav",
+      "source_window_index": 929
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000742.wav",
+      "source_window_index": 930
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000743.wav",
+      "source_window_index": 931
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000744.wav",
+      "source_window_index": 932
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000745.wav",
+      "source_window_index": 933
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000746.wav",
+      "source_window_index": 934
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000747.wav",
+      "source_window_index": 935
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000748.wav",
+      "source_window_index": 936
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000129.wav",
+      "source_window_index": 937
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000749.wav",
+      "source_window_index": 938
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000750.wav",
+      "source_window_index": 939
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000751.wav",
+      "source_window_index": 940
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000752.wav",
+      "source_window_index": 941
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000753.wav",
+      "source_window_index": 942
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000754.wav",
+      "source_window_index": 943
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000755.wav",
+      "source_window_index": 944
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000756.wav",
+      "source_window_index": 945
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000757.wav",
+      "source_window_index": 946
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000758.wav",
+      "source_window_index": 947
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000759.wav",
+      "source_window_index": 948
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000760.wav",
+      "source_window_index": 949
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000761.wav",
+      "source_window_index": 950
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000762.wav",
+      "source_window_index": 951
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000763.wav",
+      "source_window_index": 952
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000764.wav",
+      "source_window_index": 953
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000765.wav",
+      "source_window_index": 954
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000766.wav",
+      "source_window_index": 955
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000767.wav",
+      "source_window_index": 956
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000768.wav",
+      "source_window_index": 957
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000769.wav",
+      "source_window_index": 958
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000770.wav",
+      "source_window_index": 959
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000130.wav",
+      "source_window_index": 960
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000771.wav",
+      "source_window_index": 961
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000772.wav",
+      "source_window_index": 962
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000131.wav",
+      "source_window_index": 963
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000773.wav",
+      "source_window_index": 964
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000774.wav",
+      "source_window_index": 965
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000775.wav",
+      "source_window_index": 966
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000776.wav",
+      "source_window_index": 967
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000777.wav",
+      "source_window_index": 968
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000132.wav",
+      "source_window_index": 969
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000778.wav",
+      "source_window_index": 970
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000779.wav",
+      "source_window_index": 971
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000133.wav",
+      "source_window_index": 972
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000780.wav",
+      "source_window_index": 973
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000134.wav",
+      "source_window_index": 974
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000781.wav",
+      "source_window_index": 975
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000782.wav",
+      "source_window_index": 976
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000783.wav",
+      "source_window_index": 977
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000784.wav",
+      "source_window_index": 978
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000135.wav",
+      "source_window_index": 979
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000785.wav",
+      "source_window_index": 980
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000786.wav",
+      "source_window_index": 981
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000787.wav",
+      "source_window_index": 982
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000788.wav",
+      "source_window_index": 983
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000789.wav",
+      "source_window_index": 984
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000790.wav",
+      "source_window_index": 985
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000791.wav",
+      "source_window_index": 986
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000136.wav",
+      "source_window_index": 987
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000137.wav",
+      "source_window_index": 988
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000792.wav",
+      "source_window_index": 989
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000793.wav",
+      "source_window_index": 990
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000794.wav",
+      "source_window_index": 991
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000795.wav",
+      "source_window_index": 992
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000796.wav",
+      "source_window_index": 993
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000797.wav",
+      "source_window_index": 994
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000798.wav",
+      "source_window_index": 995
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000799.wav",
+      "source_window_index": 996
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000800.wav",
+      "source_window_index": 997
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000801.wav",
+      "source_window_index": 998
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000802.wav",
+      "source_window_index": 999
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000803.wav",
+      "source_window_index": 1000
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000804.wav",
+      "source_window_index": 1001
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000805.wav",
+      "source_window_index": 1002
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000806.wav",
+      "source_window_index": 1003
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000807.wav",
+      "source_window_index": 1004
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000808.wav",
+      "source_window_index": 1005
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000809.wav",
+      "source_window_index": 1006
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000810.wav",
+      "source_window_index": 1007
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000811.wav",
+      "source_window_index": 1008
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000812.wav",
+      "source_window_index": 1009
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000813.wav",
+      "source_window_index": 1010
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000138.wav",
+      "source_window_index": 1011
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000814.wav",
+      "source_window_index": 1012
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000815.wav",
+      "source_window_index": 1013
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000816.wav",
+      "source_window_index": 1014
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000817.wav",
+      "source_window_index": 1015
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000818.wav",
+      "source_window_index": 1016
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000819.wav",
+      "source_window_index": 1017
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000139.wav",
+      "source_window_index": 1018
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000140.wav",
+      "source_window_index": 1019
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000820.wav",
+      "source_window_index": 1020
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000141.wav",
+      "source_window_index": 1021
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000821.wav",
+      "source_window_index": 1022
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000822.wav",
+      "source_window_index": 1023
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000823.wav",
+      "source_window_index": 1024
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000824.wav",
+      "source_window_index": 1025
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000825.wav",
+      "source_window_index": 1026
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000826.wav",
+      "source_window_index": 1027
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000827.wav",
+      "source_window_index": 1028
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000828.wav",
+      "source_window_index": 1029
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000829.wav",
+      "source_window_index": 1030
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000830.wav",
+      "source_window_index": 1031
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000831.wav",
+      "source_window_index": 1032
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000832.wav",
+      "source_window_index": 1033
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000833.wav",
+      "source_window_index": 1034
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000834.wav",
+      "source_window_index": 1035
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000835.wav",
+      "source_window_index": 1036
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000836.wav",
+      "source_window_index": 1037
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000837.wav",
+      "source_window_index": 1038
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000838.wav",
+      "source_window_index": 1039
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000839.wav",
+      "source_window_index": 1040
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000840.wav",
+      "source_window_index": 1041
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000841.wav",
+      "source_window_index": 1042
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000842.wav",
+      "source_window_index": 1043
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000843.wav",
+      "source_window_index": 1044
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000142.wav",
+      "source_window_index": 1045
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000844.wav",
+      "source_window_index": 1046
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000845.wav",
+      "source_window_index": 1047
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000143.wav",
+      "source_window_index": 1048
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000846.wav",
+      "source_window_index": 1049
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000847.wav",
+      "source_window_index": 1050
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000848.wav",
+      "source_window_index": 1051
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000849.wav",
+      "source_window_index": 1052
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000850.wav",
+      "source_window_index": 1053
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000851.wav",
+      "source_window_index": 1054
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000852.wav",
+      "source_window_index": 1055
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000853.wav",
+      "source_window_index": 1056
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000854.wav",
+      "source_window_index": 1057
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000855.wav",
+      "source_window_index": 1058
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000856.wav",
+      "source_window_index": 1059
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000857.wav",
+      "source_window_index": 1060
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000858.wav",
+      "source_window_index": 1061
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000859.wav",
+      "source_window_index": 1062
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000144.wav",
+      "source_window_index": 1063
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000145.wav",
+      "source_window_index": 1064
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000860.wav",
+      "source_window_index": 1065
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000861.wav",
+      "source_window_index": 1066
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000146.wav",
+      "source_window_index": 1067
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000862.wav",
+      "source_window_index": 1068
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000863.wav",
+      "source_window_index": 1069
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000147.wav",
+      "source_window_index": 1070
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000148.wav",
+      "source_window_index": 1071
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000864.wav",
+      "source_window_index": 1072
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000865.wav",
+      "source_window_index": 1073
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000149.wav",
+      "source_window_index": 1074
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000866.wav",
+      "source_window_index": 1075
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000150.wav",
+      "source_window_index": 1076
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000867.wav",
+      "source_window_index": 1077
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000868.wav",
+      "source_window_index": 1078
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000869.wav",
+      "source_window_index": 1079
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000870.wav",
+      "source_window_index": 1080
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000871.wav",
+      "source_window_index": 1081
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000872.wav",
+      "source_window_index": 1082
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000873.wav",
+      "source_window_index": 1083
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000874.wav",
+      "source_window_index": 1084
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000875.wav",
+      "source_window_index": 1085
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000876.wav",
+      "source_window_index": 1086
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000877.wav",
+      "source_window_index": 1087
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000878.wav",
+      "source_window_index": 1088
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000151.wav",
+      "source_window_index": 1089
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000879.wav",
+      "source_window_index": 1090
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000880.wav",
+      "source_window_index": 1091
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000881.wav",
+      "source_window_index": 1092
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000882.wav",
+      "source_window_index": 1093
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000883.wav",
+      "source_window_index": 1094
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000884.wav",
+      "source_window_index": 1096
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000885.wav",
+      "source_window_index": 1097
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000886.wav",
+      "source_window_index": 1098
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000887.wav",
+      "source_window_index": 1099
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000152.wav",
+      "source_window_index": 1100
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000888.wav",
+      "source_window_index": 1101
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000889.wav",
+      "source_window_index": 1102
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000153.wav",
+      "source_window_index": 1103
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000890.wav",
+      "source_window_index": 1104
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000891.wav",
+      "source_window_index": 1105
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000154.wav",
+      "source_window_index": 1106
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000892.wav",
+      "source_window_index": 1107
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000893.wav",
+      "source_window_index": 1108
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000894.wav",
+      "source_window_index": 1109
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000895.wav",
+      "source_window_index": 1110
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000155.wav",
+      "source_window_index": 1111
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000896.wav",
+      "source_window_index": 1112
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000156.wav",
+      "source_window_index": 1113
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000897.wav",
+      "source_window_index": 1114
+    },
+    {
+      "split": "val",
+      "out_name": "bgreal_lab_background_sound_01__val__000157.wav",
+      "source_window_index": 1115
+    },
+    {
+      "split": "train",
+      "out_name": "bgreal_lab_background_sound_01__train__000898.wav",
+      "source_window_index": 1116
+    }
+  ],
+  "generated_at": "20260811T104121Z",
+  "dry_run": false,
+  "total_candidate_windows": 1117,
+  "dropped_empty": 60,
+  "written": {
+    "train": 899,
+    "val": 158
+  }
+}

@@ -108,7 +108,8 @@ Rows after normalization: 14840 (dropped 7794)
 
 ### Coverage Diagnostics
 
-- **Coverage Score**: 99.48% (191/192 cells met the goal of 10 samples per 10x10mm)
+- **Coverage Score**: 96.55% (2966/3072 cells met the goal of >=1 sample per 2.5x2.5mm)
+- Density: min 0, P25 3.0, median 4.0, mean 4.4, P75 6.0, max 14, std 2.3. 106/3072 cells empty.
 
 ![Dataset 4 Coverage Diagnostics](../../data/01_bronze/session_20260810_104132/shared_vision_labels_coverage_plot.png)
 
@@ -143,7 +144,8 @@ Saved normalized dataset to: host_software\data\01_bronze\session_20260810_11023
 
 ### Coverage Diagnostics
 
-- **Coverage Score**: 100.00% (192/192 cells met the goal of 10 samples per 10x10mm)
+- **Coverage Score**: 92.32% (2836/3072 cells met the goal of >=1 sample per 2.5x2.5mm)
+- Density: min 0, P25 2.0, median 3.0, mean 3.2, P75 4.0, max 11, std 2.0. 236/3072 cells empty.
 
 ![Dataset 5 Coverage Diagnostics](../../data/01_bronze/session_20260810_110239/shared_vision_labels_coverage_plot.png)
 
@@ -178,7 +180,8 @@ Saved normalized dataset to: host_software\data\01_bronze\session_20260810_11204
 
 ### Coverage Diagnostics
 
-- **Coverage Score**: 100.00% (192/192 cells met the goal of 10 samples per 10x10mm)
+- **Coverage Score**: 95.05% (2920/3072 cells met the goal of >=1 sample per 2.5x2.5mm)
+- Density: min 0, P25 2.0, median 4.0, mean 4.1, P75 6.0, max 14, std 2.3. 152/3072 cells empty.
 
 ![Dataset 6 Coverage Diagnostics](../../data/01_bronze/session_20260810_112047/shared_vision_labels_coverage_plot.png)
 
@@ -213,7 +216,8 @@ Saved normalized dataset to: host_software\data\01_bronze\session_20260810_11433
 
 ### Coverage Diagnostics
 
-- **Coverage Score**: 99.48% (191/192 cells met the goal of 10 samples per 10x10mm)
+- **Coverage Score**: 94.63% (2907/3072 cells met the goal of >=1 sample per 2.5x2.5mm)
+- Density: min 0, P25 2.0, median 4.0, mean 3.7, P75 5.0, max 14, std 2.2. 165/3072 cells empty.
 
 ![Dataset 7 Coverage Diagnostics](../../data/01_bronze/session_20260810_114330/shared_vision_labels_coverage_plot.png)
 
@@ -223,6 +227,8 @@ Saved normalized dataset to: host_software\data\01_bronze\session_20260810_11433
 **Model Tag:** ``
 
 This dataset is a combination of the four previous datasets.
+
+**2026-08-12 note:** Dataset 4's `masks/` directory contained stale per-ArUco-fiducial mask files (4-11px blobs at the four image corners) left over from the very first version of `auto_label_shared_vision.py`, which looped over ArUco markers instead of `features`. The script was already fixed, but the old files were never cleared, and were silently pulled into every blank-platform frame's combined mask via `merge_shared_vision_sessions.py`'s generic mask-indexing regex. Cleared and re-merged; blank-platform frames now correctly have empty masks. Also see docs/PROJECT_LOGBOOK.md for the same-day ball-label point-reflection fix, which affects every dataset below.
 
 ### Processing log
 
@@ -238,7 +244,7 @@ OK: 52772 rows across 4 sessions; all images/masks present; no filename collisio
 
 ### Coverage Diagnostics
 
-- **Coverage Score**: 100.00% (192/192 cells met the goal of 10 samples per 10x10mm)
+- **Coverage Score**: 99.93% (3070/3072 cells met the goal of >=1 sample per 2.5x2.5mm)
 
 ```text
 --------------------------------------------------
@@ -269,3 +275,47 @@ COVERAGE AT OTHER THRESHOLDS:
 ```
 
 ![Combined Dataset Coverage Diagnostics](../../data/03_gold/shared_vision/labels_coverage_plot.png)
+
+## Dataset 9: Synthetic Marker Composites (60/40 training mix)
+
+**Location:** `host_software\data\03_gold\shared_vision_synthetic_mix` (combined training-ready mix). Raw synthetic-only output (pre-combine) is at `host_software\data\03_gold\shared_vision_synthetic`.
+**Model Tag:** `_synth_mix_`
+
+Implements Component 3 of `docs/plans/implementation_plan_shared_backbone_cnn.md` ("For the blank platform session, we will synthetically generate and composite markers at random positions. This prevents the model from memorizing the hard-coded physical positions on the real printed sheets."), extended to also vary **shape and color**, not just position. Across all 3 real printed sheets (Datasets 5/6/7), only **11 of the 20 possible (shape x color) combinations** exist (4 shapes: circle/triangle/square/hexagon x 5 colors: blue/black/red/green/yellow -- this 5-color vocabulary matches the HSV bins the planned `marker_classifier.py` classical-CV post-processing step will use). The missing 9 -- `triangle-{black,green,yellow}`, `square-{black,red,green}`, `hexagon-{black,red,yellow}` -- are heavily biased toward (75% sampling probability) during synthetic generation, so the mask/heatmap heads learn to detect markers by appearance and position, not recall a fixed catalogue.
+
+Built by `host_software/ml_vision/data_processing/generate_synthetic_marker_composites.py` (composites 1-5 shapes per frame onto Dataset 4's blank-platform base images, avoiding the ball + its shadow via darkness thresholding, the 6 ArUco fiducials via fixed pixel exclusion zones, and other placed markers via footprint-based collision checking) followed by `host_software/ml_vision/data_processing/combine_shared_vision_training_mix.py` (physically merges the synthetic output with Datasets 5/6/7 at a stratified-sampled 60/40 ratio, following `merge_shared_vision_sessions.py`'s existing merge pattern).
+
+**Known limitation:** `aruco_markers_04.tex` (the sheet originally planned as a fully unseen evaluation sheet, per `docs/plans/implementation_plan_shared_backbone_cnn.md` and `.agents/AGENTS.md`) has not been printed/collected. Evaluation (`evaluate_shared_vision_backbone.py`) is instead run against the existing all-real Dataset 8 (`host_software/data/03_gold/shared_vision/`, untouched by this dataset), which is same-sheet/different-frames relative to Datasets 5/6/7's 40% real contribution here (disjoint rows within each session via `temporal_split`'s per-session 80/20 split, not a fully unseen sheet). Strictly weaker evidence than a real held-out sheet would give; documented here rather than silently treated as equivalent.
+
+### Processing log
+
+```text
+Synthetic generation (generate_synthetic_marker_composites.py):
+Generated 59336 synthetic rows from 14834 base frames (0 base frames skipped -- image not found).
+Missing-combo coverage: 9/9
+
+Combine (combine_shared_vision_training_mix.py):
+Real rows: 37938
+Synthetic rows available: 59336, target: 56907, sampled: 56907
+Combined total: 94845 (synthetic fraction achieved: 0.600, target: 0.6)
+OK: 94845 rows; all images/masks present; no filename collisions.
+```
+
+### Coverage Diagnostics
+
+- **Coverage Score**: 99.93% (3070/3072 cells met the goal of >=1 sample per 2.5x2.5mm) -- identical cell coverage to Dataset 8, as expected: `touch_x`/`touch_y` positions are inherited unchanged from the base frames (Dataset 4 for synthetic rows, Datasets 5/6/7 directly), so the same physical positions are hit, just at higher density per cell (mean 27.8 vs Dataset 8's 15.4, consistent with the ~1.8x row-count increase).
+- Density: min 0, P25 20.0, median 28.0, mean 27.8, P75 35.0, max 72, std 11.2. 2/3072 cells empty.
+
+![Dataset 9 Coverage Diagnostics](../../data/03_gold/shared_vision_synthetic_mix/labels_coverage_plot.png)
+
+### Combo Balance
+
+Unlike spatial coverage (above), this is the coverage axis this dataset actually exists to fix: marker instance count per (shape, color) combo. All 20 combos are represented; the 9 previously-missing ones (orange) now have 13k-16k+ training instances each.
+
+![Dataset 9 Combo Balance](../../data/03_gold/shared_vision_synthetic_mix/combo_balance_plot.png)
+
+### Label Verification
+
+`verify_shared_vision_labels.py --annotate-combo-labels` spot-check confirms: real-session rows (Datasets 5/6/7) show correctly-aligned ball labels and marker masks as before; synthetic rows show ball labels correctly avoiding all drawn markers, and each marker's `shape/color` text annotation (sourced from the `synthetic_markers_json` column) matches what's actually rendered.
+
+![Dataset 9 Label Verification](../../data/03_gold/shared_vision_synthetic_mix/label_verification_grid.png)

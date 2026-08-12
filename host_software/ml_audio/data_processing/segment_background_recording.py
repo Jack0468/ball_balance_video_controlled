@@ -52,7 +52,7 @@ HOST_SOFTWARE_DIR = os.path.dirname(ML_AUDIO_DIR)
 if HOST_SOFTWARE_DIR not in sys.path:
     sys.path.insert(0, HOST_SOFTWARE_DIR)
 
-from ml_audio.audio_receiver_pytorch import OUTPUT_SEQUENCE_LENGTH, SAMPLE_RATE  # noqa: E402
+from ml_audio.audio_dsp import OUTPUT_SEQUENCE_LENGTH, SAMPLE_RATE  # noqa: E402
 
 DEFAULT_SOURCE = os.path.join(
     ML_AUDIO_DIR, "data", "01_background_noise", "lab_background_sound_01.wav"
