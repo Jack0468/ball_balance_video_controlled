@@ -134,22 +134,68 @@ def project_points(points_mm: np.ndarray, homography: np.ndarray) -> np.ndarray:
 
 
 def render_marker_mask(shape: Tuple[int, int], center_xy: Tuple[float, float], marker: Dict) -> np.ndarray:
+    """Render a marker's mask at its true printed size and shape.
+
+    size_mm is the shape's RADIUS, not diameter -- confirmed against the TikZ
+    source (e.g. aruco_markers_03.tex's `circle (8mm)`, and its "~8mm effective
+    radius" comment shared by every feature on that sheet). radius_px converts
+    it via the platform's actual mm-to-pixel scale (the warp always maps the
+    fixed mm rectangle [-margin, W+margin] x [-margin, H+margin] onto the full
+    output frame, so this is an exact scale, not an approximation) -- NOT the
+    previous `size_mm * 0.35` constant, which covered only ~34% of the marker's
+    true visible area (verified against real photos -- see docs/PROJECT_LOGBOOK.md,
+    2026-08-12, "marker mask undersizing").
+
+    square and hexagon now get real polygon geometry, matching the vertex
+    convention in generate_synthetic_marker_composites.py's polygon_vertices()
+    -- previously fell back to a circle (same as anything other than "triangle"),
+    so real-sheet masks now match printed marker shape too, not just corrected size.
+    """
     h, w = shape
     mask = np.zeros((h, w), dtype=np.uint8)
 
     size_mm = float(marker.get("size_mm", 6.0))
     cx, cy = center_xy
-    radius_px = max(2, int(round(size_mm * 0.35)))
+    px_per_mm = ((w / (TOUCHPAD_W + 2 * PAPER_MARGIN_MM)) + (h / (TOUCHPAD_H + 2 * PAPER_MARGIN_MM))) / 2.0
+    radius_px = max(2, int(round(size_mm * px_per_mm)))
 
-    if marker.get("shape", "circle") == "triangle":
+    marker_shape = marker.get("shape", "circle")
+    if marker_shape == "triangle":
+        # Equilateral, matching aruco_markers_03.tex's actual vertices (apex offset
+        # 9.24mm, base offset 4.62mm, half-base-width 8mm for size_mm=8.0) -- NOT a
+        # symmetric apex/base offset. radius_px matches the half-base-width exactly;
+        # apex/base offsets follow the standard equilateral-triangle centroid split
+        # (apex is 2x as far from the centroid as the base is, i.e. 2/sqrt(3) and
+        # 1/sqrt(3) of the half-base-width respectively). The old symmetric formula
+        # put the base ~73% too far from centre, visibly oversizing the mask (see
+        # docs/PROJECT_LOGBOOK.md, 2026-08-12, "triangle mask still oversized").
+        apex_offset = radius_px * 2.0 / np.sqrt(3.0)
+        base_offset = radius_px * 1.0 / np.sqrt(3.0)
         points = np.array(
             [
-                [cx, cy - radius_px],
+                [cx, cy - apex_offset],
+                [cx + radius_px, cy + base_offset],
+                [cx - radius_px, cy + base_offset],
+            ],
+            dtype=np.int32,
+        )
+        cv2.fillPoly(mask, [points], 255)
+    elif marker_shape == "square":
+        points = np.array(
+            [
+                [cx - radius_px, cy - radius_px],
+                [cx + radius_px, cy - radius_px],
                 [cx + radius_px, cy + radius_px],
                 [cx - radius_px, cy + radius_px],
             ],
             dtype=np.int32,
         )
+        cv2.fillPoly(mask, [points], 255)
+    elif marker_shape == "hexagon":
+        angles = np.deg2rad(np.arange(6) * 60.0)
+        points = np.stack(
+            [cx + radius_px * np.cos(angles), cy + radius_px * np.sin(angles)], axis=1
+        ).astype(np.int32)
         cv2.fillPoly(mask, [points], 255)
     else:
         cv2.circle(mask, (int(round(cx)), int(round(cy))), radius_px, 255, -1)
@@ -311,6 +357,7 @@ def auto_label_session(
     output_cropped_dir: Path,
     image_dir: Optional[Path] = None,
     output_size: Tuple[int, int] = (128, 128),
+    limit: Optional[int] = None,
 ) -> int:
     # Load manifest: ArUco fiducials for homography, features for CNN mask targets
     aruco_markers, features, platform_width_mm, platform_height_mm = load_manifest_full(manifest_path)
@@ -322,6 +369,8 @@ def auto_label_session(
         raise FileNotFoundError(f"Missing labels file: {labels_path}")
 
     df = pd.read_csv(labels_path)
+    if limit is not None:
+        df = df.head(limit)
     if image_dir is None:
         image_dir = session_dir / "images"
 
@@ -355,8 +404,15 @@ def auto_label_session(
         # Project ball position from mm → camera px → warped px
         touch_x = float(row.get("touch_x", 0.0))
         touch_y = float(row.get("touch_y", 0.0))
-        ball_x_mm = touch_x + (TOUCHPAD_W / 2.0)
-        ball_y_mm = (TOUCHPAD_H / 2.0) - touch_y
+        # touch_x/touch_y's sign convention (MCU/PID telemetry frame) is inverted on
+        # BOTH axes relative to the mm frame build_paper_corners()/features use --
+        # confirmed empirically: with the old (touch_x + W/2, H/2 - touch_y) formula,
+        # every derived ball_x_px/ball_y_px landed at (128-true_x, 128-true_y), a full
+        # point reflection, while feature markers (which don't go through touch_x/y at
+        # all) landed correctly. See docs/PROJECT_LOGBOOK.md (2026-08-12, "ball label
+        # point-reflection bug").
+        ball_x_mm = (TOUCHPAD_W / 2.0) - touch_x
+        ball_y_mm = (TOUCHPAD_H / 2.0) + touch_y
         ball_pt_mm = np.array([[ball_x_mm, ball_y_mm]], dtype=np.float32)
         ball_pt_cam_px = project_points(ball_pt_mm, aruco_homography)[0]
         ball_pt_warped = apply_warp_to_point(ball_pt_cam_px, warp_matrix)
@@ -401,6 +457,7 @@ def main() -> None:
     parser.add_argument("--output-cropped-dir", default=None, help="Output cropped images dir (default: <session-dir>/images_cropped/)")
     parser.add_argument("--images-dir", default=None, help="Override source image directory")
     parser.add_argument("--output-size", default="128x128", help="Warped output resolution WxH (default: 128x128)")
+    parser.add_argument("--limit", type=int, default=None, help="Only process the first N rows (dry runs)")
     args = parser.parse_args()
 
     session_dir = Path(args.session_dir)
@@ -431,6 +488,7 @@ def main() -> None:
         output_cropped_dir=output_cropped_dir,
         image_dir=images_dir,
         output_size=output_size,
+        limit=args.limit,
     )
     print(f"Wrote {count} labeled rows to {output_csv_path}")
     print(f"Cropped images saved to {output_cropped_dir}")

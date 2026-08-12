@@ -37,14 +37,40 @@ class SharedVisionDataset(Dataset):
     def __len__(self) -> int:
         return len(self.labels_df)
 
-    def _make_gaussian_heatmap(self, cx: float, cy: float, sigma: float = 5.0) -> torch.Tensor:
-        """Generate a single-channel Gaussian heatmap with peak at (cx, cy) in pixel coords."""
+    def _make_gaussian_heatmap(self, cx: float, cy: float, sigma: float = 5.0) -> np.ndarray:
+        """Single Gaussian peak at (cx, cy) in pixel coords, as a plain (H, W) array
+        so callers can np.maximum-combine several peaks before converting to a tensor once."""
         h, w = self.input_size
         xs = np.arange(w, dtype=np.float32)
         ys = np.arange(h, dtype=np.float32)
         grid_x, grid_y = np.meshgrid(xs, ys)
-        heatmap = np.exp(-((grid_x - cx) ** 2 + (grid_y - cy) ** 2) / (2 * sigma ** 2))
-        return torch.from_numpy(heatmap).unsqueeze(0)  # (1, H, W)
+        return np.exp(-((grid_x - cx) ** 2 + (grid_y - cy) ** 2) / (2 * sigma ** 2))
+
+    def _make_multi_peak_heatmap(self, mask_np: np.ndarray, sigma: float = 5.0) -> torch.Tensor:
+        """One Gaussian peak per individual marker (connected component of the
+        combined mask), max-combined -- NOT a single peak at the mean position of
+        every marker's pixels merged together. The old single-centroid approach
+        degenerated on real data: sheets place markers in a symmetric quincunx
+        layout, so the mean of all visible markers' pixels lands at ~the same fixed
+        point (image centre) on virtually every frame regardless of which markers
+        are present -- verified empirically (std < 0.15px across sampled frames from
+        all 3 marker sheets). See docs/PROJECT_LOGBOOK.md, 2026-08-12 ("heatmap
+        target degeneracy"). Frames with no markers get an all-zero target --
+        correctly representing "no marker anywhere" rather than a fake peak at centre.
+        """
+        h, w = self.input_size
+        mask_uint8 = (mask_np > 0.5).astype(np.uint8)
+        num_labels, _, _, centroids = cv2.connectedComponentsWithStats(mask_uint8, connectivity=8)
+
+        if num_labels <= 1:  # label 0 is background only -- no foreground components
+            return torch.zeros((1, h, w), dtype=torch.float32)
+
+        combined = np.zeros((h, w), dtype=np.float32)
+        for label in range(1, num_labels):
+            cx, cy = centroids[label]
+            combined = np.maximum(combined, self._make_gaussian_heatmap(cx, cy, sigma))
+
+        return torch.from_numpy(combined).unsqueeze(0)
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         row = self.labels_df.iloc[idx]
@@ -72,16 +98,9 @@ class SharedVisionDataset(Dataset):
         # Normalise to [0, 1] -- x divided by W, y divided by H
         ball_xy = torch.tensor([kp_x / w, kp_y / h], dtype=torch.float32)
 
-        # Generate Gaussian heatmap target for the marker heatmap head, centred on the
-        # (post-augmentation) mask centroid -- falls back to image centre if mask is empty.
+        # Multi-peak heatmap target: one Gaussian per marker, not one Gaussian at the
+        # mean of every marker's pixels combined -- see _make_multi_peak_heatmap().
         mask_np = mask_tensor[0].numpy()
-        ys_nonzero, xs_nonzero = np.where(mask_np > 0.5)
-        if len(xs_nonzero) > 0:
-            heatmap_cx = float(xs_nonzero.mean())
-            heatmap_cy = float(ys_nonzero.mean())
-        else:
-            heatmap_cx = w / 2.0
-            heatmap_cy = h / 2.0
-        heatmap_target = self._make_gaussian_heatmap(heatmap_cx, heatmap_cy)
+        heatmap_target = self._make_multi_peak_heatmap(mask_np)
 
         return image_tensor, ball_xy, mask_tensor, heatmap_target
