@@ -24,12 +24,13 @@ PyTorch, needs `pandas`/`albumentations` for the production model's imports) —
 one with `ball_balance_env` instead. `gelu_lut.py` and `test_gelu_lut_conversion.py` need
 `vri_fpga_hls4ml`.
 
-## Status (2026-08-12)
+## Status (updated 2026-08-13)
 
 | Item | Status | Result |
 |---|---|---|
 | `gelu_lut.py` — custom hls4ml GELU layer | Conversion verified | `hls4ml.converters.convert_from_pytorch_model` accepts it; confirmed in the model graph log (`Layer name: act, layer type: HGeluLUT`). C-simulation did not run — Windows shell incompatibility in hls4ml's build scripts (`'.' is not recognized...`), not a flaw in the layer. Likely needs WSL or a Linux box for real csim/synthesis, not native Windows — worth confirming before further HLS work. Real Vitis HLS synthesis unverified (no Vitis installed on this machine). |
-| `fpga_target_architecture.py` — `AvgPool2d(16)` swap for `AdaptiveAvgPool2d((1,1))` | Verified exact | Numerically confirmed equivalent to the production architecture (max abs diff ~7e-9, floating-point noise), not just asserted from the math. Safe to use as-is. |
+| `fpga_target_architecture.py` — `AvgPool2d(16)` swap for `AdaptiveAvgPool2d((1,1))` | Verified exact | Numerically confirmed equivalent to the reconstructed production architecture (max abs diff ~7e-9, floating-point noise), not just asserted from the math. |
+| `fpga_target_architecture.py` / `../../host_software/ml_vision/experiments/trial_fixed_point_quantization.py` — `Upsample+Conv2d` decoder (replacing `ConvTranspose2d`) | Updated & verified 2026-08-13 | Decoder architecture reconstructed from the reweighting trial's reported param count only (91,140) — no source code was available, so the reconstruction was verified two ways before trusting it: (1) `fpga_target_architecture.py`'s param count matches 91,140 exactly, and (2) `trial_fixed_point_quantization.py`'s BN-fold equivalence check (folded vs. unfused, same input) passed at floating-point noise level (~5e-8), which would have failed loudly on any index-mapping mistake in the new `Upsample`-containing `Sequential` layout. **Both files currently import a stand-in architecture** (`_UpsampleConvReferenceArchitecture` in `fpga_target_architecture.py`), not the real production `SharedVisionBackbone` — see that file's docstring for exactly what to change once `ml_vision` ships this into production. Until then, neither script can load a real trained checkpoint (there isn't one yet with this architecture) — both were verified with untrained/synthetic weights only. |
 
 ## Gotchas hit along the way
 
