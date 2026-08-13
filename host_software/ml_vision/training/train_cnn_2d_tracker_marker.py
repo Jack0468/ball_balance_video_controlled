@@ -1,5 +1,6 @@
 import argparse
 import csv
+import time
 from pathlib import Path
 from typing import List, Tuple
 
@@ -207,15 +208,23 @@ def evaluate_per_session(
     return pd.DataFrame(rows).sort_values("ball_px_error").reset_index(drop=True)
 
 
-def _append_training_log_row(output_dir: Path, epoch: int, train_loss: float, test_loss: float, header: bool) -> None:
+def _append_training_log_row(
+    output_dir: Path,
+    epoch: int,
+    train_loss: float,
+    test_loss: float,
+    epoch_time_sec: float,
+    cumulative_time_sec: float,
+    header: bool,
+) -> None:
     """Write one epoch's row immediately rather than buffering the whole log in memory,
     so a mid-training crash doesn't lose the history for epochs that already finished."""
     mode = "w" if header else "a"
     with (output_dir / "training_log.csv").open(mode, newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
         if header:
-            writer.writerow(["Epoch", "Train_Loss", "Test_Loss"])
-        writer.writerow([epoch, train_loss, test_loss])
+            writer.writerow(["Epoch", "Train_Loss", "Test_Loss", "Epoch_Time_Sec", "Cumulative_Time_Sec"])
+        writer.writerow([epoch, train_loss, test_loss, round(epoch_time_sec, 3), round(cumulative_time_sec, 3)])
 
 
 def _plot_training_curve(history_train_loss: List[float], history_test_loss: List[float], output_dir: Path) -> None:
@@ -299,6 +308,7 @@ def train_model(args: argparse.Namespace) -> None:
     history_test_loss: List[float] = []
     best_loss = float("inf")
     epochs_no_improve = 0
+    total_training_time_sec = 0.0
 
     # --resume picks this back up after a Colab disconnect/crash -- reloads model,
     # optimizer, and scheduler state (not just weights, so AdamW's momentum/variance
@@ -316,6 +326,9 @@ def train_model(args: argparse.Namespace) -> None:
         epochs_no_improve = checkpoint["epochs_no_improve"]
         history_train_loss = checkpoint["history_train_loss"]
         history_test_loss = checkpoint["history_test_loss"]
+        # .get(), not [...] -- checkpoints saved before this field existed shouldn't
+        # break --resume; they just restart the cumulative timer from 0.
+        total_training_time_sec = checkpoint.get("total_training_time_sec", 0.0)
         print(f"Resumed from {resume_path} at epoch {start_epoch} (best_loss={best_loss:.4f})")
     elif args.resume:
         print(f"--resume was set but no checkpoint found at {resume_path}; training from scratch.")
@@ -324,6 +337,7 @@ def train_model(args: argparse.Namespace) -> None:
         print(f"Resume checkpoint is already at epoch {start_epoch} >= --epochs {args.epochs}; nothing to train.")
 
     for epoch in range(start_epoch, args.epochs):
+        epoch_start_time = time.perf_counter()
         model.train()
         running_loss = 0.0
         for images, ball_xy, masks, heatmap_targets in train_loader:
@@ -368,7 +382,13 @@ def train_model(args: argparse.Namespace) -> None:
         history_test_loss.append(test_loss)
         scheduler.step(test_loss)
 
-        print(f"Epoch {epoch + 1}/{args.epochs} | Train Loss: {train_loss:.4f} | Test Loss: {test_loss:.4f}")
+        epoch_time_sec = time.perf_counter() - epoch_start_time
+        total_training_time_sec += epoch_time_sec
+
+        print(
+            f"Epoch {epoch + 1}/{args.epochs} | Train Loss: {train_loss:.4f} | Test Loss: {test_loss:.4f} "
+            f"| Epoch Time: {epoch_time_sec:.1f}s | Total: {total_training_time_sec / 60:.1f}min"
+        )
 
         if test_loss < best_loss:
             best_loss = test_loss
@@ -384,7 +404,8 @@ def train_model(args: argparse.Namespace) -> None:
         # plain model state_dict so evaluate_shared_vision_backbone.py / ONNX export don't
         # need to know about the resume format.
         _append_training_log_row(
-            output_dir, epoch + 1, train_loss, test_loss, header=(epoch == 0 and start_epoch == 0)
+            output_dir, epoch + 1, train_loss, test_loss, epoch_time_sec, total_training_time_sec,
+            header=(epoch == 0 and start_epoch == 0),
         )
         _plot_training_curve(history_train_loss, history_test_loss, output_dir)
         torch.save(
@@ -398,6 +419,7 @@ def train_model(args: argparse.Namespace) -> None:
                 "epochs_no_improve": epochs_no_improve,
                 "history_train_loss": history_train_loss,
                 "history_test_loss": history_test_loss,
+                "total_training_time_sec": total_training_time_sec,
             },
             resume_path,
         )
@@ -407,6 +429,7 @@ def train_model(args: argparse.Namespace) -> None:
             break
 
     torch.save(model.state_dict(), output_dir / "shared_vision_backbone.pt")
+    print(f"\nTotal training time: {total_training_time_sec / 60:.1f} min ({total_training_time_sec / 3600:.2f} hr)")
 
     # ONNX export — load the best checkpoint before exporting
     best_ckpt = output_dir / "shared_vision_backbone_best.pt"

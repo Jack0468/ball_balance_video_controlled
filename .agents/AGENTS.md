@@ -52,8 +52,8 @@ STM32 / FPGA → PID → Inverse Kinematics → Stepper Motor Pulses
 | Vision (Markers) | 🔧 In Progress | **Shared Backbone CNN planned** — see `implementation_plan_shared_backbone_cnn.md` |
 | Audio | ⚠️ Needs Debug | Produces incorrect outputs during concurrent robot operation; matched filter suspected |
 | Fusion | ⬜ Not Started | Requires working vision (markers) + verified audio |
-| FPGA Port | 🔧 In Progress | ZedBoard/Zynq (XC7Z020), Vitis/Vivado 2025.2. Basic UDP communication has been established before, but a working video stream from FPGA to laptop has not yet been formulated; vision-weight compilation and PID/IK integration are also open. See `.agents/agent_fpga.md` |
-| Multimodal / VLA | 🔧 In Progress | Reactivated — comparing the baseline expert pipeline (vision + audio + control, run separately) against the general-purpose `RT1LiteVLA` end-to-end model. Independent track, host PC + Jetson Nano; does not block or draw against the FPGA resource budget. See `.agents/agent_ml_multimodal.md` |
+| FPGA Port | 🔄 Reframed 2026-08-13 | ZedBoard/Zynq (XC7Z020), Vitis/Vivado 2025.2. **No longer targeting on-chip vision-CNN inference** — that work (hls4ml GELU LUT, Upsample+Conv2d decoder reconstruction) is paused, not deleted. New role: digital↔optical signal bridge for the photonic computing comparison arm (see Multimodal/VLA row below) — **blocked**, no interface spec exists yet for the optical platform. Camera→UDP video streaming is separately still unresolved, independent of this pivot. See `.agents/agent_fpga.md` |
+| Multimodal / VLA | 🔧 In Progress | Reframed 2026-08-13 into a **3-arm comparison**: (1) the expert pipeline (vision + audio + control), (2) a large (billions-of-param) Qwen-derived model adapted from the lab partner's work, deployed standalone on the Jetson Orin Nano, (3) a model compiled for a photonic/optical computing platform, bridged via the FPGA (see above). Expert pipeline should also deploy to the Jetson (not just laptop) to remove hardware-platform as a confound between arms 1 and 2 — agreed direction, not yet implemented. `RT1LiteVLA` (the in-house custom baseline) remains a secondary/optional comparison point, not arm 2. See `.agents/agent_ml_multimodal.md` and `host_software/ml_jetson_vla/docs/ARCHITECTURE.md` |
 | Hardware (Tripod) | ⬜ Not Started | Camera/mic mount design needed |
 | Hardware (Power) | ⬜ Not Started | 24V 6A supply, FPGA power, PCB consolidation TBD |
 
@@ -83,7 +83,15 @@ STM32 / FPGA → PID → Inverse Kinematics → Stepper Motor Pulses
 | VLA (RT1LiteVLA) | ResNet18 + Transformer | ~12M+ | 🔧 Not for FPGA — host PC for training/dev, **Jetson Nano** is the target deployment device; compared against the baseline expert pipeline, see `.agents/agent_ml_multimodal.md` |
 
 > [!IMPORTANT]
-> The original YOLOv8-nano baseline is ~3.2M params. It is **far too large** for FPGA deployment and must never be used as a new model target. Use the ~70K Shared Backbone CNN instead.
+> The YOLOv8-nano/ResNet parameter-budget ban is **no longer FPGA-driven as of 2026-08-13** — the FPGA is not currently targeting on-chip vision inference at all (see Current State table above). Do not cite "too large for FPGA" as a reason to avoid these models going forward; see the open question below for the actual live consideration.
+
+### Open question: which vision model backs the "expert" comparison arm? (2026-08-13, NOT decided)
+
+The current `run_eval_expert.py` reference implementation actually uses the **older** `yolov8_platform_pose_markers_iphone_v1` + `mlp_corrector_iphone_v1` pipeline, not the Shared Backbone CNN — the tiny-parameter design was built as a future FPGA target, not what the expert arm currently runs. Now that FPGA vision inference is paused, parameter count is no longer a constraint either way (both the old pipeline and the Shared Backbone CNN are trivially small for a Jetson Nano or even a laptop).
+
+**The real lurking variable is training-data recency, not size.** The YOLO/ResNet/CNN lineup (tags `_iphone_`, `_0728_`, `_0730_`) was never trained on Dataset 8/9 — the merged, bug-fixed, synthetic-augmented dataset (52,772 real + 59,336 synthetic rows) that only `shared_vision_backbone_v1` has seen. Comparing the two pipelines' accuracy as-is would conflate "architecture" with "which one saw better data," not isolate either variable cleanly.
+
+**Decision:** deliberately left open, pending the Shared Backbone CNN's evaluation results once the current training run finishes. Do not pick a side in either direction (don't assume "revert to the bigger models" and don't assume "the new one wins") until that evaluation exists. A clean architecture-only ablation (does model size matter, holding data constant) would require retraining the YOLO/ResNet lineage on Dataset 8/9 first — flagged as a low-priority "for fun" follow-up, not a blocker on the actual decision, and not worth the time investment unless there's spare capacity for it.
 
 ---
 
@@ -162,7 +170,8 @@ All code additions MUST be placed in the correct directory. Never dump scripts i
 - `host_software/experimental_variants/`: Legacy experimental scripts. Read for reference only; do not add new files here.
 - `host_software/new_vla_files/`: Inactive Arduino/serial firmware (`VLADirectControl`) module. Do not modify — read-only reference for the Multimodal/VLA agent's eval scripts.
 - `host_software/ml_audio/`: Active — reactivated under Roadmap Phase 2 ("Audio Verification"). See `.agents/agent_ml_audio.md`.
-- `host_software/ml_multimodal/`: Active — reactivated for the Expert-vs-VLA comparison track (independent of the Vision/Audio/FPGA roadmap phases; does not draw against the FPGA resource budget). See `.agents/agent_ml_multimodal.md`.
+- `host_software/ml_multimodal/`: Active — the in-house `RT1LiteVLA` baseline and its BC/RL training scaffold, now a secondary/optional arm in the 3-arm comparison (independent of the Vision/Audio/FPGA roadmap phases; does not draw against the FPGA resource budget). See `.agents/agent_ml_multimodal.md`.
+- `host_software/ml_jetson_vla/`: Active (added 2026-08-13) — arm 2 of the 3-arm comparison: a large (billions-of-param) Qwen-derived model, adapted from a lab partner's work, deployed standalone on the Jetson Orin Nano. See `host_software/ml_jetson_vla/docs/ARCHITECTURE.md` for full context and open blockers (model access, deployment pipeline).
 - `host_software/ml_endtoend/`: Orphaned early end-to-end integration snapshot (committed once, 2026-08-02, never touched since). Not formally deprecated but not part of the active architecture either — read-only reference at most.
 
 ### 5. FPGA (`fpga/`)
@@ -260,27 +269,30 @@ When processing or generating datasets, be aware of these pipeline rules (from `
 - Goal: collect training data from the actual mounted camera angle.
 - Requires solving video transport off the FPGA — either UDP streaming over the FPGA's Ethernet port, or an STM32-buffered stream into the PC as a fallback. Neither is chosen yet.
 
-### Phase 5 — FPGA Port (ACTIVE — owned by `.agents/agent_fpga.md`)
+### Phase 5 — FPGA Port (ACTIVE, REFRAMED 2026-08-13 — owned by `.agents/agent_fpga.md`)
 - Target: ZedBoard (Xilinx XC7Z020-1CSG484CES), Vitis/Vivado **2025.2**. See `AGENTS.md` §"Repository Structure Rules → 5. FPGA" for which docs are current vs. legacy (Opal Kelly-era) ground truth.
-- Video transport off the FPGA is **not yet solved**: basic UDP communication has been established before, but a working camera→FPGA→UDP→laptop video stream has not been formulated. This blocks Phase 4.5 (angle-specific data collection) if that path is needed, and is open work for `agent_fpga`. See `docs/udp_research_guide.md` for the current debugging state.
-- Investigate the existing STM32 `ml_control` architecture first — understand how it currently combines/serves model weights before planning the FPGA equivalent.
-- Treat ML inference as a "black box" — define hard-coded I/O contracts first.
-- Concrete open items for `agent_fpga`, in order: (1) vision model → FPGA weight compilation (no export path exists yet for the ~64K-param shared backbone CNN), (2) wiring the already-written `fpga/hls_hardware/` PID+IK HLS core into the live application, (3) resolving the video-streaming gap above.
+- **The FPGA's job changed 2026-08-13: it is no longer targeting on-chip vision-CNN inference.** The prior on-chip vision plan (weight compilation, hls4ml GELU LUT, Upsample+Conv2d decoder reconstruction — all real, verified engineering) is **paused, not deleted** — see `docs/plans/ml_system_parameter_budget.md`'s status note. It may become relevant again if the architecture below changes.
+- **New role: digital↔optical signal bridge** for a photonic/optical computing platform that runs a model "compiled from" a pretrained VLA/LLM (see Phase 6 below) — this is now **blocked**: no interface spec (electrical/protocol/timing) for the optical platform exists yet. Do not write real Verilog against a guessed protocol; scope this as architecture sketching only until a real spec is available.
+- Video transport off the FPGA is **still separately not solved**: basic UDP communication has been established before, but a working camera→FPGA→UDP→laptop video stream has not been formulated. See `docs/udp_research_guide.md` for the current debugging state. This is independent of the optical-bridge pivot — the FPGA still needs working sensor I/O regardless of which downstream role it plays.
+- The already-written `fpga/hls_hardware/` PID+IK HLS core is still not wired into the live application (`fpga/vitis/src/main.c` currently only does camera-stream UDP, with even VDMA commented out for a ping test) — this remains open, decoupled from the vision-CNN pivot above, and is a reasonable place to make progress: write a digital testbench for `balance_controller()` first (AGENTS.md's verification sequence step 1), since it needs no physical hardware, no optical-platform spec, and no vision-model checkpoint.
 - The `CodeV_Local` MCP tool (`generate_verilog`) exists for Verilog/HLS translation, but is currently **not to be invoked** — this machine does not have enough local compute to run the CodeV-DS-6.7B model. Leave the infrastructure in place for when that capacity exists; do not attempt Verilog translation via this tool until told the compute constraint is resolved.
 - FPGA verification sequence:
   1. Write and check testbenches digitally first, before flashing any physical hardware.
   2. Verify camera input (VGA display/monitor sanity check, then route frame via UART/UDP to laptop for single-frame analysis).
   3. Verify motor control (90° rotation test, return to zero).
   4. Verify microphone input at 16kHz (store in RAM, send via UART, run inference on CPU).
-  5. Combine model weights into a single BRAM-resident block; determine the compilation path onto FPGA.
+  5. Once the optical platform's spec exists: design and verify the digital↔optical bridge against it.
 
-### Phase 6 — Multimodal / VLA Comparative Study (ACTIVE — owned by `.agents/agent_ml_multimodal.md`)
+### Phase 6 — Multimodal / VLA Comparative Study (ACTIVE, REFRAMED 2026-08-13 — owned by `.agents/agent_ml_multimodal.md`)
 
-- Independent of Phases 1-5: does not block on or draw against the FPGA resource budget, and runs in parallel with the Vision/Audio/FPGA tracks.
-- Core question: how does the baseline **expert pipeline** (separately-trained vision + audio + control models, chained via Fusion) compare to a **general-purpose end-to-end VLA model** (`RT1LiteVLA`) on the project's standard four evaluation metrics?
-- Pipeline already scaffolded in `host_software/ml_multimodal/` (dataset synthesis → Stage 1 behavioral cloning → Stage 2 RL fine-tuning → three-way evaluation) but several pieces are stubbed/mocked — audit before trusting comparative numbers.
-- Deployment target for the VLA model is the **Jetson Nano** (not the FPGA, not the STM32) — see Hardware Components above.
-- Related external context: a lab partner is building a comparable Qwen-based model for the same task — see "External / Comparative Context" above.
+- Independent of Phases 1-5: does not draw against the FPGA resource budget (FPGA isn't running any model inference for this study — see Phase 5). Runs in parallel with the Vision/Audio/FPGA tracks.
+- **This is now a 3-arm comparison, not a 2-arm one:**
+  1. **Expert pipeline** — vision + audio + control, chained via Fusion. Which vision model backs this (Shared Backbone CNN vs. the older YOLO/ResNet lineage) is an **open question** — see the "Open question" callout in §"ML Component Sizes" above; do not assume an answer. Should deploy to the **Jetson Nano** in addition to the laptop, to remove hardware-platform as a confound against arm 2 — agreed direction (2026-08-13), not yet implemented.
+  2. **Large (billions-of-param) Qwen-derived model** — adapted from the lab partner's model, deployed standalone on the **Jetson Orin Nano, 8GB** (own camera, own inference, own control loop — not relayed through the FPGA; see rationale in `host_software/ml_jetson_vla/docs/ARCHITECTURE.md`). This is the module this directory is for. The in-house `RT1LiteVLA` (`host_software/ml_multimodal/`) is a secondary/optional baseline now, not this arm.
+  3. **Optical/photonic computing platform** — runs a model compiled from a similarly-sized pretrained VLA/LLM. FPGA bridges digital↔optical signals for this arm only (see Phase 5) — **blocked** on the platform's interface spec.
+- `host_software/ml_multimodal/`'s existing scaffold (dataset synthesis → Stage 1 BC → Stage 2 RL → evaluation) still applies to `RT1LiteVLA` as the secondary baseline; several pieces are stubbed/mocked (dummy images, mock marker coords) — audit before trusting comparative numbers from it.
+- `host_software/evaluations/evaluate_system_control.py` is the shared comparison tool across all three arms (`--runs label=csv label=csv ...`) — fixed 2026-08-13 to normalize timestamp-column differences across the expert/VLA CSV schemas and to match the documented metric definitions.
+- Related external context: a lab partner is building a comparable Qwen-based model for the same task, which arm 2 adapts from — see "External / Comparative Context" above.
 
 ---
 

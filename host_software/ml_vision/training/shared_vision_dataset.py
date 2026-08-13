@@ -44,7 +44,8 @@ class SharedVisionDataset(Dataset):
         xs = np.arange(w, dtype=np.float32)
         ys = np.arange(h, dtype=np.float32)
         grid_x, grid_y = np.meshgrid(xs, ys)
-        return np.exp(-((grid_x - cx) ** 2 + (grid_y - cy) ** 2) / (2 * sigma ** 2))
+        heatmap = np.exp(-((grid_x - cx) ** 2 + (grid_y - cy) ** 2) / (2 * sigma ** 2))
+        return heatmap.astype(np.float32)
 
     def _make_multi_peak_heatmap(self, mask_np: np.ndarray, sigma: float = 5.0) -> torch.Tensor:
         """One Gaussian peak per individual marker (connected component of the
@@ -67,10 +68,18 @@ class SharedVisionDataset(Dataset):
 
         combined = np.zeros((h, w), dtype=np.float32)
         for label in range(1, num_labels):
-            cx, cy = centroids[label]
+            # cv2.connectedComponentsWithStats always returns centroids as float64 --
+            # cast to plain Python float (not np.float32(), which is still a numpy
+            # scalar) so numpy's type promotion doesn't silently upcast the whole
+            # Gaussian computation to float64 when subtracted from the float32 grid.
+            # That upcast previously produced a torch.float64 heatmap_target, which
+            # trained fine on CPU (autocast disabled there) but crashed in backward()
+            # on GPU, where autocast/GradScaler enforce float32 -- see
+            # docs/PROJECT_LOGBOOK.md, 2026-08-13.
+            cx, cy = float(centroids[label][0]), float(centroids[label][1])
             combined = np.maximum(combined, self._make_gaussian_heatmap(cx, cy, sigma))
 
-        return torch.from_numpy(combined).unsqueeze(0)
+        return torch.from_numpy(combined.astype(np.float32)).unsqueeze(0)
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         row = self.labels_df.iloc[idx]
