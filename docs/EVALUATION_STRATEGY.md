@@ -24,7 +24,12 @@ This document formalizes the evaluation criteria for the entire VRI 2026 Ball Ba
 
 ## Evaluation Pipeline
 
-The evaluation is performed by `host_software/evaluations/evaluate_system_control.py`, which parses the standardized telemetry CSV (e.g. `labels_sequential.csv` or VLA outputs) containing `host_timestamp_ms`, `target_x/y`, `touch_x/y`, and `theta_a/b/c`.
+The evaluation is performed by `host_software/evaluations/evaluate_system_control.py`, which parses telemetry CSVs from any controller (PID baseline, the expert pipeline, or a VLA policy) containing `target_x/y`, `touch_x/y`, and `theta_a/b/c`, plus one of several recognized timestamp column names (`host_timestamp_ms`, `host_command_sent_ms`/`host_packet_received_ms`, or the legacy `host_time_ms` — see `TIMESTAMP_CANDIDATES` in the script; different eval scripts across the project's history have used different names for this column, so the loader normalizes across them rather than assuming one).
+
+- **Single run:** `python evaluate_system_control.py --csv_path <telemetry.csv> --output_dir <dir>` — writes `control_metrics.json` + a trajectory plot.
+- **Multi-run comparison (expert vs. baseline_vla vs. our_vla, etc.):** `python evaluate_system_control.py --runs expert=<csv> baseline_vla=<csv> our_vla=<csv> --report_dir <dir>` — writes one comparison JSON/CSV/bar-chart PNG across all labeled runs.
+
+Task Success Rate currently measures "settled within tolerance before the trial ended" only — no telemetry schema in the project currently carries a ball-drop signal, so a dropped ball is not distinguished from a trial that simply never settled. Closing that gap requires an upstream drop-detection signal (e.g. from vision), not a change to this script.
 
 ### VLA Goal Alignment (Reinforcement Learning)
 To ensure the end-to-end VLA model respects these criteria, we utilize a two-stage training process:

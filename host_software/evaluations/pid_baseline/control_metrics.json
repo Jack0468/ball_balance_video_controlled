@@ -1,8 +1,11 @@
 {
-    "Total_Trials": 11651,
-    "Task_Success_Rate_Percent": 0.8926272422967986,
-    "Steady_State_Error_mm": 35.32510034127685,
-    "Average_Settling_Time_ms": 1306.0288461538462,
-    "Control_Effort_Per_Frame_deg": 0.9631820663219819,
-    "Total_Control_Effort_deg": 52232.40027457476
+    "Run": "202607_telemetry_eval_raw",
+    "Total_Trials": 1,
+    "Task_Success_Rate_Percent": 100.0,
+    "Task_Success_Rate_Caveat": "Measures 'settled in time' only -- no ball-drop signal exists in current telemetry, so a dropped ball is NOT distinguished from a trial that simply never settled.",
+    "Steady_State_Error_mm": 48.454064174914244,
+    "Steady_State_Error_Trials_Excluded": 0,
+    "Average_Settling_Time_ms": 0.0,
+    "Control_Effort_Per_Sample_deg": 7.335413093931041,
+    "Total_Control_Effort_deg": 1584808.6635307074
 }
