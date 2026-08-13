@@ -48,27 +48,44 @@ class SharedVisionBackbone(nn.Module):
 
         # feature_head removed — it had no semantic target and wasted ~5K params
 
+        # Upsample(nearest)+Conv2d, not ConvTranspose2d -- avoids checkerboard
+        # artifacts (a well-documented ConvTranspose2d failure mode) and both
+        # layers are natively supported by hls4ml, unlike ConvTranspose2d which
+        # needs a custom layer. Locked in 2026-08-13 after a 30-run trial
+        # (experiments/trial_decoder_upsample_vs_transpose.py) showed a large,
+        # consistent mask IoU advantage (+0.25-0.38) that survives at every loss
+        # weight setting tested -- see docs/PROJECT_LOGBOOK.md and
+        # experiments/results/ANALYSIS_2026-08-13.md. The trial also found the
+        # combined loss's mask/heatmap weights need to be low (~0.1/0.02, down
+        # from 0.5/0.1) for stable ball-tracking with either decoder -- see the
+        # --mask-loss-weight/--heatmap-loss-weight defaults below.
         self.mask_head = nn.Sequential(
-            nn.ConvTranspose2d(64, 32, 2, stride=2),
+            nn.Upsample(scale_factor=2, mode="nearest"),
+            nn.Conv2d(64, 32, 3, padding=1),
             nn.BatchNorm2d(32),
             nn.GELU(),
-            nn.ConvTranspose2d(32, 16, 2, stride=2),
+            nn.Upsample(scale_factor=2, mode="nearest"),
+            nn.Conv2d(32, 16, 3, padding=1),
             nn.BatchNorm2d(16),
             nn.GELU(),
-            nn.ConvTranspose2d(16, 8, 2, stride=2),
+            nn.Upsample(scale_factor=2, mode="nearest"),
+            nn.Conv2d(16, 8, 3, padding=1),
             nn.BatchNorm2d(8),
             nn.GELU(),
             nn.Conv2d(8, 1, 1),
         )
 
         self.heatmap_head = nn.Sequential(
-            nn.ConvTranspose2d(64, 32, 2, stride=2),
+            nn.Upsample(scale_factor=2, mode="nearest"),
+            nn.Conv2d(64, 32, 3, padding=1),
             nn.BatchNorm2d(32),
             nn.GELU(),
-            nn.ConvTranspose2d(32, 16, 2, stride=2),
+            nn.Upsample(scale_factor=2, mode="nearest"),
+            nn.Conv2d(32, 16, 3, padding=1),
             nn.BatchNorm2d(16),
             nn.GELU(),
-            nn.ConvTranspose2d(16, 8, 2, stride=2),
+            nn.Upsample(scale_factor=2, mode="nearest"),
+            nn.Conv2d(16, 8, 3, padding=1),
             nn.BatchNorm2d(8),
             nn.GELU(),
             nn.Conv2d(8, 1, 1),
@@ -129,6 +146,8 @@ def evaluate_per_session(
     batch_size: int,
     num_workers: int,
     device: torch.device,
+    mask_loss_weight: float = 0.1,
+    heatmap_loss_weight: float = 0.02,
 ) -> pd.DataFrame:
     """Break the validation loss down by session, so a strong aggregate score can't
     hide the model doing badly on one specific sheet (e.g. the blank platform vs. the
@@ -181,7 +200,7 @@ def evaluate_per_session(
                 "ball_loss": ball_loss,
                 "mask_loss": mask_loss,
                 "heatmap_loss": heatmap_loss,
-                "total_loss": ball_loss + 0.5 * mask_loss + 0.1 * heatmap_loss,
+                "total_loss": ball_loss + mask_loss_weight * mask_loss + heatmap_loss_weight * heatmap_loss,
             }
         )
 
@@ -320,7 +339,7 @@ def train_model(args: argparse.Namespace) -> None:
                 loss_mask = criterion_mask(pred_mask_logits, masks)
                 # Heatmap trained against Gaussian peaks, not the raw binary mask
                 loss_heatmap = criterion_heatmap(torch.sigmoid(pred_heatmap_logits), heatmap_targets)
-                loss = loss_ball + 0.5 * loss_mask + 0.1 * loss_heatmap
+                loss = loss_ball + args.mask_loss_weight * loss_mask + args.heatmap_loss_weight * loss_heatmap
 
             scaler.scale(loss).backward()
             scaler.step(optimizer)
@@ -342,7 +361,7 @@ def train_model(args: argparse.Namespace) -> None:
                 loss_ball = criterion_ball(pred_ball_xy, ball_xy)
                 loss_mask = criterion_mask(pred_mask_logits, masks)
                 loss_heatmap = criterion_heatmap(torch.sigmoid(pred_heatmap_logits), heatmap_targets)
-                test_loss = loss_ball + 0.5 * loss_mask + 0.1 * loss_heatmap
+                test_loss = loss_ball + args.mask_loss_weight * loss_mask + args.heatmap_loss_weight * loss_heatmap
                 running_test_loss += test_loss.item() * images.size(0)
 
         test_loss = running_test_loss / len(test_dataset)
@@ -398,7 +417,8 @@ def train_model(args: argparse.Namespace) -> None:
     # Per-session breakdown on the held-out temporal slice -- a strong aggregate score
     # can hide the model doing badly on one specific sheet.
     per_session_df = evaluate_per_session(
-        model, test_df, args.images_dir, args.mask_dir, input_size, args.batch_size, args.num_workers, device
+        model, test_df, args.images_dir, args.mask_dir, input_size, args.batch_size, args.num_workers, device,
+        mask_loss_weight=args.mask_loss_weight, heatmap_loss_weight=args.heatmap_loss_weight,
     )
     per_session_path = output_dir / "per_session_eval.csv"
     per_session_df.to_csv(per_session_path, index=False)
@@ -435,6 +455,18 @@ def main() -> None:
         type=float,
         default=0.2,
         help="Fraction of each session's frames (by frame_index, chronologically latest) held out for validation",
+    )
+    parser.add_argument(
+        "--mask-loss-weight", type=float, default=0.1,
+        help="Weight on the mask BCE loss in the combined loss. Lowered from 0.5 (2026-08-13) -- "
+        "the decoder trial (experiments/trial_decoder_upsample_vs_transpose.py) found ball-tracking "
+        "variance is driven by shared-encoder gradient competition from the mask/heatmap losses, "
+        "not decoder choice; low weights stabilize it for both decoders equally. See "
+        "experiments/results/ANALYSIS_2026-08-13.md.",
+    )
+    parser.add_argument(
+        "--heatmap-loss-weight", type=float, default=0.02,
+        help="Weight on the heatmap MSE loss in the combined loss. Lowered from 0.1 (2026-08-13), same reasoning as --mask-loss-weight.",
     )
     parser.add_argument("--patience", type=int, default=3, help="ReduceLROnPlateau patience")
     parser.add_argument("--early-stop-patience", type=int, default=10, help="Early stopping patience")

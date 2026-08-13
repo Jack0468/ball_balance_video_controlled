@@ -40,6 +40,7 @@ STM32 / FPGA → PID → Inverse Kinematics → Stepper Motor Pulses
 - **Controller (Target):** ZedBoard FPGA (Xilinx XC7Z020) — all ML inference + PID in hardware.
 - **Camera:** Overhead webcam, 640×480.
 - **Microphone (Planned):** INMP441 digital I2S mic (3.3V, cheap, 16kHz). Note: the audio *data* interface is I2S, not I2C — some planning notes say "I2C" by mistake (easy to confuse the acronyms); do not "correct" this back to I2C.
+- **Compute (Large-Model Deployment):** NVIDIA **Jetson Orin Nano, 8GB** (confirmed 2026-08-13 — Ampere GPU w/ Tensor Cores, 20-67 TOPS INT8, NOT the original 2019 Maxwell-based Jetson Nano, which is ~15-40x weaker and has no Tensor Cores). Target device for large multimodal/VLA models that are out of scope for both the FPGA (612.5 KB BRAM / 220 DSP budget) and the STM32. Not used for the lightweight expert-side vision/audio/control models. Realistic capability ceiling: INT4-quantized models up to ~4B params (e.g. Qwen2.5-VL-3B) at a few tokens/sec; NOT enough headroom for 7B-class models like OpenVLA (~2Hz even on the much stronger Jetson AGX Orin). See Multimodal/VLA section below for what this rules in/out.
 
 ---
 
@@ -52,8 +53,21 @@ STM32 / FPGA → PID → Inverse Kinematics → Stepper Motor Pulses
 | Audio | ⚠️ Needs Debug | Produces incorrect outputs during concurrent robot operation; matched filter suspected |
 | Fusion | ⬜ Not Started | Requires working vision (markers) + verified audio |
 | FPGA Port | 🔧 In Progress | ZedBoard/Zynq (XC7Z020), Vitis/Vivado 2025.2. Basic UDP communication has been established before, but a working video stream from FPGA to laptop has not yet been formulated; vision-weight compilation and PID/IK integration are also open. See `.agents/agent_fpga.md` |
+| Multimodal / VLA | 🔧 In Progress | Reactivated — comparing the baseline expert pipeline (vision + audio + control, run separately) against the general-purpose `RT1LiteVLA` end-to-end model. Independent track, host PC + Jetson Nano; does not block or draw against the FPGA resource budget. See `.agents/agent_ml_multimodal.md` |
 | Hardware (Tripod) | ⬜ Not Started | Camera/mic mount design needed |
 | Hardware (Power) | ⬜ Not Started | 24V 6A supply, FPGA power, PCB consolidation TBD |
+
+---
+
+## External / Comparative Context
+
+- A lab partner is independently building a comparable model for this same task using **Qwen** (a general-purpose multimodal/language model) as their VLA approach. This is useful framing for our own general-purpose baseline and a potential future cross-comparison point, but it is not a dependency: do not assume access to their model/weights/code, and do not adopt Qwen as our architecture without explicit instruction from the user.
+- **`RT1LiteVLA` is not actually a "general-purpose" VLA (2026-08-13 finding):** it deploys trivially on the Jetson Orin Nano (only ~12M params, dwarfed by its budget) — capacity is not the deployment problem. The problem is generality: it uses a hardcoded 5-word closed vocabulary embedding table (not real language understanding), a frozen off-the-shelf ImageNet-pretrained ResNet18 (not pretrained on robot/multimodal data at any real scale), and its Stage-2 RL fine-tuning (`train_vla.py`'s `fine_tune_rl()`) is currently a stub that only prints — it does not actually run PPO/REINFORCE. Treat `RT1LiteVLA` as a cheap in-house **lightweight custom baseline**, not as the "general-purpose VLA" arm of the expert-vs-VLA comparison — it is architecturally closer to a third category than to real general-purpose models like Qwen-VL/OpenVLA/Octo.
+- **Deployment feasibility survey for a genuine general-purpose VLA/VLM on the confirmed 8GB Jetson Orin Nano:**
+  - **Qwen2.5-VL-3B (INT4-quantized via MLC/TensorRT-LLM):** NVIDIA's own Jetson AI Lab benchmarks target this exact class of model on the Orin Nano 8GB (models up to ~4B params). Realistic throughput is a few tokens/sec — fine as a discrete-command planner (image + instruction → target color/action token, same shape as our existing audio-command output) but not for direct per-frame motor-torque generation at any meaningful control rate.
+  - **Octo-small (~93M params, purpose-built VLA, not VLM-based):** the closest architectural match to our expert-vs-VLA framing (real robot-action output head, not text tokens). Published numbers: ~5-8Hz on the much stronger Jetson AGX Orin, ~20Hz on an RTX 4090 — expect low single-digit Hz on the weaker Orin Nano. Comparable published on-device lightweight-VLA work (`LiteVLA-Edge`) reports ~6.6Hz on similar-class edge hardware, which is a useful ballpark.
+  - **OpenVLA (7B): ruled out.** Even on the far stronger Jetson AGX Orin it only reaches ~2Hz, and 7B params leaves little headroom in the Orin Nano's 8GB shared CPU/GPU memory once the OS and other processes are accounted for. Do not attempt to deploy this to the Orin Nano.
+  - Decision on which path (Qwen2.5-VL-3B-as-planner vs. Octo-small-as-policy vs. both) is open — surface the tradeoff to the user rather than picking unilaterally, per this doc's Hardware Decisions convention.
 
 ---
 
@@ -66,7 +80,7 @@ STM32 / FPGA → PID → Inverse Kinematics → Stepper Motor Pulses
 | **Shared Backbone CNN** | `train_cnn_2d_tracker_marker` | **~70K total** | 🔧 Target architecture |
 | Audio Classifier | Conv1D × 3 + Dense | ~13.5K | ⚠️ Needs debugging |
 | Control Net | Small MLP (9→32→32→3) | ~1.5K | ✅ Working — validated via the resistive touchpad sensor; not yet verified end-to-end with vision-derived coordinates |
-| VLA (RT1LiteVLA) | ResNet18 + Transformer | ~12M+ | ⬜ Not for FPGA — host PC only |
+| VLA (RT1LiteVLA) | ResNet18 + Transformer | ~12M+ | 🔧 Not for FPGA — host PC for training/dev, **Jetson Nano** is the target deployment device; compared against the baseline expert pipeline, see `.agents/agent_ml_multimodal.md` |
 
 > [!IMPORTANT]
 > The original YOLOv8-nano baseline is ~3.2M params. It is **far too large** for FPGA deployment and must never be used as a new model target. Use the ~70K Shared Backbone CNN instead.
@@ -146,8 +160,9 @@ All code additions MUST be placed in the correct directory. Never dump scripts i
 
 ### 4. Deprecated / Off-limits Directories
 - `host_software/experimental_variants/`: Legacy experimental scripts. Read for reference only; do not add new files here.
-- `host_software/new_vla_files/`, `host_software/ml_multimodal/`: Inactive modules. Do not modify.
+- `host_software/new_vla_files/`: Inactive Arduino/serial firmware (`VLADirectControl`) module. Do not modify — read-only reference for the Multimodal/VLA agent's eval scripts.
 - `host_software/ml_audio/`: Active — reactivated under Roadmap Phase 2 ("Audio Verification"). See `.agents/agent_ml_audio.md`.
+- `host_software/ml_multimodal/`: Active — reactivated for the Expert-vs-VLA comparison track (independent of the Vision/Audio/FPGA roadmap phases; does not draw against the FPGA resource budget). See `.agents/agent_ml_multimodal.md`.
 - `host_software/ml_endtoend/`: Orphaned early end-to-end integration snapshot (committed once, 2026-08-02, never touched since). Not formally deprecated but not part of the active architecture either — read-only reference at most.
 
 ### 5. FPGA (`fpga/`)
@@ -258,6 +273,14 @@ When processing or generating datasets, be aware of these pipeline rules (from `
   3. Verify motor control (90° rotation test, return to zero).
   4. Verify microphone input at 16kHz (store in RAM, send via UART, run inference on CPU).
   5. Combine model weights into a single BRAM-resident block; determine the compilation path onto FPGA.
+
+### Phase 6 — Multimodal / VLA Comparative Study (ACTIVE — owned by `.agents/agent_ml_multimodal.md`)
+
+- Independent of Phases 1-5: does not block on or draw against the FPGA resource budget, and runs in parallel with the Vision/Audio/FPGA tracks.
+- Core question: how does the baseline **expert pipeline** (separately-trained vision + audio + control models, chained via Fusion) compare to a **general-purpose end-to-end VLA model** (`RT1LiteVLA`) on the project's standard four evaluation metrics?
+- Pipeline already scaffolded in `host_software/ml_multimodal/` (dataset synthesis → Stage 1 behavioral cloning → Stage 2 RL fine-tuning → three-way evaluation) but several pieces are stubbed/mocked — audit before trusting comparative numbers.
+- Deployment target for the VLA model is the **Jetson Nano** (not the FPGA, not the STM32) — see Hardware Components above.
+- Related external context: a lab partner is building a comparable Qwen-based model for the same task — see "External / Comparative Context" above.
 
 ---
 

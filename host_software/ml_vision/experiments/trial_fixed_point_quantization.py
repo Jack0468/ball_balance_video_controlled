@@ -13,6 +13,21 @@ BatchNorm is folded into the preceding conv/deconv before quantization (Section 
 the budget doc) since that's what the deployed HLS core will actually run -- quantizing
 unfused BN parameters separately isn't representative of the real hardware path.
 
+*** IMPORTANT DEPENDENCY, updated 2026-08-13: the decoder heads (mask_head,
+heatmap_head) now use Upsample(nearest, scale=2) + Conv2d(3x3), not
+ConvTranspose2d -- DECIDED after a 30-run reweighting sweep found it dominates
+on mask quality with matched ball-tracking stability once mask/heatmap loss
+weights are reduced to ~0.1/0.02 (docs/plans/ml_system_parameter_budget.md
+Section 5.8/5.9). As of this update, ml_vision has NOT yet shipped this into
+production `SharedVisionBackbone` -- this script currently imports the
+Upsample+Conv2d architecture from fpga/hls4ml_custom_layers/
+fpga_target_architecture.py's stand-in reference class instead (same reason
+that file has one -- see its docstring). It will NOT load a checkpoint still
+using the OLD ConvTranspose2d architecture (strict state_dict load will raise
+loudly, not silently misbehave). Once ml_vision ships the new architecture,
+swap the import below back to
+`from host_software.ml_vision.training.train_cnn_2d_tracker_marker import SharedVisionBackbone, temporal_split`.
+
 Run as a module from the repo root:
 
     # Smoke-test the pipeline today, before the trained checkpoint exists tomorrow
@@ -49,9 +64,13 @@ if str(ROOT) not in sys.path:
 from host_software.ml_vision.evaluations.evaluate_shared_vision_backbone import mask_iou_dice
 from host_software.ml_vision.training.augmentations import build_eval_transform
 from host_software.ml_vision.training.shared_vision_dataset import SharedVisionDataset
-from host_software.ml_vision.training.train_cnn_2d_tracker_marker import (
-    SharedVisionBackbone,
-    temporal_split,
+from host_software.ml_vision.training.train_cnn_2d_tracker_marker import temporal_split
+
+# TODO once ml_vision ships Upsample+Conv2d into production (see module docstring):
+# swap this back to
+# `from host_software.ml_vision.training.train_cnn_2d_tracker_marker import SharedVisionBackbone`
+from fpga.hls4ml_custom_layers.fpga_target_architecture import (
+    _UpsampleConvReferenceArchitecture as SharedVisionBackbone,
 )
 
 DEFAULT_CSV = Path("host_software/data/03_gold/shared_vision/labels.csv")
@@ -133,14 +152,17 @@ class FoldedQuantizedBackbone(nn.Module):
         self.ball_pool = nn.AdaptiveAvgPool2d((1, 1))
         self.ball_fc = nn.Linear(32, 2)
 
-        self.mask_deconv1 = nn.ConvTranspose2d(64, 32, 2, stride=2)
-        self.mask_deconv2 = nn.ConvTranspose2d(32, 16, 2, stride=2)
-        self.mask_deconv3 = nn.ConvTranspose2d(16, 8, 2, stride=2)
+        # Upsample(nearest)+Conv2d(3x3), not ConvTranspose2d -- decided 2026-08-13, see
+        # module docstring. Upsample itself has no weights; each stage's Conv2d does.
+        self.up = nn.Upsample(scale_factor=2, mode="nearest")
+        self.mask_conv1 = nn.Conv2d(64, 32, 3, padding=1)
+        self.mask_conv2 = nn.Conv2d(32, 16, 3, padding=1)
+        self.mask_conv3 = nn.Conv2d(16, 8, 3, padding=1)
         self.mask_out = nn.Conv2d(8, 1, 1)
 
-        self.heatmap_deconv1 = nn.ConvTranspose2d(64, 32, 2, stride=2)
-        self.heatmap_deconv2 = nn.ConvTranspose2d(32, 16, 2, stride=2)
-        self.heatmap_deconv3 = nn.ConvTranspose2d(16, 8, 2, stride=2)
+        self.heatmap_conv1 = nn.Conv2d(64, 32, 3, padding=1)
+        self.heatmap_conv2 = nn.Conv2d(32, 16, 3, padding=1)
+        self.heatmap_conv3 = nn.Conv2d(16, 8, 3, padding=1)
         self.heatmap_out = nn.Conv2d(8, 1, 1)
 
         self.quant_cfg: Optional[QuantConfig] = None
@@ -162,14 +184,14 @@ class FoldedQuantizedBackbone(nn.Module):
         b = self.ball_pool(b).flatten(1)
         ball_xy = self.ball_fc(b)
 
-        m = self._q_act(self.act(self.mask_deconv1(features)))
-        m = self._q_act(self.act(self.mask_deconv2(m)))
-        m = self._q_act(self.act(self.mask_deconv3(m)))
+        m = self._q_act(self.act(self.mask_conv1(self.up(features))))
+        m = self._q_act(self.act(self.mask_conv2(self.up(m))))
+        m = self._q_act(self.act(self.mask_conv3(self.up(m))))
         mask_logits = self.mask_out(m)
 
-        h = self._q_act(self.act(self.heatmap_deconv1(features)))
-        h = self._q_act(self.act(self.heatmap_deconv2(h)))
-        h = self._q_act(self.act(self.heatmap_deconv3(h)))
+        h = self._q_act(self.act(self.heatmap_conv1(self.up(features))))
+        h = self._q_act(self.act(self.heatmap_conv2(self.up(h))))
+        h = self._q_act(self.act(self.heatmap_conv3(self.up(h))))
         heatmap_logits = self.heatmap_out(h)
 
         # F.interpolate(..., size=input_size) is a documented no-op given kernel=stride=2
@@ -181,17 +203,24 @@ class FoldedQuantizedBackbone(nn.Module):
     def from_pretrained(cls, source: SharedVisionBackbone, quant_cfg: QuantConfig) -> "FoldedQuantizedBackbone":
         model = cls(input_size=source.input_size)
 
+        # mask_head/heatmap_head Sequential layout (Upsample+Conv2d, decided 2026-08-13):
+        # [0]Upsample [1]Conv2d(64,32) [2]BN(32) [3]GELU [4]Upsample [5]Conv2d(32,16)
+        # [6]BN(16) [7]GELU [8]Upsample [9]Conv2d(16,8) [10]BN(8) [11]GELU [12]Conv2d(8,1,1)
+        # -- Upsample has no state_dict entries (parameter-free), so it doesn't shift
+        # indices relative to itself, but it DOES shift every index after it relative
+        # to the old ConvTranspose2d layout. All conv/BN pairs are now regular
+        # Conv2d+BatchNorm2d (transpose=False), not ConvTranspose2d+BatchNorm2d.
         conv_bn_pairs = [
             (model.enc_conv1, source.encoder[0], source.encoder[1], False),
             (model.enc_conv2, source.encoder[4], source.encoder[5], False),
             (model.enc_conv3, source.encoder[8], source.encoder[9], False),
             (model.ball_conv, source.ball_head[0], source.ball_head[1], False),
-            (model.mask_deconv1, source.mask_head[0], source.mask_head[1], True),
-            (model.mask_deconv2, source.mask_head[3], source.mask_head[4], True),
-            (model.mask_deconv3, source.mask_head[6], source.mask_head[7], True),
-            (model.heatmap_deconv1, source.heatmap_head[0], source.heatmap_head[1], True),
-            (model.heatmap_deconv2, source.heatmap_head[3], source.heatmap_head[4], True),
-            (model.heatmap_deconv3, source.heatmap_head[6], source.heatmap_head[7], True),
+            (model.mask_conv1, source.mask_head[1], source.mask_head[2], False),
+            (model.mask_conv2, source.mask_head[5], source.mask_head[6], False),
+            (model.mask_conv3, source.mask_head[9], source.mask_head[10], False),
+            (model.heatmap_conv1, source.heatmap_head[1], source.heatmap_head[2], False),
+            (model.heatmap_conv2, source.heatmap_head[5], source.heatmap_head[6], False),
+            (model.heatmap_conv3, source.heatmap_head[9], source.heatmap_head[10], False),
         ]
         for dst_conv, src_conv, src_bn, transpose in conv_bn_pairs:
             weight, bias = _fold_conv_bn(src_conv, src_bn, transpose)
@@ -203,8 +232,8 @@ class FoldedQuantizedBackbone(nn.Module):
 
         # No BN follows these -- copy (quantized if requested) as-is.
         no_bn_layers = [
-            (model.mask_out, source.mask_head[9]),
-            (model.heatmap_out, source.heatmap_head[9]),
+            (model.mask_out, source.mask_head[12]),
+            (model.heatmap_out, source.heatmap_head[12]),
             (model.ball_fc, source.ball_head[5]),
         ]
         for dst, src in no_bn_layers:

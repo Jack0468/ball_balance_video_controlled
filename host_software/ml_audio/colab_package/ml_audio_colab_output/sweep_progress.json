@@ -1,0 +1,122 @@
+{
+  "none_seed0": {
+    "status": "done",
+    "config": "none",
+    "seed": 0,
+    "best_val_acc": 0.8553770184516907,
+    "epochs_run": 108,
+    "seconds": 234.44992351531982
+  },
+  "none_seed1": {
+    "status": "done",
+    "config": "none",
+    "seed": 1,
+    "best_val_acc": 0.8619694709777832,
+    "epochs_run": 61,
+    "seconds": 128.87170934677124
+  },
+  "none_seed2": {
+    "status": "done",
+    "config": "none",
+    "seed": 2,
+    "best_val_acc": 0.8421919941902161,
+    "epochs_run": 35,
+    "seconds": 73.87138843536377
+  },
+  "light_seed0": {
+    "status": "done",
+    "config": "light",
+    "seed": 0,
+    "best_val_acc": 0.8648537397384644,
+    "epochs_run": 46,
+    "seconds": 127.32483983039856
+  },
+  "light_seed1": {
+    "status": "done",
+    "config": "light",
+    "seed": 1,
+    "best_val_acc": 0.8730943202972412,
+    "epochs_run": 56,
+    "seconds": 154.8469099998474
+  },
+  "light_seed2": {
+    "status": "done",
+    "config": "light",
+    "seed": 2,
+    "best_val_acc": 0.8529047966003418,
+    "epochs_run": 42,
+    "seconds": 116.14088249206543
+  },
+  "speed_seed0": {
+    "status": "done",
+    "config": "speed",
+    "seed": 0,
+    "best_val_acc": 0.8660898208618164,
+    "epochs_run": 51,
+    "seconds": 1820.5145058631897
+  },
+  "speed_seed1": {
+    "status": "done",
+    "config": "speed",
+    "seed": 1,
+    "best_val_acc": 0.8866913914680481,
+    "epochs_run": 93,
+    "seconds": 3315.2791950702667
+  },
+  "speed_seed2": {
+    "status": "done",
+    "config": "speed",
+    "seed": 2,
+    "best_val_acc": 0.8524928092956543,
+    "epochs_run": 42,
+    "seconds": 1501.016518354416
+  },
+  "noise_seed0": {
+    "status": "done",
+    "config": "noise",
+    "seed": 0,
+    "best_val_acc": 0.8961681127548218,
+    "epochs_run": 65,
+    "seconds": 277.2257037162781
+  },
+  "noise_seed1": {
+    "status": "done",
+    "config": "noise",
+    "seed": 1,
+    "best_val_acc": 0.8908116817474365,
+    "epochs_run": 73,
+    "seconds": 310.33482933044434
+  },
+  "noise_seed2": {
+    "status": "done",
+    "config": "noise",
+    "seed": 2,
+    "best_val_acc": 0.8685619831085205,
+    "epochs_run": 73,
+    "seconds": 310.83742594718933
+  },
+  "combined_seed0": {
+    "status": "done",
+    "config": "combined",
+    "seed": 0,
+    "best_val_acc": 0.8805109262466431,
+    "epochs_run": 73,
+    "seconds": 1584.501601934433
+  },
+  "combined_seed1": {
+    "status": "done",
+    "config": "combined",
+    "seed": 1,
+    "best_val_acc": 0.8788627982139587,
+    "epochs_run": 87,
+    "seconds": 1888.3230466842651
+  },
+  "combined_seed2": {
+    "status": "done",
+    "config": "combined",
+    "seed": 2,
+    "best_val_acc": 0.8730943202972412,
+    "epochs_run": 43,
+    "seconds": 939.1428453922272
+  }
+}

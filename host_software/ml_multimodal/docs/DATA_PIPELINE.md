@@ -73,6 +73,6 @@ Behavioral cloning perfectly copies the expert—including the expert's flaws. S
 ## Phase 5: Final Evaluation
 Finally, we must mathematically prove the VLA's superiority.
 
-*   **Script:** `host_software/run_eval_our_vla.py`
+*   **Script:** `host_software/ml_multimodal/evaluations/run_eval_our_vla.py`
 *   **Protocol:** The VLA runs the exact same 10-second hold evaluation protocol used by the PID expert.
 *   **Output:** The script logs the system's performance to `04_evaluation/labels_sequential_our_vla.csv`, which is directly compared against the baseline in our final scientific plots.
