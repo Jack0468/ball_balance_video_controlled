@@ -41,6 +41,35 @@ def main():
             "name": "ResNet Expert (End-to-End, PyTorch)",
             "model_dir": "resnet18_expert_tracker_0730_v7",
             "latency_breakdown": {"ResNet": None}
+        },
+        {
+            # Warp+CNN preprocessing/inference latency measured directly on this
+            # machine (CPU, ONNXRuntime) -- see PROJECT_LOGBOOK.md 18/08/2026.
+            # Mean_Euclidean_Error_mm is shared_vision_backbone_v2's own held-out
+            # real-data eval (evaluate_shared_vision_backbone.py against Dataset 8).
+            "name": "Warp + Shared Vision CNN (ONNX)",
+            "model_dir": None,
+            "latency_breakdown": {"ArUco+Warp": 7.17, "CNN": 8.92},
+            "metrics": {
+                "Mean_Euclidean_Error_mm": 5.57,
+                "Mean_Inference_Time_ms": 7.17 + 8.92
+            }
+        },
+        {
+            # Corrected error from mlp_corrector_shared_vision_v1's held-out
+            # temporal-split evaluation (evaluate_mlp_corrector_shared_vision.py) --
+            # a 35% reduction over the raw CNN's error on that same split. Not the
+            # identical held-out slice as the 5.57mm row above (different eval
+            # scripts/splits), so treat this pair as indicative, not lab-exact --
+            # consistent with how the other synthesized pipeline rows in this file
+            # already mix metrics from separate evaluation runs.
+            "name": "Warp + Shared Vision CNN + MLP (ONNX)",
+            "model_dir": None,
+            "latency_breakdown": {"ArUco+Warp": 7.17, "CNN": 8.92, "MLP": 0.06},
+            "metrics": {
+                "Mean_Euclidean_Error_mm": 4.99,
+                "Mean_Inference_Time_ms": 7.17 + 8.92 + 0.06
+            }
         }
     ]
 
@@ -96,21 +125,32 @@ def main():
     fig.suptitle("Pipeline Performance Dashboard", fontsize=16, fontweight='bold')
 
     # --- Subplot 1: Pareto Frontier (Accuracy vs Speed) ---
-    for item in plot_data:
+    # Broken/legacy pipelines (e.g. pure ArUco with no ball tracker at all, or an
+    # under-trained ResNet run) sit 10-20x above every real pipeline's error --
+    # scaling the y-axis to include them squashes the entire competitive cluster
+    # (sub-15mm) into a few pixels near the bottom, making the chart useless for
+    # comparing the pipelines that actually matter. Excluded from the scatter/
+    # Pareto calc (not from subplot 2, which isn't affected by this) and listed
+    # in a text note instead, so the outlier data isn't silently dropped.
+    OUTLIER_ERROR_THRESHOLD_MM = 100.0
+    scatter_data = [item for item in plot_data if item["error"] <= OUTLIER_ERROR_THRESHOLD_MM]
+    outliers = [item for item in plot_data if item["error"] > OUTLIER_ERROR_THRESHOLD_MM]
+
+    for item in scatter_data:
         ax1.scatter(item["latency"], item["error"], s=100, label=item["name"])
         # Annotate
-        ax1.annotate(item["name"], (item["latency"], item["error"]), 
+        ax1.annotate(item["name"], (item["latency"], item["error"]),
                      xytext=(5, 5), textcoords='offset points', fontsize=9)
 
     ax1.set_xlabel("Mean Inference Time (ms) -> LOWER is better", fontsize=12)
     ax1.set_ylabel("Mean Euclidean Error (mm) -> LOWER is better", fontsize=12)
     ax1.set_title("Speed vs. Accuracy Tradeoff", fontsize=14)
     ax1.grid(True, linestyle='--', alpha=0.7)
-    
-    # Invert x and y axis if we want "up and right" to be better, 
+
+    # Invert x and y axis if we want "up and right" to be better,
     # but traditionally, bottom-left is the pareto front.
     # Let's highlight the pareto front.
-    sorted_by_latency = sorted(plot_data, key=lambda x: x["latency"])
+    sorted_by_latency = sorted(scatter_data, key=lambda x: x["latency"])
     front_x = []
     front_y = []
     min_error = float('inf')
@@ -119,9 +159,20 @@ def main():
             front_x.append(item["latency"])
             front_y.append(item["error"])
             min_error = item["error"]
-    
+
     ax1.plot(front_x, front_y, '--', color='gray', alpha=0.5, label='Pareto Frontier')
-    ax1.legend()
+    # No legend here -- each point is already directly annotated with its
+    # pipeline name, so a color-keyed legend is redundant and was overlapping
+    # the top-most annotated points, making them unreadable.
+
+    if outliers:
+        note_lines = [f"Off-chart (>{OUTLIER_ERROR_THRESHOLD_MM:.0f}mm error):"]
+        note_lines += [f"  {item['name']}: {item['error']:.1f}mm" for item in outliers]
+        ax1.text(
+            0.98, 0.02, "\n".join(note_lines),
+            transform=ax1.transAxes, ha="right", va="bottom", fontsize=8,
+            color="#666666", bbox=dict(boxstyle="round", facecolor="#f0f0f0", edgecolor="#cccccc"),
+        )
 
     # --- Subplot 2: Latency Breakdown ---
     names = [item["name"] for item in plot_data]

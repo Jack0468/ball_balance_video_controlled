@@ -1,0 +1,272 @@
+{
+  "speaker": "jack",
+  "labels": {
+    "backward": {
+      "source_files": [
+        "backward_jack_00.wav"
+      ],
+      "deduped_out": [],
+      "raw_segments": 26,
+      "excluded": {
+        "mad_outlier": [
+          {
+            "source": "backward_jack_00.wav",
+            "duration_sec": 0.88
+          }
+        ],
+        "empty_after_pad": [
+          {
+            "source": "backward_jack_00.wav",
+            "duration_sec": 0.6
+          }
+        ]
+      },
+      "accepted": 24,
+      "written": {
+        "train": 21,
+        "val": 3
+      }
+    },
+    "forward": {
+      "source_files": [
+        "forward_jack_0.wav",
+        "forward_jack_01.wav",
+        "forward_jack_21.wav",
+        "forward_jack_28.wav"
+      ],
+      "deduped_out": [
+        {
+          "path": "forward_jack_01.wav",
+          "duplicate_of": "forward_jack_0.wav",
+          "max_abs_diff": 0.0003662109375
+        },
+        {
+          "path": "forward_jack_21.wav",
+          "duplicate_of": "forward_jack_0.wav",
+          "max_abs_diff": 0.0003662109375
+        }
+      ],
+      "raw_segments": 31,
+      "excluded": {
+        "mad_outlier": [
+          {
+            "source": "forward_jack_0.wav",
+            "duration_sec": 1.29
+          }
+        ],
+        "empty_after_pad": [
+          {
+            "source": "forward_jack_0.wav",
+            "duration_sec": 0.67
+          },
+          {
+            "source": "forward_jack_0.wav",
+            "duration_sec": 0.47
+          },
+          {
+            "source": "forward_jack_0.wav",
+            "duration_sec": 0.55
+          },
+          {
+            "source": "forward_jack_0.wav",
+            "duration_sec": 0.4
+          }
+        ]
+      },
+      "accepted": 26,
+      "written": {
+        "train": 23,
+        "val": 3
+      }
+    },
+    "go_grey": {
+      "source_files": [
+        "go_grey_jack_0.wav"
+      ],
+      "deduped_out": [],
+      "raw_segments": 38,
+      "excluded": {
+        "mad_outlier": [],
+        "empty_after_pad": [
+          {
+            "source": "go_grey_jack_0.wav",
+            "duration_sec": 0.79
+          },
+          {
+            "source": "go_grey_jack_0.wav",
+            "duration_sec": 1.02
+          },
+          {
+            "source": "go_grey_jack_0.wav",
+            "duration_sec": 0.56
+          },
+          {
+            "source": "go_grey_jack_0.wav",
+            "duration_sec": 0.9
+          },
+          {
+            "source": "go_grey_jack_0.wav",
+            "duration_sec": 0.6
+          },
+          {
+            "source": "go_grey_jack_0.wav",
+            "duration_sec": 0.58
+          },
+          {
+            "source": "go_grey_jack_0.wav",
+            "duration_sec": 0.59
+          },
+          {
+            "source": "go_grey_jack_0.wav",
+            "duration_sec": 0.84
+          },
+          {
+            "source": "go_grey_jack_0.wav",
+            "duration_sec": 0.71
+          },
+          {
+            "source": "go_grey_jack_0.wav",
+            "duration_sec": 0.35
+          },
+          {
+            "source": "go_grey_jack_0.wav",
+            "duration_sec": 1.14
+          },
+          {
+            "source": "go_grey_jack_0.wav",
+            "duration_sec": 1.06
+          },
+          {
+            "source": "go_grey_jack_0.wav",
+            "duration_sec": 0.5
+          }
+        ]
+      },
+      "accepted": 25,
+      "written": {
+        "train": 22,
+        "val": 3
+      }
+    },
+    "left": {
+      "source_files": [
+        "left_jack_0.wav"
+      ],
+      "deduped_out": [],
+      "raw_segments": 38,
+      "excluded": {
+        "mad_outlier": [
+          {
+            "source": "left_jack_0.wav",
+            "duration_sec": 3.18
+          }
+        ],
+        "empty_after_pad": [
+          {
+            "source": "left_jack_0.wav",
+            "duration_sec": 0.64
+          },
+          {
+            "source": "left_jack_0.wav",
+            "duration_sec": 0.84
+          },
+          {
+            "source": "left_jack_0.wav",
+            "duration_sec": 0.39
+          },
+          {
+            "source": "left_jack_0.wav",
+            "duration_sec": 0.55
+          },
+          {
+            "source": "left_jack_0.wav",
+            "duration_sec": 0.36
+          },
+          {
+            "source": "left_jack_0.wav",
+            "duration_sec": 0.74
+          },
+          {
+            "source": "left_jack_0.wav",
+            "duration_sec": 0.75
+          },
+          {
+            "source": "left_jack_0.wav",
+            "duration_sec": 0.51
+          }
+        ]
+      },
+      "accepted": 29,
+      "written": {
+        "train": 25,
+        "val": 4
+      }
+    },
+    "right": {
+      "source_files": [
+        "right_jack_00.wav"
+      ],
+      "deduped_out": [],
+      "raw_segments": 32,
+      "excluded": {
+        "mad_outlier": [
+          {
+            "source": "right_jack_00.wav",
+            "duration_sec": 0.39
+          },
+          {
+            "source": "right_jack_00.wav",
+            "duration_sec": 0.42
+          }
+        ],
+        "empty_after_pad": [
+          {
+            "source": "right_jack_00.wav",
+            "duration_sec": 0.51
+          },
+          {
+            "source": "right_jack_00.wav",
+            "duration_sec": 0.86
+          },
+          {
+            "source": "right_jack_00.wav",
+            "duration_sec": 0.7
+          },
+          {
+            "source": "right_jack_00.wav",
+            "duration_sec": 0.72
+          },
+          {
+            "source": "right_jack_00.wav",
+            "duration_sec": 0.71
+          },
+          {
+            "source": "right_jack_00.wav",
+            "duration_sec": 0.82
+          },
+          {
+            "source": "right_jack_00.wav",
+            "duration_sec": 0.9
+          },
+          {
+            "source": "right_jack_00.wav",
+            "duration_sec": 0.49
+          }
+        ]
+      },
+      "accepted": 22,
+      "written": {
+        "train": 19,
+        "val": 3
+      }
+    }
+  },
+  "generated_at": "20260813T113250Z",
+  "dry_run": true,
+  "totals": {
+    "raw_segments": 165,
+    "mad_outliers": 5,
+    "empty_after_pad": 34,
+    "accepted": 126
+  }
+}

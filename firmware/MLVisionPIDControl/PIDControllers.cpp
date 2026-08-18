@@ -6,13 +6,14 @@
 // PID Constants
 #define kp 0.25           //.8
 #define ki 0.1           //.2
-#define kd 0.05           //.09
+#define kd 0.06           //.09 (turn up from 0.05 to 0.06 on 10/08/2026)
 #define kv 0.0           //.05
 #define kp_adj 0.3       // restored to original
 #define ki_adj 0.3       // restored to original
 #define kd_adj 0.05      // restored to original
 #define max_output 73.5  // max X distance away from the center
 #define max_angle 12.5   // max tilt angle
+
 
 extern bool enable_binary_telemetry;
 extern double current_ball_x;
@@ -58,15 +59,9 @@ void pid_balance(double setpoint_x, double setpoint_y) {
   static unsigned long t_prev = 0;              // Records previous time (uses static so the variable gets remembered through each loop iteration)
   static unsigned long last_detected_time = 0;  // Track when ball was last detected
   
-  bool fresh = coords_available();
+  coords_available();                           // still drains the buffer; freshness itself no longer gates timing
   unsigned long t = millis();                   // Records current time using millis() (which counts total time since the program started)
-  
-  // Pace the control loop to incoming serial coordinates.
-  // If no coordinate has arrived, wait up to 100ms before forcing a tick (for timeouts).
-  if (!fresh && (t - t_prev) < 100) {
-      return;
-  }
-  
+
   double dt = (t - t_prev) / 1000.0;            // Converts milliseconds to seconds
 
   // Handles first run or unreasonable time gaps
@@ -75,8 +70,14 @@ void pid_balance(double setpoint_x, double setpoint_y) {
     return;  // Ends function
   }
 
-  // Ensure we don't divide by zero
-  if (dt < 0.005) dt = 0.005;
+  // Fixed-rate cap, matching the touchscreen-tuned PID build exactly: never run the
+  // control math faster than 50Hz, regardless of how fast/jittery vision inference
+  // delivers frames. kd_adj and the 0.35 derivative-filter alpha assume this fixed
+  // ~20-33ms step; letting dt float with serial arrival reintroduces high-frequency
+  // derivative noise from vision's frame-to-frame jitter.
+  if (dt < 0.020) {
+    return;
+  }
 
     coords p = get_coords();           // retrieves ball's position from touchscreen
     bool detected = false;

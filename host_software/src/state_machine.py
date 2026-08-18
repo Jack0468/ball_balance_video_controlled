@@ -44,6 +44,7 @@ class TargetStateMachine:
             "green": deque(maxlen=history_size),
             "red": deque(maxlen=history_size),
             "yellow": deque(maxlen=history_size),
+            "black": deque(maxlen=history_size),
         }
 
         self.auto_hold_tolerance_mm = 8.0

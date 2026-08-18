@@ -8,7 +8,7 @@ void setup() {
   
   // We disable binary telemetry by default so we don't spam the Python host,
   // since the host doesn't actively read and parse it in the main PID script.
-  enable_binary_telemetry = false;
+  enable_binary_telemetry = true;
 
   screen_init();
   motor_init();
