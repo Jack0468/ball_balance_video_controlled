@@ -1,14 +1,14 @@
 // ---------------------------------------------------------------------------
-// TouchProbe.cpp -- touchscreen ground truth, streamed to the PC.
-// See TouchProbe.h for the protocol and the design constraints.
+// TouchProbe.cpp -- touchscreen ground truth, streamed to the Jetson.
+// Jetson-remote-control variant -- see TouchProbe.h for what differs from
+// the stm32_ml_control_and_vision/ original and why (no SerialCoords
+// dependency, no vis_x/vis_y echo).
 //
-// The calibration block below is lifted verbatim from the old Screen.cpp so the
-// numbers you already trusted stay trusted. The one thing you MUST check is the
-// FRAME MATCH note further down.
+// The calibration block below is lifted verbatim from the original so the
+// numbers you already trusted stay trusted.
 // ---------------------------------------------------------------------------
 
 #include "TouchProbe.h"
-#include "Screen.h"
 #include "MotorControl.h"
 #include <TouchScreen.h>
 #include <stdio.h>
@@ -37,64 +37,29 @@
 // Contact threshold. Below this the STM32 ADC is just reading float noise.
 #define TS_PRESSURE_MIN 3
 
-// ---------------------------------------------------------------------------
-// >>> FRAME MATCH -- READ THIS BEFORE YOU TRUST A SINGLE CSV ROW <<<
-//
-// The comparison is only meaningful if touchscreen mm and vision mm describe
-// the same physical frame. Right now they DO NOT, by construction:
-//
-//   vision:       main.py maps the plate corners to  +/-70.0 x +/-55.0 mm
-//                 (HomographyProjector dst_pts)
-//   touchscreen:  this file maps the glass to        +/-93.75 x +/-70.5 mm
-//
-// Those are different rectangles. Either the YOLO corner keypoints sit inboard
-// of the touchscreen's active area, or one of the two calibrations is wrong.
-// Until you resolve it every error you measure will contain a fixed affine
-// term and you will be scoring your calibration, not your model.
-//
-// Procedure (5 minutes, do it once):
-//   1. Flash this, run main.py with --log_csv.
-//   2. Rest the ball at 5 known spots: dead centre and near each corner.
-//   3. Fit  touch = A * vision + b  over those points (tools/fit_frames.py in
-//      the CSV notes, or just least-squares in numpy).
-//   4. Put the result in TOUCH_GAIN_* / TOUCH_OFFSET_*_MM below, OR -- better --
-//      leave these at identity and apply the fit on the host, so the raw
-//      sensor stream stays untouched in the log. Identity is the default.
-// ---------------------------------------------------------------------------
-#define TOUCH_GAIN_X      1.0
-#define TOUCH_GAIN_Y      1.0
-#define TOUCH_OFFSET_X_MM 0.0
-#define TOUCH_OFFSET_Y_MM 0.0
+// mapf() lived in Screen.h/SerialCoords.cpp in the original firmware; that
+// module isn't compiled into this one (see TouchProbe.h), so it's inlined
+// here -- same one-line implementation, no behaviour change.
+static double mapf(double x, double in_min, double in_max, double out_min, double out_max) {
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
 
 // ------------------------------ sampling -----------------------------------
-// TOUCH_RATE_HZ telemetry records per second. Each record is the median of
-// TOUCH_SAMPLES raw reads, and those reads are spread across the frame period
-// (one per call) so we never block long enough to jitter a step pulse.
-//
-// Budget check: worst case AccelStepper speed here is 1300 steps/s = 770 us per
-// step. One getPoint() is ~300-500 us, so a single read fits inside one step
-// period. Taking all 3 back-to-back would not -- hence the interleave.
-// Lowered from 60 -> 25 Hz: the host-side vision loop only sustains ~20-25 FPS
-// once the telemetry reader thread is active (confirmed via live-recorded
-// telemetry, see PROJECT_LOGBOOK.md), so 60Hz uplink was producing several
-// duplicate-echo records per distinct vision frame for no benefit, while adding
-// host-side read/parse volume that measurably degraded control. 25Hz still
-// comfortably resolves the oscillation frequencies relevant to the ongoing
-// diagnostic (well below Nyquist for anything in the ~1-5Hz mechanical range).
+// Same rate/rationale as the original -- see docs/PROJECT_LOGBOOK.md's 19/08
+// entry on why 25Hz, not 60Hz.
 #define TOUCH_RATE_HZ   25
 #define TOUCH_SAMPLES   3            // must be odd; set to 1 to disable median
 
 #define TOUCH_PERIOD_MS   (1000 / TOUCH_RATE_HZ)
 #define TOUCH_SUBPERIOD_MS (TOUCH_PERIOD_MS / TOUCH_SAMPLES)
 
-// Emit a record even when no ball is present. You want the dropouts in the log:
-// "vision saw a ball, touchscreen saw nothing" is exactly a false positive.
+// Emit a record even when no ball is present. Dropouts are meaningful data.
 #define TOUCH_EMIT_WHEN_LOST 1
 
 // Never block on a full USB CDC TX buffer. If the host stopped reading we drop
-// the line and carry on. Set to 0 only if your core's availableForWrite() lies.
+// the line and carry on.
 #define TOUCH_TX_NONBLOCKING 1
-#define TOUCH_LINE_MAX 96
+#define TOUCH_LINE_MAX 80
 
 #define TOUCH_SERIAL Serial
 
@@ -114,6 +79,7 @@ static double   last_touch_y = 0.0;
 static bool     last_touch_valid = false;
 
 static uint32_t dropped_tx = 0;      // telemetry lines lost to a full TX buffer
+static uint32_t local_seq  = 0;      // local record counter -- see TouchProbe.h
 
 // --------------------------- helpers ---------------------------------------
 
@@ -165,12 +131,11 @@ static void emit_record() {
     double x_mm = -mapf(my, TS_LEFT,   TS_RIGHT, -SCREEN_WIDTH_MM  / 2.0, SCREEN_WIDTH_MM  / 2.0);
     double y_mm = -mapf(mx, TS_BOTTOM, TS_TOP,   -SCREEN_HEIGHT_MM / 2.0, SCREEN_HEIGHT_MM / 2.0);
 
-    last_touch_x     = x_mm * TOUCH_GAIN_X + TOUCH_OFFSET_X_MM;
-    last_touch_y     = y_mm * TOUCH_GAIN_Y + TOUCH_OFFSET_Y_MM;
+    last_touch_x     = x_mm;
+    last_touch_y     = y_mm;
     last_touch_valid = true;
   } else {
-    // Hold the last position, flag it invalid. Same convention the vision path
-    // uses, so the host sees one consistent semantics on both streams.
+    // Hold the last position, flag it invalid.
     last_touch_valid = false;
   }
 
@@ -180,23 +145,18 @@ static void emit_record() {
   if (!last_touch_valid) return;
 #endif
 
-  // Echo what the control loop is currently acting on, so one CSV row is
-  // self-contained and the host never has to guess which frame it belongs to.
-  coords c = get_coords();
-
   char line[TOUCH_LINE_MAX];
   int len = snprintf(line, sizeof(line),
-                     "T,%lu,%lu,%ld,%ld,%d,%ld,%ld,%ld,%ld,%ld\n",
-                     (unsigned long)serial_coords_seq(),
+                     "T,%lu,%lu,%ld,%ld,%d,%ld,%ld,%ld\n",
+                     (unsigned long)local_seq,
                      (unsigned long)millis(),
                      to_centi(last_touch_x),
                      to_centi(last_touch_y),
                      last_touch_valid ? 1 : 0,
-                     to_centi(c.x_mm),
-                     to_centi(c.y_mm),
                      motorA.currentPosition(),
                      motorB.currentPosition(),
                      motorC.currentPosition());
+  local_seq++;
 
   if (len <= 0 || len >= (int)sizeof(line)) return;   // truncated -> drop
 
@@ -220,6 +180,7 @@ void touch_probe_init() {
   last_touch_y     = 0.0;
   last_touch_valid = false;
   dropped_tx       = 0;
+  local_seq        = 0;
 }
 
 void touch_probe_update() {

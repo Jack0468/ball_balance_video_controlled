@@ -164,9 +164,13 @@ available for testing.
 ## Immediate blockers (not this directory's job to resolve)
 
 1. Get the lab partner's Qwen model/weights/access path (arm 2) — **now has a parallel,
-   unblocked path**: Track 4 (`docs/LARGE_VLA_RESEARCH_SPIKE.md`, 2026-08-18) scopes an
-   in-house large-VLA alternative (dual-rate architecture, trained on our own data)
-   instead of only waiting on this.
+   unblocked path**: Track 4 (`docs/LARGE_VLA_RESEARCH_SPIKE.md`, 2026-08-18, revised
+   2026-08-19) scopes an in-house large-VLA alternative instead of only waiting on this —
+   dual-rate architecture, outer tier = Jetson-PI/π0.5 fine-tuned on our own data (its
+   measured ~2.4Hz on Jetson Orin rules it out as the fast tier, so it's now scoped as the
+   slow grounding tier instead), inner tier = a fast custom action-expert, architecture
+   not yet designed. Concrete pipeline stages (data conversion to LeRobot format,
+   LoRA/Colab fine-tuning, GGUF export via Jetson-PI-Edge) are spelled out in that doc.
 2. Get the optical computing platform's real interface spec before any FPGA bridge Verilog
    is written (arm 3).
 3. Arm 1's vision model choice (small vs. medium class) — pending the small class's

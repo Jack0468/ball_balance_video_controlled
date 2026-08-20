@@ -18,10 +18,15 @@ platform-specific -- only what changes below is:
     CPU, no GPU work justified here). See Track 3 for where GPU/TensorRT actually matters.
 
 **Phase A only**: the control net still runs on the STM32 (`RLControl.cpp`), unchanged.
-This script sends `ball_x,ball_y,target_x,target_y` ASCII over `SerialCoords.cpp` exactly
-like the laptop version -- it does NOT use `ml_jetson_vla/core/control_net.py` or
-`RemoteStepControl.cpp`. Migrating control-net inference onto the Jetson is Phase B,
-deferred pending the firmware telemetry-back work proposed in `../stm32_interface/`.
+This script sends the tagged `V,<seq>,ball_x,ball_y,target_x,target_y` ASCII form over
+`SerialCoords.cpp` -- matching the laptop's `touch_logger.send_frame()` convention exactly
+(previously this sent the untagged legacy 4-field form; both are accepted by
+`SerialCoords.cpp`, but tagging gives every frame a host-supplied sequence number, needed
+to join outbound `T,...` telemetry echoes back to the frame that produced them). It does
+NOT use `ml_jetson_vla/core/control_net.py` or `RemoteStepControl.cpp`. Migrating
+control-net inference onto the Jetson is Phase B (see `firmware/stm32_jetson_remote_control/`
+once that exists), deferred pending the firmware telemetry-back work proposed in
+`../stm32_interface/`.
 
 Logic is wrapped behind `core.policy_interface.Policy` (`JetsonExpertPolicy` below) so a
 future arm (Track 3's medium class, or a large-VLA arm) can be swapped in without touching
@@ -73,6 +78,7 @@ from main_onnx_shared_vision_audio import (
 )
 
 from ml_jetson_vla.core.policy_interface import Policy, PolicyCommand
+from ml_jetson_vla.core.control_net import ControlNet
 
 # --- Configuration ---
 # Laptop default was "COM7". No physical default tty is more "correct" than another on
@@ -80,6 +86,44 @@ from ml_jetson_vla.core.policy_interface import Policy, PolicyCommand
 # matching, already OS-agnostic) comes up empty, not something to rely on normally.
 SERIAL_PORT = "/dev/ttyACM0"
 SERIAL_BAUD = 2000000
+
+
+class TelemetryReader:
+    """Non-blocking line reader for the STM32's uplink telemetry. Only used in
+    --remote-control mode (Phase B): the firmware in
+    firmware/stm32_jetson_remote_control/BallBalancingBot/TouchProbe.cpp emits
+    `T,<seq>,<ms>,<touch_x>,<touch_y>,<valid>,<a>,<b>,<c>\\n` at 25Hz -- `a,b,c`
+    are the REAL motor step positions ControlNet.infer() needs as `actual_steps`
+    (trained on lagged motor state, not the commanded target -- see
+    control_net.py's own docstring). `ser` must be opened non-blocking
+    (timeout=0); this accumulates partial lines across calls the same way the
+    firmware-side line buffers do."""
+
+    def __init__(self) -> None:
+        self._buf = b""
+        self.last_steps: tuple = (0, 0, 0)  # matches home_motors()'s zero position at boot
+        self.have_telemetry = False
+
+    def poll(self, ser: "serial.Serial") -> None:
+        if ser is None or ser.in_waiting <= 0:
+            return
+        self._buf += ser.read(ser.in_waiting)
+        while b"\n" in self._buf:
+            line, self._buf = self._buf.split(b"\n", 1)
+            self._handle_line(line)
+
+    def _handle_line(self, line: bytes) -> None:
+        if not line.startswith(b"T,"):
+            return  # '#' status lines and anything else -- not our format
+        fields = line.decode("ascii", errors="ignore").split(",")
+        if len(fields) != 9:
+            return  # malformed -- drop rather than guess
+        try:
+            a, b, c = int(fields[6]), int(fields[7]), int(fields[8])
+        except ValueError:
+            return
+        self.last_steps = (a, b, c)
+        self.have_telemetry = True
 
 
 class JetsonExpertPolicy(Policy):
@@ -207,6 +251,14 @@ def main() -> None:
     parser.add_argument("--lost-frames", type=int, default=30)
     parser.add_argument("--mask-threshold", type=float, default=0.5)
     parser.add_argument("--verbose", action="store_true")
+    parser.add_argument(
+        "--remote-control", action="store_true",
+        help="Phase B: run control_net.py on the Jetson and send precomputed step targets "
+             "('S,<a>,<b>,<c>') instead of raw coordinates ('V,<seq>,...'). Requires the "
+             "firmware in firmware/stm32_jetson_remote_control/BallBalancingBot/, NOT the "
+             "default RL-on-device firmware -- the two speak incompatible wire protocols. "
+             "Default (unset) is unchanged Phase A behaviour.",
+    )
     args = parser.parse_args()
 
     if args.port == "auto":
@@ -236,6 +288,14 @@ def main() -> None:
         print(f"Could not open serial port {args.port}. Continuing in dry-run mode.")
         ser = None
 
+    control_net = None
+    telemetry = None
+    if args.remote_control:
+        control_net = ControlNet()
+        telemetry = TelemetryReader()
+        print(f"Remote control ON -- ControlNet loaded ({control_net.total_params} params). "
+              f"Sending 'S,<a>,<b>,<c>' step targets, expects firmware/stm32_jetson_remote_control/.")
+
     if args.udp:
         receiver = UDPReceiver(port=args.udp_port, width=640, height=480)
     else:
@@ -247,8 +307,11 @@ def main() -> None:
         frame = receiver.get_latest_frame()
         time.sleep(0.1)
 
-    print("Starting Jetson standalone loop (Track 1, Phase A -- STM32 keeps its own control net)... Ctrl+C to quit")
+    mode_label = "Phase B -- control_net.py runs the policy here" if args.remote_control else "Phase A -- STM32 keeps its own control net"
+    print(f"Starting Jetson standalone loop (Track 1, {mode_label})... Ctrl+C to quit")
     last_status_t = 0.0
+    last_frame_t = None  # for --remote-control's actual_dt; None until the first successful frame
+    seq = 0
 
     try:
         while True:
@@ -257,6 +320,9 @@ def main() -> None:
                 continue
 
             start_t = time.perf_counter()
+            if telemetry is not None:
+                telemetry.poll(ser)  # drain any T,... lines that arrived since the last frame
+
             command = policy.audio_receiver.get_latest_command()
             cmd_out = policy.act(frame, command, state={})
 
@@ -266,7 +332,27 @@ def main() -> None:
                 continue
 
             try:
-                payload = f"{policy.last_debug['ball_xy_mm'][0]:.2f},{policy.last_debug['ball_xy_mm'][1]:.2f},{cmd_out.target_x_mm:.2f},{cmd_out.target_y_mm:.2f}\n".encode("ascii")
+                bx, by = policy.last_debug["ball_xy_mm"]
+                if args.remote_control:
+                    # actual_dt: real measured time since the last control cycle, not a
+                    # fixed constant -- this is the whole point of Phase B (see
+                    # control_net.py's CONTROL_DT comment: RLControl.cpp's own "30Hz"
+                    # label was never actually enforced either, but here it's explicit).
+                    now_t = time.perf_counter()
+                    actual_dt = (now_t - last_frame_t) if last_frame_t is not None else (1.0 / 24.0)
+                    last_frame_t = now_t
+                    steps = control_net.infer(
+                        bx, by, cmd_out.target_x_mm, cmd_out.target_y_mm,
+                        telemetry.last_steps, actual_dt,
+                    )
+                    payload = f"S,{steps[0]},{steps[1]},{steps[2]}\n".encode("ascii")
+                else:
+                    # Tagged form (matches touch_logger.send_frame() on the laptop) --
+                    # see module docstring. seq wraps at 2**32 to match SerialCoords.cpp's
+                    # uint32 last_seq field; the firmware only uses it for ordering/echo,
+                    # not as a global counter, so wraparound is harmless.
+                    payload = f"V,{seq},{bx:.2f},{by:.2f},{cmd_out.target_x_mm:.2f},{cmd_out.target_y_mm:.2f}\n".encode("ascii")
+                    seq = (seq + 1) % (2**32)
                 if ser is not None:
                     ser.write(payload)
             except Exception as e:
@@ -275,12 +361,15 @@ def main() -> None:
             total_ms = (time.perf_counter() - start_t) * 1000.0
             now = time.perf_counter()
             if args.verbose or (now - last_status_t) >= 1.0:
-                bx, by = policy.last_debug["ball_xy_mm"]
                 markers_str = ", ".join(f"{c}=({x:+.0f},{y:+.0f})" for c, (x, y) in policy.last_debug["markers"].items()) or "none"
+                telemetry_str = ""
+                if telemetry is not None:
+                    tag = "steps" if telemetry.have_telemetry else "steps(no telemetry yet, using 0,0,0)"
+                    telemetry_str = f" | {tag}={telemetry.last_steps}"
                 print(
                     f"[{policy.last_debug['gate_reason']}] Ball: X={bx:+6.1f} Y={by:+6.1f} mm | "
                     f"Target: X={cmd_out.target_x_mm:.1f} Y={cmd_out.target_y_mm:.1f} | "
-                    f"Markers: {markers_str} | Frame={total_ms:.1f}ms"
+                    f"Markers: {markers_str} | Frame={total_ms:.1f}ms{telemetry_str}"
                 )
                 last_status_t = now
 

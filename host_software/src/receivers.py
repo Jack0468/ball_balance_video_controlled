@@ -4,42 +4,100 @@ import queue
 import time
 import socket
 import struct
+import collections
 import numpy as np
 
 
 class USBReceiver:
-    def __init__(self, camera_id=0):
+    def __init__(self, camera_id=0, width=640, height=480, auto_exposure=None):
+        """auto_exposure: None leaves the camera's power-on default untouched.
+        Otherwise a value passed straight to cv2.CAP_PROP_AUTO_EXPOSURE -- the
+        convention for this property is backend/driver-dependent (0.25 vs 0.75
+        vs 1 vs 0 all mean different things depending on OpenCV/DirectShow/V4L2
+        combination), so probe_camera_modes.py exists to find the value that
+        actually does something on this specific camera before trusting a
+        number here. Do not assume cv2.VideoCapture.get(CAP_PROP_FPS) reflects
+        real achieved throughput after calling .set() -- confirmed this session
+        it just echoes the request back; only the timed gaps below are real.
+        """
         self.cap = cv2.VideoCapture(camera_id, cv2.CAP_DSHOW)
         if not self.cap.isOpened():
             self.cap = cv2.VideoCapture(camera_id)
 
         # Force MJPG codec to prevent USB 2.0 bandwidth bottlenecks
         self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-        self.cap.set(cv2.CAP_PROP_FPS, 30)
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+        self.cap.set(cv2.CAP_PROP_FPS, 60)
+        if auto_exposure is not None:
+            self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, auto_exposure)
+
+        # Target size for the resize-guard below -- must track whatever was
+        # actually requested, not a hardcoded 640x480, or testing a smaller
+        # capture size (e.g. to check whether resolution is the throughput
+        # constraint) would silently get upscaled straight back afterward,
+        # defeating the point of the test and adding a pointless resize cost.
+        self._target_w = width
+        self._target_h = height
 
         self.frame_queue = queue.Queue(maxsize=1)
         self.running = True
+
+        # Camera-only timing, isolated from everything downstream (ArUco/CNN/
+        # serial/etc) -- reported independently of the main loop's own FPS
+        # print, which only times work *after* get_latest_frame() returns and
+        # so has always been blind to camera-side stalls. This is the only
+        # trustworthy source of the camera's real achieved rate -- see
+        # PROJECT_LOGBOOK.md 19/08 for why cap.get(CAP_PROP_FPS) is not.
+        self._read_durations_ms = collections.deque(maxlen=200)
+        self._frame_gaps_ms = collections.deque(maxlen=200)
+        self._last_frame_ts = None
+        self._last_report_t = time.perf_counter()
+
         self.thread = threading.Thread(target=self._receive_loop, daemon=True)
         if self.cap.isOpened():
             self.thread.start()
-            print(f"USB Camera {camera_id} initialized.")
+            actual_w = self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+            actual_h = self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+            print(
+                f"USB Camera {camera_id} initialized (requested {width}x{height}, "
+                f"actual {actual_w:.0f}x{actual_h:.0f} -- watch the [camera] log lines "
+                f"below for the real achieved fps, not this line)."
+            )
         else:
             print(f"ERROR: Could not open USB Camera {camera_id}")
 
     def _receive_loop(self):
         while self.running and self.cap.isOpened():
+            t0 = time.perf_counter()
             ret, frame = self.cap.read()
+            t1 = time.perf_counter()
             if ret and frame is not None:
-                if frame.shape[:2] != (480, 640):
-                    frame = cv2.resize(frame, (640, 480))
+                self._read_durations_ms.append((t1 - t0) * 1000.0)
+                if self._last_frame_ts is not None:
+                    self._frame_gaps_ms.append((t1 - self._last_frame_ts) * 1000.0)
+                self._last_frame_ts = t1
+
+                if frame.shape[:2] != (self._target_h, self._target_w):
+                    frame = cv2.resize(frame, (self._target_w, self._target_h))
                 if self.frame_queue.full():
                     try:
                         self.frame_queue.get_nowait()
                     except queue.Empty:
                         pass
                 self.frame_queue.put(frame)
+
+                if t1 - self._last_report_t >= 2.0 and len(self._read_durations_ms) > 5:
+                    reads = list(self._read_durations_ms)
+                    gaps = list(self._frame_gaps_ms)
+                    mean_gap_ms = sum(gaps) / len(gaps) if gaps else 0.0
+                    cam_fps = 1000.0 / mean_gap_ms if mean_gap_ms > 0 else 0.0
+                    print(
+                        f"[camera] cap.read(): mean={sum(reads)/len(reads):.1f}ms max={max(reads):.1f}ms | "
+                        f"inter-frame gap: mean={mean_gap_ms:.1f}ms max={max(gaps) if gaps else 0.0:.1f}ms "
+                        f"(~{cam_fps:.1f}fps camera-only, isolated from ArUco/CNN/serial)"
+                    )
+                    self._last_report_t = t1
             else:
                 time.sleep(0.01)
 

@@ -1,9 +1,8 @@
-# Large VLA Research Spike (Track 4) — Findings, 2026-08-18 (updated same day)
+# Large VLA Research Spike (Track 4) — Findings, 2026-08-18, revised 2026-08-19
 
-**Status: research findings, not an architecture decision.** Per the Jetson port plan,
-this track is deliberately scoped as a spike, not a build. Nothing here is committed —
-it's the input to a follow-up planning pass once these findings are checked against real
-availability/licensing.
+**Status: moving from research spike into concrete pipeline planning** (2026-08-19) — the
+architecture question (which model, which tier) is resolved enough to plan build stages
+against; the inner-tier's own architecture is still open, see below.
 
 ## Why AGENTS.md's existing 3-candidate survey isn't enough
 
@@ -71,23 +70,38 @@ answer, not a novel risk:
   paper. Checkpoints on Hugging Face / ModelScope; a separate `Jetson-PI-Edge` repo holds
   the accelerated inference engine.
 
-## Recommended shape (not yet a final pick)
+## REVISED 2026-08-19 — Jetson-PI measured latency rules it out as the inner tier
+
+`Jetson-PI-Edge`'s own published numbers (checked this session): **394.5ms/inference for
+π0, 412.9ms for π0.5 on Jetson Orin — ~2.4Hz.** Not the ~19-46Hz range LiteVLA-H/VOTE
+claim, and nowhere near the ≥30Hz the tight control loop needs. This contradicts the
+earlier reading of the Jetson-PI *paper* (which frames its foresight-alignment mechanism
+as enabling real-time control) — that framing is about effective responsiveness under
+asynchronous prediction, not raw inference Hz, and the *edge-deployment* repo's own
+measured number is what actually matters for our hardware. Decision (user, 2026-08-19):
+don't spend time re-verifying whether the foresight trick makes 2.4Hz "feel" fast enough —
+treat Jetson-PI as too slow for the inner tier and move on.
+
+## Recommended shape (architecture resolved, inner tier still open)
 
 Keeps `ARCHITECTURE.md`'s locked framing that arm 2/3 are standalone (own camera, own
 inference, own control loop) — i.e. does **not** reuse arm 1's vision CNN or control net,
 which would confound "which architecture handles the task better":
 
-- **Outer tier (slow, ~5-20Hz):** vision-language grounding of spoken commands + scene
-  understanding into a high-level target. Real language understanding (not the closed
-  5-word audio vocabulary the expert pipeline and `RT1LiteVLA` both use). Candidates:
-  Qwen2.5-VL-3B (INT4), LiteVLA-H's perception tier, or π0.5's own VLM backbone if
-  Jetson-PI is adopted wholesale.
-- **Inner tier (fast, ≥30Hz):** given Jetson-PI/π0.5 has real, fine-tunable weights,
-  **prefer fine-tuning it on our own data over designing a new action-expert architecture
-  from scratch** — lower risk, and it already ships the foresight-alignment mechanism
-  FASTER's finding calls for, which we would otherwise have to build ourselves. Fall back
-  to a from-scratch compact action-expert only if Jetson-PI/π0.5 doesn't fit our latency
-  budget once actually measured on our hardware.
+- **Outer tier (slow, ~2-20Hz) — Jetson-PI/π0.5, repurposed as the grounding tier.** Its
+  measured ~2.4Hz is actually a fine fit here (comparable to Qwen2.5-VL-3B's "few
+  tokens/sec" and OpenVLA's ~2Hz, both originally scoped as outer-tier candidates) — this
+  doesn't waste the fine-tuning work, it just changes what role the result plays. Worth
+  checking during implementation whether π0.5 can be used purely for vision-language
+  grounding (scene + language → high-level target, replacing the closed 5-word audio
+  vocabulary) while ignoring its own action-expert output, since a separate inner tier now
+  owns actions — would simplify the fine-tuning objective from "imitate full VLA control"
+  to something closer to grounding/classification. Not confirmed whether π0.5's
+  architecture cleanly supports this split; verify, don't assume.
+- **Inner tier (fast, ≥30Hz) — custom, trained on our own data.** Promoted from fallback to
+  primary now that Jetson-PI has failed the latency bar. Architecture not yet designed —
+  the least-specified part of this whole track, needs its own design pass once the
+  outer-tier pipeline is underway (not blocking it).
 
 ## Training-data strategy for the inner tier (resolved 2026-08-18)
 
@@ -112,30 +126,63 @@ replacement for it. Sets up a natural DAgger-style follow-up later (collect corr
 from the new policy's own live runs once a first version exists) if pure BC isn't enough
 on its own — a future refinement, not part of this spike.
 
-## Next steps (not started)
+## Concrete pipeline (2026-08-19)
 
-1. Prototype fine-tuning Jetson-PI/π0.5 specifically — it's the one candidate with real,
-   checked-out code and weights, so it's the concrete next action rather than a generic
-   "check availability" pass. LiteVLA-H and GR00T N1 remain architectural references, not
-   confirmed buildable targets yet.
-2. Measure Jetson-PI's actual latency on our own Jetson AGX Orin 64GB — its own repo's
-   numbers are LIBERO-sim only, not from real Jetson hardware.
-3. Start logging Track 1's live closed-loop runs (once bench-validated on real hardware)
-   as the inner tier's primary training set, per the data-strategy resolution above — can
-   start independent of which inner-tier model is finally chosen.
-4. Write a follow-up recommendation doc once (1)-(3) have real numbers, not published
-   benchmarks from other tasks/hardware.
+1. **Data collection** — blocked on Track 1 running on real Jetson hardware. Logs camera
+   frame, recognized command, ball trajectory, control-net input/output. Feeds both the
+   outer tier's grounding fine-tune and, eventually, the inner tier's training set.
+2. **Data conversion to LeRobot format** — new work, not yet built. Confirmed schema
+   (LeRobotDataset v3.0, checked 2026-08-19): `meta/info.json` (feature shapes/dtypes,
+   fps, path templates), `meta/episodes/...parquet` (episode metadata),
+   `meta/tasks.parquet` (task definitions — note: some docs still reference an older
+   `tasks.jsonl`; confirm which version `openpi`/Jetson-PI's training stack actually
+   expects before committing to one), `meta/stats.json` (aggregated stats, feeds
+   `compute_norm_stats.py`), `data/chunk-*/*.parquet` (one row per timestep:
+   episode_index, frame_index, timestamp, state vector, action vector, `next.done`),
+   `videos/<camera_key>/chunk-*/*.mp4`. **Build the converter using the official
+   `LeRobotDataset.create()` Python API** (feature dict → `add_frame()`-style calls →
+   `save_episode()` → `finalize()`), not by hand-writing the parquet/video files directly —
+   confirmed this is the supported path via `lerobot`'s own tutorial. Exact per-frame
+   write-call signature not yet confirmed against real code (only tutorial-level examples
+   read so far) — check `lerobot`'s actual API reference before writing this converter for
+   real, don't guess the call shape from the tutorial's higher-level `record_loop()`
+   wrapper.
+3. **Fine-tuning compute: Google Colab, A100 tier.** Jetson-PI's own 3-stage full-finetune
+   launcher wants ≥48GB VRAM — over Colab's typical ~40GB A100 allocation. Plan: use LoRA
+   fine-tuning instead (`gemma_2b_lora`/`gemma_300m_lora`-style configs exist upstream in
+   `Physical-Intelligence/openpi`, reported to fit in ~22.5GB+). **Open verification item**:
+   whether Jetson-PI's own training scripts support LoRA the same way upstream `openpi`
+   does, or whether fine-tuning needs to go through `openpi` directly with Jetson-PI only
+   consuming the result — check before committing Colab time to a run that might not fit.
+4. **Outer-tier export for Jetson inference.** `Jetson-PI-Edge` (llama.cpp-based) needs
+   GGUF — both the PI language/action model and a SigLIP vision encoder/projector.
+   Conversion path: its own "Model Preparation" guide (not yet read in detail). Pre-converted
+   base (non-fine-tuned) BF16 GGUF checkpoints exist on Hugging Face
+   (`diantoudefengshan/Jetson-PI-GGUF`) — smoke-test the export/serving path against these
+   before trying to convert our own fine-tuned weights.
+5. **Inner tier — design pass, not started.** Deliberately deferred; informed by what data
+   logging (step 1) actually produces, not blocking steps 2-4.
+6. **Integration** — wrap both tiers behind `core/policy_interface.py`'s `Policy` protocol
+   (same interface Track 1's `JetsonExpertPolicy` already implements).
+
+Sequencing: steps 2-3 (converter tooling, LoRA config check) can start now, independent of
+Track 1 hardware bring-up. Step 1 needs real hardware. Step 4 can be smoke-tested against
+the pre-converted base checkpoint before any fine-tuning finishes.
 
 `RT1LiteVLA`'s existing BC/RL scaffold in `ml_multimodal/` remains the secondary baseline
 regardless of what this track lands on, per the project's existing framing.
 
 ---
-Sources (web research, 2026-08-18):
+Sources (web research, 2026-08-18 and 2026-08-19):
 - [Jetson-PI: Towards Onboard Real-Time Robot Control via Foresight-Aligned Asynchronous Inference](https://arxiv.org/html/2607.12659v3)
 - [GitHub — PKU-SEC-Lab/Jetson-PI](https://github.com/PKU-SEC-Lab/Jetson-PI)
+- [GitHub — PKU-SEC-Lab/Jetson-PI-Edge](https://github.com/PKU-SEC-Lab/Jetson-PI-Edge)
 - [LiteVLA-H: Dual-Rate Vision-Language-Action Inference for Onboard Aerial Guidance and Semantic Perception](https://arxiv.org/html/2605.00884)
 - [FASTER: Rethinking Real-Time Flow VLAs](https://arxiv.org/pdf/2603.19199)
 - [VOTE: Vision-Language-Action Optimization (OpenReview)](https://openreview.net/pdf?id=jAWveMzE1p)
 - [GitHub — NVIDIA/Isaac-GR00T](https://github.com/Nvidia/Isaac-GR00T)
 - [NVIDIA Isaac GR00T N1 announcement](https://nvidianews.nvidia.com/news/nvidia-isaac-gr00t-n1-open-humanoid-robot-foundation-model-simulation-frameworks)
 - [GR00T N1 paper (arXiv 2503.14734)](https://arxiv.org/abs/2503.14734)
+- [GitHub — Physical-Intelligence/openpi](https://github.com/Physical-Intelligence/openpi)
+- [LeRobot: Imitation Learning on Real-World Robots (record/train tutorial)](https://huggingface.co/docs/lerobot/il_robots)
+- [LeRobotDataset v3.0](https://huggingface.co/docs/lerobot/en/lerobot-dataset-v3)

@@ -25,9 +25,11 @@ See docs/plans (this session's plan file) for the full design rationale.
 
 import argparse
 import collections
+import json
 import os
 import sys
 import time
+from datetime import datetime
 
 import cv2
 import numpy as np
@@ -42,6 +44,7 @@ from src.receivers import USBReceiver, UDPReceiver
 from src.utils import find_stm32_port
 from src.state_machine import TargetStateMachine
 from src.audio_receiver_onnx import AudioCommandReceiverONNX
+from src.touch_logger import TouchTelemetryLogger
 
 from host_software.ml_vision.data_processing.auto_label_shared_vision import (
     build_paper_corners,
@@ -51,6 +54,8 @@ from host_software.ml_vision.data_processing.auto_label_shared_vision import (
 )
 from host_software.ml_vision.core.marker_classifier import MarkerClassifier
 from host_software.ml_vision.core.keyboard_command_receiver import KeyboardCommandReceiver
+from host_software.ml_vision.core.scripted_command_sequencer import ScriptedCommandSequencer
+from host_software.ml_vision.core.kalman_filter import KalmanFilter2D
 
 # --- Configuration ---
 SERIAL_PORT = "COM7"
@@ -99,7 +104,17 @@ class PredictionGate:
         seed_window: int = 5,
         seed_consistency_mm: float = 15.0,
         lost_frames_threshold: int = 30,
+        settle_radius_mm: float = 2.0,
+        kalman=None,
     ) -> None:
+        # kalman: optional KalmanFilter2D. When set, it REPLACES the EMA as
+        # the smoothing/anchor mechanism (jump-gate compares against its
+        # position estimate instead of an EMA, and accepted frames update it
+        # instead of blending an EMA) -- see PROJECT_LOGBOOK.md 20/08. The
+        # dead-band and jump-gate/seed/no-ball state machine are unchanged
+        # either way; only the "what's the current smoothed estimate" step
+        # differs.
+        self.kalman = kalman
         self.marker_centres = marker_centres
         self.marker_radius_mm = marker_radius_mm
         self.jump_threshold_mm = jump_threshold_mm
@@ -107,22 +122,31 @@ class PredictionGate:
         self.seed_window = seed_window
         self.seed_consistency_mm = seed_consistency_mm
         self.lost_frames_threshold = lost_frames_threshold
+        # Dead-band radius (mm): the transmitted output only moves once the
+        # smoothed estimate has drifted more than this far from what's
+        # currently being sent. Without this, a genuinely stationary ball
+        # still produces a slowly-wandering EMA (ordinary per-frame noise
+        # keeps nudging it a fraction of a mm), which the firmware's
+        # finite-difference velocity estimator reads as real, nonzero
+        # motion even though nothing moved -- see PROJECT_LOGBOOK.md 19/08.
+        self.settle_radius_mm = settle_radius_mm
 
         self._phase: str = "AWAITING_BALL"
         self._seed_buffer: list = []
         self._ema = None
         self._last_good = None
+        self._transmitted = None  # last position actually sent to the firmware
         self._consecutive_jumps: int = 0
 
     @property
     def ball_on_platform(self) -> bool:
         return self._phase == "TRACKING"
 
-    def filter(self, x_mm: float, y_mm: float):
+    def filter(self, x_mm: float, y_mm: float, dt_ms: float = 33.0):
         candidate = np.array([x_mm, y_mm], dtype=np.float32)
         if self._phase == "AWAITING_BALL":
             return self._handle_awaiting(candidate)
-        return self._handle_tracking(candidate)
+        return self._handle_tracking(candidate, dt_ms)
 
     def _handle_awaiting(self, candidate: np.ndarray):
         if self.marker_centres.shape[0] > 0 and self.marker_radius_mm > 0:
@@ -140,6 +164,9 @@ class PredictionGate:
             if max_dist < self.seed_consistency_mm:
                 self._ema = centroid.copy()
                 self._last_good = centroid.copy()
+                self._transmitted = centroid.copy()
+                if self.kalman is not None:
+                    self.kalman.reset(float(centroid[0]), float(centroid[1]))
                 self._phase = "TRACKING"
                 self._consecutive_jumps = 0
                 self._seed_buffer.clear()
@@ -147,42 +174,94 @@ class PredictionGate:
                 return float(centroid[0]), float(centroid[1]), "seeded"
         return 0.0, 0.0, "no_ball"
 
-    def _handle_tracking(self, candidate: np.ndarray):
-        if self._ema is not None and self.jump_threshold_mm > 0:
-            jump = float(np.linalg.norm(candidate - self._ema))
+    def _handle_tracking(self, candidate: np.ndarray, dt_ms: float = 33.0):
+        # Jump-gate anchor: the Kalman filter's own position estimate when
+        # active (it already predicts forward each frame, so it's a better
+        # anchor than a frozen EMA), otherwise the EMA as before.
+        if self.kalman is not None:
+            anchor = np.array(self.kalman.position, dtype=np.float32) if self.kalman.is_initialized else None
+        else:
+            anchor = self._ema
+        if anchor is not None and self.jump_threshold_mm > 0:
+            jump = float(np.linalg.norm(candidate - anchor))
             if jump > self.jump_threshold_mm:
                 self._consecutive_jumps += 1
+                if self.kalman is not None:
+                    self.kalman.predict(dt_ms / 1000.0)
                 if self._consecutive_jumps >= self.lost_frames_threshold:
                     print(f"\n  \U0001f534 Ball lost (>{self.lost_frames_threshold} consecutive jump rejections) -- reverting to AWAITING_BALL\n")
                     self._phase = "AWAITING_BALL"
                     self._ema = None
                     self._last_good = None
+                    self._transmitted = None
                     self._seed_buffer.clear()
                     self._consecutive_jumps = 0
+                    if self.kalman is not None:
+                        self.kalman.deinitialize()
                     return 0.0, 0.0, "no_ball"
                 return self._hold("jump_gate")
         self._consecutive_jumps = 0
-        if self._ema is None:
-            self._ema = candidate.copy()
+
+        if self.kalman is not None:
+            self.kalman.predict(dt_ms / 1000.0)
+            smoothed_x, smoothed_y = self.kalman.update(float(candidate[0]), float(candidate[1]))
+            smoothed = np.array([smoothed_x, smoothed_y], dtype=np.float32)
         else:
-            self._ema = self.ema_alpha * candidate + (1.0 - self.ema_alpha) * self._ema
+            if self._ema is None:
+                self._ema = candidate.copy()
+            else:
+                self._ema = self.ema_alpha * candidate + (1.0 - self.ema_alpha) * self._ema
+            smoothed = self._ema
         # last_good stays the raw candidate (jump-gate comparisons must anchor on
         # the true last-observed point, not a lagged average of itself), but the
-        # transmitted position uses the smoothed EMA -- previously this returned
-        # the raw candidate directly, so every accepted frame's per-frame noise
-        # passed to the firmware completely unfiltered. See PROJECT_LOGBOOK.md
-        # 18/08/2026 (live-deployment jitter diagnosis).
+        # transmitted position uses the smoothed estimate (EMA, or the Kalman
+        # filter's posterior when --kalman is active) -- previously this
+        # returned the raw candidate directly, so every accepted frame's
+        # per-frame noise passed to the firmware completely unfiltered. See
+        # PROJECT_LOGBOOK.md 18/08/2026 (live-deployment jitter diagnosis).
         self._last_good = candidate.copy()
-        return float(self._ema[0]), float(self._ema[1]), "ok"
+
+        # Dead-band: only move the transmitted output once the smoothed
+        # estimate has drifted more than settle_radius_mm from what's
+        # currently being sent, so a genuinely stationary ball produces an
+        # exactly-zero firmware-side velocity reading instead of a
+        # small-but-nonzero drift. See PROJECT_LOGBOOK.md 19/08/2026.
+        if self._transmitted is None or self.settle_radius_mm <= 0:
+            self._transmitted = smoothed.copy()
+        else:
+            drift = float(np.linalg.norm(smoothed - self._transmitted))
+            if drift > self.settle_radius_mm:
+                self._transmitted = smoothed.copy()
+        return float(self._transmitted[0]), float(self._transmitted[1]), "ok"
 
     def _hold(self, reason: str):
-        # Hold at the smoothed EMA, not the raw last-accepted candidate -- keeps
-        # the transmitted signal consistently smoothed across accept/reject
-        # transitions instead of snapping back to a raw value on every rejection
-        # (jump-gate rejections are frequent in practice, per live-deployment logs).
+        # Hold at the last transmitted position (dead-band-aware), not the raw
+        # EMA directly -- keeps the transmitted signal consistent across
+        # accept/reject transitions instead of snapping to a value the
+        # dead-band would otherwise have suppressed.
+        if self._transmitted is not None:
+            return float(self._transmitted[0]), float(self._transmitted[1]), reason
         if self._ema is not None:
             return float(self._ema[0]), float(self._ema[1]), reason
         return 0.0, 0.0, "no_ball"
+
+    def reset_smoothing(self):
+        """Clear the EMA/transmitted state WITHOUT leaving TRACKING phase --
+        for recovering from a detected processing/camera stall (see the
+        dt_ms > 100 check in the main loop), where the ball may have moved a
+        lot during the gap. Without this, the next real reading gets compared
+        against a now-stale EMA and is very likely to fail the jump-gate and
+        get held at the old, wrong position -- exactly the failure chain
+        behind "ball flies off after alt-tab" (PROJECT_LOGBOOK.md 19/08).
+        Resetting _ema to None makes _handle_tracking's accept branch treat
+        the next candidate as a first observation (no jump-check at all),
+        so recovery is immediate rather than gated behind a full re-seed."""
+        self._ema = None
+        self._last_good = None
+        self._transmitted = None
+        self._consecutive_jumps = 0
+        if self.kalman is not None:
+            self.kalman.deinitialize()
 
 
 def preprocess_warped(warped_bgr: np.ndarray) -> np.ndarray:
@@ -210,6 +289,9 @@ def sigmoid(x: np.ndarray) -> np.ndarray:
 def main() -> None:
     parser = argparse.ArgumentParser(description="shared_vision_backbone_v2 -> CNN + Marker Detection + Audio Tracker (ONNX)")
     parser.add_argument("--cam_id", type=int, default=1, help="Camera ID for USB mode")
+    parser.add_argument("--cam-width", type=int, default=640, help="Requested camera capture width -- use probe_camera_modes.py to find what this camera actually delivers before assuming a value here")
+    parser.add_argument("--cam-height", type=int, default=480, help="Requested camera capture height")
+    parser.add_argument("--cam-auto-exposure", type=float, default=None, help="Value for cv2.CAP_PROP_AUTO_EXPOSURE (backend-dependent convention -- see probe_camera_modes.py). Default: leave the camera's power-on setting untouched")
     parser.add_argument("--port", type=str, default="auto", help="STM32 serial port or 'auto'")
     parser.add_argument("--udp", action="store_true", help="Use UDP receiver")
     parser.add_argument("--udp_port", type=int, default=5001, help="UDP listen port")
@@ -220,10 +302,16 @@ def main() -> None:
     parser.add_argument("--seed-window", type=int, default=5, help="Consecutive consistent frames required to confirm ball on platform")
     parser.add_argument("--seed-consistency-mm", type=float, default=15.0, help="Max spread (mm) across seed-window frames to be considered consistent")
     parser.add_argument("--lost-frames", type=int, default=30, help="Consecutive jump-rejected frames before ball is considered lost")
+    parser.add_argument("--settle-radius-mm", type=float, default=2.0, help="Dead-band (mm): transmitted position only moves once the smoothed estimate drifts past this from what's currently being sent (0 to disable)")
+    parser.add_argument("--kalman", action="store_true", help="Replace PredictionGate's EMA smoothing with a constant-velocity Kalman filter (jump-gate/seed/no-ball logic unchanged). Needs R/Q from --kalman-params to be trustworthy -- see kalman_filter.py")
+    parser.add_argument("--kalman-params", type=str, default=None, help="Path to a JSON file with 'r' (2x2) and 'q' (4x4) matrices, as produced by estimate_kalman_noise_params.py --output-json. Without this, --kalman uses illustrative fallback values (not validated -- see kalman_filter.py docstring)")
     parser.add_argument("--mask-threshold", type=float, default=0.5, help="Sigmoid threshold for marker segmentation mask")
     parser.add_argument("--mlp", action="store_true", help="Apply the shared-vision MLP time corrector on top of raw CNN output (default off -- see PROJECT_LOGBOOK for validation results)")
     parser.add_argument("--mlp-model-path", type=str, default=None, help="Override path to the MLP corrector .pth (default: models/mlp_corrector_shared_vision_v1/mlp_corrector_best.pth)")
     parser.add_argument("--dummy-audio", action="store_true", help="Use typed keyboard commands instead of the trained audio model -- for testing state-machine/target-switching without a working mic (temporary testing aid, see keyboard_command_receiver.py)")
+    parser.add_argument("--scripted-sequence", action="store_true", help="Drive the target with a fixed, reproducible command schedule instead of live audio/keyboard input -- for collecting controlled telemetry (settle window + swept motion) to design Kalman filter noise parameters. See scripted_command_sequencer.py")
+    parser.add_argument("--log-csv", type=str, default="auto", help="Ground-truth telemetry CSV: 'auto' (timestamped file in data/01_bronze/evaluation/), 'off' (disable persistence -- the serial I/O thread still runs), or an explicit path")
+    parser.add_argument("--quiet-mcu", action="store_true", help="Suppress TouchTelemetryLogger's per-line MCU status printing")
     parser.add_argument("--verbose", action="store_true", help="Print status every frame instead of once per second")
     args = parser.parse_args()
 
@@ -244,7 +332,7 @@ def main() -> None:
         print(f"Error: ONNX model not found at {cnn_path}")
         return
 
-    if not args.dummy_audio:
+    if not args.dummy_audio and not args.scripted_sequence:
         audio_path = os.path.abspath(os.path.join(script_dir, "ml_audio/models/audio_command_classifier_v3.onnx"))
         if not os.path.exists(audio_path):
             print(f"Error: ONNX Audio model not found at {audio_path}")
@@ -297,7 +385,9 @@ def main() -> None:
         mlp_window = collections.deque(maxlen=mlp_window_size)
         print(f"Loaded MLP corrector from {mlp_path} (window_size={mlp_window_size}, auto-detected from checkpoint)")
 
-    if args.dummy_audio:
+    if args.scripted_sequence:
+        audio_receiver = ScriptedCommandSequencer()
+    elif args.dummy_audio:
         audio_receiver = KeyboardCommandReceiver()
     else:
         print("Initializing Audio Receiver...")
@@ -319,17 +409,46 @@ def main() -> None:
 
     # ---- 3. Serial Port Init ----
     try:
-        ser = serial.Serial(args.port, SERIAL_BAUD, timeout=0)
+        # timeout=0.02 (not 0): the link is bidirectional now -- a short blocking
+        # read lets TouchTelemetryLogger's reader thread avoid spinning the CPU
+        # while waiting for "T,..." lines. write_timeout is unaffected/unset.
+        ser = serial.Serial(args.port, SERIAL_BAUD, timeout=0.02)
         print(f"Connected to STM32 on {args.port} at {SERIAL_BAUD} baud.")
     except Exception:
         print(f"Could not open serial port {args.port}. Continuing in dry-run mode.")
         ser = None
 
+    # touch_logger's worker thread is the sole owner of the serial handle from
+    # here on -- constructed whenever ser is open, regardless of --log-csv.
+    # Consolidating both directions (writing vision frames, reading telemetry)
+    # onto one thread is what fixes the throughput collapse a split
+    # main-thread-writes/reader-thread-reads design caused (see
+    # PROJECT_LOGBOOK.md); csv_path=None just means that thread won't persist
+    # rows to disk, not that it stops existing. Do not call ser.write()
+    # directly anywhere below this point -- use touch_logger.send_frame()/
+    # send_raw() instead.
+    touch_logger = None
+    if ser is not None:
+        csv_path = None
+        if args.log_csv != "off":
+            if args.log_csv == "auto":
+                stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                csv_path = os.path.join(script_dir, "data", "01_bronze", "evaluation", f"ground_truth_{stamp}.csv")
+            else:
+                csv_path = args.log_csv
+        touch_logger = TouchTelemetryLogger(ser, csv_path, print_status_lines=not args.quiet_mcu)
+        touch_logger.start()
+
     # ---- 4. Camera/Receiver Init ----
     if args.udp:
         receiver = UDPReceiver(port=args.udp_port, width=640, height=480)
     else:
-        receiver = USBReceiver(camera_id=args.cam_id)
+        receiver = USBReceiver(
+            camera_id=args.cam_id,
+            width=args.cam_width,
+            height=args.cam_height,
+            auto_exposure=args.cam_auto_exposure,
+        )
 
     print("Waiting for camera feed...")
     frame = None
@@ -339,6 +458,19 @@ def main() -> None:
 
     print("Starting shared_vision_backbone_v2 -> Marker Detection + Audio Tracker loop... (press Ctrl+C to quit)")
 
+    kalman = None
+    if args.kalman:
+        r, q = None, None
+        if args.kalman_params:
+            with open(args.kalman_params) as f:
+                params = json.load(f)
+            r = np.array(params["r"], dtype=np.float64)
+            q = np.array(params["q"], dtype=np.float64)
+            print(f"Kalman filter: loaded R/Q from {args.kalman_params}")
+        else:
+            print("Kalman filter: --kalman-params not given -- using illustrative fallback R/Q (NOT validated, see kalman_filter.py)")
+        kalman = KalmanFilter2D(r=r, q=q)
+
     gate = PredictionGate(
         marker_centres=_ARUCO_CENTRES_CENTRED,
         marker_radius_mm=args.marker_gate_mm,
@@ -347,15 +479,19 @@ def main() -> None:
         seed_window=args.seed_window,
         seed_consistency_mm=args.seed_consistency_mm,
         lost_frames_threshold=args.lost_frames,
+        settle_radius_mm=args.settle_radius_mm,
+        kalman=kalman,
     )
     print(
         f"PredictionGate: marker_gate={args.marker_gate_mm:.0f}mm, jump_gate={args.jump_gate_mm:.0f}mm, "
-        f"seed_window={args.seed_window} frames @ {args.seed_consistency_mm:.0f}mm, lost_threshold={args.lost_frames} frames"
+        f"seed_window={args.seed_window} frames @ {args.seed_consistency_mm:.0f}mm, lost_threshold={args.lost_frames} frames, "
+        f"settle_radius={args.settle_radius_mm:.1f}mm, smoothing={'kalman' if kalman is not None else 'ema'}"
     )
     print("  Waiting for ball to be placed on platform...")
 
     last_status_t: float = 0.0
     last_frame_time = time.perf_counter()
+    seq = 0  # frame counter, echoed back by the MCU to join vision and touch streams
 
     try:
         while True:
@@ -367,7 +503,23 @@ def main() -> None:
             dt_ms = (start_t - last_frame_time) * 1000.0
             last_frame_time = start_t
             if dt_ms > 100.0:
+                # Processing/camera stall (e.g. the driver throttling capture
+                # while the window isn't focused -- see PROJECT_LOGBOOK.md
+                # 19/08). The ball may have moved a lot during the gap; without
+                # this, the next real position gets jump-gate-rejected against
+                # a now-stale EMA and held at the wrong point, which is the
+                # confirmed mechanism behind the ball flying off after alt-tab.
+                # Reset gate smoothing so the next reading is accepted directly
+                # instead of fighting a stale anchor, clear the MLP window for
+                # the same reason the no-ball case does, and tell the firmware
+                # about the gap immediately rather than let it infer one.
+                print(f"  ⚠ Stall detected ({dt_ms:.0f}ms since last frame) -- resetting gate smoothing")
                 dt_ms = 33.0
+                gate.reset_smoothing()
+                if mlp_window is not None:
+                    mlp_window.clear()
+                if touch_logger is not None:
+                    touch_logger.send_raw(b"L\n")
 
             # --- STAGE 1: ArUco Homography + Perspective Warp ---
             aruco_t0 = time.perf_counter()
@@ -376,6 +528,8 @@ def main() -> None:
 
             if aruco_homography is None:
                 print(f"Gate closed - Insufficient ArUco markers ({aruco_ms:.1f}ms)")
+                if touch_logger is not None:
+                    touch_logger.send_raw(b"L\n")
                 continue
 
             warped_bgr, _warp_matrix = warp_to_platform(frame, aruco_homography, output_size=INPUT_SIZE[::-1], paper_corners=paper_corners)
@@ -420,12 +574,25 @@ def main() -> None:
                 final_x, final_y = raw_x, raw_y
 
             # --- STAGE 5: Prediction Gate ---
-            gated_x, gated_y, gate_reason = gate.filter(final_x, final_y)
+            gated_x, gated_y, gate_reason = gate.filter(final_x, final_y, dt_ms)
 
             if gate_reason == "no_ball":
+                # The CNN produced a ball_xy guess this frame regardless of
+                # whether a ball is really present (it has no explicit "no
+                # ball" output), and STAGE 4 above already pushed that guess
+                # into mlp_window before this gate result was known. Clear it
+                # here so the corrector never runs on a window contaminated
+                # with pre-placement/post-loss garbage, and so the first
+                # MLP-corrected output after a fresh placement or
+                # re-acquisition is built from a clean window of genuine
+                # frames only, not a stale mix. See PROJECT_LOGBOOK.md 19/08.
+                if mlp_window is not None:
+                    mlp_window.clear()
                 command = audio_receiver.get_latest_command()
                 if command:
                     print(f"\n[AUDIO] (gate=no_ball) Heard: {command} -- waiting for ball\n")
+                if touch_logger is not None:
+                    touch_logger.send_raw(b"L\n")
                 continue
 
             if gate_reason not in ("ok", "seeded"):
@@ -443,12 +610,9 @@ def main() -> None:
             target_x, target_y = state_machine.get_target_coords()
 
             # --- STAGE 7: Serial Transmission ---
-            try:
-                payload = f"{final_x:.2f},{final_y:.2f},{target_x:.2f},{target_y:.2f}\n".encode("ascii")
-                if ser is not None:
-                    ser.write(payload)
-            except Exception as e:
-                print(f"Serial Error: {e}")
+            seq += 1
+            if touch_logger is not None:
+                touch_logger.send_frame(seq, final_x, final_y, target_x, target_y, raw_x=raw_x, raw_y=raw_y)
 
             end_t = time.perf_counter()
             total_ms = (end_t - start_t) * 1000.0
@@ -481,6 +645,8 @@ def main() -> None:
     finally:
         receiver.stop()
         audio_receiver.stop()
+        if touch_logger is not None:
+            touch_logger.stop()
         if ser:
             ser.close()
         cv2.destroyAllWindows()
