@@ -35,6 +35,7 @@ CODE_FILES = [
     "ml_audio/evaluations/evaluate_audio_classifier.py",
     "ml_audio/training/audio_augmentations.py",
     "ml_audio/training/train_audio_command_classifier.py",
+    "ml_audio/training/nemo_manifest.py",
 ]
 DATASET_DIR = "ml_audio/data/synthetic+real_dataset_large/training_v2"
 
