@@ -27,6 +27,7 @@ import json
 
 import numpy as np
 import pandas as pd
+from scipy.signal import savgol_filter
 
 
 def estimate_r(df_still: pd.DataFrame) -> np.ndarray:
@@ -53,7 +54,7 @@ def estimate_r(df_still: pd.DataFrame) -> np.ndarray:
     return r
 
 
-def estimate_q(dfs_moving) -> np.ndarray:
+def estimate_q(dfs_moving, savgol_window: int = 9, savgol_polyorder: int = 3) -> np.ndarray:
     # dfs_moving: a single moving-phase DataFrame, or a list of them (one per
     # recording, when pooling multiple runs). mcu_ms is a per-recording MCU
     # clock (resets each session/boot) -- differentiation MUST happen within
@@ -76,6 +77,26 @@ def estimate_q(dfs_moving) -> np.ndarray:
         t = valid["mcu_ms"].to_numpy(dtype=float) / 1000.0  # seconds
         x = valid["touch_x_mm"].to_numpy(dtype=float)
         y = valid["touch_y_mm"].to_numpy(dtype=float)
+
+        # Double-differentiating raw position amplifies small per-sample
+        # jitter into large apparent acceleration -- confirmed this session
+        # by accel std swinging 3400-5400mm/s^2 run to run despite similar
+        # underlying motion (PROJECT_LOGBOOK.md 20/08). Smoothing position
+        # with a Savitzky-Golay filter before differentiating suppresses
+        # that noise-amplification without flattening the real target-nudge
+        # motion (window ~360ms at ~25Hz vs. nudges every few seconds).
+        # touch_valid==1 rows aren't perfectly uniformly spaced in time
+        # (invalid frames were just dropped above), but they're close enough
+        # at ~25Hz that treating the kept samples as evenly spaced for this
+        # smoothing pass is a reasonable approximation -- the derivative
+        # step right below still uses each pair's real dt, not an assumed
+        # constant one.
+        window = min(savgol_window, len(x))  # must be odd and <= len(x)
+        if window % 2 == 0:
+            window -= 1
+        if window > savgol_polyorder:
+            x = savgol_filter(x, window_length=window, polyorder=savgol_polyorder)
+            y = savgol_filter(y, window_length=window, polyorder=savgol_polyorder)
 
         dt = np.diff(t)
         # Guard against any zero/negative dt from duplicate/out-of-order samples.

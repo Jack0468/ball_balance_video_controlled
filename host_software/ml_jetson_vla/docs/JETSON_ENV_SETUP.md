@@ -9,10 +9,15 @@ dependencies (Track 3, medium class) are a separate, larger setup and not covere
 
 ## Baseline
 
-- Flash JetPack (confirms the L4T/CUDA/cuDNN base image and kernel) — record the exact
-  JetPack version used once flashed; different JetPack majors ship different default
-  Python/OpenCV/CUDA versions, and "which JetPack" needs to be pinned and written down
-  here before this doc is trusted as accurate, not assumed.
+- **JetPack version: 6.2.3** (confirmed 2026-08-19, chosen, not yet flashed/verified on
+  real hardware). L4T 36.5.2, Ubuntu 22.04, kernel 5.15, CUDA 12.6, TensorRT 10.3,
+  cuDNN 9.3 — a minor patch release over 6.2.2 (security/bugfixes), not a different major
+  line. Confirmed on NVIDIA's own release notes to support all Jetson Orin modules and dev
+  kits, including the AGX Orin. This also unblocks Track 3's GPU path: NVIDIA's Jetson AI
+  Lab wheel index for this exact JetPack/CUDA combo
+  (`https://pypi.jetson-ai-lab.io/jp6/cu126`) has confirmed prebuilt
+  `onnxruntime-gpu==1.23.0`, `torch==2.8.0`, `torchvision==0.23.0` — the JetPack-specific
+  wheels Track 3's plan called for, not the generic x86 CUDA wheel.
 - Track 1 does not need CUDA/TensorRT at all (CPU-only ONNX inference) — the JetPack
   version mostly matters here for L4T's OpenCV build and general driver/USB stability,
   not for ML acceleration.
@@ -56,6 +61,7 @@ this needs the whole `host_software/` tree (or at least `ml_vision/`, `ml_audio/
    of it.
 
 This doc has **not yet been executed against real hardware** — it's a bring-up checklist
-derived from what Track 1's code actually imports, not a confirmed-working recipe. Update
-it with the real JetPack version, actual package versions that worked, and any surprises
-once it's been run once on the device.
+derived from what Track 1's code actually imports, not a confirmed-working recipe. JetPack
+6.2.3 above is a chosen target, not yet confirmed by an actual flash — update this doc with
+what the flash/boot actually produced (any version drift, package versions that worked,
+surprises) once it's been run once on the device.

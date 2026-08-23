@@ -574,6 +574,7 @@ def main() -> None:
                 final_x, final_y = raw_x, raw_y
 
             # --- STAGE 5: Prediction Gate ---
+            was_tracking = gate.ball_on_platform
             gated_x, gated_y, gate_reason = gate.filter(final_x, final_y, dt_ms)
 
             if gate_reason == "no_ball":
@@ -588,6 +589,15 @@ def main() -> None:
                 # frames only, not a stale mix. See PROJECT_LOGBOOK.md 19/08.
                 if mlp_window is not None:
                     mlp_window.clear()
+                if was_tracking and not gate.ball_on_platform:
+                    # This is specifically the TRACKING -> AWAITING_BALL edge
+                    # (lost_frames_threshold consecutive jump-gate rejections
+                    # -- see PredictionGate._handle_tracking), not the
+                    # routine no_ball seen every frame while already
+                    # awaiting/near a marker. Force target back to center;
+                    # state_machine resumes whatever we were pursuing once
+                    # the ball genuinely re-settles near center.
+                    state_machine.on_ball_lost()
                 command = audio_receiver.get_latest_command()
                 if command:
                     print(f"\n[AUDIO] (gate=no_ball) Heard: {command} -- waiting for ball\n")
@@ -606,6 +616,7 @@ def main() -> None:
 
             state_machine.process_command(command, final_x, final_y)
             state_machine.update_markers(marker_coords_xy)
+            state_machine.maybe_resume_previous_target(final_x, final_y)
             state_machine.maybe_auto_hold(final_x, final_y, marker_coords_xy)
             target_x, target_y = state_machine.get_target_coords()
 
