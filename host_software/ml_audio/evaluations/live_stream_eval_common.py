@@ -18,6 +18,15 @@ order (see that script's EVAL_SEQUENCE):
     0s go_grey, 10s go_blue, 20s go_green, 30s go_yellow, 40s go_red,
     50s forward, 60s left, 70s right, 80s backward, 90s hold, 100s stop,
     110s background (nothing overlaid)
+
+`go_grey` (0s) is deliberately excluded from EXPECTED_SEQUENCE below -- the
+current robot deployment has no grey marker to test against, so it isn't
+part of the scored set for now (still spoken in the stream audio itself,
+just not graded). Live-stream scores from before this change were out of
+11; from this change onward they're out of 10. Not a big swing in practice
+-- go_grey scored correctly in all 3 NeMo seeds tested so far, so dropping
+it doesn't change which classes look weak (go_green/backward still the
+consistent failures).
 """
 
 import json
@@ -26,7 +35,6 @@ import time
 from datetime import datetime, timezone
 
 EXPECTED_SEQUENCE = [
-    (0, "go_grey"),
     (10, "go_blue"),
     (20, "go_green"),
     (30, "go_yellow"),

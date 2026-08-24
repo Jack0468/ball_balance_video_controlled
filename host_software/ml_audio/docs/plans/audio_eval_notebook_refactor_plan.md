@@ -406,7 +406,33 @@ This blows past the 6/11 ceiling every custom-CNN checkpoint hit (v4, v6) -- and
 
 **Verdict: the pretrained-backbone track is now the clear leader on both metrics that matter (95.75% offline, 9/11 live-stream), not just offline accuracy alone.** This is the first checkpoint in the entire plan where the live-stream result is unambiguously, dramatically better rather than diverging from or barely matching the offline result -- strong, now twice-confirmed (once per metric) evidence that the custom 13.5K-param CNN's capacity was the real ceiling, not the dataset or preprocessing work that came before it.
 
-**Not yet done:** TensorRT engine build + real Jetson Orin Nano latency/power measurement (Phase 0 only verified ONNX export, not on-device performance) -- the one remaining unknown before this could actually be deployed. Also still open: whether the single remaining misclassification (`go_green`/`go_grey`) is a repeatable pattern or single-run noise, the same question multi-seed testing answered for the custom-CNN track (this result is one seed, not yet multi-seed-verified).
+**Multi-seed check done (4 seeds total via the notebook's `SEED` parameter) -- `go_green` and `backward` are confirmed real, repeatable weaknesses, not single-run noise:**
+
+| t | expected | seed 0 | seed 1 | seed 2 | seed 3 |
+|---|---|---|---|---|---|
+| 0s | go_grey | OK | OK | OK | OK |
+| 10s | go_blue | OK | MISS | OK | OK |
+| 20s | go_green | **MISS** | **MISS** | **MISS** | **MISS** |
+| 30s | go_yellow | OK | OK | OK | OK |
+| 40s | go_red | OK | OK | OK | OK |
+| 50s | forward | OK | OK | OK | OK |
+| 60s | left | OK | OK | OK | OK |
+| 70s | right | OK | MISS | MISS | OK |
+| 80s | backward | **MISS** | **MISS** | **MISS** | **MISS** |
+| 90s | hold | OK | OK | MISS | MISS |
+| 100s | stop | OK | OK | OK | OK |
+| **Total** | | **9/11** | **7/11** | **7/11** | **8/11** |
+
+`go_green`/`go_grey` and `backward` fail in all 4 of 4 seeds now -- as confirmed as this kind of finding gets without literally infinite seeds, a real structural weakness rather than noise. `right` sits at 2 of 4 (genuinely ambiguous, not clearly real or noise). `go_blue` at 1 of 4 looks like a one-off. `hold` is the one worth watching, not yet concluding on: fine in the first two seeds, missed in the last two -- could be coincidence at n=4, could be an emerging pattern; would need more seeds to tell, not worth chasing on its own before the `go_green`/`backward` fixes are tried. Offline accuracy stayed tight across all 4 seeds too (95.3-96.5%, no class collapse anywhere), reinforcing that live-stream's wider spread (7-9/11) is about live/continuous-noise conditions specifically, not a shaky checkpoint -- the same offline/live-stream gap lesson this plan keeps re-learning, just at a much higher baseline this time. All 4 seeds' checkpoints organized under `models/nemo_matchboxnet_v1[_seedN]/`, reports under `evaluations/reports/`.
+
+**Diagnosed *why* the two confirmed failures happen** (built [`evaluations/nemo_stream_probe.py`](../../evaluations/nemo_stream_probe.py), which logs every window's raw prediction/confidence/margin rather than only what passes the gate -- ruled out a threshold-tuning fix before considering anything bigger):
+- **`go_green` -> `go_grey`:** the model never predicts `go_green` at all during that window -- it confidently predicts `go_grey` instead (up to 96.5%). Not a borderline miss; a specific, confident acoustic confusion between two genuinely similar-sounding words.
+- **`backward`:** the model almost never rises above `_background_` during that window -- a few weak (<0.52 confidence) flickers toward unrelated classes, never anything resembling `backward`. Looks like noise-masking, not confusion with a specific wrong word. Consistent with `backward` still having the fewest real recordings (22) of any class and no noise-mixing augmentation tuned to our own robot/lab noise profile.
+- Checked whether the `go_green`/`backward` source recordings in `master_evaluation_audio.wav` (from `data/01_evaluation_samples/`) are simply bad clips before assuming a model/data problem -- peak/RMS/active-duration for both are solidly mid-pack against the other 9 command samples in that folder, not obvious outliers. Doesn't rule out subtler quality issues undetectable without actually listening, but rules out the simple "one dud recording" explanation.
+
+**Scope change: `go_grey` dropped from live-stream scoring going forward** -- the current robot deployment has no grey marker to test against. `EXPECTED_SEQUENCE` in [`evaluations/live_stream_eval_common.py`](../../evaluations/live_stream_eval_common.py) now has 10 entries instead of 11 (still spoken in the stream audio itself, just not graded) -- future live-stream scores are out of 10, not 11. Doesn't change any conclusion above: `go_grey` passed 3/3 seeds before being dropped.
+
+**Not yet done:** TensorRT engine build + real Jetson Orin Nano latency/power measurement (Phase 0 only verified ONNX export, not on-device performance) -- the one remaining unknown before this could actually be deployed. Given `go_green`/`backward` are now confirmed with 4 independent seeds rather than suspected, the next real lever is trying the larger `matchboxnet3x2x64` pretrained variant and/or noise-mixing our own background recordings into fine-tuning specifically targeting these two classes, not further seed-hunting.
 
 ## Proposed Modular Refactor
 
