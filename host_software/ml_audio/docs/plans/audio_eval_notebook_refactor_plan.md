@@ -1,7 +1,9 @@
 # Audio Evaluation & Notebook Refactor Plan
 
 ## Status
-In progress. Corruption audit + quarantine, evaluation-script extraction, the live receiver's label-order + preprocessing fixes, a full multi-seed Colab tuning sweep (v4 -> v5 -> v6), and a first pass at closing the domain gap with real recordings (v7, 3 seeds) are all done and measured. **v7 is a real, confirmed mixed result, not deployable as-is:** the domain-gap fix genuinely works for `left`/`go_grey` (both now >95% offline recall, consistent across all 3 seeds), but every seed also shows a serious, consistent `go_red` recall collapse (72.4% -> ~42-47%) via a specific, repeated `go_red`->`hold` confusion that wasn't there before -- confirmed not to be single-run noise. Live-stream results across the 3 seeds (4/11, 5/11, 6/11) also reveal that this metric has roughly a +/-1-detection error bar from seed alone, useful context for reading every single-seed number measured earlier in this plan (v3-v6). **Current recommendation: keep v4 on hardware, do not deploy any v7 seed, fix the go_red/hold confusion before the next candidate.** Building the training script also surfaced an important correction to an assumption made earlier in this same plan: see "Correction: the conv/batchnorm layers are NOT frozen/shared across checkpoints" below. Companion to [`.agents/agent_ml_audio.md`](../../../../.agents/agent_ml_audio.md).
+**The pretrained-backbone track has produced the best checkpoint in this entire plan, on both metrics that matter.** [`models/nemo_matchboxnet_v1/`](../../models/nemo_matchboxnet_v1/) (NeMo MatchboxNet, transfer-learned on our dataset -- see "Pretrained Backbone / Transfer Learning Track" below) hit 95.75% offline accuracy with no class collapse anywhere (including `go_red` at 94.6%, the class that kept collapsing in the custom-CNN track), and then **9/11 on the live-stream test** -- blowing past the 6/11 ceiling every custom-CNN checkpoint (v3-v7) hit, with `forward`/`left`/`right` all correctly detected simultaneously for the first time anywhere in this plan. This is the first checkpoint where live-stream performance is unambiguously better rather than diverging from offline accuracy, strong evidence the custom 13.5K-param CNN's capacity -- not the dataset/preprocessing work -- was the real ceiling all along.
+
+Everything that came before this remains real, measured work, not superseded busywork: corruption audit + quarantine, evaluation-script extraction, the live receiver's label-order + preprocessing fixes, a full multi-seed Colab tuning sweep (v4 -> v5 -> v6), and closing the domain gap with real recordings (v7, 3 seeds, which confirmed a repeatable `go_red`/`hold` capacity-thrashing regression) are what led directly to trying a pretrained backbone in the first place. **v4 remains the interim hardware recommendation** until the NeMo checkpoint clears its remaining open items (TensorRT/Jetson latency validation; multi-seed confirmation of the one remaining `go_green`/`go_grey` misclassification). Building the training script also surfaced an important correction to an assumption made earlier in this same plan: see "Correction: the conv/batchnorm layers are NOT frozen/shared across checkpoints" below. Companion to [`.agents/agent_ml_audio.md`](../../../../.agents/agent_ml_audio.md).
 
 ## Context
 
@@ -353,7 +355,58 @@ Motivated by the confirmed, repeatable `go_red`/`hold` capacity-thrashing found 
 - [`training/colab_nemo_finetune.ipynb`](../../training/colab_nemo_finetune.ipynb): loads the Phase-0-verified checkpoint, swaps its decoder for our alphabetical 12-class label list (asserted to match, not assumed, after `change_labels()`), fine-tunes at a lower LR than the pretrained recipe with early stopping on val accuracy (same overfitting discipline the custom-CNN track needed), builds our own full confusion matrix rather than trusting NeMo's aggregate val-accuracy metric alone (the go_red/hold confusion in v7 would have been invisible to a single scalar), and exports both `.nemo` and ONNX. Checkpoints persist to Drive via a Lightning `ModelCheckpoint` callback rather than a hand-rolled callback, since training here goes through `trainer.fit()` rather than our own epoch loop -- same crash-resilience intent as the augmentation sweep's Drive-persisted progress, using the framework's native mechanism instead of reimplementing it.
 - **Needs a freshly rebuilt data package** before running -- the existing `ml_audio_colab_package.zip` predates the real `jack` recordings added for v7; re-run `prepare_colab_package.py` first.
 
-**Not yet done:** running the fine-tuning notebook, and everything downstream (live-stream evaluation needs a NeMo-compatible receiver wrapper, not yet built since it's only worth building once offline accuracy here looks promising; Phases 3-4 above).
+**Phase 1 run -- offline result is the best of any checkpoint in this entire plan, by a wide margin.** Ran into three real API mismatches getting there (not guessed -- each pinned down against a live diagnostic or the actual traceback before patching, same discipline as Phase 0):
+
+1. NeMo's current `EncDecClassificationModel` inherits `setup_training_data`/`setup_validation_data` from `EncDecSpeakerLabelModel` without overriding them, so the keyword args are `train_data_layer_config`/`val_data_layer_config`, not `train_data_config`/`val_data_config` (the class itself is correct and `change_labels()` worked fine on the first try -- the error message just names the class that *defines* the inherited method, not the instance's own class, which briefly looked like a much bigger problem than it was).
+2. `import pytorch_lightning as pl` fails an `isinstance` check at `trainer.fit()` -- NeMo's current models subclass `lightning.pytorch.LightningModule` (the renamed/unified package), not the legacy standalone `pytorch_lightning` package. Two similarly-named but distinct classes.
+3. The `EarlyStopping`/`ModelCheckpoint` callbacks' `monitor="val_acc"` doesn't exist in this version's logged metrics; `val_acc_micro_top_1` is what matches the accuracy definition used everywhere else in this plan (correct/total, i.e. micro -- confirmed from the actual list of available metrics in the error message, not guessed, since `val_acc_macro` weights every class equally regardless of sample count and wouldn't be comparable to any v3-v7 number).
+
+**Result: 95.75% offline accuracy (2344/2448), best of any checkpoint by a wide margin (previous best: v6's 89.6%).**
+
+| Class | Recall | Best prior (custom CNN) |
+|---|---|---|
+| `go_red` | **94.6%** | 72.4% (v6) -- the class with the confirmed, repeatable `go_red`->`hold` collapse across all 3 v7 seeds |
+| `backward` | **100%** | 97.5% (v4) |
+| `forward` | 98.4% | 92.5% (v4) |
+| `hold` | 91.5% | 88.5% (v6) |
+| `_background_` | 87.4% | 88.9% (v5, the only prior checkpoint to beat this) |
+| `left` / `go_grey` / `right` / `stop` / `go_blue` / `go_green` / `go_yellow` | 96-99.6% | -- |
+
+**The headline finding: `go_red` no longer collapses.** That class went 67.1% (v3) -> 50.2% (v4) -> 54.8% (v5) -> 72.4% (v6) -> ~42-47% across all 3 v7 seeds (the confirmed capacity-thrashing regression) -> **94.6%** here. No class shows anything resembling that collapse pattern in this checkpoint. Directly consistent with the capacity-thrashing hypothesis the v7 multi-seed check pointed at: a ~75K-param pretrained backbone doesn't fight itself for representational room the way the 13.5K-param custom CNN did when asked to absorb more class diversity. Also notable: the pretrained recipe's inherited augmentor config was already applying white-noise injection (probability 1.0) and small time-shifts automatically, without any explicit configuration on our part -- convergent with `noise` being the winning augmentation in the custom-CNN sweep, not a coincidence.
+
+Artifacts organized into the existing convention: [`models/nemo_matchboxnet_v1/`](../../models/nemo_matchboxnet_v1/) (`.nemo`, ONNX, and the raw Lightning `.ckpt`), confusion matrix report alongside every other checkpoint's in [`evaluations/reports/nemo_finetune_confusion_matrix_20260824T011522Z.json`](../../evaluations/reports/nemo_finetune_confusion_matrix_20260824T011522Z.json). ONNX export re-verified locally (structurally valid, input `(batch, 64, time)` matching Phase 0's finding, output correctly resized to 12 classes) rather than trusted from the Colab log alone.
+
+**Same discipline as every other checkpoint in this plan applies here too: offline accuracy has diverged from live-stream performance three separate times already (v5, v6, v7).** This 95.75% is genuinely the best result produced so far, but it is not yet evidence of anything on the actual failure mode (concurrent robot operation / continuous noisy stream) this whole investigation started from.
+
+## Live-Stream Result: 9/11, the Best Result in This Entire Plan
+
+Built [`evaluations/nemo_live_receiver.py`](../../evaluations/nemo_live_receiver.py) (mirrors `AudioCommandReceiver`'s threading/buffer/gating harness exactly -- same window size, step interval, confidence/margin thresholds -- swapping in NeMo's own forward pass since its MFCC preprocessing differs from the custom CNN's) and [`evaluations/evaluate_nemo_live_receiver_stream.py`](../../evaluations/evaluate_nemo_live_receiver_stream.py). Factored the receiver-agnostic scoring/report logic out of `evaluate_live_receiver_stream.py` into [`evaluations/live_stream_eval_common.py`](../../evaluations/live_stream_eval_common.py) so both tracks are scored by the literal same code, not just similarly-shaped copies -- **verified this refactor changed nothing** by re-running it against v4 and confirming a bit-for-bit identical result (6/11, same exact hits/misses) before trusting it for anything new.
+
+**Correction to a claim repeated throughout this plan: NeMo installs fine locally on this Windows machine.** Every prior NeMo step (Phase 0, Phase 1 fine-tuning) ran in Colab specifically because `nemo_toolkit` was assumed to need Linux-only dependencies (`pynini`, `nemo_text_processing`) -- that assumption was never actually tested here and turned out to be wrong for the `[asr]` extra specifically (those packages are for TTS/text-normalization collections we don't use). `pip install "nemo_toolkit[asr]"` in a fresh `nemo_local` conda env (Python 3.10, isolated from `ball_balance_env` rather than risking the working environment) installed cleanly -- CPU-only PyTorch, which is fine for inference on a ~75K-param model even without a local GPU. This means the live-stream evaluation (and any future NeMo inference/evaluation work) can run locally like every other evaluation script in this plan, without a Colab round-trip.
+
+**One more bug caught locally before it reached the live-stream test:** `model.labels` is `None` after `EncDecClassificationModel.restore_from(...)` -- it's only populated as a side effect of calling `setup_training_data()`, not persisted in the saved checkpoint. The real label order is in `model.cfg.labels` (confirmed to agree with `cfg.train_ds.labels`, `cfg.validation_ds.labels`, and the decoder's `num_classes` before trusting it). `nemo_live_receiver.py` reads labels from there instead.
+
+**Result: 9/11 expected commands correctly detected**, run locally against the same `master_evaluation_audio.wav` stream every checkpoint in this plan has been scored against:
+
+| t | expected | detected |
+|---|---|---|
+| 0s | go_grey | OK |
+| 10s | go_blue | OK |
+| 20s | go_green | **MISS** (misclassified as `go_grey`, twice) |
+| 30s | go_yellow | OK |
+| 40s | go_red | OK |
+| 50s | forward | **OK** |
+| 60s | left | **OK** |
+| 70s | right | **OK** |
+| 80s | backward | MISS (no detection) |
+| 90s | hold | OK |
+| 100s | stop | OK |
+
+This blows past the 6/11 ceiling every custom-CNN checkpoint hit (v4, v6) -- and critically, `forward`/`left`/`right` are all correctly detected **simultaneously** for the first time anywhere in this plan; no v3-v7 checkpoint, including any of the 3 v7 seeds specifically aimed at fixing these classes, ever got all three at once. Only 2 misses, one of which (`go_green`->`go_grey`) is a genuine misclassification rather than a safe non-detection -- still a much cleaner failure profile than v6's ~70 stray background firings and multiple misfires. Report: [`evaluations/reports/live_stream_eval_20260824T015753Z.json`](../../evaluations/reports/live_stream_eval_20260824T015753Z.json).
+
+**Verdict: the pretrained-backbone track is now the clear leader on both metrics that matter (95.75% offline, 9/11 live-stream), not just offline accuracy alone.** This is the first checkpoint in the entire plan where the live-stream result is unambiguously, dramatically better rather than diverging from or barely matching the offline result -- strong, now twice-confirmed (once per metric) evidence that the custom 13.5K-param CNN's capacity was the real ceiling, not the dataset or preprocessing work that came before it.
+
+**Not yet done:** TensorRT engine build + real Jetson Orin Nano latency/power measurement (Phase 0 only verified ONNX export, not on-device performance) -- the one remaining unknown before this could actually be deployed. Also still open: whether the single remaining misclassification (`go_green`/`go_grey`) is a repeatable pattern or single-run noise, the same question multi-seed testing answered for the custom-CNN track (this result is one seed, not yet multi-seed-verified).
 
 ## Proposed Modular Refactor
 

@@ -8,10 +8,12 @@ training scripts run completely unchanged -- same imports
 (`from ml_audio.training.train_audio_command_classifier import ...`), same
 `DEFAULT_DATASET_ROOT` resolution via `__file__`, no path overrides needed.
 
-Only the training-relevant files are included -- NOT audio_receiver_pytorch.py
-or the live-mic scripts, which pull in sounddevice (needs system PortAudio
-libs, irrelevant to training and often annoying to install in a fresh
-Colab image). See audio_dsp.py, split out for exactly this reason.
+Only training/evaluation-relevant files are included -- NOT
+audio_receiver_pytorch.py or the live-mic scripts, which pull in sounddevice
+(needs system PortAudio libs, irrelevant here and often annoying to install
+in a fresh Colab image). See audio_dsp.py, split out for exactly this reason,
+and nemo_live_receiver.py, a separate sounddevice-free receiver so the
+pretrained-backbone track's live-stream test can run in Colab too.
 
 Usage:
     python prepare_colab_package.py
@@ -33,11 +35,20 @@ CODE_FILES = [
     "ml_audio/audio_dsp.py",
     "ml_audio/audio_command_classifier_pytorch.py",
     "ml_audio/evaluations/evaluate_audio_classifier.py",
+    "ml_audio/evaluations/live_stream_eval_common.py",
+    "ml_audio/evaluations/nemo_live_receiver.py",
+    "ml_audio/evaluations/evaluate_nemo_live_receiver_stream.py",
     "ml_audio/training/audio_augmentations.py",
     "ml_audio/training/train_audio_command_classifier.py",
     "ml_audio/training/nemo_manifest.py",
 ]
 DATASET_DIR = "ml_audio/data/synthetic+real_dataset_large/training_v2"
+# Standalone eval assets outside training_v2/ -- needed for the live-stream
+# test (nemo_live_receiver.py / evaluate_nemo_live_receiver_stream.py), not
+# for training itself.
+EXTRA_DATA_FILES = [
+    "ml_audio/data/02_silver/master_evaluation_audio.wav",
+]
 
 DEFAULT_OUT_DIR = os.path.join(ML_AUDIO_DIR, "colab_package")
 DEFAULT_ZIP_NAME = "ml_audio_colab_package.zip"
@@ -65,10 +76,21 @@ def main() -> None:
         print(f"ERROR: missing dataset dir {dataset_abs}", file=sys.stderr)
         sys.exit(1)
 
+    for rel in EXTRA_DATA_FILES:
+        abs_path = os.path.join(HOST_SOFTWARE_DIR, rel)
+        if not os.path.isfile(abs_path):
+            print(f"ERROR: missing data file {abs_path}", file=sys.stderr)
+            sys.exit(1)
+
     print(f"Writing {zip_path} ...")
     file_count = 0
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
         for rel in CODE_FILES:
+            zf.write(os.path.join(HOST_SOFTWARE_DIR, rel), arcname=rel)
+            file_count += 1
+            print(f"  + {rel}")
+
+        for rel in EXTRA_DATA_FILES:
             zf.write(os.path.join(HOST_SOFTWARE_DIR, rel), arcname=rel)
             file_count += 1
             print(f"  + {rel}")
