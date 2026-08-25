@@ -134,6 +134,41 @@ def export_mlp_corrector(model_path):
     print(f"Success! MLP ONNX model saved to: {output_path}\n")
 
 
+def export_corrector_mlp_iphone_v1(model_path, input_dim=14, hidden_dim=128, output_dim=2):
+    print(f"Loading CorrectorMLP model: {model_path}...")
+    import sys
+
+    core_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../core"))
+    if core_dir not in sys.path:
+        sys.path.append(core_dir)
+    from corrector_mlp import CorrectorMLP
+
+    resolved_path = os.path.abspath(os.path.join(os.path.dirname(__file__), model_path))
+    model = CorrectorMLP(input_dim=input_dim, hidden_dim=hidden_dim, output_dim=output_dim)
+    checkpoint = torch.load(resolved_path, map_location="cpu", weights_only=False)
+    if "model_state_dict" in checkpoint:
+        model.load_state_dict(checkpoint["model_state_dict"])
+    else:
+        model.load_state_dict(checkpoint)
+    model.eval()
+
+    dummy_input = torch.randn(1, input_dim)
+    output_path = resolved_path.replace(".pth", ".onnx")
+
+    print(f"Exporting CorrectorMLP to ONNX format...")
+    torch.onnx.export(
+        model,
+        dummy_input,
+        output_path,
+        export_params=True,
+        opset_version=12,
+        do_constant_folding=True,
+        input_names=["input"],
+        output_names=["output"],
+    )
+    print(f"Success! CorrectorMLP ONNX model saved to: {output_path}\n")
+
+
 def main():
     print("--- Model to ONNX Exporter ---\n")
 
@@ -152,6 +187,14 @@ def main():
     # 5. Export MLP Corrector Time varuco_v1
     export_mlp_corrector(
         model_path="../models/mlp_corrector_time_aruco_0730_v1/mlp_corrector_best.pth",
+    )
+
+    # 6. Export YOLO-Pose iphone_v1 + its MLP corrector (medium-class pipeline
+    # run_eval_expert.py actually runs -- added for the Jetson port's Track 3,
+    # ml_jetson_vla/deployment/export_medium_class_onnx.py calls these directly)
+    export_model("../models/yolov8_platform_pose_markers_iphone_v1/weights/best.pt", is_local_path=True)
+    export_corrector_mlp_iphone_v1(
+        model_path="../models/mlp_corrector_iphone_v1/best_corrector.pth",
     )
 
     print(

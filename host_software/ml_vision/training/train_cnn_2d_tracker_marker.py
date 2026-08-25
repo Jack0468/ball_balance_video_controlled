@@ -448,19 +448,26 @@ def train_model(args: argparse.Namespace) -> None:
     print(f"\nPer-session validation performance (saved to {per_session_path}):")
     print(per_session_df.to_string(index=False))
 
-    h, w = tuple(args.input_size)
-    dummy_input = torch.zeros(1, 3, h, w, device=device)
-    onnx_path = output_dir / "shared_vision_backbone_best.onnx"
-    torch.onnx.export(
-        model,
-        dummy_input,
-        str(onnx_path),
-        input_names=["image"],
-        output_names=["ball_xy", "mask_logits", "heatmap_logits"],
-        dynamic_axes={"image": {0: "batch"}, "ball_xy": {0: "batch"}, "mask_logits": {0: "batch"}, "heatmap_logits": {0: "batch"}},
-        opset_version=17,
-    )
-    print(f"ONNX model exported to: {onnx_path}")
+    # Non-fatal: training + evaluation are already complete and saved above (the
+    # .pt checkpoints and per_session_eval.csv) by this point -- an export-only
+    # failure (e.g. a missing optional dependency like onnxscript) shouldn't read
+    # as "training crashed" when it didn't. See docs/PROJECT_LOGBOOK.md, 2026-08-14.
+    try:
+        h, w = tuple(args.input_size)
+        dummy_input = torch.zeros(1, 3, h, w, device=device)
+        onnx_path = output_dir / "shared_vision_backbone_best.onnx"
+        torch.onnx.export(
+            model,
+            dummy_input,
+            str(onnx_path),
+            input_names=["image"],
+            output_names=["ball_xy", "mask_logits", "heatmap_logits"],
+            dynamic_axes={"image": {0: "batch"}, "ball_xy": {0: "batch"}, "mask_logits": {0: "batch"}, "heatmap_logits": {0: "batch"}},
+            opset_version=17,
+        )
+        print(f"ONNX model exported to: {onnx_path}")
+    except Exception as exc:  # noqa: BLE001 -- deliberately broad: export is best-effort
+        print(f"\n[WARNING] ONNX export failed ({exc!r}) -- the trained .pt checkpoints above are still valid and complete.")
 
 
 def main() -> None:

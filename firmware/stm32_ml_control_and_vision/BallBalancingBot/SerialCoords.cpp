@@ -1,24 +1,31 @@
 // ---------------------------------------------------------------------------
-// SerialCoords.cpp  --  drop-in replacement for Screen.cpp
+// SerialCoords.cpp  --  DOWNLINK: ball + target coordinates from the PC.
 //
-// Instead of reading the resistive touchscreen, ball coordinates arrive over a
-// serial port from a host (Python vision script, another MCU, etc.).
-// Implements the exact same API declared in Screen.h, so RLControl.cpp and
-// BallBalancingBot.ino need no changes.
+// The PC's vision/audio pipeline pushes the estimated ball position and the
+// current target here; the RL policy runs on this. Nothing about that changed.
 //
-// WIRE PROTOCOL (ASCII, one sample per line, '\n' or '\r\n' terminated):
+// WHAT CHANGED vs. the previous version
+//   1. Lines may now carry a leading "V,<seq>" tag. <seq> is a monotonically
+//      increasing frame counter from the host. We store the seq of the most
+//      recently accepted frame and expose it via serial_coords_seq(), so the
+//      touchscreen telemetry (TouchProbe.cpp) can echo it back and the host can
+//      join "what vision thought" to "where the ball actually was".
+//   2. The old untagged formats still parse, so an older host keeps working.
 //
-//     "<x_mm>,<y_mm>"            ball detected at x,y   e.g.  "-12.5,43.0"
-//     "<x_mm>,<y_mm>,<z>"        z <= 0 means "not detected"
-//     "L"  or  "N"               ball lost / out of frame
+// WIRE PROTOCOL, PC -> MCU (ASCII, one sample per line, '\n' terminated):
 //
+//   V,<seq>,<x_mm>,<y_mm>,<tgt_x_mm>,<tgt_y_mm>[,<valid>]   preferred
+//   <x_mm>,<y_mm>,<tgt_x_mm>,<tgt_y_mm>[,<valid>]           legacy, still OK
+//   <x_mm>,<y_mm>                                            legacy, target=(0,0)
+//   L   or   N                                               ball lost
+//
+// <valid> <= 0 means "the host saw nothing this frame".
 // Separators may be comma, semicolon, space or tab. Coordinates are in
-// MILLIMETRES with (0,0) at the centre of the plate -- same convention the
-// touchscreen version produced and the RL policy was trained on.
+// MILLIMETRES with (0,0) at the centre of the plate.
 //
 // If no valid sample arrives for COORD_TIMEOUT_MS the ball is reported as lost
-// (z = 0) while the last known position is still returned, mirroring the old
-// Screen.cpp behaviour. rl_balance() then levels the plate after 3 s.
+// (z = 0) while the last known position is still returned. rl_balance() then
+// levels the plate after 3 s.
 // ---------------------------------------------------------------------------
 
 #include "Screen.h"
@@ -26,9 +33,7 @@
 
 // --------------------------- configuration ---------------------------------
 
-// Which port the host talks on. Serial is already opened at 2 Mbaud in the
-// sketch. Change to Serial1/Serial2 if you want coordinates on a hardware UART
-// separate from the debug console.
+// Which port the host talks on. Serial is already opened in the sketch.
 #define COORD_SERIAL       Serial
 
 // Set to 1 and pick a baud if COORD_SERIAL is NOT the one the .ino opens.
@@ -39,7 +44,8 @@
 // At 30 Hz control cadence, 150 ms = ~4 missed frames.
 #define COORD_TIMEOUT_MS   150
 
-#define COORD_LINE_MAX     48      // longest accepted line, incl. terminator
+#define COORD_LINE_MAX     64      // longest accepted line, incl. terminator
+                                   // (was 48; the "V,<seq>," tag needs room)
 
 // Sign / scale fixes, in case the host's axes disagree with the plate.
 #define COORD_INVERT_X     0
@@ -67,6 +73,8 @@ static bool          has_ball   = false;
 static bool          has_new    = false;   // a fresh line arrived since last check
 static unsigned long last_good_ms = 0;
 
+static uint32_t      last_seq   = 0;       // NEW: host frame counter
+
 // ------------------------- helpers (unchanged API) -------------------------
 
 // map command but can return floating point values
@@ -91,6 +99,20 @@ static void handle_line(char *line) {
     has_ball = false;
     has_new  = true;
     return;
+  }
+
+  // NEW: optional "V,<seq>," header. If absent we just auto-increment, so the
+  // host still gets a usable (if less precise) join key.
+  bool tagged = false;
+  if (*p == 'V' || *p == 'v') {
+    p++;
+    while (is_sep(*p)) p++;
+    unsigned long s = strtoul(p, &end, 10);
+    if (end == p) return;                              // "V" with no seq -> junk
+    last_seq = (uint32_t)s;
+    tagged   = true;
+    p = end;
+    while (is_sep(*p)) p++;
   }
 
   double x = strtod(p, &end);
@@ -123,7 +145,7 @@ static void handle_line(char *line) {
       p = end;
   }
 
-  // Optional fifth field: <= 0 means the host saw nothing.
+  // Optional trailing validity field: <= 0 means the host saw nothing.
   while (is_sep(*p)) p++;
   end = p;
   double z = strtod(p, &end);
@@ -147,6 +169,8 @@ static void handle_line(char *line) {
   if (y >  COORD_LIMIT_Y_MM) y =  COORD_LIMIT_Y_MM;
   if (y < -COORD_LIMIT_Y_MM) y = -COORD_LIMIT_Y_MM;
 #endif
+
+  if (!tagged) last_seq++;                             // keep the counter moving
 
   last_x       = x;
   last_y       = y;
@@ -198,9 +222,15 @@ bool coords_available() {
   return n;
 }
 
+// NEW: join key for the host-side accuracy log.
+uint32_t serial_coords_seq() {
+  return last_seq;
+}
+
 // ------------------------------ public API ---------------------------------
 
-// Kept for source compatibility with Screen.cpp; no touchscreen pins to set up.
+// Kept for source compatibility with Screen.cpp; no touchscreen pins to set up
+// here -- the touchscreen now belongs to TouchProbe.cpp.
 void screen_init() {
 #if COORD_BEGIN_SERIAL
   COORD_SERIAL.begin(COORD_BAUD);
@@ -213,6 +243,7 @@ void screen_init() {
   last_y       = 0.0;
   last_tx      = 0.0;
   last_ty      = 0.0;
+  last_seq     = 0;
   last_good_ms = millis();
 }
 

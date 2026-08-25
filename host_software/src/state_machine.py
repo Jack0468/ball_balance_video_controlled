@@ -44,11 +44,22 @@ class TargetStateMachine:
             "green": deque(maxlen=history_size),
             "red": deque(maxlen=history_size),
             "yellow": deque(maxlen=history_size),
+            "black": deque(maxlen=history_size),
         }
 
         self.auto_hold_tolerance_mm = 8.0
         self.auto_hold_required_frames = 6
         self._on_target_frames = 0
+
+        # Ball-loss recovery: on_ball_lost() forces the target to center;
+        # maybe_resume_previous_target() switches back to whatever we were
+        # pursuing once the ball has genuinely dwelt near center again (same
+        # tolerance/dwell pattern as auto-hold), not the instant it's
+        # re-acquired.
+        self._pre_loss_target = None
+        self.recenter_tolerance_mm = 8.0
+        self.recenter_required_frames = 6
+        self._recenter_frames = 0
 
         # Edge-trigger state: the last command we actually *acted on*.
         # process_command() is called every loop with a latched command,
@@ -73,6 +84,11 @@ class TargetStateMachine:
         self._apply_command(command, cam_x, cam_y)
 
     def _apply_command(self, command, cam_x, cam_y):
+        # A fresh explicit command always wins over a queued post-loss
+        # resume -- don't snap back to a stale target once the user has
+        # asked for something new.
+        self._pre_loss_target = None
+
         if command in ("hold", "stop"):
             self.current_target_name = "hold"
             self.hold_x = float(cam_x)
@@ -158,6 +174,50 @@ class TargetStateMachine:
             print(
                 f"[AUTO HOLD] Locked at ({self.hold_x:.1f}, {self.hold_y:.1f}) after reaching target."
             )
+
+    # -----------------------------------------------------------------
+    # Ball-loss recovery: force center, then resume the previous target
+    # -----------------------------------------------------------------
+    def on_ball_lost(self):
+        """Call exactly once, on the frame the tracker transitions from
+        actively tracking the ball to AWAITING_BALL (ball flew off / got
+        lost -- not every routine no-ball frame). Remembers whatever we were
+        pursuing and forces an immediate switch to center; the actual
+        physical move happens naturally once get_target_coords() is next
+        read, same as any other target change."""
+        if self.current_target_name != "center":
+            self._pre_loss_target = self.current_target_name
+        self.current_target_name = "center"
+        self._on_target_frames = 0
+        self._recenter_frames = 0
+        print(
+            f"[BALL LOST] Forcing target to center"
+            + (f" -- will resume '{self._pre_loss_target}' once re-centered." if self._pre_loss_target else ".")
+        )
+
+    def maybe_resume_previous_target(self, cam_x, cam_y):
+        """Call every tracking-phase frame. Once the ball has dwelt within
+        recenter_tolerance_mm of center for recenter_required_frames
+        consecutive frames after a ball-lost event, switches back to
+        whatever target was active before the loss. No-op otherwise --
+        including if the user issued a fresh command in the meantime,
+        since _apply_command() already clears _pre_loss_target then."""
+        if self._pre_loss_target is None or self.current_target_name != "center":
+            return
+
+        dist = (float(cam_x) ** 2 + float(cam_y) ** 2) ** 0.5
+        if dist <= self.recenter_tolerance_mm:
+            self._recenter_frames += 1
+        else:
+            self._recenter_frames = 0
+
+        if self._recenter_frames >= self.recenter_required_frames:
+            resumed = self._pre_loss_target
+            self._pre_loss_target = None
+            self._recenter_frames = 0
+            self.current_target_name = resumed
+            self._on_target_frames = 0
+            print(f"[RECOVERED] Ball re-centered -- resuming target '{resumed}'.")
 
     # -----------------------------------------------------------------
     # Marker history / target resolution

@@ -1,0 +1,135 @@
+{
+  "speaker": "jack",
+  "labels": {
+    "backward": {
+      "source_files": [
+        "backward_jack_00.wav"
+      ],
+      "deduped_out": [],
+      "raw_segments": 26,
+      "excluded": {
+        "mad_outlier": [
+          {
+            "source": "backward_jack_00.wav",
+            "duration_sec": 0.88
+          }
+        ],
+        "empty_after_pad": []
+      },
+      "accepted": 25,
+      "written": {
+        "train": 22,
+        "val": 3
+      }
+    },
+    "forward": {
+      "source_files": [
+        "forward_jack_0.wav",
+        "forward_jack_01.wav",
+        "forward_jack_21.wav",
+        "forward_jack_28.wav"
+      ],
+      "deduped_out": [
+        {
+          "path": "forward_jack_01.wav",
+          "duplicate_of": "forward_jack_0.wav",
+          "max_abs_diff": 0.0003662109375
+        },
+        {
+          "path": "forward_jack_21.wav",
+          "duplicate_of": "forward_jack_0.wav",
+          "max_abs_diff": 0.0003662109375
+        }
+      ],
+      "raw_segments": 31,
+      "excluded": {
+        "mad_outlier": [
+          {
+            "source": "forward_jack_0.wav",
+            "duration_sec": 1.29
+          }
+        ],
+        "empty_after_pad": []
+      },
+      "accepted": 30,
+      "written": {
+        "train": 26,
+        "val": 4
+      }
+    },
+    "go_grey": {
+      "source_files": [
+        "go_grey_jack_0.wav"
+      ],
+      "deduped_out": [],
+      "raw_segments": 38,
+      "excluded": {
+        "mad_outlier": [],
+        "empty_after_pad": []
+      },
+      "accepted": 38,
+      "written": {
+        "train": 33,
+        "val": 5
+      }
+    },
+    "left": {
+      "source_files": [
+        "left_jack_0.wav"
+      ],
+      "deduped_out": [],
+      "raw_segments": 38,
+      "excluded": {
+        "mad_outlier": [
+          {
+            "source": "left_jack_0.wav",
+            "duration_sec": 3.18
+          }
+        ],
+        "empty_after_pad": []
+      },
+      "accepted": 37,
+      "written": {
+        "train": 32,
+        "val": 5
+      }
+    },
+    "right": {
+      "source_files": [
+        "right_jack_00.wav"
+      ],
+      "deduped_out": [],
+      "raw_segments": 32,
+      "excluded": {
+        "mad_outlier": [
+          {
+            "source": "right_jack_00.wav",
+            "duration_sec": 0.39
+          },
+          {
+            "source": "right_jack_00.wav",
+            "duration_sec": 0.42
+          }
+        ],
+        "empty_after_pad": []
+      },
+      "accepted": 30,
+      "written": {
+        "train": 26,
+        "val": 4
+      }
+    }
+  },
+  "generated_at": "20260813T113744Z",
+  "dry_run": true,
+  "totals": {
+    "raw_segments": 165,
+    "mad_outliers": 5,
+    "empty_after_pad": 0,
+    "accepted": 160
+  },
+  "gain_correction": {
+    "target_rms": 0.043276309967041016,
+    "applied_gain": 4.609134158888449
+  }
+}

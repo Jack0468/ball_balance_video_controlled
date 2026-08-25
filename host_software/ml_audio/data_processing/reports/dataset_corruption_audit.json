@@ -9,17 +9,17 @@
   },
   "per_class_summary": {
     "train/_background_": {
-      "total": 1290,
+      "total": 2189,
       "empty": 96,
       "truncated": 0
     },
     "train/backward": {
-      "total": 600,
+      "total": 622,
       "empty": 0,
       "truncated": 0
     },
     "train/forward": {
-      "total": 600,
+      "total": 626,
       "empty": 0,
       "truncated": 0
     },
@@ -34,7 +34,7 @@
       "truncated": 0
     },
     "train/go_grey": {
-      "total": 600,
+      "total": 633,
       "empty": 0,
       "truncated": 0
     },
@@ -54,12 +54,12 @@
       "truncated": 0
     },
     "train/left": {
-      "total": 598,
+      "total": 630,
       "empty": 0,
       "truncated": 0
     },
     "train/right": {
-      "total": 600,
+      "total": 626,
       "empty": 0,
       "truncated": 0
     },
@@ -69,17 +69,17 @@
       "truncated": 0
     },
     "val/_background_": {
-      "total": 240,
+      "total": 398,
       "empty": 17,
       "truncated": 0
     },
     "val/backward": {
-      "total": 120,
+      "total": 123,
       "empty": 0,
       "truncated": 0
     },
     "val/forward": {
-      "total": 120,
+      "total": 124,
       "empty": 0,
       "truncated": 0
     },
@@ -94,7 +94,7 @@
       "truncated": 0
     },
     "val/go_grey": {
-      "total": 120,
+      "total": 125,
       "empty": 0,
       "truncated": 0
     },
@@ -114,12 +114,12 @@
       "truncated": 0
     },
     "val/left": {
-      "total": 116,
+      "total": 121,
       "empty": 0,
       "truncated": 0
     },
     "val/right": {
-      "total": 120,
+      "total": 124,
       "empty": 0,
       "truncated": 0
     },

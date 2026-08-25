@@ -98,6 +98,7 @@ def main():
                 and "resnet" not in model_name_lower
                 and "mlp" not in model_name_lower
                 and "cnn" not in model_name_lower
+                and "shared_vision" not in model_name_lower
             ):
                 continue
 

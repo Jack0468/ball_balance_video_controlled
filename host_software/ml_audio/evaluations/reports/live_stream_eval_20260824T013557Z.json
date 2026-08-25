@@ -1,0 +1,196 @@
+{
+  "generated_at": "20260824T013557Z",
+  "model": "models\\pytorch_v4\\audio_command_classifier_state_dict_v4.pth",
+  "stream": "data\\02_silver\\master_evaluation_audio.wav",
+  "correct": 6,
+  "total": 11,
+  "results": [
+    {
+      "window_start_sec": 0,
+      "expected": "go_grey",
+      "detected": null,
+      "detected_at_sec": null,
+      "correct": false
+    },
+    {
+      "window_start_sec": 10,
+      "expected": "go_blue",
+      "detected": "go_blue",
+      "detected_at_sec": 10.84,
+      "correct": true
+    },
+    {
+      "window_start_sec": 20,
+      "expected": "go_green",
+      "detected": null,
+      "detected_at_sec": null,
+      "correct": false
+    },
+    {
+      "window_start_sec": 30,
+      "expected": "go_yellow",
+      "detected": "go_yellow",
+      "detected_at_sec": 31.77,
+      "correct": true
+    },
+    {
+      "window_start_sec": 40,
+      "expected": "go_red",
+      "detected": "go_red",
+      "detected_at_sec": 42.83,
+      "correct": true
+    },
+    {
+      "window_start_sec": 50,
+      "expected": "forward",
+      "detected": null,
+      "detected_at_sec": null,
+      "correct": false
+    },
+    {
+      "window_start_sec": 60,
+      "expected": "left",
+      "detected": "left",
+      "detected_at_sec": 63.97,
+      "correct": true
+    },
+    {
+      "window_start_sec": 70,
+      "expected": "right",
+      "detected": null,
+      "detected_at_sec": null,
+      "correct": false
+    },
+    {
+      "window_start_sec": 80,
+      "expected": "backward",
+      "detected": null,
+      "detected_at_sec": null,
+      "correct": false
+    },
+    {
+      "window_start_sec": 90,
+      "expected": "hold",
+      "detected": "hold",
+      "detected_at_sec": 94.1,
+      "correct": true
+    },
+    {
+      "window_start_sec": 100,
+      "expected": "stop",
+      "detected": "stop",
+      "detected_at_sec": 104.26,
+      "correct": true
+    }
+  ],
+  "all_detections": [
+    {
+      "t": 0.44,
+      "cmd": "go_blue"
+    },
+    {
+      "t": 1.52,
+      "cmd": "_background_"
+    },
+    {
+      "t": 10.84,
+      "cmd": "go_blue"
+    },
+    {
+      "t": 12.27,
+      "cmd": "_background_"
+    },
+    {
+      "t": 21.59,
+      "cmd": "_background_"
+    },
+    {
+      "t": 22.21,
+      "cmd": "_background_"
+    },
+    {
+      "t": 22.83,
+      "cmd": "_background_"
+    },
+    {
+      "t": 31.56,
+      "cmd": "_background_"
+    },
+    {
+      "t": 31.77,
+      "cmd": "go_yellow"
+    },
+    {
+      "t": 32.82,
+      "cmd": "_background_"
+    },
+    {
+      "t": 42.83,
+      "cmd": "go_red"
+    },
+    {
+      "t": 43.63,
+      "cmd": "go_red"
+    },
+    {
+      "t": 43.88,
+      "cmd": "_background_"
+    },
+    {
+      "t": 53.64,
+      "cmd": "_background_"
+    },
+    {
+      "t": 63.36,
+      "cmd": "_background_"
+    },
+    {
+      "t": 63.97,
+      "cmd": "left"
+    },
+    {
+      "t": 64.2,
+      "cmd": "_background_"
+    },
+    {
+      "t": 73.33,
+      "cmd": "_background_"
+    },
+    {
+      "t": 74.16,
+      "cmd": "_background_"
+    },
+    {
+      "t": 83.65,
+      "cmd": "_background_"
+    },
+    {
+      "t": 84.72,
+      "cmd": "_background_"
+    },
+    {
+      "t": 88.67,
+      "cmd": "_background_"
+    },
+    {
+      "t": 94.1,
+      "cmd": "hold"
+    },
+    {
+      "t": 94.5,
+      "cmd": "hold"
+    },
+    {
+      "t": 95.11,
+      "cmd": "_background_"
+    },
+    {
+      "t": 104.26,
+      "cmd": "stop"
+    },
+    {
+      "t": 105.54,
+      "cmd": "_background_"
+    }
+  ]
+}
