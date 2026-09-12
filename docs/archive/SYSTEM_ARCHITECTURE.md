@@ -1,5 +1,15 @@
 # Ball Balancing Robot: System Architecture
 
+> [!WARNING]
+> **ARCHIVED 2026-09-12.** Describes the superseded Opal Kelly XEM3010 (Spartan-3) FPGA
+> topology and an on-chip-vision-inference role for the FPGA. Current hardware is the
+> ZedBoard (Zynq XC7Z020); the FPGA's role was reframed 2026-08-13 to a digital↔optical
+> bridge + PID/IK HLS core, not on-chip vision. See `CLAUDE.md`'s Current State table and
+> `docs/plans/ml_system_parameter_budget.md` for the current architecture. Kept for
+> historical reference only — do not follow this as current design.
+
+---
+
 > [!NOTE]
 > This document defines the macro-architecture for the Camera & Audio-Controlled Ball Balancing Robot using an Opal Kelly FPGA.
 

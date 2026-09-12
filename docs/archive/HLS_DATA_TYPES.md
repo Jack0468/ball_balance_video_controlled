@@ -1,5 +1,13 @@
 # Cost-Benefit Analysis: HLS Data Types (Float vs. Fixed-Point)
 
+> [!WARNING]
+> **ARCHIVED 2026-09-12.** Early, general float-vs-fixed-point discussion predating this
+> project's actual, evidence-based fixed-point quantization work on the vision CNN (real
+> trial data, calibration methodology, per-layer results) in
+> `docs/plans/ml_system_parameter_budget.md` §5.7-5.8. Also references the legacy Teensy
+> C++ codebase. Kept for historical reference only — use the parameter-budget doc's
+> trial results for any current bit-width decision.
+
 When synthesizing C++ into Verilog using Xilinx Vitis HLS, the choice of data types for the Inverse Kinematics (IK) and PID calculations is the most critical design decision for FPGA performance.
 
 ## Option A: Standard Floating Point (`float` / `double`)

@@ -1,5 +1,12 @@
 # Engineering Standards
 
+> [!WARNING]
+> **ARCHIVED 2026-09-12.** Describes a Teensy-based "baseline revision" superseded by the
+> current STM32 control firmware. Its Python/coordinate-contract standards (non-blocking
+> execution, mandatory type hints, Python-owns-all-coordinate-transforms) were carried
+> forward into `CLAUDE.md`'s "Coding Conventions" and "Coordinate Contract" sections —
+> **that's the current source of truth**, not this file. Kept for historical reference only.
+
 ## Project Revision Strategy
 
 The project is structured into two hardware revisions to ensure stable iterative development:

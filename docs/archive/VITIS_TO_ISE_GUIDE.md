@@ -1,5 +1,12 @@
 # Vitis HLS to XEM3010 (Spartan-3) Workflow Guide
 
+> [!WARNING]
+> **ARCHIVED 2026-09-12.** Entirely specific to the superseded Opal Kelly XEM3010
+> (Spartan-3) board and its legacy Xilinx ISE 14.7 toolchain requirement. Current hardware
+> is the ZedBoard (Zynq XC7Z020), which uses Vitis/Vivado 2025.2 natively end-to-end — no
+> ISE hybrid workflow is needed. See `docs/HARDWARE_AND_SOFTWARE_PREREQUISITES.md` for the
+> current toolchain. Kept for historical reference only.
+
 Porting the `hls_hardware/` C++ modules to the Opal Kelly XEM3010 requires a **hybrid toolchain approach**. The XEM3010 uses a Xilinx Spartan-3 FPGA, which is a legacy chip. Modern tools like Vitis/Vivado **do not support** the Spartan-3 for bitstream synthesis. 
 
 Therefore, you will use **Vitis HLS** strictly as a "C++ to Verilog" translator, and then use the legacy **Xilinx ISE 14.7** to compile that Verilog into a physical bitstream.

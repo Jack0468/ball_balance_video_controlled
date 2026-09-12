@@ -62,7 +62,7 @@ substrate is the point of that arm).
    `run_eval_expert.py` actually runs today — `yolov8_platform_pose_markers_iphone_v1` +
    `mlp_corrector_iphone_v1`, plus `cnn_2d_tracker_0730_v3`/BasicCNN, YOLOv8-nano, ResNet18/50
    variants). Both aim at the same vision task on different-but-similar data — see
-   `AGENTS.md`'s "Arm 1 has two vision model classes" callout under ML Component Sizes. The
+   `CLAUDE.md`'s Current State table / Architecture Decisions ("YOLOv8-nano/ResNet ban") entries. The
    lurking variable is training-data recency (only the small class has seen Dataset 8/9, the
    corrected/complete data), not architecture size. **Neither is decided; both are live
    candidates**, pending the small class's evaluation once its current training run finishes.

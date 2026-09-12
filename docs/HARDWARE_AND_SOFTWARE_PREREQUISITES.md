@@ -1,6 +1,12 @@
 # Hardware and Software Prerequisites
 
-Before we transition into Phase 2 (Hardware Integration), you need to ensure the correct toolchains are installed on the Host PC and keep several physical constraints in mind when fabricating the robot.
+> Toolchain/hardware setup content below is current (ZedBoard, Vitis/Vivado 2025.2). The
+> original "Phase 2 (Hardware Integration)" framing predates the 2026-08-13 FPGA role
+> reframe (digital↔optical bridge + PID/IK HLS core, not on-chip vision inference) and has
+> been dropped here — see `CLAUDE.md`'s Current State table for the FPGA track's current
+> scope.
+
+You need to ensure the correct toolchains are installed on the Host PC and keep several physical constraints in mind when fabricating the robot.
 
 ## 1. Required Software Installations (Unified Toolchain)
 

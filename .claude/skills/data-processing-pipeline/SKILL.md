@@ -15,6 +15,8 @@ description: Use when building or extending a raw-capture-to-labeled-training-da
 
 Before trusting the output of any pipeline you build or change here, run the `data-pipeline-verification` skill's sequence; before trusting a dataset already produced, run `dataset-integrity-check`.
 
+This contract covers directory *semantics* only. For where the bytes physically live, how to move them between machines, and why raw folder-sync tools (OneDrive/Google Drive/naive Git-LFS) are unsuitable at this project's current scale (~85GB, ~1.1M files), see `docs/DATA_STORAGE.md`.
+
 ## Vision pipeline specifics
 
 - Ball position ground truth = telemetry (`{pitch, roll}` or `{touch_x, touch_y}`) backward-mapped through the ArUco homography to pixel space (`auto_label_shared_vision.py`) — never color-tracking.

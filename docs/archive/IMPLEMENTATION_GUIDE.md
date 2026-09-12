@@ -1,5 +1,12 @@
 # Implementation Guide
 
+> [!WARNING]
+> **ARCHIVED 2026-09-12.** References YOLO-vs-MobileNet-SSD vision benchmarking, the
+> legacy `ball-balancing-bot/` C++ codebase, and a Teensy-era workflow — all superseded.
+> Current vision architecture is the Shared Backbone CNN, current control MCU is the
+> STM32 (`firmware/stm32_ml_control_and_vision/`), and current onboarding lives in
+> `README.md` + `CLAUDE.md`. Kept for historical reference only.
+
 This guide provides step-by-step instructions for developing, building, and deploying the Ball Balancing Robot.
 
 ## Phase 1: ML Pipeline Setup (Host PC)

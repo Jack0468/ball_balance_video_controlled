@@ -37,6 +37,37 @@ Python owns ALL coordinate transforms. Raw camera pixels MUST be converted to ph
 | Deployment target | **Host PC (Python + ONNX)** first; then FPGA Verilog via CodeV MCP |
 | YOLOv8-nano/ResNet ban | **Lifted 2026-08-13** — was FPGA-budget-driven, no longer binding now that FPGA vision inference is paused. Which vision-model class ("small" Shared Backbone vs. "medium" YOLO/ResNet lineage) backs the expert comparison arm is an **open, undecided question** — don't assume either side. |
 
+## Terminology: Phase / Track / Arm
+
+Three different words get used for "a piece of this project," at three different scopes.
+They are not interchangeable, and none of them form a single clean numbered list end to
+end — this section states what's actually confirmed, not a tidied-up fiction.
+
+- **Phase** = a major sequential project stage. Only **Phase 5** (FPGA) and **Phase 6**
+  (current — the Jetson AGX Orin small/medium/large model-class comparison) are used
+  consistently as project-level phase numbers in current docs (this file, `docs/PROJECT_LOGBOOK.md`).
+  **Phases 1-4 are not confirmed as a coherent numbered sequence anywhere current** — some
+  now-archived planning docs (`docs/archive/IMPLEMENTATION_GUIDE.md`,
+  `docs/archive/ml_vision_todo.md`) used their own informal, mutually inconsistent "Phase
+  1/2" labels for internal step sequences; don't treat those as the same numbering or try
+  to reconstruct a 1-6 list from them.
+  **Separate collision, don't confuse the two:** the ball-balancing **data-collection state
+  machine** also uses "Phase 0/2/3" (recovery / Patterns / Sweeps) for its own per-run
+  trajectory-generation stages — an unrelated, smaller-scope concept with the same word.
+- **Track** = a named parallel workstream *within* a phase. Currently only defined inside
+  Phase 6 (`host_software/ml_jetson_vla/docs/ARCHITECTURE.md`): **Track 1** = small-class
+  expert pipeline running standalone on the Jetson (built), **Track 4** = in-house
+  large-VLA research spike (`docs/LARGE_VLA_RESEARCH_SPIKE.md`, scoped). **Track 2 and 3
+  have never been named or scoped in any doc** — a real, open gap, not an omission to paper
+  over.
+- **Arm** = one of the 3 model classes being compared end-to-end in the VLA evaluation
+  (cuts across Phase 6/its tracks, evaluated on the standard four metrics in
+  `docs/EVALUATION_STRATEGY.md`): **Arm 1** = the expert pipeline (small Shared-Backbone-CNN
+  vs. medium YOLO/ResNet-lineage vision — open, see the Architecture Decisions table above),
+  **Arm 2** = Jetson AGX Orin large Qwen-derived model (standalone, not yet in our
+  possession), **Arm 3** = the photonic computing platform (same large-VLA model class as
+  Arm 2, confirmed 2026-08-14).
+
 ## Current State
 
 | Module | Status | Owner |
@@ -44,8 +75,8 @@ Python owns ALL coordinate transforms. Raw camera pixels MUST be converted to ph
 | Vision (Ball + Markers) | Premier pipeline (ArUco + Shared Backbone CNN + marker classifier) working; two legitimate vision-model classes (small/medium) still open, not a gate | `.claude/agents/ml-vision.md` |
 | Audio | Root-caused into 3 distinct failure clusters (background leakage, corrupted-clip class confusion, genuine feature overlap); actively being fixed, not "needs debug" in the abstract anymore | `.claude/agents/ml-audio.md` |
 | Fusion | Not started — blocked on working Vision (markers) + verified Audio | orchestration-level, no dedicated agent yet |
-| FPGA | Reframed 2026-08-13: no longer targeting on-chip vision inference. New role: digital↔optical bridge for the photonic comparison arm (blocked, no interface spec yet) + PID/IK HLS core wiring (live priority, unblocked). Camera→UDP video streaming still separately unresolved. | `.claude/agents/fpga.md` |
-| Multimodal / VLA | **The project's major goal as of 2026-08-14.** 3-arm comparison (expert pipeline / large Qwen-derived model on Jetson / photonic platform), all converging on the Jetson AGX Orin as the shared hardware platform for arms 1-2. | `.claude/agents/ml-multimodal.md` |
+| FPGA | Reframed 2026-08-13: no longer targeting on-chip vision inference. New role: digital↔optical bridge for the photonic comparison arm (Arm 3, blocked, no interface spec yet) + PID/IK HLS core wiring (live priority, unblocked). Camera→UDP video streaming still separately unresolved. | `.claude/agents/fpga.md` |
+| Multimodal / VLA (Phase 6, Arms 1-3) | **The project's major goal as of 2026-08-14.** 3-arm comparison (expert pipeline / large Qwen-derived model on Jetson / photonic platform), all converging on the Jetson AGX Orin as the shared hardware platform for Arms 1-2. See "Terminology" above and `host_software/ml_jetson_vla/docs/ARCHITECTURE.md` for the Track-level breakdown. | `.claude/agents/ml-multimodal.md` |
 | Hardware (Tripod, Power) | Not started | User / Electrical Engineer |
 
 ## Hardware Decisions (OPEN — human sign-off required)
