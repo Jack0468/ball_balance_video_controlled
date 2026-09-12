@@ -1,0 +1,5 @@
+numpy
+onnxruntime
+pyserial
+sounddevice
+pandas
