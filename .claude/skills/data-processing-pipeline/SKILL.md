@@ -15,7 +15,7 @@ description: Use when building or extending a raw-capture-to-labeled-training-da
 
 Before trusting the output of any pipeline you build or change here, run the `data-pipeline-verification` skill's sequence; before trusting a dataset already produced, run `dataset-integrity-check`.
 
-This contract covers directory *semantics* only. For where the bytes physically live, how to move them between machines, and why raw folder-sync tools (OneDrive/Google Drive/naive Git-LFS) are unsuitable at this project's current scale (~85GB, ~1.1M files), see `docs/DATA_STORAGE.md`.
+This contract covers directory *semantics* only. For where the bytes physically live, how to move them between machines, and why raw folder-sync tools (OneDrive/Google Drive/naive Git-LFS) are unsuitable at this project's current scale (~85GB, ~1.1M files), see `docs/DATA_STORAGE.md`. `03_gold/` and model weight directories now flow through DVC (`dvc add`/`dvc push`/`dvc pull` against the home-server MinIO remote) — don't manually copy those tiers between machines or into Colab; `01_bronze`/`02_silver` stay outside DVC (tar/zip per session instead, per that doc).
 
 ## Vision pipeline specifics
 

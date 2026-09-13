@@ -1,0 +1,6 @@
+outs:
+- md5: 0cce76a6a01652451200438767baa957.dir
+  size: 20376542
+  nfiles: 94
+  hash: md5
+  path: 03_synthetic_yolo

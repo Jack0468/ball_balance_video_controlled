@@ -38,7 +38,16 @@ host_software/data/03_synthetic_yolo/
 host_software/data/*_unified_pose/
 host_software/data/yolo_raw_dataset/
 host_software/data_collection/data/
-host_software/data/
+host_software/data/*
+# DVC pointer files for the reproducible-artifact tiers must stay trackable despite the
+# blanket ignore above -- a trailing-slash "host_software/data/" exclusion (the previous
+# form of this rule) makes git refuse to re-include ANYTHING inside it, .dvc files
+# included, per git's own documented "can't re-include a file if a parent directory is
+# excluded" rule. Using "host_software/data/*" (glob, not a directory exclusion) instead
+# is what makes the negations below actually work. See docs/DATA_STORAGE.md.
+!host_software/data/03_gold.dvc
+!host_software/data/03_synthetic_yolo.dvc
+!host_software/data/yolo_raw_dataset.dvc
 
 host_software/ml_audio/data/
 

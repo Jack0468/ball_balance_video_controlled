@@ -86,11 +86,22 @@ python main_onnx_shared_vision_audio.py
 `main_onnx_shared_vision_audio.py` is the actively-developed one, using the Shared Backbone
 CNN and adding marker detection.)
 
-### 4. Data & Model Weights
+### 4. Fetching Data & Model Weights
 
-Training data and model weights (`host_software/data/`, `*.pt`/`*.pth`/`*.onnx`)
-are not tracked in Git — they must be copied in manually from wherever they
-currently live. See `docs/DATA_STORAGE.md` for the current storage/portability
-policy (what belongs on the home server vs. an occasional cloud mirror, and
-why plain OneDrive/Google Drive folder-sync doesn't work at this project's
-data scale).
+Curated datasets (`03_gold`, `03_synthetic_yolo`, `yolo_raw_dataset`) and model
+weights (`ml_vision/models/`, `ml_audio/data/`, `ml_audio/models/`,
+`ml_multimodal/models/`) are version-controlled with **DVC**, backed by a home
+server (MinIO over Tailscale) rather than Git — install `dvc[s3]` (already in
+`requirements.txt`/`environment.yml`), join the home server's Tailscale network
+(human step, see `home_server/docs/CONNECTING_A_NEW_DEVICE.md`), configure the
+remote's credentials (see `home_server/docs/DVC_SETUP.md`), then:
+
+```bash
+dvc pull
+```
+
+Raw/intermediate data (`01_bronze`, `02_silver`) deliberately stays **outside**
+DVC — too many small files per session for that to be practical; see
+`docs/DATA_STORAGE.md` for the full policy and the Colab-specific setup
+(`home_server/docs/COLAB_SETUP.md`) for running notebooks without a normal
+Tailscale client.

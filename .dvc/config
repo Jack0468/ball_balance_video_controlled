@@ -1,0 +1,7 @@
+[core]
+    remote = homeserver
+[cache]
+    type = "reflink,hardlink,symlink,copy"
+['remote "homeserver"']
+    url = s3://dvc-store
+    endpointurl = http://100.71.198.37:9000

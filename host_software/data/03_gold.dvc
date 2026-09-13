@@ -1,0 +1,6 @@
+outs:
+- md5: ed36d316ddab363817f7677024803701.dir
+  size: 8948087864
+  nfiles: 418944
+  hash: md5
+  path: 03_gold

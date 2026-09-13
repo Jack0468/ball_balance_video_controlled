@@ -6,14 +6,36 @@ machines** — a different concern from the Medallion tier *contract*
 `.claude/skills/data-processing-pipeline/SKILL.md` and governs directory
 semantics, not transport.
 
-## Current state (audited 2026-09-12)
+## Current state (DVC wired up 2026-09-13, superseding the "planned" section this doc used to end with)
+
+The home server (`https://github.com/Jack0468/home_server`, private repo) is live and
+runs a MinIO (S3-compatible) container as a DVC remote, reachable over Tailscale — no
+public exposure. **This project is now wired into it.** `03_gold/`, `03_synthetic_yolo/`,
+`yolo_raw_dataset/`, `ml_vision/models/`, `ml_audio/data/`, `ml_audio/models/`, and
+`ml_multimodal/models/` are `dvc add`-ed; the `.dvc` pointer files are committed to git,
+the actual bytes live only in MinIO (or a machine's local `.dvc/cache`). `01_bronze/` and
+`02_silver/` deliberately stay **outside** DVC (still tar/zip-per-session, per the rules
+below) — only the reproducible-artifact tiers are versioned this way.
+
+**Connection details, credentials, and the Colab-specific Tailscale bootstrap live in the
+`home_server` repo, not here** (`docs/DVC_SETUP.md`, `docs/COLAB_SETUP.md`,
+`docs/CONNECTING_A_NEW_DEVICE.md`) — deliberately not duplicated into this file, since
+that's the repo that actually owns the server and would drift if this file also tried to
+track its IP/endpoint/credential-handling details. Quick reference for day-to-day use in
+*this* repo:
+```bash
+dvc pull   # fetch tracked datasets/weights (needs Tailscale connected first)
+dvc push   # after adding/changing a tracked dataset or weight file
+```
+
+## Original audit (2026-09-12, kept for the scale numbers)
 
 Everything under `host_software/data/`, `host_software/ml_audio/data/`, and
-model weight directories (`*.pt`, `*.pth`, `*.onnx`, `models/`) is
-`.gitignore`'d. There is **no version control, checksum manifest, or
-automated fetch path** for any of it today — moving to a new machine means a
-manual copy, and nothing records which weight file matches which training
-run. Scale, at time of writing:
+model weight directories (`*.pt`, `*.pth`, `*.onnx`, `models/`) was
+`.gitignore`'d with no version control, checksum manifest, or automated fetch
+path — moving to a new machine meant a manual copy, and nothing recorded which
+weight file matched which training run. Scale at the time of the audit
+(the DVC-tracked tiers above are this same data, now versioned):
 
 | Tier / location | Size | File count |
 |---|---|---|
@@ -37,22 +59,22 @@ regardless of which cloud/server backend is chosen.
   this scale. These tiers are also the least reusable across machines —
   prefer regenerating `02_silver` from `01_bronze` archives on the target
   machine over syncing it directly, per the existing pipeline scripts.
-- **`03_gold` (curated train/eval splits) and model weights
-  (`ml_vision/models/`, `ml_audio/models/`, `ml_multimodal` /
-  `ml_jetson_vla` checkpoints):** these are the artifacts that actually need
-  reproducible versioning tied to a specific training run or reported
-  result. This is where **DVC** (Data Version Control) is the right tool —
-  lightweight `.dvc` pointer files get committed to Git while the real bytes
-  live in a configurable remote (S3-compatible, SSH, WebDAV, a local/NAS
-  mount). Not yet adopted; see "Planned" below.
+- **`03_gold` (curated train/eval splits), `ml_audio/data/`, and model weights
+  (`ml_vision/models/`, `ml_audio/models/`, `ml_multimodal/models/`;
+  `ml_jetson_vla` has no checkpoints of its own yet — see its `ARCHITECTURE.md`):**
+  these are the artifacts that need reproducible versioning tied to a specific
+  training run or reported result. **DVC is now adopted for these** — lightweight
+  `.dvc` pointer files are committed to Git while the real bytes live in the home
+  server's MinIO remote. See "Current state" above.
 
 ## Storage backend guidance
 
-- **Home cloud server (in progress):** the best long-term fit once it's
-  reachable. Plan is a DVC remote over SSH or an S3-compatible store
-  (e.g. MinIO) pointed at it, replacing manual copies for `03_gold` and
-  model weights. Also a valid plain rsync/robocopy target for bronze/silver
-  session archives.
+- **Home cloud server (live):** the DVC remote for `03_gold`, `ml_audio/data/`,
+  and all model weight directories — a MinIO (S3-compatible) container reachable
+  only over Tailscale (no public exposure). See "Current state" above for the
+  quick-reference commands and `home_server/docs/DVC_SETUP.md` /
+  `COLAB_SETUP.md` for full setup. Also a valid plain rsync/robocopy target for
+  bronze/silver session archives (outside DVC, per the rule above).
 - **OneDrive / Google Drive:** use only as an **occasional off-site mirror
   of already-archived, gold-tier artifacts** — a handful of large `.zip`/
   model-checkpoint files, not the live working tree. Both consumer sync
@@ -69,15 +91,18 @@ regardless of which cloud/server backend is chosen.
   fit for a dataset with ~1.1M individual files regardless of remote size.
   DVC (above) supersedes it for this project's scale.
 
-## Planned, not yet implemented
+## Still open / not yet done
 
-- `dvc init` + tracking `03_gold/` and the model weight directories, remote
-  pointed at the home server once available.
-- A checksummed manifest (or DVC's own hash tracking) so a given weight file
-  can be tied back to the training run/dataset version that produced it.
-- A "Fetching data & model weights" step in the root `README.md` (currently
-  absent — see `README.md`'s Getting Started section).
+- `01_bronze`/`02_silver` still have no automated per-session archival step —
+  tarring/zipping before a transfer is a manual discipline, not yet scripted.
+- No backup of the home server's MinIO data itself yet — see `home_server`'s
+  own `BLUEPRINT.md` §5 ("Backups") for that project's open item; this repo's
+  data is only as durable as that server's storage until it's resolved there.
+- `host_software/data_collection/data/` was never audited in the original
+  2026-09-12 pass — confirm whether it needs its own tier/DVC treatment before
+  assuming it's covered by anything above.
 
-Until the above lands, treat any data/model transfer as a manual,
-undocumented step — verify checksums or at least file counts/sizes against
-this table after copying, since nothing else will catch a partial transfer.
+DVC's own hash tracking (each `.dvc` file's `md5`) already ties a tracked
+directory's contents to the exact bytes referenced — that's the "which weight
+file matches which training run" manifest the original version of this
+section asked for, no separate tool needed.

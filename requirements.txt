@@ -24,3 +24,4 @@ tf2onnx
 onnx2torch
 openvino
 pillow-heif
+dvc[s3]
