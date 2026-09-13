@@ -41,13 +41,21 @@ CODE_FILES = [
     "ml_audio/training/audio_augmentations.py",
     "ml_audio/training/train_audio_command_classifier.py",
     "ml_audio/training/nemo_manifest.py",
+    "ml_audio/training/nemo_noise_manifest.py",
+    "ml_audio/data_processing/segment_background_recording.py",
 ]
 DATASET_DIR = "ml_audio/data/synthetic+real_dataset_large/training_v2"
 # Standalone eval assets outside training_v2/ -- needed for the live-stream
 # test (nemo_live_receiver.py / evaluate_nemo_live_receiver_stream.py), not
-# for training itself.
+# for training itself. The 3 raw background recordings are needed by
+# nemo_noise_manifest.py (NeMo's own `noise` perturbation, mixing our real
+# recordings into fine-tuning rather than synthetic noise) -- .m4a excluded,
+# same reason nemo_noise_manifest.py's NOISE_SOURCE_FILES excludes it.
 EXTRA_DATA_FILES = [
     "ml_audio/data/02_silver/master_evaluation_audio.wav",
+    "ml_audio/data/01_background_noise/lab_background_sound_01.wav",
+    "ml_audio/data/01_background_noise/robot_background_sound.wav",
+    "ml_audio/data/01_background_noise/robot_background_sound_01.wav",
 ]
 
 DEFAULT_OUT_DIR = os.path.join(ML_AUDIO_DIR, "colab_package")

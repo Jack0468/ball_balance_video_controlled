@@ -457,6 +457,36 @@ Per `model-iteration-constraints` (read before touching the notebook): checked t
 - Offline accuracy has diverged from live-stream performance at every single stage of this plan (v5, v6, v7, and now the NeMo track's own 95.3-96.5% offline vs. 7-9/10 live-stream spread) -- a 99% figure needs to specify *which* metric, and a 99% *offline* number would not, on this plan's own track record, be strong evidence of a 99% *live-stream* number.
 - **Realistic target, stated the same way this plan calibrated expectations earlier:** a stable 9-10/10 live-stream result, reproducible across >=5 seeds, with `go_green`/`backward` specifically improved (not just overall accuracy) -- not a round 99% on any single offline number.
 
+## Scaling-Up Result: `3x2x64` Does Not Fix `go_green`/`backward` -- Confirmed at >=5 Seeds Each (2026-09-13)
+
+Ran the sweep this section called for: `3x1x64` seed4 + seed59 (bringing that variant to **6 seeds total**, past the >=5 threshold), and `3x2x64` seeds 0-4 (**5 seeds**, its first ranking-eligible batch). Organized into `models/nemo_matchboxnet_v1_seed{4,59}/` (3x1x64, matching the existing `_seedN` convention) and `models/nemo_matchboxnet_3x2x64_seed{0-4}/` (new variant, deliberately not reusing `v1` naming per the plan above); reports into `evaluations/reports/`.
+
+**First correction to an assumption made when this section was written: `3x2x64` is barely bigger than `3x1x64`, not a meaningful capacity jump.** The notebook's own `n_params` print (added specifically so this wouldn't be guessed) shows **77,859 params for fine-tuned `3x1x64`** and **93,411 for fine-tuned `3x2x64`** -- a ~1.2x difference, not the "next size step up" this section implied going in. Worth remembering for any future "try a bigger model" instinct on this NGC family specifically: the naming (`3x1x64` vs `3x2x64`) suggests a bigger jump than the real parameter count delivers.
+
+| | 3x1x64 (6 seeds: 0,1,2,3,4,59) | 3x2x64 (5 seeds: 0-4) |
+|---|---|---|
+| Params (fine-tuned) | 77,859 | 93,411 |
+| Offline accuracy (mean) | 95.76% (94.93-96.45% range) | 95.30% (94.24-96.49% range) |
+| Live-stream (mean, out of 10) | 7.0/10 (6-8 range) | 6.2/10 (6-7 range) |
+
+**Note on the live-stream numbers above:** the Colab package used for this sweep still had the pre-`go_grey`-exclusion `live_stream_eval_common.py` baked in (every new report scored `/11` with `go_grey` still in `EXPECTED_SEQUENCE`, not the current local `/10`) -- another instance of the stale-package pattern this plan has hit twice before. Didn't invalidate anything this time: `go_grey` passed in all 11 new runs (7 new + the 4 already on record), so the table above simply subtracts 1/1 to convert to the current `/10` convention, which is exact, not an approximation. Still: **rebuild and re-upload the Colab package before the next NeMo run**, so this doesn't have to be corrected by hand again.
+
+**Verdict: offline accuracy and live-stream score are both within the seed-noise band already established for this checkpoint family (this plan's own prior finding: live-stream needs a +/-1-detection error bar) -- no real separation between the two variants on either metric.** Neither variant should be preferred over the other on this data alone.
+
+**The actual headline finding is per-class, not aggregate, and it's decisive:**
+
+| Class | 3x1x64 (6 seeds) | 3x2x64 (5 seeds) | Combined |
+|---|---|---|---|
+| `go_green` | 0/6 (MISS every seed) | 0/5 (MISS every seed) | **0/11 -- fails in literally every run of either variant** |
+| `backward` | 0/6 | 0/5 | **0/11 -- same** |
+| `right` | 2/6 | 2/5 | 4/11 (36%) -- leans toward a real, if partial, weakness, more than the earlier "genuinely ambiguous" read at n=4 |
+| `hold` | 4/6 | 2/5 | 6/11 (55%) -- still genuinely inconclusive |
+| `go_blue` | 5/6 | 3/5 | 8/11 (73%) -- mostly fine, occasional miss |
+
+**`go_green` and `backward` now fail in 11 out of 11 runs across two different model sizes at the same family.** This is about as strong as evidence gets without literally exhausting the search space: scaling within the MatchboxNet NGC family (at least across this ~1.2x range) does not touch either failure. This empirically confirms exactly what the calibration section above predicted rather than assumed -- `go_green`/`go_grey` is a genuine acoustic near-homophone confusion the model doesn't hedge on (not a capacity gap), and `backward` is noise-masking (also not primarily a capacity problem). **Recommendation: stop scaling this family further and move to the other candidate fix -- noise-mixing our own background recordings into fine-tuning, targeting `backward` specifically** (the original diagnostic list's item 4). `go_green`/`go_grey` doesn't have an obvious data-side fix from what's been tried so far and may need a closer look at whether the two classes are separable at all from short command-word audio alone, independent of model choice.
+
+**Interim hardware recommendation is unchanged: still the NeMo `3x1x64` track (best live-stream ceiling of 9/11 at seed0, best confirmed offline accuracy), not `3x2x64`** -- the larger variant has produced no seed that beats `3x1x64`'s best, at ~20% more parameters for no measured benefit. `3x2x64` checkpoints are kept for reference, not recommended for further tuning effort ahead of `3x1x64`.
+
 ## Proposed Modular Refactor
 
 Target layout for `host_software/ml_audio/`, mirroring the `ml_vision` convention:

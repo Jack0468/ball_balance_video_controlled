@@ -1,0 +1,280 @@
+{
+  "generated_at": "20260913T041649Z",
+  "model": "nemo_matchboxnet_3x1x64 seed4 (fine-tuned)",
+  "stream": "data/02_silver/master_evaluation_audio.wav",
+  "correct": 8,
+  "total": 11,
+  "results": [
+    {
+      "window_start_sec": 0,
+      "expected": "go_grey",
+      "detected": "go_grey",
+      "detected_at_sec": 0.45,
+      "correct": true
+    },
+    {
+      "window_start_sec": 10,
+      "expected": "go_blue",
+      "detected": "go_blue",
+      "detected_at_sec": 11.04,
+      "correct": true
+    },
+    {
+      "window_start_sec": 20,
+      "expected": "go_green",
+      "detected": null,
+      "detected_at_sec": null,
+      "correct": false
+    },
+    {
+      "window_start_sec": 30,
+      "expected": "go_yellow",
+      "detected": "go_yellow",
+      "detected_at_sec": 30.45,
+      "correct": true
+    },
+    {
+      "window_start_sec": 40,
+      "expected": "go_red",
+      "detected": "go_red",
+      "detected_at_sec": 41.45,
+      "correct": true
+    },
+    {
+      "window_start_sec": 50,
+      "expected": "forward",
+      "detected": "forward",
+      "detected_at_sec": 50.48,
+      "correct": true
+    },
+    {
+      "window_start_sec": 60,
+      "expected": "left",
+      "detected": "left",
+      "detected_at_sec": 61.47,
+      "correct": true
+    },
+    {
+      "window_start_sec": 70,
+      "expected": "right",
+      "detected": null,
+      "detected_at_sec": null,
+      "correct": false
+    },
+    {
+      "window_start_sec": 80,
+      "expected": "backward",
+      "detected": null,
+      "detected_at_sec": null,
+      "correct": false
+    },
+    {
+      "window_start_sec": 90,
+      "expected": "hold",
+      "detected": "hold",
+      "detected_at_sec": 91.32,
+      "correct": true
+    },
+    {
+      "window_start_sec": 100,
+      "expected": "stop",
+      "detected": "stop",
+      "detected_at_sec": 100.51,
+      "correct": true
+    }
+  ],
+  "all_detections": [
+    {
+      "t": 0.45,
+      "cmd": "go_grey"
+    },
+    {
+      "t": 1.86,
+      "cmd": "_background_"
+    },
+    {
+      "t": 8.23,
+      "cmd": "_background_"
+    },
+    {
+      "t": 11.04,
+      "cmd": "go_blue"
+    },
+    {
+      "t": 13.24,
+      "cmd": "_background_"
+    },
+    {
+      "t": 20.87,
+      "cmd": "go_grey"
+    },
+    {
+      "t": 22.48,
+      "cmd": "_background_"
+    },
+    {
+      "t": 28.25,
+      "cmd": "_background_"
+    },
+    {
+      "t": 30.45,
+      "cmd": "go_yellow"
+    },
+    {
+      "t": 39.89,
+      "cmd": "_background_"
+    },
+    {
+      "t": 41.45,
+      "cmd": "go_red"
+    },
+    {
+      "t": 42.65,
+      "cmd": "_background_"
+    },
+    {
+      "t": 45.46,
+      "cmd": "_background_"
+    },
+    {
+      "t": 49.07,
+      "cmd": "_background_"
+    },
+    {
+      "t": 50.48,
+      "cmd": "forward"
+    },
+    {
+      "t": 52.28,
+      "cmd": "_background_"
+    },
+    {
+      "t": 57.1,
+      "cmd": "_background_"
+    },
+    {
+      "t": 58.66,
+      "cmd": "_background_"
+    },
+    {
+      "t": 61.47,
+      "cmd": "left"
+    },
+    {
+      "t": 61.87,
+      "cmd": "_background_"
+    },
+    {
+      "t": 66.89,
+      "cmd": "_background_"
+    },
+    {
+      "t": 68.09,
+      "cmd": "_background_"
+    },
+    {
+      "t": 68.69,
+      "cmd": "_background_"
+    },
+    {
+      "t": 71.7,
+      "cmd": "_background_"
+    },
+    {
+      "t": 74.92,
+      "cmd": "_background_"
+    },
+    {
+      "t": 75.32,
+      "cmd": "_background_"
+    },
+    {
+      "t": 80.08,
+      "cmd": "_background_"
+    },
+    {
+      "t": 81.69,
+      "cmd": "_background_"
+    },
+    {
+      "t": 82.49,
+      "cmd": "_background_"
+    },
+    {
+      "t": 87.71,
+      "cmd": "_background_"
+    },
+    {
+      "t": 89.12,
+      "cmd": "_background_"
+    },
+    {
+      "t": 89.52,
+      "cmd": "_background_"
+    },
+    {
+      "t": 90.12,
+      "cmd": "_background_"
+    },
+    {
+      "t": 91.32,
+      "cmd": "hold"
+    },
+    {
+      "t": 95.89,
+      "cmd": "_background_"
+    },
+    {
+      "t": 100.51,
+      "cmd": "stop"
+    },
+    {
+      "t": 101.71,
+      "cmd": "_background_"
+    },
+    {
+      "t": 102.11,
+      "cmd": "_background_"
+    },
+    {
+      "t": 103.31,
+      "cmd": "_background_"
+    },
+    {
+      "t": 104.32,
+      "cmd": "_background_"
+    },
+    {
+      "t": 106.73,
+      "cmd": "_background_"
+    },
+    {
+      "t": 107.73,
+      "cmd": "_background_"
+    },
+    {
+      "t": 108.73,
+      "cmd": "_background_"
+    },
+    {
+      "t": 110.74,
+      "cmd": "_background_"
+    },
+    {
+      "t": 114.3,
+      "cmd": "_background_"
+    },
+    {
+      "t": 117.51,
+      "cmd": "_background_"
+    },
+    {
+      "t": 118.32,
+      "cmd": "_background_"
+    },
+    {
+      "t": 119.72,
+      "cmd": "_background_"
+    }
+  ]
+}

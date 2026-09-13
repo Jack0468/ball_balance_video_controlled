@@ -1,0 +1,196 @@
+{
+  "generated_at": "20260912T044616Z",
+  "model": "nemo_matchboxnet_3x2x64 seed2 (fine-tuned)",
+  "stream": "data/02_silver/master_evaluation_audio.wav",
+  "correct": 7,
+  "total": 11,
+  "results": [
+    {
+      "window_start_sec": 0,
+      "expected": "go_grey",
+      "detected": "go_grey",
+      "detected_at_sec": 0.45,
+      "correct": true
+    },
+    {
+      "window_start_sec": 10,
+      "expected": "go_blue",
+      "detected": null,
+      "detected_at_sec": null,
+      "correct": false
+    },
+    {
+      "window_start_sec": 20,
+      "expected": "go_green",
+      "detected": null,
+      "detected_at_sec": null,
+      "correct": false
+    },
+    {
+      "window_start_sec": 30,
+      "expected": "go_yellow",
+      "detected": "go_yellow",
+      "detected_at_sec": 30.68,
+      "correct": true
+    },
+    {
+      "window_start_sec": 40,
+      "expected": "go_red",
+      "detected": "go_red",
+      "detected_at_sec": 41.47,
+      "correct": true
+    },
+    {
+      "window_start_sec": 50,
+      "expected": "forward",
+      "detected": "forward",
+      "detected_at_sec": 50.29,
+      "correct": true
+    },
+    {
+      "window_start_sec": 60,
+      "expected": "left",
+      "detected": "left",
+      "detected_at_sec": 61.27,
+      "correct": true
+    },
+    {
+      "window_start_sec": 70,
+      "expected": "right",
+      "detected": "right",
+      "detected_at_sec": 70.9,
+      "correct": true
+    },
+    {
+      "window_start_sec": 80,
+      "expected": "backward",
+      "detected": null,
+      "detected_at_sec": null,
+      "correct": false
+    },
+    {
+      "window_start_sec": 90,
+      "expected": "hold",
+      "detected": null,
+      "detected_at_sec": null,
+      "correct": false
+    },
+    {
+      "window_start_sec": 100,
+      "expected": "stop",
+      "detected": "stop",
+      "detected_at_sec": 100.52,
+      "correct": true
+    }
+  ],
+  "all_detections": [
+    {
+      "t": 0.45,
+      "cmd": "go_grey"
+    },
+    {
+      "t": 1.65,
+      "cmd": "_background_"
+    },
+    {
+      "t": 11.63,
+      "cmd": "_background_"
+    },
+    {
+      "t": 20.66,
+      "cmd": "go_grey"
+    },
+    {
+      "t": 21.66,
+      "cmd": "_background_"
+    },
+    {
+      "t": 28.28,
+      "cmd": "_background_"
+    },
+    {
+      "t": 30.68,
+      "cmd": "go_yellow"
+    },
+    {
+      "t": 31.83,
+      "cmd": "_background_"
+    },
+    {
+      "t": 41.47,
+      "cmd": "go_red"
+    },
+    {
+      "t": 42.67,
+      "cmd": "_background_"
+    },
+    {
+      "t": 43.07,
+      "cmd": "_background_"
+    },
+    {
+      "t": 49.89,
+      "cmd": "_background_"
+    },
+    {
+      "t": 50.29,
+      "cmd": "forward"
+    },
+    {
+      "t": 51.7,
+      "cmd": "_background_"
+    },
+    {
+      "t": 61.27,
+      "cmd": "left"
+    },
+    {
+      "t": 61.88,
+      "cmd": "_background_"
+    },
+    {
+      "t": 65.48,
+      "cmd": "_background_"
+    },
+    {
+      "t": 70.9,
+      "cmd": "right"
+    },
+    {
+      "t": 71.7,
+      "cmd": "_background_"
+    },
+    {
+      "t": 81.27,
+      "cmd": "_background_"
+    },
+    {
+      "t": 81.68,
+      "cmd": "_background_"
+    },
+    {
+      "t": 91.7,
+      "cmd": "_background_"
+    },
+    {
+      "t": 100.52,
+      "cmd": "stop"
+    },
+    {
+      "t": 101.73,
+      "cmd": "_background_"
+    },
+    {
+      "t": 109.7,
+      "cmd": "_background_"
+    },
+    {
+      "t": 118.32,
+      "cmd": "_background_"
+    },
+    {
+      "t": 118.92,
+      "cmd": "_background_"
+    }
+  ]
+}
