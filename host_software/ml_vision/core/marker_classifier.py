@@ -45,9 +45,9 @@ PAPER_MARGIN_MM = 6.0
 #     real upper tail, well below green's real floor -- any yellow reading that
 #     drifted up (which real ones routinely do) was guaranteed to hit green's
 #     bin first under the old check order. Moved green's floor to 45 and
-#     yellow's ceiling to 42, leaving a small 42-45 gap that will not be
-#     legitimately double free (a value there is safer to remain "unknown" than
-#     confidently claimed by an unrelated color).
+#     yellow's ceiling to 42, leaving a small 42-45 gap that neither color's
+#     real distribution legitimately claims (a value landing there is safer
+#     left "unknown" than confidently assigned to the wrong color).
 #   - black_circle's real printed marker measures S~11-26, V~110-140 (core
 #     pixels, eroded mask, n>35k) even fully unoccluded by the ball -- a
 #     desaturated mid-grey under this camera/lighting, NOT anywhere near V<60.
@@ -63,6 +63,22 @@ PAPER_MARGIN_MM = 6.0
 #     blob exists; if Jetson genuinely produces no blob at all, that is a
 #     separate, still-open question (see logbook) needing a live capture to
 #     resolve, not something this file can fix.
+#   - Widening black's V bound alone (first pass) measurably increased
+#     collateral misclassification of the other 4 markers' own dim/shadowed
+#     frames as "black" -- verified end-to-end via marker_classifier.classify()
+#     itself (not just the raw bins) against 307 real sampled frames: 46 blobs
+#     belonging to blue_triangle/yellow_square/green_hexagon/red_triangle
+#     flipped from a (harmless) "unknown" to a wrong "black". Their S values
+#     (median 29.2, extending down to 13.6) meaningfully overlap black_circle's
+#     own real S distribution (median 13.8, p95 27.2, max 31.5 across the same
+#     307 frames) -- a real ambiguity in HSV space, not fully separable. Capping
+#     black's S at 20 was the best real trade-off measured: keeps 92.8% of true
+#     black_circle detections while rejecting 82.6% of the false positives (46
+#     -> 8 leaking through). The residual ~8/1228 (~0.65%) false-"black" rate on
+#     the other markers' dimmest frames is a known, quantified, NOT fully
+#     eliminated residual risk -- tightening further trades away real
+#     black_circle recall for diminishing false-positive reduction (see
+#     black_s_cap_tradeoff numbers in the 2026-09-15 logbook entry).
 COLOR_BINS = {
     "blue": [(np.array([90, 50, 50]), np.array([150, 255, 255]))],
     "red": [
@@ -71,7 +87,7 @@ COLOR_BINS = {
     ],
     "green": [(np.array([45, 50, 50]), np.array([85, 255, 255]))],
     "yellow": [(np.array([20, 50, 50]), np.array([42, 255, 255]))],
-    "black": [(np.array([0, 0, 0]), np.array([180, 255, 150]))],
+    "black": [(np.array([0, 0, 0]), np.array([180, 20, 150]))],
 }
 # Check order matters: black's V bound can overlap the low-V edge of the hue
 # bins above, so hue-specific colors are checked first and black is the

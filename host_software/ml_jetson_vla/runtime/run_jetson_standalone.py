@@ -91,6 +91,8 @@ from main_onnx_shared_vision_audio import (
 
 from ml_jetson_vla.core.policy_interface import Policy, PolicyCommand
 from ml_jetson_vla.core.control_net import ControlNet
+from ml_jetson_vla.runtime.motor_geometry import steps_to_angle
+from ml_jetson_vla.runtime.session_recorder import SessionRecorder, SessionTouchTap
 
 # --- Configuration ---
 # Laptop default was "COM7". No physical default tty is more "correct" than another on
@@ -280,6 +282,18 @@ def main() -> None:
     parser.add_argument("--log-csv", type=str, default="auto", help="Ground-truth telemetry CSV via TouchTelemetryLogger/TouchProbe.cpp's existing 'T,...' uplink (confirmed live on this firmware 2026-09-15, no firmware change needed): 'auto' (timestamped file in data/01_bronze/evaluation/), 'off' (disable persistence -- the serial I/O thread still runs), or an explicit path. Only active when NOT --remote-control (Phase B's TelemetryReader already owns reading this same serial handle -- see module docstring).")
     parser.add_argument("--quiet-mcu", action="store_true", help="Suppress TouchTelemetryLogger's per-line MCU status printing")
     parser.add_argument(
+        "--record-track4-session", action="store_true",
+        help="Also write a session-structured Track 4 bronze capture "
+             "(data/01_bronze/session_jetson_track4_<timestamp>/{telemetry.csv,rgb_video.mp4}), "
+             "picked up by ml_multimodal/data_processing/generate_vla_dataset.py's "
+             "existing session_* glob and by this directory's own "
+             "data_processing/convert_to_lerobot.py. Requires a live serial connection "
+             "and Phase A (--remote-control not set), since it taps the same 'T,...' "
+             "uplink TouchTelemetryLogger already reads (see session_recorder.py's "
+             "SessionTouchTap) rather than opening a second serial reader. Independent "
+             "of --log-csv, which still controls the separate evaluation ground-truth CSV.",
+    )
+    parser.add_argument(
         "--dummy-audio", action="store_true",
         help="Use typed keyboard commands instead of the trained audio model -- for "
              "testing state-machine/target-switching without a working mic (temporary "
@@ -361,6 +375,7 @@ def main() -> None:
     # confirmed live on real hardware 2026-09-15 -- this was simply never wired up on the
     # Jetson side before now. No firmware change needed.
     touch_logger = None
+    session_recorder = None
     if ser is not None and not args.remote_control:
         csv_path = None
         if args.log_csv != "off":
@@ -369,8 +384,21 @@ def main() -> None:
                 csv_path = os.path.join(_HOST_SOFTWARE_DIR, "data", "01_bronze", "evaluation", f"ground_truth_jetson_{stamp}.csv")
             else:
                 csv_path = args.log_csv
-        touch_logger = TouchTelemetryLogger(ser, csv_path, print_status_lines=not args.quiet_mcu)
+        # SessionTouchTap is a drop-in TouchTelemetryLogger subclass (same constructor,
+        # same CSV/thread behavior) that additionally caches the latest touch/motor
+        # reading for --record-track4-session -- see session_recorder.py's docstring for
+        # why this is a subclass on the SAME worker thread rather than a second reader.
+        logger_cls = SessionTouchTap if args.record_track4_session else TouchTelemetryLogger
+        touch_logger = logger_cls(ser, csv_path, print_status_lines=not args.quiet_mcu)
         touch_logger.start()
+        if args.record_track4_session:
+            bronze_root = os.path.join(_HOST_SOFTWARE_DIR, "data", "01_bronze")
+            session_recorder = SessionRecorder(bronze_root, fps=30.0)
+    elif args.record_track4_session:
+        print(
+            "[track4-session] --record-track4-session requires a live serial connection "
+            "and Phase A (not --remote-control) -- session recording disabled for this run."
+        )
 
     control_net = None
     telemetry = None
@@ -399,6 +427,7 @@ def main() -> None:
     last_status_t = 0.0
     last_frame_t = None  # for --remote-control's actual_dt; None until the first successful frame
     seq = 0
+    last_audio_command: Optional[str] = None  # persists across frames like target_x/y already does
 
     try:
         while True:
@@ -411,6 +440,8 @@ def main() -> None:
                 telemetry.poll(ser)  # drain any T,... lines that arrived since the last frame
 
             command = policy.audio_receiver.get_latest_command()
+            if command:
+                last_audio_command = command
             cmd_out = policy.act(frame, command, state={})
 
             if cmd_out is None:
@@ -422,6 +453,36 @@ def main() -> None:
 
             try:
                 bx, by = policy.last_debug["ball_xy_mm"]
+
+                if session_recorder is not None:
+                    # SessionTouchTap.get_latest_touch() is a best-effort, non-blocking
+                    # snapshot -- the 'T,...' uplink runs at its own ~25Hz cadence,
+                    # independent of this loop's rate, so it may lag or (early in a run)
+                    # be None. theta_a/b/c come from the same motor_geometry.py port
+                    # used nowhere in the control path -- see its docstring for why no
+                    # origin-offset subtraction is needed here.
+                    touch_snapshot = (
+                        touch_logger.get_latest_touch()
+                        if isinstance(touch_logger, SessionTouchTap)
+                        else None
+                    )
+                    if touch_snapshot is not None:
+                        t_x, t_y = touch_snapshot["touch_x"], touch_snapshot["touch_y"]
+                        theta_a = steps_to_angle(touch_snapshot["motor_a"])
+                        theta_b = steps_to_angle(touch_snapshot["motor_b"])
+                        theta_c = steps_to_angle(touch_snapshot["motor_c"])
+                    else:
+                        t_x = t_y = theta_a = theta_b = theta_c = None
+                    session_recorder.log(
+                        frame,
+                        int(time.time() * 1000),
+                        cmd_out.target_x_mm,
+                        cmd_out.target_y_mm,
+                        t_x, t_y,
+                        theta_a, theta_b, theta_c,
+                        last_audio_command,
+                    )
+
                 if args.remote_control:
                     # actual_dt: real measured time since the last control cycle, not a
                     # fixed constant -- this is the whole point of Phase B (see
@@ -485,6 +546,8 @@ def main() -> None:
         policy.audio_receiver.stop()
         if touch_logger is not None:
             touch_logger.stop()
+        if session_recorder is not None:
+            session_recorder.stop()
         if ser:
             ser.close()
         cv2.destroyAllWindows()
