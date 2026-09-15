@@ -31,23 +31,25 @@ env.bak/
 venv.bak/
 
 # Data and large files
-host_software/data/01_bronze/
-host_software/data/02_silver/
-host_software/data/03_gold/
-host_software/data/03_synthetic_yolo/
-host_software/data/*_unified_pose/
-host_software/data/yolo_raw_dataset/
-host_software/data_collection/data/
-host_software/data/*
+#
 # DVC pointer files for the reproducible-artifact tiers must stay trackable despite the
-# blanket ignore above -- a trailing-slash "host_software/data/" exclusion (the previous
-# form of this rule) makes git refuse to re-include ANYTHING inside it, .dvc files
-# included, per git's own documented "can't re-include a file if a parent directory is
-# excluded" rule. Using "host_software/data/*" (glob, not a directory exclusion) instead
-# is what makes the negations below actually work. See docs/DATA_STORAGE.md.
+# blanket ignores below. Git's rule: "you cannot re-include a file if a parent directory
+# of that file is itself excluded" -- a *directory*-level exclusion (matched by a glob
+# against its parent, e.g. "data/*" matching the "01_bronze" directory as one of its
+# children) blocks git from ever descending into it again, no matter how specific a later
+# negation is. So every ancestor directory on the path to an unignored file must itself be
+# explicitly un-excluded, in order, before the file-level negation works. See
+# docs/DATA_STORAGE.md for what's actually DVC-tracked and why.
+host_software/data/*
+!host_software/data/01_bronze/
+host_software/data/01_bronze/*
+# Scoped exception: Track 4 Jetson bronze sessions are DVC-tracked (small, 2 files/session,
+# not the ~1M-file bulk legacy bronze data the blanket exclusion above is really for).
+!host_software/data/01_bronze/session_jetson_track4_*.dvc
 !host_software/data/03_gold.dvc
 !host_software/data/03_synthetic_yolo.dvc
 !host_software/data/yolo_raw_dataset.dvc
+host_software/data_collection/data/
 
 host_software/ml_audio/data/
 
