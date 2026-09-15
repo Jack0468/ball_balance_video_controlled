@@ -7,9 +7,15 @@ manifest/margin constants directly (import, not copy-paste) since none of that l
 platform-specific -- only what changes below is:
 
   - Camera open: unchanged code path (`src.receivers.USBReceiver`), but on Linux/Jetson
-    its `cv2.CAP_DSHOW` attempt fails and it falls through to the default backend (V4L2).
-    That fallback already existed for other reasons; this is the first place it's expected
-    to actually engage. Verify this on real hardware -- don't assume.
+    its `cv2.CAP_DSHOW` attempt fails and it falls through to an explicit `cv2.CAP_V4L2`
+    request. **Correction, confirmed on real hardware 2026-09-15**: this docstring
+    originally assumed the untargeted default backend (no explicit flag) would land on
+    V4L2 -- it doesn't, it lands on GStreamer, which silently ignores the
+    CAP_PROP_FRAME_WIDTH/HEIGHT `.set()` calls and opens at the camera's native 1280x720
+    instead of the requested 640x480, no error raised. `receivers.py` now requests V4L2
+    explicitly (confirmed present via `cv2.videoio_registry.getBackends()`) rather than
+    trusting the default. Lesson: "falls through to X" is a claim to verify, not assume,
+    even when it sounds like standard OpenCV behavior.
   - Serial port default: Windows' "COM7" fallback replaced with a Linux tty path. Real
     detection still goes through `find_stm32_port()` (`src.utils`), which is already
     OS-agnostic (matches on `pyserial` port description, not a Windows-specific string).
@@ -34,9 +40,12 @@ the camera/serial/runtime-loop plumbing in `main()`.
 """
 
 import argparse
+import json
 import os
 import sys
 import time
+from datetime import datetime
+from typing import Optional
 
 import cv2
 import numpy as np
@@ -54,6 +63,8 @@ from src.receivers import USBReceiver, UDPReceiver
 from src.utils import find_stm32_port
 from src.state_machine import TargetStateMachine
 from src.audio_receiver_onnx import AudioCommandReceiverONNX
+from src.touch_logger import TouchTelemetryLogger
+from host_software.ml_vision.core.keyboard_command_receiver import KeyboardCommandReceiver
 
 from host_software.ml_vision.data_processing.auto_label_shared_vision import (
     build_paper_corners,
@@ -62,6 +73,7 @@ from host_software.ml_vision.data_processing.auto_label_shared_vision import (
     warp_to_platform,
 )
 from host_software.ml_vision.core.marker_classifier import MarkerClassifier
+from host_software.ml_vision.core.kalman_filter import KalmanFilter2D
 
 # Reused as-is from the laptop entry point -- this logic is preprocessing/warp/gating
 # math with no platform dependency. Importing (not duplicating) keeps the two entry
@@ -134,17 +146,24 @@ class JetsonExpertPolicy(Policy):
 
     def __init__(self, script_dir: str, marker_gate_mm: float, jump_gate_mm: float,
                  gate_ema_alpha: float, seed_window: int, seed_consistency_mm: float,
-                 lost_frames: int, mask_threshold: float) -> None:
+                 lost_frames: int, mask_threshold: float,
+                 dummy_audio: bool = False, mic_device: Optional[str] = None,
+                 kalman: Optional[KalmanFilter2D] = None) -> None:
         cnn_path = os.path.abspath(
             os.path.join(script_dir, "ml_vision/models/shared_vision_backbone_v2/shared_vision_backbone_best.onnx")
         )
         if not os.path.exists(cnn_path):
             raise FileNotFoundError(f"ONNX vision model not found at {cnn_path}")
-        audio_path = os.path.abspath(
-            os.path.join(script_dir, "ml_audio/models/audio_command_classifier_v3.onnx")
-        )
-        if not os.path.exists(audio_path):
-            raise FileNotFoundError(f"ONNX audio model not found at {audio_path}")
+
+        # Matches main_onnx_shared_vision_audio.py's --dummy-audio pattern exactly (same
+        # flag name, same KeyboardCommandReceiver swap) -- the audio ONNX file is only
+        # required to exist when it's actually going to be loaded.
+        if not dummy_audio:
+            audio_path = os.path.abspath(
+                os.path.join(script_dir, "ml_audio/models/audio_command_classifier_v3.onnx")
+            )
+            if not os.path.exists(audio_path):
+                raise FileNotFoundError(f"ONNX audio model not found at {audio_path}")
 
         print("Loading ONNX sessions (CPUExecutionProvider)...")
         cnn_opts = ort.SessionOptions()
@@ -153,7 +172,10 @@ class JetsonExpertPolicy(Policy):
         self.cnn_session = ort.InferenceSession(cnn_path, sess_options=cnn_opts, providers=["CPUExecutionProvider"])
         self.cnn_input_name = self.cnn_session.get_inputs()[0].name
 
-        self.audio_receiver = AudioCommandReceiverONNX(audio_path)
+        if dummy_audio:
+            self.audio_receiver = KeyboardCommandReceiver()
+        else:
+            self.audio_receiver = AudioCommandReceiverONNX(audio_path, mic_device=mic_device)
         self.state_machine = TargetStateMachine()
         self.marker_classifier = MarkerClassifier(input_size=INPUT_SIZE, mask_threshold=mask_threshold)
 
@@ -177,6 +199,7 @@ class JetsonExpertPolicy(Policy):
             seed_window=seed_window,
             seed_consistency_mm=seed_consistency_mm,
             lost_frames_threshold=lost_frames,
+            kalman=kalman,
         )
         self.last_debug: dict = {}
 
@@ -189,6 +212,7 @@ class JetsonExpertPolicy(Policy):
             seed_window=self.gate.seed_window,
             seed_consistency_mm=self.gate.seed_consistency_mm,
             lost_frames_threshold=self.gate.lost_frames_threshold,
+            kalman=self.gate.kalman,
         )
 
     def act(self, image: np.ndarray, instruction, state: dict) -> "PolicyCommand | None":
@@ -232,6 +256,7 @@ class JetsonExpertPolicy(Policy):
         target_x, target_y = self.state_machine.get_target_coords()
 
         self.last_debug["ball_xy_mm"] = (gated_x, gated_y)
+        self.last_debug["raw_ball_xy_mm"] = (raw_x, raw_y)
         self.last_debug["markers"] = marker_coords_xy
         return PolicyCommand(target_x_mm=target_x, target_y_mm=target_y)
 
@@ -250,6 +275,30 @@ def main() -> None:
     parser.add_argument("--seed-consistency-mm", type=float, default=15.0)
     parser.add_argument("--lost-frames", type=int, default=30)
     parser.add_argument("--mask-threshold", type=float, default=0.5)
+    parser.add_argument("--kalman", action="store_true", help="Replace PredictionGate's EMA smoothing with a constant-velocity Kalman filter (jump-gate/seed/no-ball logic unchanged). Needs R/Q from --kalman-params to be trustworthy -- see kalman_filter.py")
+    parser.add_argument("--kalman-params", type=str, default=None, help="Path to a JSON file with 'r' (2x2) and 'q' (4x4) matrices, as produced by estimate_kalman_noise_params.py --output-json. Without this, --kalman uses illustrative fallback values (not validated -- see kalman_filter.py docstring)")
+    parser.add_argument("--log-csv", type=str, default="auto", help="Ground-truth telemetry CSV via TouchTelemetryLogger/TouchProbe.cpp's existing 'T,...' uplink (confirmed live on this firmware 2026-09-15, no firmware change needed): 'auto' (timestamped file in data/01_bronze/evaluation/), 'off' (disable persistence -- the serial I/O thread still runs), or an explicit path. Only active when NOT --remote-control (Phase B's TelemetryReader already owns reading this same serial handle -- see module docstring).")
+    parser.add_argument("--quiet-mcu", action="store_true", help="Suppress TouchTelemetryLogger's per-line MCU status printing")
+    parser.add_argument(
+        "--dummy-audio", action="store_true",
+        help="Use typed keyboard commands instead of the trained audio model -- for "
+             "testing state-machine/target-switching without a working mic (temporary "
+             "testing aid, see keyboard_command_receiver.py). Same flag name/behavior as "
+             "main_onnx_shared_vision_audio.py's --dummy-audio -- use this for Jetson "
+             "bring-up before the mic/audio path is wired up there; audio (possibly the "
+             "NeMo-finetuned model, still exploratory as of 2026-09-15 -- see "
+             "ml_audio/docs/plans/audio_eval_notebook_refactor_plan.md) gets added back "
+             "as a separate step, not blocking this.",
+    )
+    parser.add_argument(
+        "--mic-device", type=str, default="JBCW036",
+        help="Substring to match the mic's input device name (default: JBCW036, the "
+             "USB camera's built-in mic). Confirmed 2026-09-15: sounddevice has no "
+             "reliable cross-machine default here -- Linux/the Jetson enumerates audio "
+             "devices completely differently than Windows, so pin by name rather than "
+             "index or trusting the OS default. Use "
+             "deployment/test_microphone.py --list to see device names on this machine.",
+    )
     parser.add_argument("--verbose", action="store_true")
     parser.add_argument(
         "--remote-control", action="store_true",
@@ -270,6 +319,19 @@ def main() -> None:
             args.port = SERIAL_PORT
             print(f"Could not auto-detect STM32. Defaulting to {args.port}")
 
+    kalman = None
+    if args.kalman:
+        r, q = None, None
+        if args.kalman_params:
+            with open(args.kalman_params) as f:
+                params = json.load(f)
+            r = np.array(params["r"], dtype=np.float64)
+            q = np.array(params["q"], dtype=np.float64)
+            print(f"Kalman filter: loaded R/Q from {args.kalman_params}")
+        else:
+            print("Kalman filter: --kalman-params not given -- using illustrative fallback R/Q (NOT validated, see kalman_filter.py)")
+        kalman = KalmanFilter2D(r=r, q=q)
+
     policy = JetsonExpertPolicy(
         script_dir=_HOST_SOFTWARE_DIR,
         marker_gate_mm=args.marker_gate_mm,
@@ -279,6 +341,9 @@ def main() -> None:
         seed_consistency_mm=args.seed_consistency_mm,
         lost_frames=args.lost_frames,
         mask_threshold=args.mask_threshold,
+        dummy_audio=args.dummy_audio,
+        mic_device=args.mic_device,
+        kalman=kalman,
     )
 
     try:
@@ -287,6 +352,25 @@ def main() -> None:
     except Exception:
         print(f"Could not open serial port {args.port}. Continuing in dry-run mode.")
         ser = None
+
+    # Phase A only -- Phase B's TelemetryReader below already owns reading this same
+    # serial handle for a DIFFERENT, 8-field wire format (firmware/stm32_jetson_remote_control/),
+    # so the two must never both read at once. TouchProbe.cpp's 11-field "T,..." uplink
+    # (matching touch_logger.py's parser) is already being sent by the CURRENT firmware
+    # (firmware/stm32_ml_control_and_vision/) regardless of whether anything reads it --
+    # confirmed live on real hardware 2026-09-15 -- this was simply never wired up on the
+    # Jetson side before now. No firmware change needed.
+    touch_logger = None
+    if ser is not None and not args.remote_control:
+        csv_path = None
+        if args.log_csv != "off":
+            if args.log_csv == "auto":
+                stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                csv_path = os.path.join(_HOST_SOFTWARE_DIR, "data", "01_bronze", "evaluation", f"ground_truth_jetson_{stamp}.csv")
+            else:
+                csv_path = args.log_csv
+        touch_logger = TouchTelemetryLogger(ser, csv_path, print_status_lines=not args.quiet_mcu)
+        touch_logger.start()
 
     control_net = None
     telemetry = None
@@ -332,6 +416,8 @@ def main() -> None:
             if cmd_out is None:
                 if command:
                     print(f"\n[AUDIO] (no ball) Heard: {command}\n")
+                if touch_logger is not None:
+                    touch_logger.send_raw(b"L\n")
                 continue
 
             try:
@@ -349,6 +435,16 @@ def main() -> None:
                         telemetry.last_steps, actual_dt,
                     )
                     payload = f"S,{steps[0]},{steps[1]},{steps[2]}\n".encode("ascii")
+                    if ser is not None:
+                        ser.write(payload)
+                elif touch_logger is not None:
+                    # touch_logger's worker thread is the sole owner of the serial handle
+                    # once constructed -- never call ser.write() directly alongside it (see
+                    # PROJECT_LOGBOOK.md 19/08 for the throughput-collapse this caused on
+                    # the laptop the one time two threads touched the handle concurrently).
+                    seq += 1
+                    raw_x, raw_y = policy.last_debug["raw_ball_xy_mm"]
+                    touch_logger.send_frame(seq, bx, by, cmd_out.target_x_mm, cmd_out.target_y_mm, raw_x=raw_x, raw_y=raw_y)
                 else:
                     # Tagged form (matches touch_logger.send_frame() on the laptop) --
                     # see module docstring. seq wraps at 2**32 to match SerialCoords.cpp's
@@ -356,8 +452,8 @@ def main() -> None:
                     # not as a global counter, so wraparound is harmless.
                     payload = f"V,{seq},{bx:.2f},{by:.2f},{cmd_out.target_x_mm:.2f},{cmd_out.target_y_mm:.2f}\n".encode("ascii")
                     seq = (seq + 1) % (2**32)
-                if ser is not None:
-                    ser.write(payload)
+                    if ser is not None:
+                        ser.write(payload)
             except Exception as e:
                 print(f"Serial Error: {e}")
 
@@ -387,6 +483,8 @@ def main() -> None:
     finally:
         receiver.stop()
         policy.audio_receiver.stop()
+        if touch_logger is not None:
+            touch_logger.stop()
         if ser:
             ser.close()
         cv2.destroyAllWindows()

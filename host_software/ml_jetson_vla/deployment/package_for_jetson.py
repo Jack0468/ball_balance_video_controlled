@@ -44,7 +44,30 @@ FILES = [
     "host_software/ml_vision/core/kalman_filter.py",
     "hardware/platform_templates/ground_truth_manifest.json",
     "host_software/ml_vision/models/shared_vision_backbone_v2/shared_vision_backbone_best.onnx",
+    # This model stores some weight tensors in a separate "external data" file rather
+    # than embedding them in the .onnx protobuf -- missing this caused a real, confirmed
+    # failure on real hardware (2026-09-15): onnxruntime loaded the .onnx file fine, then
+    # failed deserializing a tensor with "Invalid fd was supplied: -1" trying to open this
+    # file, which the package never included. `--help`-based import-chain verification
+    # doesn't catch this since it never actually loads the ONNX file -- only an actual
+    # inference attempt does. If a future model export ever produces a similarly-named
+    # `<name>.onnx.data` (or `.onnx_data`) companion file, check for it explicitly rather
+    # than assuming a single .onnx file is always self-contained.
+    "host_software/ml_vision/models/shared_vision_backbone_v2/shared_vision_backbone_best.onnx.data",
     "host_software/ml_audio/models/audio_command_classifier_v3.onnx",
+    # Same external-data situation as the vision model above -- confirmed present in the
+    # source repo (2026-09-15) and missing here caused the identical "Invalid fd was
+    # supplied: -1" failure, just for conv2_weight in the audio model instead. Any .onnx
+    # file in this project should be treated as possibly needing its .onnx.data sibling
+    # until proven otherwise -- don't assume single-file self-containment.
+    "host_software/ml_audio/models/audio_command_classifier_v3.onnx.data",
+    # Not bulk data -- a single 532-byte R/Q calibration result (from
+    # estimate_kalman_noise_params.py), needed for --kalman-params to be trustworthy
+    # (see kalman_filter.py). Confirmed 2026-09-15 as the best-performing set found so
+    # far. This is a deliberate, individually-named exception to "don't copy
+    # host_software/data/" -- that exclusion is about the ~85GB bulk tree, not about
+    # every file that happens to live under that path.
+    "host_software/data/01_bronze/evaluation/kalman_params_20260820_102744.json",
 ]
 
 # Matches this package's actual import needs -- see the module docstring
@@ -63,9 +86,19 @@ FILES = [
 # better) to drop this dependency from the Jetson package entirely -- pandas
 # pulls in a much heavier transitive dependency chain than this file's actual
 # runtime need justifies. Not done now; this is the note to come back to.
+# numpy and onnxruntime are version-pinned deliberately, not just "whatever's newest" --
+# both pins came from real crashes on real Jetson AGX Orin hardware (2026-09-15), see
+# JETSON_ENV_SETUP.md's dependency table for the full writeup:
+#   - numpy<2: apt's python3-opencv is compiled against numpy's 1.x C ABI; an unpinned
+#     numpy install grabs 2.x and breaks `import cv2` with "_ARRAY_API not found".
+#   - onnxruntime==1.18.0: newer/default onnxruntime hits a filed upstream ARM bug
+#     (microsoft/onnxruntime#28301) that crashes on Jetson Orin's CPU vendor detection;
+#     onnxruntime-gpu crashes differently since this device has no cuDNN/TensorRT
+#     installed (offline-flashed, no JetPack SDK Components). Don't bump either version
+#     without re-confirming on real hardware first.
 REQUIREMENTS = [
-    "numpy",
-    "onnxruntime",
+    "numpy<2",
+    "onnxruntime==1.18.0",
     "pyserial",
     "sounddevice",
     "pandas",  # see TODO above -- swap for stdlib csv, then remove this line

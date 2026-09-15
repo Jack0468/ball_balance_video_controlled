@@ -31,20 +31,56 @@ TOUCHPAD_H_MM = 142.0
 PAPER_MARGIN_MM = 6.0
 
 # (H, S, V) lower/upper bounds. Red wraps the hue circle, so it's two ranges.
+#
+# 2026-09-15 recalibration (docs/PROJECT_LOGBOOK.md, "Marker Classifier: 2 of 5
+# Colors Unreachable on Jetson AGX Orin"): green/yellow's shared H=35 boundary
+# and black's V<60 bound were both re-measured against real photos of the
+# aruco_markers_03 sheet (session_20260810_114330, the one real session whose
+# masks match this manifest -- 12,883 frames, ~800-1000 sampled per feature):
+#   - green_hexagon's real hue (eroded-core, per-frame mean) is 45-85, median
+#     ~55, p5~51 -- it essentially never legitimately reads below ~45. yellow_square's
+#     real hue runs up to ~42-44 at the high end (full/CNN-mask-realistic
+#     population, not the tightest possible erosion) before saturation drops off.
+#     The old touching boundary (both at H=35) sat squarely inside yellow's own
+#     real upper tail, well below green's real floor -- any yellow reading that
+#     drifted up (which real ones routinely do) was guaranteed to hit green's
+#     bin first under the old check order. Moved green's floor to 45 and
+#     yellow's ceiling to 42, leaving a small 42-45 gap that will not be
+#     legitimately double free (a value there is safer to remain "unknown" than
+#     confidently claimed by an unrelated color).
+#   - black_circle's real printed marker measures S~11-26, V~110-140 (core
+#     pixels, eroded mask, n>35k) even fully unoccluded by the ball -- a
+#     desaturated mid-grey under this camera/lighting, NOT anywhere near V<60.
+#     Blank background paper (sampled well clear of every marker/ArUco fiducial)
+#     measures V~214-255 the great majority of the time, comfortably above 150
+#     -- widening black's V bound to 150 covers the marker's measured range
+#     (p99=140) with a 10-unit margin while staying well clear of background.
+#     NOTE: this does NOT explain the live-Jetson report of black_circle
+#     producing zero blobs at all -- run_cnn_mask_check.py against this same
+#     session shows shared_vision_backbone_v2's mask head fires at >0.98
+#     confidence over black_circle's location in 98%+ of unoccluded frames, so
+#     a blob does form here on historical data. This bin fix only helps once a
+#     blob exists; if Jetson genuinely produces no blob at all, that is a
+#     separate, still-open question (see logbook) needing a live capture to
+#     resolve, not something this file can fix.
 COLOR_BINS = {
     "blue": [(np.array([90, 50, 50]), np.array([150, 255, 255]))],
     "red": [
         (np.array([0, 50, 50]), np.array([15, 255, 255])),
         (np.array([165, 50, 50]), np.array([180, 255, 255])),
     ],
-    "green": [(np.array([35, 50, 50]), np.array([85, 255, 255]))],
-    "yellow": [(np.array([20, 50, 50]), np.array([35, 255, 255]))],
-    "black": [(np.array([0, 0, 0]), np.array([180, 255, 60]))],
+    "green": [(np.array([45, 50, 50]), np.array([85, 255, 255]))],
+    "yellow": [(np.array([20, 50, 50]), np.array([42, 255, 255]))],
+    "black": [(np.array([0, 0, 0]), np.array([180, 255, 150]))],
 }
-# Check order matters: black's V<60 bound can overlap the low-V edge of the hue
+# Check order matters: black's V bound can overlap the low-V edge of the hue
 # bins above, so hue-specific colors are checked first and black is the
 # fallback -- matches MarkerTracker's existing first-match-wins pattern.
-COLOR_CHECK_ORDER = ["blue", "red", "green", "yellow", "black"]
+# yellow is now checked before green (was: green, yellow) -- real yellow's
+# hue drifts up into the old shared-boundary zone far more often than real
+# green's hue drifts down into it (see recalibration note above), so on any
+# residual ambiguity it's the safer default.
+COLOR_CHECK_ORDER = ["blue", "red", "yellow", "green", "black"]
 
 
 @dataclass

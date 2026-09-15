@@ -1,6 +1,7 @@
 import threading
 import queue
 import time
+from typing import Optional, Union
 import numpy as np
 import sounddevice as sd
 import onnxruntime as ort
@@ -36,6 +37,21 @@ LABEL_NAMES = [
     "left",
     "right",
 ]
+
+
+def find_device_by_name(name_substring: str) -> Optional[int]:
+    """Look up an input device index by case-insensitive substring match on its
+    name (e.g. "JBCW036" for the USB camera's built-in mic). Returns the last
+    match if several audio APIs expose the same physical device (WASAPI/
+    DirectSound entries are generally preferable to MME, and sounddevice lists
+    MME first), or None if nothing matches."""
+    devices = sd.query_devices()
+    matches = [
+        i
+        for i, d in enumerate(devices)
+        if name_substring.lower() in d["name"].lower() and d["max_input_channels"] > 0
+    ]
+    return matches[-1] if matches else None
 
 
 def align_speech_to_fixed_length(audio, target_samples=OUTPUT_SEQUENCE_LENGTH):
@@ -98,7 +114,8 @@ def waveform_to_spectrogram_np(waveform):
 
 
 class AudioCommandReceiverONNX:
-    def __init__(self, model_path, step_seconds=0.2, source_file=None):
+    def __init__(self, model_path, step_seconds=0.2, source_file=None,
+                 mic_device: Optional[Union[int, str]] = None):
         print(f"Loading Audio Model ONNX from {model_path}...")
 
         opts = ort.SessionOptions()
@@ -134,15 +151,32 @@ class AudioCommandReceiverONNX:
             )
             self.thread_file.start()
         else:
+            resolved_device: Optional[int] = None
+            if isinstance(mic_device, str):
+                resolved_device = find_device_by_name(mic_device)
+                if resolved_device is None:
+                    raise RuntimeError(
+                        f"No input device matching '{mic_device}' found. "
+                        f"Devices: {sd.query_devices()}"
+                    )
+            elif isinstance(mic_device, int):
+                resolved_device = mic_device
+
             self.stream = sd.InputStream(
                 samplerate=SAMPLE_RATE,
                 channels=1,
                 dtype="float32",
                 blocksize=self.step_samples,
                 callback=self._audio_callback,
+                device=resolved_device,
             )
             self.stream.start()
-            print("Audio receiver initialized on laptop microphone.")
+            device_desc = (
+                sd.query_devices(resolved_device)["name"]
+                if resolved_device is not None
+                else "OS default input"
+            )
+            print(f"Audio receiver initialized on: {device_desc}")
 
         self.thread = threading.Thread(target=self._process_loop, daemon=True)
         self.thread.start()

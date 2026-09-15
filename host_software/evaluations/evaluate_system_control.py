@@ -9,6 +9,18 @@ Those CSVs do not share one timestamp column name (host_timestamp_ms vs.
 host_command_sent_ms/host_packet_received_ms vs. the older host_time_ms) --
 load_telemetry() normalizes whichever is present. target_x/y, touch_x/y, and
 theta_a/b/c are the one column set common to all of them.
+
+Also accepts host_software/src/touch_logger.py's own native CSV schema directly
+(confirmed 2026-09-15 while wiring up Track 1 evaluation on the Jetson) -- its
+column names differ (target_x_mm/touch_x_mm, host_recv_ts, motor_a/b/c raw steps
+instead of theta_a/b/c degrees) since that schema is shared with
+estimate_kalman_noise_params.py and wasn't written with this evaluator's column
+names in mind. Rather than requiring a separate conversion script or changing
+touch_logger.py's schema (which would ripple into the Kalman-fitting workflow),
+load_telemetry() aliases the position columns and derives theta_a/b/c from
+motor_a/b/c using the same steps-per-degree constant firmware itself uses
+(MotorControl.cpp's steps_to_angle(), 3200 steps/revolution) -- no firmware
+change needed, since TouchProbe.cpp already sends the raw step counts today.
 """
 
 import os
@@ -38,6 +50,21 @@ TIMESTAMP_CANDIDATES = [
     "host_time_ms",
 ]
 
+# touch_logger.py's CSV_FIELDS names for the same quantities -- see module
+# docstring. Only renamed when the target name isn't already present, so a CSV
+# that already uses this evaluator's own naming is untouched.
+_TOUCH_LOGGER_RENAMES = {
+    "target_x_mm": "target_x",
+    "target_y_mm": "target_y",
+    "touch_x_mm": "touch_x",
+    "touch_y_mm": "touch_y",
+}
+
+# MotorControl.cpp's steps_to_angle(): (360.0 / 3200.0) * steps -- 3200 steps/revolution,
+# a stable hardware constant (confirmed 2026-09-15 in firmware/stm32_ml_control_and_vision/
+# BallBalancingBot/MotorControl.cpp). Inverted here since we're going steps -> degrees.
+_STEPS_PER_DEGREE = 3200.0 / 360.0
+
 TARGET_CHANGE_TOLERANCE_MM = 1.0  # ignore target jitter below this when segmenting trials
 SETTLE_TOLERANCE_MM = 20.0  # from docs/EVALUATION_STRATEGY.md
 SETTLE_DURATION_MS = 500.0  # from docs/EVALUATION_STRATEGY.md
@@ -45,6 +72,27 @@ SETTLE_DURATION_MS = 500.0  # from docs/EVALUATION_STRATEGY.md
 
 def load_telemetry(csv_path):
     df = pd.read_csv(csv_path)
+
+    df = df.rename(columns={
+        src: dst for src, dst in _TOUCH_LOGGER_RENAMES.items()
+        if src in df.columns and dst not in df.columns
+    })
+
+    # theta_a/b/c aren't in touch_logger.py's schema -- only raw motor_a/b/c step
+    # counts are (TouchProbe.cpp already sends these today, no firmware change
+    # needed). Derive degrees host-side rather than requiring a separate conversion
+    # pass over the CSV.
+    for axis in ("a", "b", "c"):
+        theta_col, motor_col = f"theta_{axis}", f"motor_{axis}"
+        if theta_col not in df.columns and motor_col in df.columns:
+            df[theta_col] = df[motor_col] / _STEPS_PER_DEGREE
+
+    if "host_recv_ts" in df.columns and not any(c in df.columns for c in TIMESTAMP_CANDIDATES):
+        # touch_logger.py's own timestamp is a time.perf_counter() float in seconds
+        # (monotonic, arbitrary zero point) -- fine here since every metric this
+        # evaluator computes (settling time, trial segmentation) only uses elapsed
+        # deltas within one run, never wall-clock time.
+        df["host_timestamp_ms"] = df["host_recv_ts"] * 1000.0
 
     ts_col = next((c for c in TIMESTAMP_CANDIDATES if c in df.columns), None)
     if ts_col is None:

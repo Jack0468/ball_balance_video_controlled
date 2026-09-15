@@ -40,19 +40,32 @@ To ensure the end-to-end VLA model respects these criteria, we utilize a two-sta
    - **Terminal Penalty:** Dropping the ball (Task Success Rate)
 
 ## Standardized Evaluation Sequence
-To rigorously benchmark all systems (PID, Expert Vision+RL, VLA) under perfectly identical conditions, evaluations must be run against a pre-recorded audio sequence. 
+To rigorously benchmark all systems (PID, Expert Vision+RL, VLA) under perfectly identical conditions, evaluations must be run against a pre-recorded audio sequence.
 
-The evaluation script injects the following 12 commands with background continuously being fed inbetween commands (each spaced by exactly 10 seconds of evaluation time):
-1. `go_grey` (0s - 10s)
-2. `go_blue` (10s - 20s)
-3. `go_green` (20s - 30s)
-4. `go_yellow` (30s - 40s)
-5. `go_red` (40s - 50s)
-6. `FORWARD` (50s - 60s)
-7. `LEFT` (60s - 70s)
+**Updated 2026-09-15: only `green`/`red`/`yellow`/`black` are used as target colors** (`grey`/`blue`
+dropped) -- matches the physical marker sheet actually in use; `grey` and `blue` aren't reliable
+targets on this sheet (see `ml-vision`'s marker-classification findings, session 2026-09-15).
+
+**Updated 2026-09-15: `HOLD` placement redesigned.** Color-marker positions are physically movable
+(placed on the board by hand, not fixed in `ground_truth_manifest.json` -- see
+`PROJECT_LOGBOOK.md`'s "Movable Target Detection" entry), so a "hold between two far-apart
+targets" design would depend on the current physical layout and wouldn't stay reproducible across
+setups. Instead, `HOLD` now fires **mid-transit**: `FORWARD`+`LEFT` drive the ball toward the
+top-left of the platform, a color command is then issued (driving it back across the board), and
+`HOLD` interrupts that transit before it arrives -- tests whether the controller correctly holds
+position mid-trajectory rather than only at a settled target. `go_black` is deliberately not the
+first command (an untested cold-start target).
+
+The evaluation script injects the following 10 commands with background continuously being fed inbetween commands (each spaced by exactly 10 seconds of evaluation time):
+1. `go_green` (0s - 10s)
+2. `go_yellow` (10s - 20s)
+3. `FORWARD` (20s - 30s) -- drive toward top of platform
+4. `LEFT` (30s - 40s) -- drive toward top-left
+5. `go_red` (40s - 50s) -- command toward red, ball is mid-transit from top-left
+6. `HOLD` (50s - 60s) -- interrupt the transit, hold here
+7. `go_black` (60s - 70s)
 8. `RIGHT` (70s - 80s)
 9. `BACKWARD` (80s - 90s)
-10. `HOLD` (90s - 100s)
-11. `STOP` (100s - 110s)
+10. `STOP` (90s - 100s)
 
 The host script is responsible for aligning these logical commands to the equivalent 2D physical target coordinates depending on the robot's current configuration.

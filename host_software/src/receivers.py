@@ -22,6 +22,16 @@ class USBReceiver:
         """
         self.cap = cv2.VideoCapture(camera_id, cv2.CAP_DSHOW)
         if not self.cap.isOpened():
+            # Confirmed 2026-09-15 on the Jetson AGX Orin: NOT requesting a backend here
+            # lands on GStreamer (cv2.videoio_registry.getBackends() showed both GSTREAMER
+            # (1800) and V4L2 (200) compiled in, but plain cv2.VideoCapture(camera_id)
+            # picked GSTREAMER) -- and GStreamer silently ignores the CAP_PROP_FRAME_WIDTH/
+            # HEIGHT .set() calls below, so the camera opened at its native 1280x720
+            # instead of the requested 640x480 with no error at all. Request V4L2
+            # explicitly so those .set() calls actually take effect; only fall through to
+            # the untargeted default if this specific backend isn't available.
+            self.cap = cv2.VideoCapture(camera_id, cv2.CAP_V4L2)
+        if not self.cap.isOpened():
             self.cap = cv2.VideoCapture(camera_id)
 
         # Force MJPG codec to prevent USB 2.0 bandwidth bottlenecks

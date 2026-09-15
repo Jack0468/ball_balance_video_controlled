@@ -172,6 +172,76 @@ the pre-converted base checkpoint before any fine-tuning finishes.
 `RT1LiteVLA`'s existing BC/RL scaffold in `ml_multimodal/` remains the secondary baseline
 regardless of what this track lands on, per the project's existing framing.
 
+## REVISED 2026-09-15 — dual-tier framing replaced: one existing fine-tuned action-chunking VLA
+
+**User decision (planning session, 2026-09-15): do not design or train a custom "inner
+tier" action architecture from scratch.** This directly overturns the
+2026-08-19 "Recommended shape" section above, which promoted a custom inner tier to
+primary once Jetson-PI/π0.5 failed the ≥30Hz latency bar. That inner tier was, by the
+2026-08-19 section's own admission, "the least-specified part of this whole track" — no
+architecture, no data-scale estimate, no comparison to anything. Spending a design pass on
+a from-scratch model here was judged not worth it when an existing, already-trained,
+already-fine-tunable alternative exists.
+
+**New direction: use ONE existing action-chunking VLA, fine-tuned on our own data, instead
+of a dual-tier split.** The reason the dual-tier split existed at all was FASTER's finding
+(see above) that a single slow monolithic VLA can't hit real-time control rates — the fix
+was assumed to require splitting grounding (slow) from action (fast) into two separate
+models. **Action chunking already solves this**, without a second model: an action-chunking
+policy predicts a short sequence of N future actions in one forward pass, then executes
+that chunk open-loop across N control ticks before replanning. This is exactly how
+ACT (Action Chunking Transformer), π0, and SmolVLA already decouple the control tick rate
+from the model's own inference latency — inference only needs to keep up with the *replan*
+rate (once per chunk), not the tick rate. A single model satisfies "don't design a second
+architecture from scratch" as long as it already ships this way, which these do.
+
+**Recommended primary candidate: SmolVLA** (Hugging Face LeRobot project). 450M params,
+SigLIP vision encoder + SmolLM2-135M language backbone + a flow-matching action head,
+natively fine-tunable via the `lerobot` framework's own `LeRobotDataset` format (see Task 2
+below), default action chunk size ~50. Being a first-class `lerobot` citizen is what makes
+it the practical pick here — the same framework Task 3's converter targets, and the same
+tutorial-documented fine-tuning path (`train.py` against a `LeRobotDataset`) rather than a
+bespoke training loop.
+Sources: [SmolVLA overview](https://learnopencv.com/smolvla-lerobot-vision-language-action-model/),
+[SmolVLA training walkthrough](https://vnrobo.com/en/blog/vla-lerobot-12-smolvla-training).
+
+**Secondary candidate, flagged but NOT adopted this session: GigaBrain-0-Small.** Its own
+paper reports faster throughput on Jetson AGX Orin than most comparable VLAs (~7.7Hz), which
+would be attractive here, but **license terms are unconfirmed** — do not commit engineering
+time to it (fine-tuning, export, benchmarking) until that's checked. Recorded here so it
+isn't lost, not as a second thing to build in parallel with SmolVLA.
+Sources: [GigaBrain-0-Small paper](https://arxiv.org/html/2510.19430v1),
+[GigaBrain-0-Small summary](https://www.emergentmind.com/topics/gigabrain-0-small).
+
+**Open verification item, not resolved by this revision:** this doesn't necessarily mean
+FASTER's underlying finding was wrong or irrelevant — FASTER's claim is about reaction time
+as a random variable set by *both* perception-execution latency and inference-execution
+cycle frequency together, not just raw Hz. Action chunking raises effective Hz (by
+amortizing one inference call over N ticks) but does not, on its own, prove it fixes the
+phase-mismatch problem FASTER describes (an external event landing mid-chunk still waits
+out the rest of that chunk before the policy can react to it, which is a different failure
+mode than "inference was too slow"). Treat "action chunking resolves the latency/rate
+decoupling problem" as true for *why we don't need a second custom model*, and treat
+"action chunking fully satisfies FASTER's reaction-time framing" as unverified — check once
+a SmolVLA checkpoint and real chunk-boundary-vs-disturbance timing data exist, don't
+retroactively claim it's already been proven.
+
+**What this changes in the concrete pipeline (2026-08-19 section above):** steps 1
+(data collection) and 2 (LeRobot conversion) are unaffected — they were never specific to
+Jetson-PI's data format. Step 3 (fine-tuning compute/LoRA) should target SmolVLA's own
+fine-tuning path rather than `openpi`'s LoRA configs once that's scoped for real. Step 4
+(GGUF export via Jetson-PI-Edge) no longer applies as written — that pipeline was specific
+to the PI/π0.5 family; SmolVLA's own Jetson export path (TensorRT or ONNX, not yet
+researched) replaces it, as a follow-up not done in this session. Step 5 (inner-tier design
+pass) is now **moot, not merely deferred** — there is no separate inner tier to design.
+Step 6 (integration behind `core/policy_interface.py`) is unchanged: a single `Policy`
+implementation wrapping SmolVLA replaces the two-tier wrapper that section implied.
+
+**Explicitly deferred, not started this session:** SmolVLA fine-tuning, any quantized
+export, and Jetson-side Hz benchmarking. All three need a converter's real output and a
+checkpoint in hand first (Task 2/3 of this kickoff, below) — starting any of them without
+that would be guessing at data shapes this session doesn't have yet.
+
 ---
 Sources (web research, 2026-08-18 and 2026-08-19):
 - [Jetson-PI: Towards Onboard Real-Time Robot Control via Foresight-Aligned Asynchronous Inference](https://arxiv.org/html/2607.12659v3)
@@ -186,3 +256,10 @@ Sources (web research, 2026-08-18 and 2026-08-19):
 - [GitHub — Physical-Intelligence/openpi](https://github.com/Physical-Intelligence/openpi)
 - [LeRobot: Imitation Learning on Real-World Robots (record/train tutorial)](https://huggingface.co/docs/lerobot/il_robots)
 - [LeRobotDataset v3.0](https://huggingface.co/docs/lerobot/en/lerobot-dataset-v3)
+
+Sources (web research, 2026-09-15):
+
+- [SmolVLA — LeRobot's Compact Vision-Language-Action Model](https://learnopencv.com/smolvla-lerobot-vision-language-action-model/)
+- [VLA + LeRobot #12 — SmolVLA Training](https://vnrobo.com/en/blog/vla-lerobot-12-smolvla-training)
+- [GigaBrain-0-Small paper](https://arxiv.org/html/2510.19430v1)
+- [GigaBrain-0-Small — EmergentMind summary](https://www.emergentmind.com/topics/gigabrain-0-small)
