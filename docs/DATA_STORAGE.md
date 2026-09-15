@@ -11,11 +11,22 @@ semantics, not transport.
 The home server (`https://github.com/Jack0468/home_server`, private repo) is live and
 runs a MinIO (S3-compatible) container as a DVC remote, reachable over Tailscale — no
 public exposure. **This project is now wired into it.** `03_gold/`, `03_synthetic_yolo/`,
-`yolo_raw_dataset/`, `ml_vision/models/`, `ml_audio/data/`, `ml_audio/models/`, and
-`ml_multimodal/models/` are `dvc add`-ed; the `.dvc` pointer files are committed to git,
-the actual bytes live only in MinIO (or a machine's local `.dvc/cache`). `01_bronze/` and
-`02_silver/` deliberately stay **outside** DVC (still tar/zip-per-session, per the rules
-below) — only the reproducible-artifact tiers are versioned this way.
+`yolo_raw_dataset/`, `ml_vision/models/`, `ml_audio/data/`, `ml_audio/models/`,
+`ml_multimodal/models/`, and `ml_jetson_vla/models/` (the `Qwen2.5-VL-3B-Instruct`
+checkpoint) are `dvc add`-ed; the `.dvc` pointer files are committed to git, the actual
+bytes live only in MinIO (or a machine's local `.dvc/cache`). `01_bronze/` and `02_silver/`
+deliberately stay **outside** DVC by default (still tar/zip-per-session, per the rules
+below) — only the reproducible-artifact tiers are versioned this way as a rule.
+
+**Scoped exception (2026-09-15):** `host_software/data/01_bronze/session_jetson_track4_*`
+(the Track 4 Jetson standalone-run sessions, `telemetry.csv` + `rgb_video.mp4` each) ARE
+individually `dvc add`-ed and pushed, per explicit user instruction. Unlike the bulk legacy
+bronze data (hundreds of thousands of small frame-capture files, the actual reason for the
+`01_bronze` exclusion), each Track 4 session is exactly 2 files — small enough that DVC's
+per-file overhead isn't a problem, and this data is valuable enough (real Jetson-collected
+runs for VLA fine-tuning) to warrant real versioning rather than manual copies. This is a
+per-session opt-in, not a reversal of the general `01_bronze` rule — new bronze data outside
+this specific naming pattern is not automatically covered.
 
 **Connection details, credentials, and the Colab-specific Tailscale bootstrap live in the
 `home_server` repo, not here** (`docs/DVC_SETUP.md`, `docs/COLAB_SETUP.md`,
@@ -98,9 +109,6 @@ regardless of which cloud/server backend is chosen.
 - No backup of the home server's MinIO data itself yet — see `home_server`'s
   own `BLUEPRINT.md` §5 ("Backups") for that project's open item; this repo's
   data is only as durable as that server's storage until it's resolved there.
-- `host_software/data_collection/data/` was never audited in the original
-  2026-09-12 pass — confirm whether it needs its own tier/DVC treatment before
-  assuming it's covered by anything above.
 
 DVC's own hash tracking (each `.dvc` file's `md5`) already ties a tracked
 directory's contents to the exact bytes referenced — that's the "which weight
