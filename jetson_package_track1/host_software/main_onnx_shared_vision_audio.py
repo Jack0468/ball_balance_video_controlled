@@ -577,6 +577,13 @@ def main() -> None:
             was_tracking = gate.ball_on_platform
             gated_x, gated_y, gate_reason = gate.filter(final_x, final_y, dt_ms)
 
+            if gate_reason == "seeded" and isinstance(audio_receiver, ScriptedCommandSequencer):
+                # Ball just confirmed on the platform -- start --scripted-sequence's
+                # clock now rather than at construction time, so DEFAULT_SCHEDULE's
+                # settle window measures a clean period with the ball actually present,
+                # not construction-to-ball-seeded dead time too. begin() is idempotent.
+                audio_receiver.begin()
+
             if gate_reason == "no_ball":
                 # The CNN produced a ball_xy guess this frame regardless of
                 # whether a ball is really present (it has no explicit "no

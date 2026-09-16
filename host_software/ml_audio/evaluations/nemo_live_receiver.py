@@ -24,17 +24,44 @@ local syntax/logic check -- without NeMo installed, matching how audio_dsp.py
 was split out to avoid an unnecessary sounddevice dependency for the custom
 CNN's track. This module itself needs no NeMo-specific or Windows-hostile
 dependencies to import, only to instantiate.
+
+Live-microphone support (added for the NeMo-audio main entry point, see
+docs/plans/audio_eval_notebook_refactor_plan.md "Production Integration
+Check" -- this is the "Option B: deploy the full NeMo/PyTorch runtime"
+path, not the ONNX one) mirrors AudioCommandReceiverONNX's sounddevice
+InputStream pattern exactly (device lookup by name/index, callback pushes
+chunks into the same chunk_queue the file-reader loop already used) --
+sounddevice was deliberately NOT a module-level import before this, same
+reasoning as the deferred NeMo import above; it's now imported at module
+level since this file is no longer meant to stay importable in a
+sounddevice-free Colab environment once it's used for live mic input.
 """
 
 import queue
 import threading
 import time
+from typing import Optional, Union
 
 import numpy as np
+import sounddevice as sd
 import soundfile as sf
 import torch
 
 from ml_audio.audio_dsp import OUTPUT_SEQUENCE_LENGTH, SAMPLE_RATE
+
+
+def find_device_by_name(name_substring: str) -> Optional[int]:
+    """Same lookup as audio_receiver_onnx.py's find_device_by_name -- kept
+    as a duplicate rather than a shared import because that module pulls in
+    onnxruntime, which this NeMo-based receiver has no other reason to
+    depend on."""
+    devices = sd.query_devices()
+    matches = [
+        i
+        for i, d in enumerate(devices)
+        if name_substring.lower() in d["name"].lower() and d["max_input_channels"] > 0
+    ]
+    return matches[-1] if matches else None
 
 
 class NemoAudioCommandReceiver:
@@ -43,6 +70,7 @@ class NemoAudioCommandReceiver:
         nemo_model_path: str,
         step_seconds: float = 0.2,
         source_file: str | None = None,
+        mic_device: Optional[Union[int, str]] = None,
         min_confidence: float = 0.8,
         min_margin: float = 0.15,
     ):
@@ -77,18 +105,51 @@ class NemoAudioCommandReceiver:
         self.min_margin = min_margin
         self.last_pushed_command = None
 
+        self.latest_inference_time_ms = 0.0
+
         self.source_file = source_file
-        if not self.source_file:
-            raise NotImplementedError(
-                "NemoAudioCommandReceiver only supports source_file playback mode "
-                "(this track hasn't been wired to a live microphone yet)."
+        if self.source_file:
+            print(f"NeMo audio receiver initialized on File Stream: {self.source_file}")
+            self.thread_file = threading.Thread(target=self._file_reader_loop, daemon=True)
+            self.thread_file.start()
+        else:
+            # Mirrors AudioCommandReceiverONNX's mic setup exactly (device
+            # lookup by name/index, blocksize=step_samples so each callback
+            # hands _process_loop one step's worth of audio at a time).
+            resolved_device: Optional[int] = None
+            if isinstance(mic_device, str):
+                resolved_device = find_device_by_name(mic_device)
+                if resolved_device is None:
+                    raise RuntimeError(
+                        f"No input device matching '{mic_device}' found. "
+                        f"Devices: {sd.query_devices()}"
+                    )
+            elif isinstance(mic_device, int):
+                resolved_device = mic_device
+
+            self.stream = sd.InputStream(
+                samplerate=SAMPLE_RATE,
+                channels=1,
+                dtype="float32",
+                blocksize=self.step_samples,
+                callback=self._audio_callback,
+                device=resolved_device,
             )
-        print(f"NeMo audio receiver initialized on File Stream: {self.source_file}")
-        self.thread_file = threading.Thread(target=self._file_reader_loop, daemon=True)
-        self.thread_file.start()
+            self.stream.start()
+            device_desc = (
+                sd.query_devices(resolved_device)["name"]
+                if resolved_device is not None
+                else "OS default input"
+            )
+            print(f"NeMo audio receiver initialized on: {device_desc}")
 
         self.thread = threading.Thread(target=self._process_loop, daemon=True)
         self.thread.start()
+
+    def _audio_callback(self, indata, frames, time_info, status):
+        if status:
+            pass
+        self.chunk_queue.put(indata.copy().squeeze())
 
     def _file_reader_loop(self):
         try:
@@ -133,6 +194,7 @@ class NemoAudioCommandReceiver:
             self.audio_buffer = np.roll(self.audio_buffer, -len(new_chunk))
             self.audio_buffer[-len(new_chunk):] = new_chunk
 
+            inf_start = time.perf_counter()
             audio_t = torch.as_tensor(
                 self.audio_buffer, dtype=torch.float32, device=self.device
             ).unsqueeze(0)
@@ -140,6 +202,7 @@ class NemoAudioCommandReceiver:
             with torch.no_grad():
                 logits = self.model(input_signal=audio_t, input_signal_length=len_t)
                 probs = torch.nn.functional.softmax(logits, dim=-1)[0].cpu().numpy()
+            self.latest_inference_time_ms = (time.perf_counter() - inf_start) * 1000.0
 
             top_id = int(np.argmax(probs))
             top_label = self.labels[top_id]
@@ -168,3 +231,6 @@ class NemoAudioCommandReceiver:
 
     def stop(self):
         self.running = False
+        if hasattr(self, "stream"):
+            self.stream.stop()
+            self.stream.close()

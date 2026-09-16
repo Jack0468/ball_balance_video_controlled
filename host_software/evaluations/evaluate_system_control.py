@@ -63,11 +63,30 @@ _TOUCH_LOGGER_RENAMES = {
 # MotorControl.cpp's steps_to_angle(): (360.0 / 3200.0) * steps -- 3200 steps/revolution,
 # a stable hardware constant (confirmed 2026-09-15 in firmware/stm32_ml_control_and_vision/
 # BallBalancingBot/MotorControl.cpp). Inverted here since we're going steps -> degrees.
+# Also independently ported in host_software/ml_jetson_vla/runtime/motor_geometry.py
+# (DEG_PER_STEP) for Track 4's telemetry-to-training-schema conversion -- not imported
+# from here deliberately, since that module lives under one specific arm's runtime and
+# this evaluator is arm-agnostic by design (see module docstring). Both are independent
+# ports of the same firmware source, not a copy of each other -- if the firmware constant
+# (3200 steps/rev) ever changes, update both.
 _STEPS_PER_DEGREE = 3200.0 / 360.0
 
 TARGET_CHANGE_TOLERANCE_MM = 1.0  # ignore target jitter below this when segmenting trials
 SETTLE_TOLERANCE_MM = 20.0  # from docs/EVALUATION_STRATEGY.md
 SETTLE_DURATION_MS = 500.0  # from docs/EVALUATION_STRATEGY.md
+
+# Confirmed 2026-09-15 on 3 real Jetson runs: TARGET_CHANGE_TOLERANCE_MM alone can't
+# distinguish a real command transition from a brief marker-classifier misclassification
+# burst -- state_machine.py's get_target_coords() only averages marker_history (a plain
+# 10-sample rolling mean, no outlier/jump rejection like PredictionGate has for the ball),
+# so a sustained ~0.5-1s misclassification (confirmed concentrated in go_green/go_yellow
+# phases) rides straight through the average and can reach 29.6mm -- as large as some
+# genuine transitions, so raising the mm tolerance alone would still misfire. What
+# actually separates noise from a real command in the data is DURATION: every genuine
+# transition in docs/EVALUATION_STRATEGY.md's sequence holds ~10,000ms; every observed
+# spurious one collapsed within a fraction of a second. 1500ms sits comfortably above the
+# observed noise-burst durations and well below the real 10s cadence.
+MIN_TRIAL_DURATION_MS = 1500.0
 
 
 def load_telemetry(csv_path):
@@ -114,11 +133,16 @@ def load_telemetry(csv_path):
     return df
 
 
-def segment_by_target(df, tol_mm=TARGET_CHANGE_TOLERANCE_MM):
+def segment_by_target(df, tol_mm=TARGET_CHANGE_TOLERANCE_MM, min_duration_ms=MIN_TRIAL_DURATION_MS):
     """Split a run into trials wherever target_x/y actually jumps, ignoring
     float noise below tol_mm (a naive exact-equality diff over-segments any
     run where the target isn't a perfectly quantized step signal -- this
-    previously produced thousands of spurious 1-row "trials" on real data)."""
+    previously produced thousands of spurious 1-row "trials" on real data).
+
+    Then merges any resulting segment shorter than min_duration_ms into its
+    preceding segment -- see MIN_TRIAL_DURATION_MS's comment for why a mm-jump
+    threshold alone can't reliably tell a real command transition apart from a
+    brief marker-classifier misclassification burst."""
     n = len(df)
     if n == 0:
         return []
@@ -132,7 +156,36 @@ def segment_by_target(df, tol_mm=TARGET_CHANGE_TOLERANCE_MM):
 
     starts = np.flatnonzero(changed).tolist()
     starts.append(n)
-    return [(starts[i], starts[i + 1]) for i in range(len(starts) - 1)]
+    raw_segments = [(starts[i], starts[i + 1]) for i in range(len(starts) - 1)]
+
+    if min_duration_ms <= 0 or len(raw_segments) <= 1:
+        return raw_segments
+
+    times = df["timestamp_ms"].to_numpy(dtype=float)
+    merged = [raw_segments[0]]
+    for start, end in raw_segments[1:]:
+        duration_ms = times[end - 1] - times[start]
+        if duration_ms < min_duration_ms:
+            # Too brief to be a real, deliberately-held target -- fold into the
+            # segment that was actually still active (noise riding on top of it),
+            # not counted as its own trial. Chains of consecutive short segments
+            # all absorb into the same growing merged[-1] entry here.
+            prev_start, _prev_end = merged[-1]
+            merged[-1] = (prev_start, end)
+        else:
+            merged.append((start, end))
+
+    # The first segment has no preceding one to absorb into (commands can fire in
+    # quick succession right at a run's start) -- merge it FORWARD instead. By this
+    # point every other entry in `merged` is already guaranteed >= min_duration_ms,
+    # so a single check here (not a recursive one) is sufficient.
+    if len(merged) > 1:
+        first_start, first_end = merged[0]
+        if times[first_end - 1] - times[first_start] < min_duration_ms:
+            _second_start, second_end = merged[1]
+            merged[0:2] = [(first_start, second_end)]
+
+    return merged
 
 
 def find_settling_time_ms(times_ms, errors_mm, tolerance_mm, duration_ms):
@@ -209,8 +262,14 @@ def compute_metrics(df, run_label="run"):
     }
 
 
-def plot_trajectory(df, output_path, max_rows=1000):
-    plot_df = df.head(max_rows)
+def plot_trajectory(df, output_path, max_rows=None):
+    # Confirmed 2026-09-15: the old default (1000) silently truncated a full
+    # ~100s/~2450-row Standardized Evaluation Sequence run to its first ~40s,
+    # cutting off go_red/HOLD/go_black/RIGHT/BACKWARD/STOP entirely with no
+    # warning. None (default) plots everything -- still overridable for a run
+    # long enough that plotting every row would actually be unwieldy (e.g. a
+    # multi-hour PID baseline log).
+    plot_df = df if max_rows is None else df.head(max_rows)
     t0 = plot_df["timestamp_ms"].iloc[0]
     plt.figure(figsize=(10, 5))
     plt.plot(plot_df["timestamp_ms"] - t0, plot_df["target_x"], "r--", label="Target X")

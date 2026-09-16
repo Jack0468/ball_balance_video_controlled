@@ -29,6 +29,8 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]  # deployment/ -> ml_jetson_vla
 # path under the output directory.
 FILES = [
     "host_software/ml_jetson_vla/runtime/run_jetson_standalone.py",
+    "host_software/ml_jetson_vla/runtime/session_recorder.py",
+    "host_software/ml_jetson_vla/runtime/motor_geometry.py",
     "host_software/ml_jetson_vla/core/policy_interface.py",
     "host_software/ml_jetson_vla/core/control_net.py",
     "host_software/main_onnx_shared_vision_audio.py",

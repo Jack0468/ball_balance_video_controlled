@@ -1,0 +1,245 @@
+{
+  "generated_at": "20260915T094326Z",
+  "model": "models/nemo_matchboxnet_3x1x64_noisemix_seed1/matchboxnet_3x1x64_noisemix_finetuned_seed1.nemo",
+  "stream": "data\\02_silver\\master_evaluation_audio.wav",
+  "correct": 8,
+  "total": 10,
+  "results": [
+    {
+      "window_start_sec": 10,
+      "expected": "go_blue",
+      "detected": "go_blue",
+      "detected_at_sec": 11.46,
+      "correct": true
+    },
+    {
+      "window_start_sec": 20,
+      "expected": "go_green",
+      "detected": null,
+      "detected_at_sec": null,
+      "correct": false
+    },
+    {
+      "window_start_sec": 30,
+      "expected": "go_yellow",
+      "detected": "go_yellow",
+      "detected_at_sec": 31.81,
+      "correct": true
+    },
+    {
+      "window_start_sec": 40,
+      "expected": "go_red",
+      "detected": "go_red",
+      "detected_at_sec": 42.99,
+      "correct": true
+    },
+    {
+      "window_start_sec": 50,
+      "expected": "forward",
+      "detected": "forward",
+      "detected_at_sec": 52.1,
+      "correct": true
+    },
+    {
+      "window_start_sec": 60,
+      "expected": "left",
+      "detected": "left",
+      "detected_at_sec": 63.89,
+      "correct": true
+    },
+    {
+      "window_start_sec": 70,
+      "expected": "right",
+      "detected": "right",
+      "detected_at_sec": 73.51,
+      "correct": true
+    },
+    {
+      "window_start_sec": 80,
+      "expected": "backward",
+      "detected": null,
+      "detected_at_sec": null,
+      "correct": false
+    },
+    {
+      "window_start_sec": 90,
+      "expected": "hold",
+      "detected": "hold",
+      "detected_at_sec": 94.01,
+      "correct": true
+    },
+    {
+      "window_start_sec": 100,
+      "expected": "stop",
+      "detected": "stop",
+      "detected_at_sec": 104.41,
+      "correct": true
+    }
+  ],
+  "all_detections": [
+    {
+      "t": 0.47,
+      "cmd": "go_grey"
+    },
+    {
+      "t": 1.47,
+      "cmd": "go_red"
+    },
+    {
+      "t": 1.89,
+      "cmd": "_background_"
+    },
+    {
+      "t": 8.17,
+      "cmd": "_background_"
+    },
+    {
+      "t": 11.46,
+      "cmd": "go_blue"
+    },
+    {
+      "t": 12.06,
+      "cmd": "_background_"
+    },
+    {
+      "t": 21.18,
+      "cmd": "_background_"
+    },
+    {
+      "t": 21.42,
+      "cmd": "go_grey"
+    },
+    {
+      "t": 22.88,
+      "cmd": "_background_"
+    },
+    {
+      "t": 24.71,
+      "cmd": "_background_"
+    },
+    {
+      "t": 28.91,
+      "cmd": "_background_"
+    },
+    {
+      "t": 31.81,
+      "cmd": "go_yellow"
+    },
+    {
+      "t": 33.23,
+      "cmd": "_background_"
+    },
+    {
+      "t": 35.93,
+      "cmd": "_background_"
+    },
+    {
+      "t": 36.52,
+      "cmd": "_background_"
+    },
+    {
+      "t": 39.85,
+      "cmd": "_background_"
+    },
+    {
+      "t": 42.99,
+      "cmd": "go_red"
+    },
+    {
+      "t": 44.06,
+      "cmd": "_background_"
+    },
+    {
+      "t": 51.07,
+      "cmd": "_background_"
+    },
+    {
+      "t": 52.1,
+      "cmd": "forward"
+    },
+    {
+      "t": 53.4,
+      "cmd": "_background_"
+    },
+    {
+      "t": 57.91,
+      "cmd": "_background_"
+    },
+    {
+      "t": 58.57,
+      "cmd": "_background_"
+    },
+    {
+      "t": 63.89,
+      "cmd": "left"
+    },
+    {
+      "t": 64.13,
+      "cmd": "_background_"
+    },
+    {
+      "t": 70.76,
+      "cmd": "_background_"
+    },
+    {
+      "t": 73.51,
+      "cmd": "right"
+    },
+    {
+      "t": 74.3,
+      "cmd": "_background_"
+    },
+    {
+      "t": 82.46,
+      "cmd": "_background_"
+    },
+    {
+      "t": 82.88,
+      "cmd": "_background_"
+    },
+    {
+      "t": 84.75,
+      "cmd": "_background_"
+    },
+    {
+      "t": 87.48,
+      "cmd": "_background_"
+    },
+    {
+      "t": 87.89,
+      "cmd": "_background_"
+    },
+    {
+      "t": 90.15,
+      "cmd": "_background_"
+    },
+    {
+      "t": 94.01,
+      "cmd": "hold"
+    },
+    {
+      "t": 95.3,
+      "cmd": "_background_"
+    },
+    {
+      "t": 96.1,
+      "cmd": "_background_"
+    },
+    {
+      "t": 98.2,
+      "cmd": "_background_"
+    },
+    {
+      "t": 104.41,
+      "cmd": "stop"
+    },
+    {
+      "t": 105.69,
+      "cmd": "_background_"
+    },
+    {
+      "t": 121.93,
+      "cmd": "_background_"
+    }
+  ]
+}

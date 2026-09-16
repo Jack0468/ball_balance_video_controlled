@@ -1,9 +1,126 @@
+import math
 from collections import deque
 
 # Physical platform dimensions (mm) — used to derive nudge step and clamp bounds.
 # Source of truth: hardware/platform_templates/ground_truth_manifest.json
 _PLATFORM_W = 187.5
 _PLATFORM_H = 142.0
+
+
+class _MarkerPositionFilter:
+    """Per-color jump-gate/seed filter for a marker-derived state-machine target.
+
+    See docs/PROJECT_LOGBOOK.md 15/09/2026 ("Marker Target Jump-Gate") for the
+    full before/after validation. Design summary -- and why this is NOT a copy
+    of main_onnx_shared_vision_audio.py's PredictionGate:
+
+    PredictionGate tracks the BALL, which genuinely moves, so it needs a motion
+    model (EMA or Kalman), a jump-gate anchored on that model's prediction, and
+    an AWAITING_BALL/"lost -> reseed" escape valve for when the ball is flung
+    off-platform and reappears somewhere new. A color marker is a static
+    physical object glued to the printed sheet for the life of one session --
+    it never legitimately moves, so there is no motion to model and no sense
+    in which it can be "lost and reappear elsewhere". The right model here is
+    simpler: the current smoothed estimate IS the best guess of a fixed true
+    value; a new candidate far from it is noise (most often a different,
+    nearby marker's blob getting misclassified as this color -- see the
+    marker_classifier.py color-flicker bugs logged the same day), reject it
+    outright, and let more *accepted* samples only sharpen the estimate.
+
+    Consequences of that model, each deliberate:
+      - No velocity/Kalman term at all.
+      - No "AWAITING"/lost phase and no reseed-on-sustained-rejection escape
+        valve. A burst of rejected candidates does NOT mean the marker moved,
+        so nothing resets -- the anchor simply holds through the whole burst,
+        which is exactly what stops a multi-frame misclassification burst from
+        ever entering the average (see the logbook entry for the mechanism:
+        the old plain rolling mean had no defense once a burst outlasted its
+        10-sample window; this filter's anchor never moves during a rejected
+        burst, so every sample in it is rejected, not just the first one).
+      - A color going undetected for a while (occlusion, ball sitting on it,
+        a transient classifier miss) is simply not fed an update that frame --
+        not a jump, not evidence of a real move, not gated or decayed. The
+        estimate just holds at its last accepted value until a new detection
+        arrives, gated the same as any other update.
+      - Seeding (seed_window/seed_consistency_mm) exists for the same reason
+        PredictionGate seeds the ball: the first few detections of a color
+        this session could themselves be noisy before settling, so an initial
+        run of mutually-consistent detections is required before the estimate
+        is trusted at all. Unlike the ball, there is no camera-frame marker
+        exclusion zone check here -- markers are the thing being seeded, not
+        an obstacle to avoid seeding on.
+    """
+
+    def __init__(
+        self,
+        jump_threshold_mm: float = 15.0,
+        seed_window: int = 5,
+        seed_consistency_mm: float = 10.0,
+        history_size: int = 30,
+    ) -> None:
+        # jump_threshold_mm sits between normal same-marker detection jitter
+        # (a few mm, comparable to the ball's own ~5.6mm mean error) and real
+        # inter-marker spacing on the printed sheet (30mm center-to-center on
+        # aruco_markers_03 -- see ground_truth_manifest-derived touch_mm
+        # positions in the logbook entry) so a same-marker reading is accepted
+        # and a different-marker misclassification is rejected.
+        self.jump_threshold_mm = jump_threshold_mm
+        self.seed_window = seed_window
+        self.seed_consistency_mm = seed_consistency_mm
+        self.history_size = history_size
+
+        self._seed_buffer: list = []
+        self._history: deque = deque(maxlen=history_size)
+        self._estimate = None  # (x, y) tuple once seeded, else None
+
+    @property
+    def position(self):
+        """Current best-guess (x, y) mm, or None if never yet seeded."""
+        return self._estimate
+
+    def update(self, x: float, y: float) -> None:
+        """Feed one new raw per-frame detection for this color. Call this only
+        on frames where the classifier actually reported this color this
+        frame -- for an undetected frame, simply don't call it at all (see
+        class docstring: absence is not evidence of a move, so it must not
+        gate, reset, or decay anything)."""
+        candidate = (float(x), float(y))
+
+        if self._estimate is None:
+            # Not yet confirmed: accumulate a sliding seed window and only
+            # lock in an estimate once seed_window consecutive detections
+            # mutually agree within seed_consistency_mm -- same rationale as
+            # PredictionGate's seed phase, scaled for a static target.
+            self._seed_buffer.append(candidate)
+            if len(self._seed_buffer) > self.seed_window:
+                self._seed_buffer.pop(0)
+            if len(self._seed_buffer) == self.seed_window:
+                cx = sum(p[0] for p in self._seed_buffer) / self.seed_window
+                cy = sum(p[1] for p in self._seed_buffer) / self.seed_window
+                max_dist = max(
+                    math.hypot(p[0] - cx, p[1] - cy) for p in self._seed_buffer
+                )
+                if max_dist <= self.seed_consistency_mm:
+                    self._history.clear()
+                    self._history.extend(self._seed_buffer)
+                    self._estimate = (cx, cy)
+                    self._seed_buffer.clear()
+            return
+
+        # Confirmed: jump-gate against the current estimate. Anything beyond
+        # jump_threshold_mm is treated as noise and simply discarded -- the
+        # estimate is left exactly as it was (no counter, no partial blend,
+        # no reset), so a sustained burst of bad candidates is rejected in
+        # full, not just its first frame.
+        ex, ey = self._estimate
+        if math.hypot(candidate[0] - ex, candidate[1] - ey) > self.jump_threshold_mm:
+            return
+
+        self._history.append(candidate)
+        n = len(self._history)
+        hx = sum(p[0] for p in self._history) / n
+        hy = sum(p[1] for p in self._history) / n
+        self._estimate = (hx, hy)
 
 # Nudge step: 15% of each axis's full range.
 # X axis: 0.15 × 187.5 mm ≈ 28 mm per command
@@ -38,13 +155,18 @@ class TargetStateMachine:
         self.hold_x = 0.0
         self.hold_y = 0.0
 
+        # history_size here means something different from the old plain
+        # rolling-mean deque: it's now the size of the ACCEPTED-only (post
+        # jump-gate) sample window each color's _MarkerPositionFilter
+        # averages over. Kept as a constructor kwarg for call-site
+        # compatibility (no existing caller passes it explicitly).
         self.history_size = history_size
-        self.marker_history = {
-            "blue": deque(maxlen=history_size),
-            "green": deque(maxlen=history_size),
-            "red": deque(maxlen=history_size),
-            "yellow": deque(maxlen=history_size),
-            "black": deque(maxlen=history_size),
+        self.marker_filters = {
+            "blue": _MarkerPositionFilter(history_size=history_size),
+            "green": _MarkerPositionFilter(history_size=history_size),
+            "red": _MarkerPositionFilter(history_size=history_size),
+            "yellow": _MarkerPositionFilter(history_size=history_size),
+            "black": _MarkerPositionFilter(history_size=history_size),
         }
 
         self.auto_hold_tolerance_mm = 8.0
@@ -223,9 +345,14 @@ class TargetStateMachine:
     # Marker history / target resolution
     # -----------------------------------------------------------------
     def update_markers(self, marker_coords):
+        """Feed this frame's classifier-reported per-color positions into each
+        color's own _MarkerPositionFilter. A color absent from marker_coords
+        this frame is simply skipped -- not appended, not reset, not treated
+        as a rejection -- see _MarkerPositionFilter's docstring for why."""
         for name, coords in marker_coords.items():
-            if name in self.marker_history:
-                self.marker_history[name].append(coords)
+            filt = self.marker_filters.get(name)
+            if filt is not None:
+                filt.update(coords[0], coords[1])
 
     def get_target_coords(self, marker_coords=None):
         # Accept optional live marker coords for call-site compatibility.
@@ -237,12 +364,11 @@ class TargetStateMachine:
         if self.current_target_name == "hold":
             return self.hold_x, self.hold_y
 
-        # Target is a color. Use averaged history if we have any.
-        history = self.marker_history.get(self.current_target_name)
-        if history and len(history) > 0:
-            avg_x = sum(pt[0] for pt in history) / len(history)
-            avg_y = sum(pt[1] for pt in history) / len(history)
-            return avg_x, avg_y
+        # Target is a color. Use its jump-gated/seeded static-position
+        # estimate if one has been confirmed yet.
+        filt = self.marker_filters.get(self.current_target_name)
+        if filt is not None and filt.position is not None:
+            return filt.position
 
-        # No history for the target -> fall back to center.
+        # Not yet confirmed for this target -> fall back to center.
         return 0.0, 0.0

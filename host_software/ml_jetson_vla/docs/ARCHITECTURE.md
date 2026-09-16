@@ -165,12 +165,17 @@ available for testing.
 
 1. Get the lab partner's Qwen model/weights/access path (arm 2) — **now has a parallel,
    unblocked path**: Track 4 (`docs/LARGE_VLA_RESEARCH_SPIKE.md`, 2026-08-18, revised
-   2026-08-19) scopes an in-house large-VLA alternative instead of only waiting on this —
-   dual-rate architecture, outer tier = Jetson-PI/π0.5 fine-tuned on our own data (its
-   measured ~2.4Hz on Jetson Orin rules it out as the fast tier, so it's now scoped as the
-   slow grounding tier instead), inner tier = a fast custom action-expert, architecture
-   not yet designed. Concrete pipeline stages (data conversion to LeRobot format,
-   LoRA/Colab fine-tuning, GGUF export via Jetson-PI-Edge) are spelled out in that doc.
+   2026-08-19, revised again 2026-09-15) scopes an in-house large-VLA alternative instead
+   of only waiting on this. **Superseded 2026-09-15**: the dual-rate Jetson-PI/π0.5
+   outer-tier + custom-designed inner-tier split described here previously is no longer
+   the plan — action chunking (predicting a short sequence of future actions per
+   inference call, executed open-loop across several control ticks) already decouples
+   control rate from inference latency without a second custom model, so the current plan
+   is a single existing fine-tuned action-chunking VLA (SmolVLA, primary candidate) rather
+   than two tiers. See the research-spike doc's 2026-09-15 section for the full reasoning
+   and its own open verification item. Data conversion to LeRobot format is unaffected by
+   this change; LoRA/Colab fine-tuning and GGUF-via-Jetson-PI-Edge were Jetson-PI-specific
+   and no longer apply as written — see that doc.
 2. Get the optical computing platform's real interface spec before any FPGA bridge Verilog
    is written (arm 3).
 3. Arm 1's vision model choice (small vs. medium class) — pending the small class's

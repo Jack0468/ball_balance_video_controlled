@@ -65,6 +65,11 @@ from src.state_machine import TargetStateMachine
 from src.audio_receiver_onnx import AudioCommandReceiverONNX
 from src.touch_logger import TouchTelemetryLogger
 from host_software.ml_vision.core.keyboard_command_receiver import KeyboardCommandReceiver
+from host_software.ml_vision.core.scripted_command_sequencer import (
+    ScriptedCommandSequencer,
+    STANDARD_EVAL_SCHEDULE,
+    random_schedule,
+)
 
 from host_software.ml_vision.data_processing.auto_label_shared_vision import (
     build_paper_corners,
@@ -150,17 +155,29 @@ class JetsonExpertPolicy(Policy):
                  gate_ema_alpha: float, seed_window: int, seed_consistency_mm: float,
                  lost_frames: int, mask_threshold: float,
                  dummy_audio: bool = False, mic_device: Optional[str] = None,
-                 kalman: Optional[KalmanFilter2D] = None) -> None:
+                 kalman: Optional[KalmanFilter2D] = None,
+                 eval_sequence: bool = False,
+                 random_sequence: bool = False,
+                 random_sequence_duration: float = 200.0,
+                 random_sequence_min_interval: float = 3.0,
+                 random_sequence_max_interval: float = 20.0,
+                 random_sequence_seed: Optional[int] = None) -> None:
+        if eval_sequence and random_sequence:
+            raise ValueError(
+                "--eval-sequence and --random-sequence are mutually exclusive -- both "
+                "are scripted command sources, pick one."
+            )
         cnn_path = os.path.abspath(
             os.path.join(script_dir, "ml_vision/models/shared_vision_backbone_v2/shared_vision_backbone_best.onnx")
         )
         if not os.path.exists(cnn_path):
             raise FileNotFoundError(f"ONNX vision model not found at {cnn_path}")
 
-        # Matches main_onnx_shared_vision_audio.py's --dummy-audio pattern exactly (same
-        # flag name, same KeyboardCommandReceiver swap) -- the audio ONNX file is only
-        # required to exist when it's actually going to be loaded.
-        if not dummy_audio:
+        # Matches main_onnx_shared_vision_audio.py's --dummy-audio/--scripted-sequence
+        # precedence pattern (same KeyboardCommandReceiver/ScriptedCommandSequencer
+        # swaps) -- the audio ONNX file is only required to exist when it's actually
+        # going to be loaded, i.e. neither of the no-audio-model modes is active.
+        if not dummy_audio and not eval_sequence and not random_sequence:
             audio_path = os.path.abspath(
                 os.path.join(script_dir, "ml_audio/models/audio_command_classifier_v3.onnx")
             )
@@ -174,7 +191,25 @@ class JetsonExpertPolicy(Policy):
         self.cnn_session = ort.InferenceSession(cnn_path, sess_options=cnn_opts, providers=["CPUExecutionProvider"])
         self.cnn_input_name = self.cnn_session.get_inputs()[0].name
 
-        if dummy_audio:
+        if eval_sequence:
+            # docs/EVALUATION_STRATEGY.md's Standardized Evaluation Sequence -- takes
+            # precedence over --dummy-audio (matching the laptop's own
+            # scripted-sequence-first precedence), since a scripted comparison run and
+            # manual keyboard testing are mutually exclusive use cases.
+            self.audio_receiver = ScriptedCommandSequencer(schedule=STANDARD_EVAL_SCHEDULE)
+        elif random_sequence:
+            # Track 4 unattended data-collection smoke test -- same precedence tier as
+            # eval_sequence (both are scripted sources, ahead of --dummy-audio), mutually
+            # exclusive with eval_sequence (checked above).
+            self.audio_receiver = ScriptedCommandSequencer(
+                schedule=random_schedule(
+                    total_duration_s=random_sequence_duration,
+                    min_interval_s=random_sequence_min_interval,
+                    max_interval_s=random_sequence_max_interval,
+                    seed=random_sequence_seed,
+                )
+            )
+        elif dummy_audio:
             self.audio_receiver = KeyboardCommandReceiver()
         else:
             self.audio_receiver = AudioCommandReceiverONNX(audio_path, mic_device=mic_device)
@@ -305,6 +340,51 @@ def main() -> None:
              "as a separate step, not blocking this.",
     )
     parser.add_argument(
+        "--eval-sequence", action="store_true",
+        help="Run docs/EVALUATION_STRATEGY.md's Standardized Evaluation Sequence "
+             "(ScriptedCommandSequencer + STANDARD_EVAL_SCHEDULE) instead of live audio "
+             "or keyboard input -- the reproducible, timed 10-command comparison protocol "
+             "for the PID/Expert-Vision-RL/VLA arms. Takes precedence over --dummy-audio. "
+             "Combine with --log-csv (on by default) to actually collect the comparison "
+             "data; --kalman/--kalman-params recommended for consistency with other runs.",
+    )
+    parser.add_argument(
+        "--random-sequence", action="store_true",
+        help="Run a randomized command schedule (ScriptedCommandSequencer + "
+             "random_schedule()) instead of live audio or keyboard input -- for "
+             "unattended Track 4 data-collection smoke tests: randomly-ordered "
+             "commands (no immediate repeats) over a fixed total session duration, "
+             "each held a randomized gap (see --random-sequence-min-interval/"
+             "--random-sequence-max-interval), drawn from the confirmed active "
+             "vocabulary. Command count is a consequence of the random gaps, not a "
+             "fixed input. Same precedence tier as --eval-sequence (both are "
+             "scripted sources, ahead of --dummy-audio); mutually exclusive with "
+             "--eval-sequence. Combine with --record-track4-session to actually "
+             "capture the run.",
+    )
+    parser.add_argument(
+        "--random-sequence-duration", type=float, default=200.0,
+        help="Total session duration in seconds for the --random-sequence schedule "
+             "(default: 200.0). The last command fires somewhere before this, never "
+             "at or past it.",
+    )
+    parser.add_argument(
+        "--random-sequence-min-interval", type=float, default=3.0,
+        help="Minimum randomized gap in seconds between consecutive commands in the "
+             "--random-sequence schedule (default: 3.0).",
+    )
+    parser.add_argument(
+        "--random-sequence-max-interval", type=float, default=20.0,
+        help="Maximum randomized gap in seconds between consecutive commands in the "
+             "--random-sequence schedule (default: 20.0, exclusive upper bound).",
+    )
+    parser.add_argument(
+        "--random-sequence-seed", type=int, default=None,
+        help="Optional seed for the --random-sequence schedule, to reproduce a specific "
+             "problematic session later. Uses a local random.Random instance -- global "
+             "random state is untouched. Default: unseeded (a different sequence each run).",
+    )
+    parser.add_argument(
         "--mic-device", type=str, default="JBCW036",
         help="Substring to match the mic's input device name (default: JBCW036, the "
              "USB camera's built-in mic). Confirmed 2026-09-15: sounddevice has no "
@@ -358,6 +438,12 @@ def main() -> None:
         dummy_audio=args.dummy_audio,
         mic_device=args.mic_device,
         kalman=kalman,
+        eval_sequence=args.eval_sequence,
+        random_sequence=args.random_sequence,
+        random_sequence_duration=args.random_sequence_duration,
+        random_sequence_min_interval=args.random_sequence_min_interval,
+        random_sequence_max_interval=args.random_sequence_max_interval,
+        random_sequence_seed=args.random_sequence_seed,
     )
 
     try:
@@ -443,6 +529,19 @@ def main() -> None:
             if command:
                 last_audio_command = command
             cmd_out = policy.act(frame, command, state={})
+
+            if (
+                policy.last_debug.get("gate_reason") == "seeded"
+                and isinstance(policy.audio_receiver, ScriptedCommandSequencer)
+            ):
+                # PredictionGate's AWAITING_BALL -> TRACKING transition (see
+                # main_onnx_shared_vision_audio.py's PredictionGate._handle_awaiting) --
+                # fires exactly once per run, the first frame the ball is confirmed. This
+                # is what --eval-sequence/--scripted-sequence should treat as "the
+                # platform is ready," not construction time, so the schedule's clock
+                # doesn't burn real time on camera warm-up / no-ball waiting. Safe to
+                # call every frame after that too -- begin() is idempotent.
+                policy.audio_receiver.begin()
 
             if cmd_out is None:
                 if command:
@@ -550,7 +649,16 @@ def main() -> None:
             session_recorder.stop()
         if ser:
             ser.close()
-        cv2.destroyAllWindows()
+        if not args.headless:
+            # Confirmed 2026-09-15: some Jetson OpenCV builds (this one drifted from the
+            # earlier-verified apt python3-opencv 4.5.4 to a pip-style 4.12.0 with no GTK
+            # backend at all) raise "function is not implemented" even on
+            # destroyAllWindows() -- not just imshow(). Since --headless never calls
+            # imshow() in the first place, there are no windows to destroy either; gate
+            # this the same way so a correctly-headless run can't crash in cleanup on a
+            # GUI-less build. Non-headless use on such a build still fails at imshow()
+            # itself, which is the right place for that failure, not here.
+            cv2.destroyAllWindows()
         print("Jetson standalone loop stopped.")
 
 

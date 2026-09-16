@@ -65,6 +65,11 @@ from src.state_machine import TargetStateMachine
 from src.audio_receiver_onnx import AudioCommandReceiverONNX
 from src.touch_logger import TouchTelemetryLogger
 from host_software.ml_vision.core.keyboard_command_receiver import KeyboardCommandReceiver
+from host_software.ml_vision.core.scripted_command_sequencer import (
+    ScriptedCommandSequencer,
+    STANDARD_EVAL_SCHEDULE,
+    random_schedule,
+)
 
 from host_software.ml_vision.data_processing.auto_label_shared_vision import (
     build_paper_corners,
@@ -91,6 +96,8 @@ from main_onnx_shared_vision_audio import (
 
 from ml_jetson_vla.core.policy_interface import Policy, PolicyCommand
 from ml_jetson_vla.core.control_net import ControlNet
+from ml_jetson_vla.runtime.motor_geometry import steps_to_angle
+from ml_jetson_vla.runtime.session_recorder import SessionRecorder, SessionTouchTap
 
 # --- Configuration ---
 # Laptop default was "COM7". No physical default tty is more "correct" than another on
@@ -148,17 +155,29 @@ class JetsonExpertPolicy(Policy):
                  gate_ema_alpha: float, seed_window: int, seed_consistency_mm: float,
                  lost_frames: int, mask_threshold: float,
                  dummy_audio: bool = False, mic_device: Optional[str] = None,
-                 kalman: Optional[KalmanFilter2D] = None) -> None:
+                 kalman: Optional[KalmanFilter2D] = None,
+                 eval_sequence: bool = False,
+                 random_sequence: bool = False,
+                 random_sequence_duration: float = 200.0,
+                 random_sequence_min_interval: float = 3.0,
+                 random_sequence_max_interval: float = 20.0,
+                 random_sequence_seed: Optional[int] = None) -> None:
+        if eval_sequence and random_sequence:
+            raise ValueError(
+                "--eval-sequence and --random-sequence are mutually exclusive -- both "
+                "are scripted command sources, pick one."
+            )
         cnn_path = os.path.abspath(
             os.path.join(script_dir, "ml_vision/models/shared_vision_backbone_v2/shared_vision_backbone_best.onnx")
         )
         if not os.path.exists(cnn_path):
             raise FileNotFoundError(f"ONNX vision model not found at {cnn_path}")
 
-        # Matches main_onnx_shared_vision_audio.py's --dummy-audio pattern exactly (same
-        # flag name, same KeyboardCommandReceiver swap) -- the audio ONNX file is only
-        # required to exist when it's actually going to be loaded.
-        if not dummy_audio:
+        # Matches main_onnx_shared_vision_audio.py's --dummy-audio/--scripted-sequence
+        # precedence pattern (same KeyboardCommandReceiver/ScriptedCommandSequencer
+        # swaps) -- the audio ONNX file is only required to exist when it's actually
+        # going to be loaded, i.e. neither of the no-audio-model modes is active.
+        if not dummy_audio and not eval_sequence and not random_sequence:
             audio_path = os.path.abspath(
                 os.path.join(script_dir, "ml_audio/models/audio_command_classifier_v3.onnx")
             )
@@ -172,7 +191,25 @@ class JetsonExpertPolicy(Policy):
         self.cnn_session = ort.InferenceSession(cnn_path, sess_options=cnn_opts, providers=["CPUExecutionProvider"])
         self.cnn_input_name = self.cnn_session.get_inputs()[0].name
 
-        if dummy_audio:
+        if eval_sequence:
+            # docs/EVALUATION_STRATEGY.md's Standardized Evaluation Sequence -- takes
+            # precedence over --dummy-audio (matching the laptop's own
+            # scripted-sequence-first precedence), since a scripted comparison run and
+            # manual keyboard testing are mutually exclusive use cases.
+            self.audio_receiver = ScriptedCommandSequencer(schedule=STANDARD_EVAL_SCHEDULE)
+        elif random_sequence:
+            # Track 4 unattended data-collection smoke test -- same precedence tier as
+            # eval_sequence (both are scripted sources, ahead of --dummy-audio), mutually
+            # exclusive with eval_sequence (checked above).
+            self.audio_receiver = ScriptedCommandSequencer(
+                schedule=random_schedule(
+                    total_duration_s=random_sequence_duration,
+                    min_interval_s=random_sequence_min_interval,
+                    max_interval_s=random_sequence_max_interval,
+                    seed=random_sequence_seed,
+                )
+            )
+        elif dummy_audio:
             self.audio_receiver = KeyboardCommandReceiver()
         else:
             self.audio_receiver = AudioCommandReceiverONNX(audio_path, mic_device=mic_device)
@@ -280,6 +317,18 @@ def main() -> None:
     parser.add_argument("--log-csv", type=str, default="auto", help="Ground-truth telemetry CSV via TouchTelemetryLogger/TouchProbe.cpp's existing 'T,...' uplink (confirmed live on this firmware 2026-09-15, no firmware change needed): 'auto' (timestamped file in data/01_bronze/evaluation/), 'off' (disable persistence -- the serial I/O thread still runs), or an explicit path. Only active when NOT --remote-control (Phase B's TelemetryReader already owns reading this same serial handle -- see module docstring).")
     parser.add_argument("--quiet-mcu", action="store_true", help="Suppress TouchTelemetryLogger's per-line MCU status printing")
     parser.add_argument(
+        "--record-track4-session", action="store_true",
+        help="Also write a session-structured Track 4 bronze capture "
+             "(data/01_bronze/session_jetson_track4_<timestamp>/{telemetry.csv,rgb_video.mp4}), "
+             "picked up by ml_multimodal/data_processing/generate_vla_dataset.py's "
+             "existing session_* glob and by this directory's own "
+             "data_processing/convert_to_lerobot.py. Requires a live serial connection "
+             "and Phase A (--remote-control not set), since it taps the same 'T,...' "
+             "uplink TouchTelemetryLogger already reads (see session_recorder.py's "
+             "SessionTouchTap) rather than opening a second serial reader. Independent "
+             "of --log-csv, which still controls the separate evaluation ground-truth CSV.",
+    )
+    parser.add_argument(
         "--dummy-audio", action="store_true",
         help="Use typed keyboard commands instead of the trained audio model -- for "
              "testing state-machine/target-switching without a working mic (temporary "
@@ -289,6 +338,51 @@ def main() -> None:
              "NeMo-finetuned model, still exploratory as of 2026-09-15 -- see "
              "ml_audio/docs/plans/audio_eval_notebook_refactor_plan.md) gets added back "
              "as a separate step, not blocking this.",
+    )
+    parser.add_argument(
+        "--eval-sequence", action="store_true",
+        help="Run docs/EVALUATION_STRATEGY.md's Standardized Evaluation Sequence "
+             "(ScriptedCommandSequencer + STANDARD_EVAL_SCHEDULE) instead of live audio "
+             "or keyboard input -- the reproducible, timed 10-command comparison protocol "
+             "for the PID/Expert-Vision-RL/VLA arms. Takes precedence over --dummy-audio. "
+             "Combine with --log-csv (on by default) to actually collect the comparison "
+             "data; --kalman/--kalman-params recommended for consistency with other runs.",
+    )
+    parser.add_argument(
+        "--random-sequence", action="store_true",
+        help="Run a randomized command schedule (ScriptedCommandSequencer + "
+             "random_schedule()) instead of live audio or keyboard input -- for "
+             "unattended Track 4 data-collection smoke tests: randomly-ordered "
+             "commands (no immediate repeats) over a fixed total session duration, "
+             "each held a randomized gap (see --random-sequence-min-interval/"
+             "--random-sequence-max-interval), drawn from the confirmed active "
+             "vocabulary. Command count is a consequence of the random gaps, not a "
+             "fixed input. Same precedence tier as --eval-sequence (both are "
+             "scripted sources, ahead of --dummy-audio); mutually exclusive with "
+             "--eval-sequence. Combine with --record-track4-session to actually "
+             "capture the run.",
+    )
+    parser.add_argument(
+        "--random-sequence-duration", type=float, default=200.0,
+        help="Total session duration in seconds for the --random-sequence schedule "
+             "(default: 200.0). The last command fires somewhere before this, never "
+             "at or past it.",
+    )
+    parser.add_argument(
+        "--random-sequence-min-interval", type=float, default=3.0,
+        help="Minimum randomized gap in seconds between consecutive commands in the "
+             "--random-sequence schedule (default: 3.0).",
+    )
+    parser.add_argument(
+        "--random-sequence-max-interval", type=float, default=20.0,
+        help="Maximum randomized gap in seconds between consecutive commands in the "
+             "--random-sequence schedule (default: 20.0, exclusive upper bound).",
+    )
+    parser.add_argument(
+        "--random-sequence-seed", type=int, default=None,
+        help="Optional seed for the --random-sequence schedule, to reproduce a specific "
+             "problematic session later. Uses a local random.Random instance -- global "
+             "random state is untouched. Default: unseeded (a different sequence each run).",
     )
     parser.add_argument(
         "--mic-device", type=str, default="JBCW036",
@@ -344,6 +438,12 @@ def main() -> None:
         dummy_audio=args.dummy_audio,
         mic_device=args.mic_device,
         kalman=kalman,
+        eval_sequence=args.eval_sequence,
+        random_sequence=args.random_sequence,
+        random_sequence_duration=args.random_sequence_duration,
+        random_sequence_min_interval=args.random_sequence_min_interval,
+        random_sequence_max_interval=args.random_sequence_max_interval,
+        random_sequence_seed=args.random_sequence_seed,
     )
 
     try:
@@ -361,6 +461,7 @@ def main() -> None:
     # confirmed live on real hardware 2026-09-15 -- this was simply never wired up on the
     # Jetson side before now. No firmware change needed.
     touch_logger = None
+    session_recorder = None
     if ser is not None and not args.remote_control:
         csv_path = None
         if args.log_csv != "off":
@@ -369,8 +470,21 @@ def main() -> None:
                 csv_path = os.path.join(_HOST_SOFTWARE_DIR, "data", "01_bronze", "evaluation", f"ground_truth_jetson_{stamp}.csv")
             else:
                 csv_path = args.log_csv
-        touch_logger = TouchTelemetryLogger(ser, csv_path, print_status_lines=not args.quiet_mcu)
+        # SessionTouchTap is a drop-in TouchTelemetryLogger subclass (same constructor,
+        # same CSV/thread behavior) that additionally caches the latest touch/motor
+        # reading for --record-track4-session -- see session_recorder.py's docstring for
+        # why this is a subclass on the SAME worker thread rather than a second reader.
+        logger_cls = SessionTouchTap if args.record_track4_session else TouchTelemetryLogger
+        touch_logger = logger_cls(ser, csv_path, print_status_lines=not args.quiet_mcu)
         touch_logger.start()
+        if args.record_track4_session:
+            bronze_root = os.path.join(_HOST_SOFTWARE_DIR, "data", "01_bronze")
+            session_recorder = SessionRecorder(bronze_root, fps=30.0)
+    elif args.record_track4_session:
+        print(
+            "[track4-session] --record-track4-session requires a live serial connection "
+            "and Phase A (not --remote-control) -- session recording disabled for this run."
+        )
 
     control_net = None
     telemetry = None
@@ -399,6 +513,7 @@ def main() -> None:
     last_status_t = 0.0
     last_frame_t = None  # for --remote-control's actual_dt; None until the first successful frame
     seq = 0
+    last_audio_command: Optional[str] = None  # persists across frames like target_x/y already does
 
     try:
         while True:
@@ -411,7 +526,22 @@ def main() -> None:
                 telemetry.poll(ser)  # drain any T,... lines that arrived since the last frame
 
             command = policy.audio_receiver.get_latest_command()
+            if command:
+                last_audio_command = command
             cmd_out = policy.act(frame, command, state={})
+
+            if (
+                policy.last_debug.get("gate_reason") == "seeded"
+                and isinstance(policy.audio_receiver, ScriptedCommandSequencer)
+            ):
+                # PredictionGate's AWAITING_BALL -> TRACKING transition (see
+                # main_onnx_shared_vision_audio.py's PredictionGate._handle_awaiting) --
+                # fires exactly once per run, the first frame the ball is confirmed. This
+                # is what --eval-sequence/--scripted-sequence should treat as "the
+                # platform is ready," not construction time, so the schedule's clock
+                # doesn't burn real time on camera warm-up / no-ball waiting. Safe to
+                # call every frame after that too -- begin() is idempotent.
+                policy.audio_receiver.begin()
 
             if cmd_out is None:
                 if command:
@@ -422,6 +552,36 @@ def main() -> None:
 
             try:
                 bx, by = policy.last_debug["ball_xy_mm"]
+
+                if session_recorder is not None:
+                    # SessionTouchTap.get_latest_touch() is a best-effort, non-blocking
+                    # snapshot -- the 'T,...' uplink runs at its own ~25Hz cadence,
+                    # independent of this loop's rate, so it may lag or (early in a run)
+                    # be None. theta_a/b/c come from the same motor_geometry.py port
+                    # used nowhere in the control path -- see its docstring for why no
+                    # origin-offset subtraction is needed here.
+                    touch_snapshot = (
+                        touch_logger.get_latest_touch()
+                        if isinstance(touch_logger, SessionTouchTap)
+                        else None
+                    )
+                    if touch_snapshot is not None:
+                        t_x, t_y = touch_snapshot["touch_x"], touch_snapshot["touch_y"]
+                        theta_a = steps_to_angle(touch_snapshot["motor_a"])
+                        theta_b = steps_to_angle(touch_snapshot["motor_b"])
+                        theta_c = steps_to_angle(touch_snapshot["motor_c"])
+                    else:
+                        t_x = t_y = theta_a = theta_b = theta_c = None
+                    session_recorder.log(
+                        frame,
+                        int(time.time() * 1000),
+                        cmd_out.target_x_mm,
+                        cmd_out.target_y_mm,
+                        t_x, t_y,
+                        theta_a, theta_b, theta_c,
+                        last_audio_command,
+                    )
+
                 if args.remote_control:
                     # actual_dt: real measured time since the last control cycle, not a
                     # fixed constant -- this is the whole point of Phase B (see
@@ -485,9 +645,20 @@ def main() -> None:
         policy.audio_receiver.stop()
         if touch_logger is not None:
             touch_logger.stop()
+        if session_recorder is not None:
+            session_recorder.stop()
         if ser:
             ser.close()
-        cv2.destroyAllWindows()
+        if not args.headless:
+            # Confirmed 2026-09-15: some Jetson OpenCV builds (this one drifted from the
+            # earlier-verified apt python3-opencv 4.5.4 to a pip-style 4.12.0 with no GTK
+            # backend at all) raise "function is not implemented" even on
+            # destroyAllWindows() -- not just imshow(). Since --headless never calls
+            # imshow() in the first place, there are no windows to destroy either; gate
+            # this the same way so a correctly-headless run can't crash in cleanup on a
+            # GUI-less build. Non-headless use on such a build still fails at imshow()
+            # itself, which is the right place for that failure, not here.
+            cv2.destroyAllWindows()
         print("Jetson standalone loop stopped.")
 
 

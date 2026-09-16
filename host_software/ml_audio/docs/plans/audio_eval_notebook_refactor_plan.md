@@ -489,6 +489,82 @@ Ran the sweep this section called for: `3x1x64` seed4 + seed59 (bringing that va
 
 **Interim hardware recommendation is unchanged: still the NeMo `3x1x64` track (best live-stream ceiling of 9/11 at seed0, best confirmed offline accuracy), not `3x2x64`** -- the larger variant has produced no seed that beats `3x1x64`'s best, at ~20% more parameters for no measured benefit. `3x2x64` checkpoints are kept for reference, not recommended for further tuning effort ahead of `3x1x64`.
 
+## Production Integration Check (2026-09-15): NOT a Drop-In ONNX Swap -- Caught Before It Shipped
+
+The user asked for this NeMo checkpoint to be integrated as the production audio classifier in `main_onnx_shared_vision_audio.py`, on the reasonable belief that it "now outperforms" what's currently deployed. Checked what's actually there before touching anything, per this plan's own standing discipline -- and found a real incompatibility that would have made "just point it at the new .onnx file" a broken deployment, not a working upgrade.
+
+**Two separate findings, both confirmed by reading the actual code/config, not assumed:**
+
+1. **Every NeMo live-stream number on record in this plan (9/11, 7-9/10, all the seed0-59/3x2x64 tables above) was measured through the full NeMo/PyTorch runtime, not the ONNX export.** [`evaluations/nemo_live_receiver.py`](../../evaluations/nemo_live_receiver.py)'s `_process_loop` calls `self.model(input_signal=audio_t, ...)` directly -- the loaded `EncDecClassificationModel` object, preprocessor included. Phase 0's ONNX verification (`colab_nemo_phase0_verification.ipynb`) only checked PyTorch-vs-ONNX numerical equivalence on one static dummy clip with precomputed features fed to both paths -- nobody has built or run a lean, ONNX-only NeMo receiver in a live/streaming setting. The "NeMo beats the current production model" comparison is real and well-supported, but it's a comparison against the *PyTorch* NeMo model, not (yet) against anything that could actually ship through the project's ONNX-first deployment convention.
+
+2. **The production receiver's feature extraction is architecture-specific and does not match NeMo's at all.** [`src/audio_receiver_onnx.py`](../../../src/audio_receiver_onnx.py)'s `waveform_to_spectrogram_np` computes a 255-point STFT (hop 128, no mel filterbank) matching the custom CNN's ONNX contract exactly -- confirmed against the model's actual pretrained-checkpoint config (`model.cfg.preprocessor`), NeMo instead uses `AudioToMFCCPreprocessor` (25ms window / 10ms stride, 512-point FFT, 64 mel bins, 64 MFCCs) -- a completely different transform, different bin count (64 vs. 128), different framing. Pointing `AudioCommandReceiverONNX` at a NeMo `.onnx` file without also swapping its feature-extraction function would fail loudly (ONNX Runtime shape-checks the declared `(batch, 64, time)` input against whatever `waveform_to_spectrogram_np` actually produces) rather than silently -- which is the safer of the two possible failure modes, but a naive fix that just reshapes/resizes the STFT output to force the shape to match, instead of computing real MFCC features, would fail silently with garbage predictions. Neither should happen without the work below.
+
+**Also found, unrelated to the above but worth flagging separately:** current production (`main_onnx_shared_vision_audio.py`) is still pointed at `audio_command_classifier_v3.onnx` -- the *original* pre-quarantine, pre-retrain checkpoint (86.3% offline, 4/11 live-stream from the Stage 2 measurement), not even v4 (this plan's own interim custom-CNN recommendation, 6/11). So today's actual baseline for "does NeMo outperform production" is v3, not v4 -- NeMo clearly does either way, but the comparison the user had in mind may have assumed v4 was already deployed.
+
+**Not fixed here -- this needs a real decision, not a unilateral pick, since it changes the live control loop's dependency footprint either way:**
+- **Option A: build a lean, ONNX-only NeMo receiver** (`AudioToMFCCPreprocessor`-equivalent feature extraction in numpy/scipy, no NeMo/PyTorch dependency at inference time -- same shape of work as `audio_dsp.py` for the custom CNN), then numerically verify it against NeMo's own preprocessor output before trusting any prediction from it (same "verify before trusting" step Phase 0 already did once for PyTorch-vs-ONNX, needed again here for hand-rolled-MFCC-vs-NeMo's-MFCC). Matches this project's stated ONNX-first deployment convention (`CLAUDE.md`) and the Jetson TensorRT plan. Real, scoped new engineering -- not a config change.
+- **Option B: deploy the full NeMo/PyTorch runtime in production instead of ONNX.** Far less new code, but adds `nemo_toolkit[asr]` + `torch` to the main pipeline's dependency footprint (currently just `onnxruntime` + `sounddevice` for audio) and needs a real latency check against `CLAUDE.md`'s non-blocking-inference rule before trusting it on the host PC or Jetson CPU path -- untested either way.
+
+Routed back to the user/orchestrating session for this decision rather than picked unilaterally. `main_onnx_shared_vision_audio.py` was not modified.
+
+## First NOISE_MIX Data Point (2026-09-15) -- Inconclusive, from Half-Trained Checkpoints
+
+Two Colab sessions ran `NOISE_MIX = True` (seed0, seed1) but disconnected before reaching the notebook's own offline-eval/export cells -- only a Lightning `ModelCheckpoint` `.ckpt` survived for each (`models/checkpoints_3x1x64_noisemix_seed{0,1}/`), seed0 at epoch 16 (best `val_acc_micro_top_1` 0.9575), seed1 at epoch 7 (0.9481) -- neither ran to early-stopping completion, so "half-trained" is accurate, not just cautious phrasing.
+
+Built [`evaluations/evaluate_nemo_checkpoint.py`](../../evaluations/evaluate_nemo_checkpoint.py) rather than re-running Colab from scratch -- loads a raw `.ckpt` (or a `.nemo`) locally, reuses the exact offline confusion-matrix logic and `.nemo`/`.onnx` export the notebook's own cells already contain, so a disconnected Colab session's checkpoint doesn't need a full re-run just to get a first read. Exported into `models/nemo_matchboxnet_3x1x64_noisemix_seed{0,1}/`, matching the `RUN_TAG`-based naming convention.
+
+**Offline: both seeds show 100% `backward` recall -- but that number is meaningless for this question, not a win.** The *base* (non-noisemix) 3x1x64 model already hit 100% `backward` recall offline (see the Phase 1 per-class table above) -- `backward`'s failure was never visible in isolated-clip offline eval to begin with; it only shows up in the live-stream test's continuous-noise condition (diagnosed via `nemo_stream_probe.py` as noise-masking). Offline accuracy otherwise: seed0 95.75% (2344/2448), seed1 94.81% (2321/2448) -- both within the established seed-noise band, nothing unusual.
+
+**Live-stream (the test that actually matters here):**
+
+| t | expected | seed0 (epoch 16) | seed1 (epoch 7) |
+|---|---|---|---|
+| 10s | go_blue | OK | OK |
+| 20s | go_green | MISS | MISS |
+| 30s | go_yellow | OK | OK |
+| 40s | go_red | OK | OK |
+| 50s | forward | OK | OK |
+| 60s | left | **MISS** | OK |
+| 70s | right | OK | OK |
+| 80s | backward | **MISS** | **MISS** |
+| 90s | hold | OK | OK |
+| 100s | stop | OK | OK |
+| **Total** | | **7/10** | **8/10** |
+
+Reports: [`evaluations/reports/live_stream_eval_20260915T094149Z.json`](../../evaluations/reports/live_stream_eval_20260915T094149Z.json) (seed0), [`evaluations/reports/live_stream_eval_20260915T094326Z.json`](../../evaluations/reports/live_stream_eval_20260915T094326Z.json) (seed1).
+
+**Read this as a non-result, not a hint of one.** `backward` missed in *both* seeds -- `NOISE_MIX` has not yet produced a single correct live-stream `backward` detection anywhere. (An earlier draft of this section briefly and wrongly said seed1 got `backward` right, written before that run's actual output had come back -- caught and corrected before anyone acted on it, not after.) `go_green` is unchanged (MISS both seeds, as predicted -- `NOISE_MIX` targets noise-masking, not the acoustic near-homophone problem). `left` missing at seed0 only is new and unexplained; could be noise, could be a real side effect of adding the noise perturbation -- one seed can't tell the difference, same lesson this plan has re-learned every time it looked at n<5. **No sign yet that `NOISE_MIX` is fixing what it was built to fix**, though neither run finished training (early stopping never triggered on either) -- worth letting both seeds actually finish (resume from these checkpoints or re-run) before concluding it doesn't work, since a half-trained checkpoint underselling itself is at least as plausible as the fix being ineffective.
+
+## Production Integration, Option B Chosen (2026-09-15/16): New Entry Point Built and Wired Up
+
+Per the user's explicit instruction, went with **Option B** from "Production Integration Check" above (full NeMo/PyTorch runtime) rather than building the ONNX-only MFCC reimplementation -- a real, informed choice, not a default. [`host_software/main_onnx_shared_vision_nemo_audio.py`](../../../main_onnx_shared_vision_nemo_audio.py) is a new, separate entry point (not a flag added to `main_onnx_shared_vision_audio.py`, which another session had in flight at the time) -- vision-side code (`PredictionGate`, `preprocess_warped`, `px_to_touch_mm`, `sigmoid`, constants) is imported from that file unchanged, not duplicated; only STAGE 6's audio backend differs (`NemoAudioCommandReceiver` in place of `AudioCommandReceiverONNX`).
+
+**`NemoAudioCommandReceiver` gained live-microphone support** ([`evaluations/nemo_live_receiver.py`](../../evaluations/nemo_live_receiver.py)) -- it previously only supported file-stream playback (`NotImplementedError` on mic use). Mirrors `AudioCommandReceiverONNX`'s `sounddevice.InputStream` pattern exactly (device lookup by name/index, `stop()` now also closes the stream). **Regression-checked before trusting it**: re-ran the file-stream live-stream eval against the known-good `nemo_matchboxnet_v1` checkpoint before and after this change -- bit-for-bit identical result (8/10, same two misses) both times.
+
+**Real dependency-footprint consequence, checked, not assumed away:** installing `nemo_toolkit[asr]` into `ball_balance_env` (the project's standard interpreter, previously only verified in an isolated `nemo_local` conda env) triggered real pip dependency-resolver conflicts -- `protobuf` (6.33.6 vs. `google-ai-generativelanguage`/`grpcio-status`'s `<6.0` requirement), `huggingface_hub` (1.31.0 vs. `lerobot==0.4.4`'s `<0.36.0` requirement), `numpy` (2.2.6 vs. `openvino`'s `<2.2.0` requirement), `fsspec` (downgraded to 2025.12.0 vs. `s3fs`'s `>=2026.6.0` requirement -- `s3fs` backs DVC's S3/MinIO remote). **Checked each rather than trusting pip's warning or assuming it away:** `google.genai`, `lerobot`, `openvino`, `s3fs`, and `dvc` all still import cleanly; `dvc remote list` still correctly resolves the `homeserver` remote. Not an exhaustive functional test of each (no actual Gemini API call, LeRobot conversion, or DVC push/pull round-trip attempted) -- worth watching for if anything downstream of those starts behaving oddly, but no breakage found. Added `nemo_toolkit[asr]` to `environment.yml`/`requirements.txt` per `CLAUDE.md` convention.
+
+**Full end-to-end verification in `ball_balance_env` itself** (not just `nemo_local`): re-ran the file-stream live-stream eval one more time through the newly-installed `ball_balance_env` interpreter -- identical 8/10 result, confirming no numerical drift between environments.
+
+**What's still explicitly NOT verified, and can't be from this session** (per this session's standing scope -- audio/vision development, not physical hardware): an actual live microphone, or the real robot end-to-end. `main_onnx_shared_vision_nemo_audio.py --dummy-audio` and `--scripted-sequence` paths are confirmed working (exercise the same vision/state-machine code as the existing entry point); the real NeMo mic path needs verification on the user's own machine.
+
+**The default checkpoint wired into the new entry point is the preliminary, half-trained `NOISE_MIX` seed0 checkpoint from the section above** (per explicit instruction, for integration-testing purposes) -- not the plan's actually-recommended checkpoint (`models/nemo_matchboxnet_v1/matchboxnet_finetuned.nemo`, 9/11 live-stream, no known regressions). Pass `--audio-model` to use that instead once a validated accuracy number (not a plumbing check) is what's needed.
+
+## Colab Data Flow: DVC Revert Was Intentional (2026-09-17)
+
+Noticed `colab_nemo_finetune.ipynb`'s `git clone` + Tailscale + `dvc pull` restructure (see "Production Integration Check" era of this doc) and the checkpoint `dvc push` cell were both missing from the notebook's current committed state, and flagged it as a possible accidental revert before touching anything else. **Confirmed intentional, not accidental:** the user reverted to the `prepare_colab_package.py` zip/Drive flow because DVC-over-Tailscale was more friction than it was worth specifically inside Colab's environment -- the zip flow is the one to build on going forward for this notebook, not something to "fix" back. Noted here so this doesn't get rediscovered and re-flagged as a regression later.
+
+## Colab Reconnect Support Added (2026-09-17)
+
+Confirmed via direct code inspection that this notebook had **no resume support at all** -- `trainer.fit(model)` was called with no `ckpt_path`, and `model` was always freshly built via `from_pretrained()` + `change_labels()` at the top of the notebook. A Colab disconnect meant the next run silently re-fine-tuned from the original pretrained checkpoint from scratch, with no error or warning that this had happened. This is the confirmed root cause behind the `NOISE_MIX` seed0/seed1 checkpoints in "First NOISE_MIX Data Point" above being permanently stuck half-trained -- there was no way to continue them, only to evaluate them as-is via a separate local script.
+
+**Fix, per the new `model-iteration-constraints` item ("every cloud/Colab training notebook needs reconnect support"):**
+- `ModelCheckpoint` now has `save_last=True` alongside the existing `save_top_k=1` -- writes `CHECKPOINT_DIR/last.ckpt` on every epoch end, capturing full trainer state (epoch count, optimizer/scheduler state, and `EarlyStopping`'s own patience counter, since callback states are checkpointed too), not just the best-scoring weights.
+- New `RESUME_IF_AVAILABLE` toggle (default `True`) in the `SEED`/`MODEL_VARIANT`/`NOISE_MIX` config cell. When a `last.ckpt` already exists at this exact run's `CHECKPOINT_DIR` (i.e. the same `SEED`/`MODEL_VARIANT`/`NOISE_MIX` combination), `trainer.fit()` resumes from it instead of starting fresh. Set to `False` to force a fresh run -- resuming into a run whose config has since changed would silently mix two experiments' worth of training into one checkpoint.
+
+**Verified locally before trusting it, not assumed from the Lightning docs alone:** built a fresh model object (`from_pretrained()` + `change_labels()`, same as the notebook does every run -- not a reload from the checkpoint directly, since the real question is whether `ckpt_path=` correctly restores state on top of a newly-constructed model), ran 2 epochs, confirmed `last.ckpt` was written, then in a **separate** process rebuilt the model fresh again and called `trainer.fit(model, ckpt_path=last.ckpt)` with `max_epochs=4`. Lightning logged `Restoring states from the checkpoint path` / `Restored all states from the checkpoint`, and training continued to `current_epoch=4` (global_step 36) rather than restarting at epoch 0 and redoing epochs 0-1 -- confirms resume genuinely continues training rather than merely reloading weights.
+
+**Not retroactive:** the existing `NOISE_MIX` seed0/seed1 checkpoints predate `save_last=True` and have no `last.ckpt` to resume from -- they remain stuck as evaluated via `evaluate_nemo_checkpoint.py`, same as before. This only prevents the failure mode going forward.
+
 ## Proposed Modular Refactor
 
 Target layout for `host_software/ml_audio/`, mirroring the `ml_vision` convention:

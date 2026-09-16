@@ -16,6 +16,7 @@ matplotlib
 albumentations
 cocotb
 fastmcp
+jsonschema
 google-genai
 python-dotenv
 resampy
@@ -25,3 +26,5 @@ onnx2torch
 openvino
 pillow-heif
 dvc[s3]
+lerobot==0.4.4
+nemo_toolkit[asr]

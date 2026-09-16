@@ -74,6 +74,22 @@ against the packaged copy caught the `ModuleNotFoundError` and revealed them. Re
 same verification after any future change to confirm the list is still complete, rather
 than trusting it from memory.
 
+## Track 4 note: `lerobot` + Track 1 numpy pin, resolved (confirmed 2026-09-15)
+
+Installing `lerobot` on-device (for Track 4's `convert_to_lerobot.py`) pulled in numpy≥2
+as a transitive dependency and silently upgraded the same Python environment Track 1
+uses — breaking the numpy<2 pin above and reproducing the identical `_ARRAY_API not
+found` ABI failure this time on `import onnxruntime` (not just `cv2`). Fix confirmed on
+real hardware: `pip3 install "numpy==1.26.4"` restores Track 1
+(`run_jetson_standalone.py --help` runs clean past it — apt's `python3-scipy` prints a
+harmless `UserWarning` about wanting numpy `<1.25.0`, non-fatal, safe to ignore) **and**
+`lerobot` still imports fine afterward (`python3 -c "import lerobot"` → `ok`). No
+environment isolation needed — both coexist under `numpy==1.26.4` in the one environment.
+
+**Consequence for Track 4:** running `convert_to_lerobot.py` on-device is a fully viable
+option now, not just the dev-machine `ball_balance_env` path — pick whichever is more
+convenient per-session; there's no longer a correctness reason to prefer one.
+
 ## Verification before trusting this doc
 
 1. `python -c "import cv2; print(cv2.__version__); print(cv2.videoio_registry.getBackends())"`

@@ -1,26 +1,46 @@
-"""Live laptop inference entry point for shared_vision_backbone_v2.
+"""Live laptop inference entry point for shared_vision_backbone_v2, using the
+NeMo pretrained-backbone audio classifier instead of the custom-CNN ONNX one.
 
-Structural skeleton (audio receiver, TargetStateMachine, PredictionGate,
-serial transmission loop) reused wholesale from main_onnx_aruco_audio.py --
-that scaffolding is preprocessing-agnostic. What's new/replaced:
+Forked from main_onnx_shared_vision_audio.py rather than adding a flag to it,
+per explicit instruction (a separate new entry point, not a change to the
+one other sessions currently have in flight). Everything vision-side
+(PredictionGate, warp_to_platform preprocessing, marker detection, the main
+loop's stage structure) is IMPORTED unchanged from that file, not
+re-implemented -- the only real difference is STAGE 6's audio backend:
+NemoAudioCommandReceiver (ml_audio/evaluations/nemo_live_receiver.py) in
+place of AudioCommandReceiverONNX.
 
-  - Preprocessing: perspective warp_to_platform() (auto_label_shared_vision.py)
-    instead of an axis-aligned bbox crop -- must match training preprocessing
-    exactly (SharedVisionDataset / build_eval_transform), a hard-won lesson
-    from this project's train/inference-parity bugs.
-  - Model: single multi-head ONNX session (ball_xy, mask_logits, heatmap_logits)
-    replacing the old cascaded CNN+MLP.
-  - Marker detection: NEW. mask_logits/heatmap_logits -> MarkerClassifier
-    (host_software/ml_vision/core/marker_classifier.py) -> state_machine's
-    update_markers()/maybe_auto_hold(), which existed but were never fed real
-    marker data by any prior entry point.
-  - --mlp flag (optional, default off): applies mlp_corrector_shared_vision_v1
-    (see train_mlp_corrector_shared_vision.py) on top of the raw CNN output.
-    That corrector operates in centered platform mm, NOT the old
-    mlp_corrector_time_aruco_0730_v1's raw camera-pixel space -- the two are
-    not interchangeable.
+This is "Option B" from docs/plans/audio_eval_notebook_refactor_plan.md's
+"Production Integration Check" section, not Option A -- it runs the full
+NeMo/PyTorch model directly (model.forward(), MFCC preprocessing included),
+NOT the NeMo ONNX export. That's a deliberate, informed choice already
+documented there (Option A needs a from-scratch ONNX-compatible MFCC
+reimplementation that doesn't exist yet), not an oversight. Consequence:
+this pipeline's audio path now depends on nemo_toolkit[asr] + torch, not
+just onnxruntime + sounddevice -- confirm that installs cleanly in
+ball_balance_env (this project's standard interpreter, per CLAUDE.md) before
+relying on this for anything beyond local testing; it has so far only been
+verified in a separate nemo_local conda env.
 
-See docs/plans (this session's plan file) for the full design rationale.
+IMPORTANT, read before trusting this for anything but integration testing:
+- The default checkpoint below is a PRELIMINARY, half-trained NOISE_MIX
+  checkpoint (see plan doc "First NOISE_MIX Data Point (2026-09-15)") --
+  wired up at the user's explicit request to test this entry point's
+  plumbing, not because it's been validated as the best available
+  checkpoint. Neither of its two seeds has shown a live-stream `backward`
+  win yet, and neither run finished training. The plan's own currently-
+  recommended checkpoint is models/nemo_matchboxnet_v1/matchboxnet_finetuned.nemo
+  (9/11 live-stream, the best on record) -- pass --audio-model to use that
+  instead once you actually want a real accuracy number, not a plumbing
+  check.
+- Verified so far: this file imports cleanly, --dummy-audio and
+  --scripted-sequence paths exercise the same vision/state-machine code the
+  existing entry point already uses, and NemoAudioCommandReceiver's file-
+  stream mode (used by the eval scripts) still passes its own regression
+  check after the live-mic support added here. NOT yet verified: an actual
+  live microphone, or the real robot end-to-end -- per this session's scope
+  (audio/vision development, not physical hardware), that check needs to
+  happen on your machine, not here.
 """
 
 import argparse
@@ -43,7 +63,6 @@ if root_dir not in sys.path:
 from src.receivers import USBReceiver, UDPReceiver
 from src.utils import find_stm32_port
 from src.state_machine import TargetStateMachine
-from src.audio_receiver_onnx import AudioCommandReceiverONNX
 from src.touch_logger import TouchTelemetryLogger
 
 from host_software.ml_vision.data_processing.auto_label_shared_vision import (
@@ -57,237 +76,35 @@ from host_software.ml_vision.core.keyboard_command_receiver import KeyboardComma
 from host_software.ml_vision.core.scripted_command_sequencer import ScriptedCommandSequencer
 from host_software.ml_vision.core.kalman_filter import KalmanFilter2D
 
+# Reused, not reimplemented -- see module docstring.
+from host_software.main_onnx_shared_vision_audio import (
+    GROUND_TRUTH_MANIFEST,
+    INPUT_SIZE,
+    PAPER_MARGIN_MM,
+    PredictionGate,
+    _ARUCO_MARKER_CENTRES_MM_RAW,
+    preprocess_warped,
+    px_to_touch_mm,
+    sigmoid,
+)
+
+from host_software.ml_audio.evaluations.nemo_live_receiver import NemoAudioCommandReceiver
+
 # --- Configuration ---
 SERIAL_PORT = "COM7"
 SERIAL_BAUD = 2000000
-INPUT_SIZE = (128, 128)  # (H, W), must match training
 
-# ArUco fiducial layout (ids 0-5) is identical across every printed sheet
-# (verified this session: ground_truth_manifest.json and
-# aruco_markers_01/02/03_manifest.json all have the same aruco_markers list --
-# only the colored `features` list differs, and those are no longer needed at
-# inference since markers are now detected live by the CNN). So the homography
-# lookup can be built once from the base manifest regardless of which sheet is
-# physically mounted.
-GROUND_TRUTH_MANIFEST = os.path.join(root_dir, "hardware", "platform_templates", "ground_truth_manifest.json")
-
-# Physical platform dimensions -- mm/px conversion is a fixed linear map (not a
-# per-frame homography) because warp_to_platform() always warps the same fixed
-# mm rectangle onto the full output frame. See
-# run_shared_vision_inference_on_dataset.py for the derivation/verification of
-# this formula, including the touch_x/touch_y axis-convention fix (the X axis
-# is NOT a simple centering subtraction -- see that file's comment).
-PAPER_MARGIN_MM = 6.0
-
-# ArUco marker physical positions (mm, centred), used by PredictionGate to
-# reject predictions that land on a marker during startup. Same 4 corner
-# markers used by main_onnx_aruco_audio.py.
-_ARUCO_MARKER_CENTRES_MM_RAW = [
-    [12.0, 130.0],
-    [175.5, 130.0],
-    [175.5, 12.0],
-    [12.0, 12.0],
-]
-
-
-class PredictionGate:
-    """Two-phase state machine that gates CNN ball predictions -- unchanged
-    from main_onnx_aruco_audio.py, since it operates purely on mm floats and
-    is model-agnostic."""
-
-    def __init__(
-        self,
-        marker_centres: np.ndarray,
-        marker_radius_mm: float = 20.0,
-        jump_threshold_mm: float = 30.0,
-        ema_alpha: float = 0.15,
-        seed_window: int = 5,
-        seed_consistency_mm: float = 15.0,
-        lost_frames_threshold: int = 30,
-        settle_radius_mm: float = 2.0,
-        kalman=None,
-    ) -> None:
-        # kalman: optional KalmanFilter2D. When set, it REPLACES the EMA as
-        # the smoothing/anchor mechanism (jump-gate compares against its
-        # position estimate instead of an EMA, and accepted frames update it
-        # instead of blending an EMA) -- see PROJECT_LOGBOOK.md 20/08. The
-        # dead-band and jump-gate/seed/no-ball state machine are unchanged
-        # either way; only the "what's the current smoothed estimate" step
-        # differs.
-        self.kalman = kalman
-        self.marker_centres = marker_centres
-        self.marker_radius_mm = marker_radius_mm
-        self.jump_threshold_mm = jump_threshold_mm
-        self.ema_alpha = ema_alpha
-        self.seed_window = seed_window
-        self.seed_consistency_mm = seed_consistency_mm
-        self.lost_frames_threshold = lost_frames_threshold
-        # Dead-band radius (mm): the transmitted output only moves once the
-        # smoothed estimate has drifted more than this far from what's
-        # currently being sent. Without this, a genuinely stationary ball
-        # still produces a slowly-wandering EMA (ordinary per-frame noise
-        # keeps nudging it a fraction of a mm), which the firmware's
-        # finite-difference velocity estimator reads as real, nonzero
-        # motion even though nothing moved -- see PROJECT_LOGBOOK.md 19/08.
-        self.settle_radius_mm = settle_radius_mm
-
-        self._phase: str = "AWAITING_BALL"
-        self._seed_buffer: list = []
-        self._ema = None
-        self._last_good = None
-        self._transmitted = None  # last position actually sent to the firmware
-        self._consecutive_jumps: int = 0
-
-    @property
-    def ball_on_platform(self) -> bool:
-        return self._phase == "TRACKING"
-
-    def filter(self, x_mm: float, y_mm: float, dt_ms: float = 33.0):
-        candidate = np.array([x_mm, y_mm], dtype=np.float32)
-        if self._phase == "AWAITING_BALL":
-            return self._handle_awaiting(candidate)
-        return self._handle_tracking(candidate, dt_ms)
-
-    def _handle_awaiting(self, candidate: np.ndarray):
-        if self.marker_centres.shape[0] > 0 and self.marker_radius_mm > 0:
-            dists = np.linalg.norm(self.marker_centres - candidate, axis=1)
-            if dists.min() < self.marker_radius_mm:
-                self._seed_buffer.clear()
-                return 0.0, 0.0, "no_ball"
-        self._seed_buffer.append(candidate.copy())
-        if len(self._seed_buffer) > self.seed_window:
-            self._seed_buffer.pop(0)
-        if len(self._seed_buffer) == self.seed_window:
-            stack = np.stack(self._seed_buffer)
-            centroid = stack.mean(axis=0)
-            max_dist = float(np.linalg.norm(stack - centroid, axis=1).max())
-            if max_dist < self.seed_consistency_mm:
-                self._ema = centroid.copy()
-                self._last_good = centroid.copy()
-                self._transmitted = centroid.copy()
-                if self.kalman is not None:
-                    self.kalman.reset(float(centroid[0]), float(centroid[1]))
-                self._phase = "TRACKING"
-                self._consecutive_jumps = 0
-                self._seed_buffer.clear()
-                print(f"\n  ✅ Ball confirmed on platform at ({centroid[0]:+.1f}, {centroid[1]:+.1f}) mm -- tracking started\n")
-                return float(centroid[0]), float(centroid[1]), "seeded"
-        return 0.0, 0.0, "no_ball"
-
-    def _handle_tracking(self, candidate: np.ndarray, dt_ms: float = 33.0):
-        # Jump-gate anchor: the Kalman filter's own position estimate when
-        # active (it already predicts forward each frame, so it's a better
-        # anchor than a frozen EMA), otherwise the EMA as before.
-        if self.kalman is not None:
-            anchor = np.array(self.kalman.position, dtype=np.float32) if self.kalman.is_initialized else None
-        else:
-            anchor = self._ema
-        if anchor is not None and self.jump_threshold_mm > 0:
-            jump = float(np.linalg.norm(candidate - anchor))
-            if jump > self.jump_threshold_mm:
-                self._consecutive_jumps += 1
-                if self.kalman is not None:
-                    self.kalman.predict(dt_ms / 1000.0)
-                if self._consecutive_jumps >= self.lost_frames_threshold:
-                    print(f"\n  \U0001f534 Ball lost (>{self.lost_frames_threshold} consecutive jump rejections) -- reverting to AWAITING_BALL\n")
-                    self._phase = "AWAITING_BALL"
-                    self._ema = None
-                    self._last_good = None
-                    self._transmitted = None
-                    self._seed_buffer.clear()
-                    self._consecutive_jumps = 0
-                    if self.kalman is not None:
-                        self.kalman.deinitialize()
-                    return 0.0, 0.0, "no_ball"
-                return self._hold("jump_gate")
-        self._consecutive_jumps = 0
-
-        if self.kalman is not None:
-            self.kalman.predict(dt_ms / 1000.0)
-            smoothed_x, smoothed_y = self.kalman.update(float(candidate[0]), float(candidate[1]))
-            smoothed = np.array([smoothed_x, smoothed_y], dtype=np.float32)
-        else:
-            if self._ema is None:
-                self._ema = candidate.copy()
-            else:
-                self._ema = self.ema_alpha * candidate + (1.0 - self.ema_alpha) * self._ema
-            smoothed = self._ema
-        # last_good stays the raw candidate (jump-gate comparisons must anchor on
-        # the true last-observed point, not a lagged average of itself), but the
-        # transmitted position uses the smoothed estimate (EMA, or the Kalman
-        # filter's posterior when --kalman is active) -- previously this
-        # returned the raw candidate directly, so every accepted frame's
-        # per-frame noise passed to the firmware completely unfiltered. See
-        # PROJECT_LOGBOOK.md 18/08/2026 (live-deployment jitter diagnosis).
-        self._last_good = candidate.copy()
-
-        # Dead-band: only move the transmitted output once the smoothed
-        # estimate has drifted more than settle_radius_mm from what's
-        # currently being sent, so a genuinely stationary ball produces an
-        # exactly-zero firmware-side velocity reading instead of a
-        # small-but-nonzero drift. See PROJECT_LOGBOOK.md 19/08/2026.
-        if self._transmitted is None or self.settle_radius_mm <= 0:
-            self._transmitted = smoothed.copy()
-        else:
-            drift = float(np.linalg.norm(smoothed - self._transmitted))
-            if drift > self.settle_radius_mm:
-                self._transmitted = smoothed.copy()
-        return float(self._transmitted[0]), float(self._transmitted[1]), "ok"
-
-    def _hold(self, reason: str):
-        # Hold at the last transmitted position (dead-band-aware), not the raw
-        # EMA directly -- keeps the transmitted signal consistent across
-        # accept/reject transitions instead of snapping to a value the
-        # dead-band would otherwise have suppressed.
-        if self._transmitted is not None:
-            return float(self._transmitted[0]), float(self._transmitted[1]), reason
-        if self._ema is not None:
-            return float(self._ema[0]), float(self._ema[1]), reason
-        return 0.0, 0.0, "no_ball"
-
-    def reset_smoothing(self):
-        """Clear the EMA/transmitted state WITHOUT leaving TRACKING phase --
-        for recovering from a detected processing/camera stall (see the
-        dt_ms > 100 check in the main loop), where the ball may have moved a
-        lot during the gap. Without this, the next real reading gets compared
-        against a now-stale EMA and is very likely to fail the jump-gate and
-        get held at the old, wrong position -- exactly the failure chain
-        behind "ball flies off after alt-tab" (PROJECT_LOGBOOK.md 19/08).
-        Resetting _ema to None makes _handle_tracking's accept branch treat
-        the next candidate as a first observation (no jump-check at all),
-        so recovery is immediate rather than gated behind a full re-seed."""
-        self._ema = None
-        self._last_good = None
-        self._transmitted = None
-        self._consecutive_jumps = 0
-        if self.kalman is not None:
-            self.kalman.deinitialize()
-
-
-def preprocess_warped(warped_bgr: np.ndarray) -> np.ndarray:
-    """Matches build_eval_transform() + SharedVisionDataset.__getitem__ exactly:
-    RGB, [0,1] float, CHW, batch dim. No ImageNet mean/std normalization --
-    that was the OLD model's convention, not this one's."""
-    rgb = cv2.cvtColor(warped_bgr, cv2.COLOR_BGR2RGB)
-    img_f = rgb.astype(np.float32) / 255.0
-    chw = np.transpose(img_f, (2, 0, 1))
-    return np.expand_dims(chw, axis=0)
-
-
-def px_to_touch_mm(px_x: float, px_y: float, mm_per_px_x: float, mm_per_px_y: float, w_mm: float, h_mm: float):
-    manifest_mm_x = -PAPER_MARGIN_MM + px_x * mm_per_px_x
-    manifest_mm_y = -PAPER_MARGIN_MM + px_y * mm_per_px_y
-    touch_x = w_mm / 2.0 - manifest_mm_x
-    touch_y = manifest_mm_y - h_mm / 2.0
-    return touch_x, touch_y
-
-
-def sigmoid(x: np.ndarray) -> np.ndarray:
-    return 1.0 / (1.0 + np.exp(-x))
+# Preliminary/half-trained -- see module docstring. Override with --audio-model
+# to use the plan's actually-recommended checkpoint
+# (models/nemo_matchboxnet_v1/matchboxnet_finetuned.nemo, 9/11 live-stream).
+DEFAULT_NEMO_MODEL = os.path.join(
+    "ml_audio", "models", "nemo_matchboxnet_3x1x64_noisemix_seed0",
+    "matchboxnet_3x1x64_noisemix_finetuned_seed0.nemo",
+)
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="shared_vision_backbone_v2 -> CNN + Marker Detection + Audio Tracker (ONNX)")
+    parser = argparse.ArgumentParser(description="shared_vision_backbone_v2 -> CNN + Marker Detection + NeMo Audio Tracker")
     parser.add_argument("--cam_id", type=int, default=1, help="Camera ID for USB mode")
     parser.add_argument("--cam-width", type=int, default=640, help="Requested camera capture width -- use probe_camera_modes.py to find what this camera actually delivers before assuming a value here")
     parser.add_argument("--cam-height", type=int, default=480, help="Requested camera capture height")
@@ -308,6 +125,8 @@ def main() -> None:
     parser.add_argument("--mask-threshold", type=float, default=0.5, help="Sigmoid threshold for marker segmentation mask")
     parser.add_argument("--mlp", action="store_true", help="Apply the shared-vision MLP time corrector on top of raw CNN output (default off -- see PROJECT_LOGBOOK for validation results)")
     parser.add_argument("--mlp-model-path", type=str, default=None, help="Override path to the MLP corrector .pth (default: models/mlp_corrector_shared_vision_v1/mlp_corrector_best.pth)")
+    parser.add_argument("--audio-model", type=str, default=None, help=f"Path to a .nemo checkpoint (default: preliminary NOISE_MIX checkpoint at {DEFAULT_NEMO_MODEL} -- see module docstring; pass the plan's recommended ml_audio/models/nemo_matchboxnet_v1/matchboxnet_finetuned.nemo for a validated number instead)")
+    parser.add_argument("--mic-device", type=str, default=None, help="Input device name substring or index (default: OS default input)")
     parser.add_argument("--dummy-audio", action="store_true", help="Use typed keyboard commands instead of the trained audio model -- for testing state-machine/target-switching without a working mic (temporary testing aid, see keyboard_command_receiver.py)")
     parser.add_argument("--scripted-sequence", action="store_true", help="Drive the target with a fixed, reproducible command schedule instead of live audio/keyboard input -- for collecting controlled telemetry (settle window + swept motion) to design Kalman filter noise parameters. See scripted_command_sequencer.py")
     parser.add_argument("--log-csv", type=str, default="auto", help="Ground-truth telemetry CSV: 'auto' (timestamped file in data/01_bronze/evaluation/), 'off' (disable persistence -- the serial I/O thread still runs), or an explicit path")
@@ -326,19 +145,18 @@ def main() -> None:
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
 
-    # ---- 1. Model Init (ONNX) ----
+    # ---- 1. Model Init (ONNX vision + NeMo audio) ----
     cnn_path = os.path.abspath(os.path.join(script_dir, "ml_vision/models/shared_vision_backbone_v2/shared_vision_backbone_best.onnx"))
     if not os.path.exists(cnn_path):
         print(f"Error: ONNX model not found at {cnn_path}")
         return
 
-    if not args.dummy_audio and not args.scripted_sequence:
-        audio_path = os.path.abspath(os.path.join(script_dir, "ml_audio/models/audio_command_classifier_v3.onnx"))
-        if not os.path.exists(audio_path):
-            print(f"Error: ONNX Audio model not found at {audio_path}")
-            return
+    audio_path = os.path.abspath(os.path.join(script_dir, args.audio_model or DEFAULT_NEMO_MODEL))
+    if not args.dummy_audio and not args.scripted_sequence and not os.path.exists(audio_path):
+        print(f"Error: NeMo audio model not found at {audio_path}")
+        return
 
-    print("Loading ONNX sessions...")
+    print("Loading ONNX vision session...")
     cnn_opts = ort.SessionOptions()
     cnn_opts.intra_op_num_threads = 2
     cnn_opts.inter_op_num_threads = 1
@@ -364,12 +182,6 @@ def main() -> None:
             print("Run train_mlp_corrector_shared_vision.py first, or pass --mlp-model-path.")
             return
 
-        # Window size is inferred from the checkpoint's own first-layer weight
-        # shape, not taken from a CLI flag -- different mlp_corrector_shared_vision_*
-        # variants (e.g. v1 = window 5, vw1 = window 1) have different window
-        # sizes baked in, and a mismatched flag produces a state_dict size-mismatch
-        # crash (seen live: vw1 loaded with the default window-5 construction).
-        # Trusting the checkpoint's actual shape removes that whole failure mode.
         mlp_num_features = 5
         mlp_state_dict = torch.load(mlp_path, map_location="cpu")
         mlp_input_dim = mlp_state_dict["net.0.weight"].shape[1]
@@ -385,13 +197,17 @@ def main() -> None:
         mlp_window = collections.deque(maxlen=mlp_window_size)
         print(f"Loaded MLP corrector from {mlp_path} (window_size={mlp_window_size}, auto-detected from checkpoint)")
 
+    mic_device = args.mic_device
+    if mic_device is not None and mic_device.isdigit():
+        mic_device = int(mic_device)
+
     if args.scripted_sequence:
         audio_receiver = ScriptedCommandSequencer()
     elif args.dummy_audio:
         audio_receiver = KeyboardCommandReceiver()
     else:
-        print("Initializing Audio Receiver...")
-        audio_receiver = AudioCommandReceiverONNX(audio_path)
+        print("Initializing NeMo Audio Receiver...")
+        audio_receiver = NemoAudioCommandReceiver(audio_path, mic_device=mic_device)
     state_machine = TargetStateMachine()
     marker_classifier = MarkerClassifier(input_size=INPUT_SIZE, mask_threshold=args.mask_threshold)
 
@@ -409,24 +225,12 @@ def main() -> None:
 
     # ---- 3. Serial Port Init ----
     try:
-        # timeout=0.02 (not 0): the link is bidirectional now -- a short blocking
-        # read lets TouchTelemetryLogger's reader thread avoid spinning the CPU
-        # while waiting for "T,..." lines. write_timeout is unaffected/unset.
         ser = serial.Serial(args.port, SERIAL_BAUD, timeout=0.02)
         print(f"Connected to STM32 on {args.port} at {SERIAL_BAUD} baud.")
     except Exception:
         print(f"Could not open serial port {args.port}. Continuing in dry-run mode.")
         ser = None
 
-    # touch_logger's worker thread is the sole owner of the serial handle from
-    # here on -- constructed whenever ser is open, regardless of --log-csv.
-    # Consolidating both directions (writing vision frames, reading telemetry)
-    # onto one thread is what fixes the throughput collapse a split
-    # main-thread-writes/reader-thread-reads design caused (see
-    # PROJECT_LOGBOOK.md); csv_path=None just means that thread won't persist
-    # rows to disk, not that it stops existing. Do not call ser.write()
-    # directly anywhere below this point -- use touch_logger.send_frame()/
-    # send_raw() instead.
     touch_logger = None
     if ser is not None:
         csv_path = None
@@ -456,7 +260,7 @@ def main() -> None:
         frame = receiver.get_latest_frame()
         time.sleep(0.1)
 
-    print("Starting shared_vision_backbone_v2 -> Marker Detection + Audio Tracker loop... (press Ctrl+C to quit)")
+    print("Starting shared_vision_backbone_v2 -> Marker Detection + NeMo Audio Tracker loop... (press Ctrl+C to quit)")
 
     kalman = None
     if args.kalman:
@@ -491,7 +295,7 @@ def main() -> None:
 
     last_status_t: float = 0.0
     last_frame_time = time.perf_counter()
-    seq = 0  # frame counter, echoed back by the MCU to join vision and touch streams
+    seq = 0
 
     try:
         while True:
@@ -503,16 +307,6 @@ def main() -> None:
             dt_ms = (start_t - last_frame_time) * 1000.0
             last_frame_time = start_t
             if dt_ms > 100.0:
-                # Processing/camera stall (e.g. the driver throttling capture
-                # while the window isn't focused -- see PROJECT_LOGBOOK.md
-                # 19/08). The ball may have moved a lot during the gap; without
-                # this, the next real position gets jump-gate-rejected against
-                # a now-stale EMA and held at the wrong point, which is the
-                # confirmed mechanism behind the ball flying off after alt-tab.
-                # Reset gate smoothing so the next reading is accepted directly
-                # instead of fighting a stale anchor, clear the MLP window for
-                # the same reason the no-ball case does, and tell the firmware
-                # about the gap immediately rather than let it infer one.
                 print(f"  ⚠ Stall detected ({dt_ms:.0f}ms since last frame) -- resetting gate smoothing")
                 dt_ms = 33.0
                 gate.reset_smoothing()
@@ -578,32 +372,12 @@ def main() -> None:
             gated_x, gated_y, gate_reason = gate.filter(final_x, final_y, dt_ms)
 
             if gate_reason == "seeded" and isinstance(audio_receiver, ScriptedCommandSequencer):
-                # Ball just confirmed on the platform -- start --scripted-sequence's
-                # clock now rather than at construction time, so DEFAULT_SCHEDULE's
-                # settle window measures a clean period with the ball actually present,
-                # not construction-to-ball-seeded dead time too. begin() is idempotent.
                 audio_receiver.begin()
 
             if gate_reason == "no_ball":
-                # The CNN produced a ball_xy guess this frame regardless of
-                # whether a ball is really present (it has no explicit "no
-                # ball" output), and STAGE 4 above already pushed that guess
-                # into mlp_window before this gate result was known. Clear it
-                # here so the corrector never runs on a window contaminated
-                # with pre-placement/post-loss garbage, and so the first
-                # MLP-corrected output after a fresh placement or
-                # re-acquisition is built from a clean window of genuine
-                # frames only, not a stale mix. See PROJECT_LOGBOOK.md 19/08.
                 if mlp_window is not None:
                     mlp_window.clear()
                 if was_tracking and not gate.ball_on_platform:
-                    # This is specifically the TRACKING -> AWAITING_BALL edge
-                    # (lost_frames_threshold consecutive jump-gate rejections
-                    # -- see PredictionGate._handle_tracking), not the
-                    # routine no_ball seen every frame while already
-                    # awaiting/near a marker. Force target back to center;
-                    # state_machine resumes whatever we were pursuing once
-                    # the ball genuinely re-settles near center.
                     state_machine.on_ball_lost()
                 command = audio_receiver.get_latest_command()
                 if command:
@@ -654,7 +428,7 @@ def main() -> None:
                 for i, det in enumerate(detections):
                     label = f"{det.color}/{det.shape}"
                     cv2.putText(disp, label, (5, 15 + i * 12), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 255, 0), 1)
-                cv2.imshow("Shared Vision Backbone Tracker (ONNX)", disp)
+                cv2.imshow("Shared Vision Backbone Tracker (NeMo Audio)", disp)
                 if cv2.waitKey(1) & 0xFF == ord("q"):
                     break
 
