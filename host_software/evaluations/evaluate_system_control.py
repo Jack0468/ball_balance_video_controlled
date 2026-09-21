@@ -24,12 +24,21 @@ change needed, since TouchProbe.cpp already sends the raw step counts today.
 """
 
 import os
+import sys
 import time
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import json
 import argparse
+from typing import Any, Dict, List
+
+_THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+_HOST_SOFTWARE_DIR = os.path.abspath(os.path.join(_THIS_DIR, ".."))
+if _HOST_SOFTWARE_DIR not in sys.path:
+    sys.path.append(_HOST_SOFTWARE_DIR)
+
+from src.touch_ground_truth_filter import flag_touch_position_outliers
 
 REQUIRED_COLUMNS = [
     "target_x",
@@ -89,7 +98,7 @@ SETTLE_DURATION_MS = 500.0  # from docs/EVALUATION_STRATEGY.md
 MIN_TRIAL_DURATION_MS = 1500.0
 
 
-def load_telemetry(csv_path):
+def load_telemetry(csv_path, filter_touch_outliers=False):
     df = pd.read_csv(csv_path)
 
     df = df.rename(columns={
@@ -127,9 +136,18 @@ def load_telemetry(csv_path):
         raise ValueError(f"{csv_path}: missing required columns {missing}")
 
     df = df.dropna(subset=["timestamp_ms"] + REQUIRED_COLUMNS).reset_index(drop=True)
+
+    n_touch_outliers_filtered = 0
+    if filter_touch_outliers:
+        touch_valid = df["touch_valid"] if "touch_valid" in df.columns else None
+        is_outlier = flag_touch_position_outliers(df["touch_x"], df["touch_y"], touch_valid=touch_valid)
+        n_touch_outliers_filtered = int(is_outlier.sum())
+        df = df.loc[~is_outlier].reset_index(drop=True)
+
     df["error_mm"] = np.sqrt(
         (df["touch_x"] - df["target_x"]) ** 2 + (df["touch_y"] - df["target_y"]) ** 2
     )
+    df.attrs["n_touch_outliers_filtered"] = n_touch_outliers_filtered
     return df
 
 
@@ -208,9 +226,75 @@ def find_settling_time_ms(times_ms, errors_mm, tolerance_mm, duration_ms):
     return None
 
 
+def _integral_error_indices(seg_times_ms, seg_errors_mm):
+    """IAE/ISE/ITAE (docs/EVALUATION_STRATEGY.md's "Integral Error Indices"
+    section) over one trial segment, in mm*s / mm^2*s / mm*s^2 respectively.
+    Trapezoidal integration over the segment's actual (jittery) sample
+    timestamps, not a fixed dt -- correct regardless of sample rate. Time is
+    measured from the segment's own start (t=0 at the command edge), matching
+    ITAE's standard definition (penalizes error that persists LATE in the
+    transient more than error present at t=0, which is unavoidable). Computed
+    over the FULL segment, not just until settle -- unlike Steady-State
+    Error/Settling Time, these don't require the trial to have succeeded, so
+    every trial contributes a value."""
+    t_s = (seg_times_ms - seg_times_ms[0]) / 1000.0
+    iae = float(np.trapezoid(np.abs(seg_errors_mm), t_s))
+    ise = float(np.trapezoid(seg_errors_mm ** 2, t_s))
+    itae = float(np.trapezoid(t_s * np.abs(seg_errors_mm), t_s))
+    return iae, ise, itae
+
+
+def _rise_time_ms(seg_times_ms, seg_errors_mm):
+    """Time for the scalar Euclidean error to first drop from its initial
+    (segment-start) value E0 to 10% of E0 -- a generalization of the classical
+    10%-90% rise time to a decaying (not rising) response, since "distance to
+    target" only ever decreases toward a converged value here, never rises the
+    way a step response's output does. Returns None if E0 is degenerate
+    (<1mm -- already at the target when the command fired, so "rise" isn't a
+    meaningful concept for this trial) or the error never reaches the 10%
+    threshold within the segment."""
+    e0 = seg_errors_mm[0]
+    if e0 < 1.0:
+        return None
+    threshold = 0.1 * e0
+    below = np.flatnonzero(seg_errors_mm <= threshold)
+    if below.size == 0:
+        return None
+    return float(seg_times_ms[below[0]] - seg_times_ms[0])
+
+
+def _axis_overshoot(seg_target, seg_touch):
+    """Classical overshoot, computed per-axis (signed error, unlike the
+    scalar Euclidean error used elsewhere) since "overshoot" requires a
+    direction to overshoot past -- a magnitude-only distance can't go
+    negative. e0 = signed error at segment start (touch - target). If the
+    signed error ever crosses zero (the ball passes through the target along
+    this axis) and swings to the opposite sign, returns
+    (peak_opposite_excursion_mm, percent_of_|e0|). Returns (0.0, 0.0) if no
+    crossing occurs (no overshoot observed) or e0 is degenerate (<1mm --
+    percent would be a division-by-a-near-zero artifact, not a meaningful
+    measurement; confirmed empirically on real data, e.g. a 1.1mm initial
+    error producing a 462% "overshoot" from a perfectly ordinary ~5mm
+    oscillation -- see Overshoot_Caveat)."""
+    e0 = seg_touch[0] - seg_target[0]
+    if abs(e0) < 1.0:
+        return 0.0, 0.0
+    err = seg_touch - seg_target
+    sign0 = np.sign(e0)
+    opposite = (err * sign0) < 0  # crossed to the other side of the target
+    if not np.any(opposite):
+        return 0.0, 0.0
+    peak_opposite = float(np.max(np.abs(err[opposite])))
+    return peak_opposite, 100.0 * peak_opposite / abs(e0)
+
+
 def compute_metrics(df, run_label="run"):
     times = df["timestamp_ms"].to_numpy(dtype=float)
     errors = df["error_mm"].to_numpy(dtype=float)
+    target_x = df["target_x"].to_numpy(dtype=float)
+    target_y = df["target_y"].to_numpy(dtype=float)
+    touch_x = df["touch_x"].to_numpy(dtype=float)
+    touch_y = df["touch_y"].to_numpy(dtype=float)
 
     diff_a = df["theta_a"].diff().abs().dropna()
     diff_b = df["theta_b"].diff().abs().dropna()
@@ -220,12 +304,28 @@ def compute_metrics(df, run_label="run"):
 
     segments = segment_by_target(df)
     settling_times, settled_state_errors, successes = [], [], 0
+    rise_times, overshoots_mm, overshoots_pct, iae_list, ise_list, itae_list = [], [], [], [], [], []
 
     for start, end in segments:
         seg_times = times[start:end]
         seg_errors = errors[start:end]
         if len(seg_times) < 2:
             continue  # too short to evaluate settling within
+
+        # Computed for every long-enough trial regardless of success/failure --
+        # unlike Steady-State Error/Settling Time below, these don't require a
+        # settle to have occurred.
+        iae, ise, itae = _integral_error_indices(seg_times, seg_errors)
+        iae_list.append(iae)
+        ise_list.append(ise)
+        itae_list.append(itae)
+        rt = _rise_time_ms(seg_times, seg_errors)
+        if rt is not None:
+            rise_times.append(rt)
+        ov_x_mm, ov_x_pct = _axis_overshoot(target_x[start:end], touch_x[start:end])
+        ov_y_mm, ov_y_pct = _axis_overshoot(target_y[start:end], touch_y[start:end])
+        overshoots_mm.append(max(ov_x_mm, ov_y_mm))
+        overshoots_pct.append(max(ov_x_pct, ov_y_pct))
 
         settle_ms = find_settling_time_ms(
             seg_times, seg_errors, SETTLE_TOLERANCE_MM, SETTLE_DURATION_MS
@@ -259,6 +359,56 @@ def compute_metrics(df, run_label="run"):
         ),
         "Control_Effort_Per_Sample_deg": control_effort_per_sample,
         "Total_Control_Effort_deg": control_effort_total,
+        "Average_Rise_Time_ms": float(np.mean(rise_times)) if rise_times else None,
+        "Rise_Time_Trials_Excluded": total_trials - len(rise_times),
+        "Rise_Time_Caveat": (
+            "Time for scalar error to drop from its trial-start value to 10% of "
+            "that value -- a decaying-response generalization of classical rise "
+            "time, not the classical 10%-90% rising-step definition. Excluded "
+            "trials either started within 1mm of target (nothing to rise from) "
+            "or never reached the 10% threshold."
+        ),
+        "Average_Overshoot_mm": float(np.mean(overshoots_mm)) if overshoots_mm else None,
+        "Average_Overshoot_Percent": float(np.mean(overshoots_pct)) if overshoots_pct else None,
+        "Overshoot_Caveat": (
+            "Per-axis (X, Y) signed-error overshoot past the target; max(X, Y) "
+            "reported per trial, then averaged. 0 for a trial with no "
+            "zero-crossing (the ball never passed through the target on either "
+            "axis) or a degenerate (<1mm) initial error on both axes. "
+            "Prefer Average_Overshoot_mm over the _Percent version: percent is "
+            "normalized by each trial's own initial error, so a trial that "
+            "starts only ~1mm from target can show a triple-digit percent "
+            "overshoot from perfectly ordinary millimeter-scale oscillation -- "
+            "confirmed on real data, not a hypothetical edge case."
+        ),
+        "Average_IAE_mm_s": float(np.mean(iae_list)) if iae_list else None,
+        "Average_ISE_mm2_s": float(np.mean(ise_list)) if ise_list else None,
+        "Average_ITAE_mm_s2": float(np.mean(itae_list)) if itae_list else None,
+        "Integral_Error_Indices_Caveat": (
+            "IAE/ISE/ITAE integrated over each trial's FULL duration (not just "
+            "until settle), so every trial with >=2 samples contributes -- "
+            "unlike Steady-State Error/Settling Time, these don't require the "
+            "trial to have succeeded."
+        ),
+        **_inference_latency_stats(df),
+    }
+
+
+def _inference_latency_stats(df):
+    """Mean/median/p95/max of vision_inference_ms, if the telemetry has it --
+    added 2026-09-18 alongside the touch_ground_truth_filter.py work, not
+    present in any CSV recorded before that date. Absent (not zero) on older
+    telemetry, so it's never silently averaged in as 0ms."""
+    if "vision_inference_ms" not in df.columns:
+        return {}
+    values = df["vision_inference_ms"].dropna()
+    if values.empty:
+        return {}
+    return {
+        "Mean_Inference_Time_ms": float(values.mean()),
+        "Median_Inference_Time_ms": float(values.median()),
+        "P95_Inference_Time_ms": float(np.percentile(values, 95)),
+        "Max_Inference_Time_ms": float(values.max()),
     }
 
 
@@ -285,7 +435,45 @@ def plot_trajectory(df, output_path, max_rows=None):
     plt.close()
 
 
-def plot_comparison(all_metrics, output_path):
+_COMPARISON_COLORS: List[str] = ["#4C72B0", "#DD8452", "#55A868", "#C44E52"]
+
+
+def _plot_inference_panel(ax: "plt.Axes", all_metrics: List[Dict[str, Any]], labels: List[str]) -> None:
+    """Bar = median inference time, upper whisker = P95. Median/P95 rather than
+    mean/max because a single scheduling hiccup or warm-up transient moves max
+    (and the mean) far more than it should for a like-for-like comparison. A run
+    whose CSV predates vision_inference_ms (2026-09-18) has no such keys -- drawn
+    as an explicit "no data" bar, never as a real 0ms measurement."""
+    medians: List[float] = []
+    p95_above_median: List[float] = []
+    missing: List[bool] = []
+    for m in all_metrics:
+        med = m.get("Median_Inference_Time_ms")
+        p95 = m.get("P95_Inference_Time_ms")
+        if med is None or p95 is None:
+            medians.append(0.0)
+            p95_above_median.append(0.0)
+            missing.append(True)
+        else:
+            medians.append(float(med))
+            p95_above_median.append(max(float(p95) - float(med), 0.0))
+            missing.append(False)
+
+    ax.bar(
+        labels,
+        medians,
+        yerr=[[0.0] * len(labels), p95_above_median],
+        capsize=4,
+        color=_COMPARISON_COLORS[: len(labels)],
+    )
+    for i, is_missing in enumerate(missing):
+        if is_missing:
+            ax.text(i, 0, "no data", ha="center", va="bottom", rotation=90, fontsize=8, color="gray")
+    ax.set_title("Inference Time (ms)\n(bar = median, whisker = P95, lower is better)")
+    ax.tick_params(axis="x", rotation=20)
+
+
+def plot_comparison(all_metrics: List[Dict[str, Any]], output_path: str) -> None:
     metric_keys = [
         ("Steady_State_Error_mm", "Steady-State Error (mm)", "lower is better"),
         ("Average_Settling_Time_ms", "Settling Time (ms)", "lower is better"),
@@ -294,50 +482,71 @@ def plot_comparison(all_metrics, output_path):
     ]
     labels = [m["Run"] for m in all_metrics]
 
-    fig, axes = plt.subplots(2, 2, figsize=(11, 8))
-    for ax, (key, title, note) in zip(axes.flat, metric_keys):
+    # Fifth panel only when at least one run actually recorded inference time --
+    # comparing runs that all predate vision_inference_ms keeps the original 2x2
+    # layout instead of adding an empty panel.
+    has_inference = any("Median_Inference_Time_ms" in m for m in all_metrics)
+    n_panels = len(metric_keys) + (1 if has_inference else 0)
+    ncols = 3 if has_inference else 2
+
+    fig, axes = plt.subplots(2, ncols, figsize=(15 if has_inference else 11, 8))
+    flat_axes = list(axes.flat)
+    for ax, (key, title, note) in zip(flat_axes, metric_keys):
         values = [m[key] if m[key] is not None else 0.0 for m in all_metrics]
-        ax.bar(labels, values, color=["#4C72B0", "#DD8452", "#55A868", "#C44E52"][: len(labels)])
+        ax.bar(labels, values, color=_COMPARISON_COLORS[: len(labels)])
         ax.set_title(f"{title}\n({note})")
         ax.tick_params(axis="x", rotation=20)
+    if has_inference:
+        _plot_inference_panel(flat_axes[len(metric_keys)], all_metrics, labels)
+    for unused_ax in flat_axes[n_panels:]:
+        unused_ax.axis("off")
     fig.tight_layout()
     fig.savefig(output_path)
     plt.close(fig)
 
 
-def evaluate_single_run(csv_path, output_dir, label=None):
+def evaluate_single_run(csv_path, output_dir, label=None, filter_touch_outliers=False):
     label = label or os.path.splitext(os.path.basename(csv_path))[0]
     print(f"Evaluating telemetry from: {csv_path}")
-    df = load_telemetry(csv_path)
+    df = load_telemetry(csv_path, filter_touch_outliers=filter_touch_outliers)
+    if filter_touch_outliers:
+        n_flagged = df.attrs.get("n_touch_outliers_filtered", 0)
+        print(f"Despiked {n_flagged} touch-plate ground-truth outlier frames "
+              f"(see src/touch_ground_truth_filter.py); {len(df)} frames remain.")
     metrics = compute_metrics(df, run_label=label)
+    metrics["Touch_Outliers_Filtered"] = df.attrs.get("n_touch_outliers_filtered", 0)
 
     print(f"\n--- System Control Evaluation: {label} ---")
     for k, v in metrics.items():
         print(f"{k}: {v}")
 
+    suffix = "_filtered" if filter_touch_outliers else ""
     os.makedirs(output_dir, exist_ok=True)
-    with open(os.path.join(output_dir, "control_metrics.json"), "w") as f:
+    with open(os.path.join(output_dir, f"control_metrics{suffix}.json"), "w") as f:
         json.dump(metrics, f, indent=4)
-    plot_trajectory(df, os.path.join(output_dir, "trajectory_plot.png"))
+    plot_trajectory(df, os.path.join(output_dir, f"trajectory_plot{suffix}.png"))
     return metrics
 
 
-def compare_runs(run_specs, output_dir):
+def compare_runs(run_specs, output_dir, filter_touch_outliers=False):
     """run_specs: dict of {label: csv_path}."""
     all_metrics = []
     for label, csv_path in run_specs.items():
-        df = load_telemetry(csv_path)
-        all_metrics.append(compute_metrics(df, run_label=label))
+        df = load_telemetry(csv_path, filter_touch_outliers=filter_touch_outliers)
+        metrics = compute_metrics(df, run_label=label)
+        metrics["Touch_Outliers_Filtered"] = df.attrs.get("n_touch_outliers_filtered", 0)
+        all_metrics.append(metrics)
 
     table = pd.DataFrame(all_metrics)
     print("\n--- Expert vs. VLA Comparison ---")
     print(table.to_string(index=False))
 
+    suffix = "_filtered" if filter_touch_outliers else ""
     os.makedirs(output_dir, exist_ok=True)
     stamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
-    json_path = os.path.join(output_dir, f"comparison_{stamp}.json")
-    csv_path_out = os.path.join(output_dir, f"comparison_{stamp}.csv")
-    png_path = os.path.join(output_dir, f"comparison_{stamp}.png")
+    json_path = os.path.join(output_dir, f"comparison{suffix}_{stamp}.json")
+    csv_path_out = os.path.join(output_dir, f"comparison{suffix}_{stamp}.csv")
+    png_path = os.path.join(output_dir, f"comparison{suffix}_{stamp}.png")
 
     with open(json_path, "w") as f:
         json.dump(all_metrics, f, indent=4)
@@ -382,11 +591,18 @@ if __name__ == "__main__":
         default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports"),
         help="Directory to save comparison report (comparison mode)",
     )
+    parser.add_argument(
+        "--filter-touch-outliers", action="store_true",
+        help="Despike touch-plate ground-truth readings (see "
+        "src/touch_ground_truth_filter.py) before computing metrics. Off by "
+        "default so existing results are never silently changed -- outputs are "
+        "written to separate _filtered-suffixed files, not in place.",
+    )
     args = parser.parse_args()
 
     if args.runs:
-        compare_runs(dict(args.runs), args.report_dir)
+        compare_runs(dict(args.runs), args.report_dir, filter_touch_outliers=args.filter_touch_outliers)
     elif args.csv_path:
-        evaluate_single_run(args.csv_path, args.output_dir)
+        evaluate_single_run(args.csv_path, args.output_dir, filter_touch_outliers=args.filter_touch_outliers)
     else:
         parser.error("Provide either --csv_path (single run) or --runs (comparison)")

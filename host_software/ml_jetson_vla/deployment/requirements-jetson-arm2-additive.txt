@@ -1,0 +1,30 @@
+# Arm 2 minimal-baseline sweep, Jetson AGX Orin -- ADDITIVE packages only.
+# See host_software/ml_jetson_vla/docs/JETSON_ARM2_SWEEP_LOCAL.md. NOT a replacement for the root
+# requirements.txt (which must never be installed verbatim on the Jetson, see JETSON_ENV_SETUP.md).
+#
+# What this file is: the small set of pure-wheel packages `run_arm2_sweep_jetson.py` may find MISSING
+# in an environment that already runs Qwen2.5-VL (`--stage probe` lists exactly which). It contains
+# nothing that touches the GPU stack (torch/torchvision/CUDA) and nothing that pins numpy.
+#
+# HOW TO INSTALL (mandatory form -- this is the guard against the numpy/ABI incident that
+# `pip install lerobot` caused on Track 1's environment):
+#   1. freeze what is installed NOW into a constraints file (only exact `==` pins):
+#        python -m pip freeze --exclude-editable | grep -E '^[A-Za-z0-9_.-]+==' > ~/arm2_constraints.txt
+#   2. install ONLY under that constraints file, binary wheels only (no aarch64 source builds):
+#        python -m pip install -c ~/arm2_constraints.txt --only-binary=:all: -r requirements-jetson-arm2-additive.txt
+#      With `-c`, pip cannot upgrade/downgrade anything already installed; if a package here would need
+#      to, the install FAILS LOUDLY instead of silently changing numpy/torch underneath you.
+#   3. audit (expect NO output -- any line printed is an existing package that changed or vanished):
+#        python -m pip freeze --exclude-editable | grep -E '^[A-Za-z0-9_.-]+==' | diff ~/arm2_constraints.txt - | grep '^<'
+#
+# OpenCV is deliberately NOT here: the sweep needs cv2 WITH the aruco module, and how it is provided
+# (apt python3-opencv 4.5.4 visible via system-site-packages, vs a pip wheel) decides whether numpy<2
+# must hold. If `--stage probe` reports cv2 missing / no aruco, see the doc's "cv2" note before
+# installing anything.
+
+av              # PyAV: sequential rgb_video.mp4 decode (score_minimal_baseline_offline.read_frames_at_indices)
+pandas          # telemetry.csv + result tables (imported at module load by the ArUco helper and the scorer)
+accelerate      # from_pretrained(device_map=...) for every candidate
+huggingface_hub # gated-repo probe + downloads (usually already present as a transformers dependency)
+pillow          # PIL.Image.fromarray in every backend (usually already present)
+sentencepiece   # precautionary: Gemma tokenizer for PaliGemma2 (not verified as strictly required this session)

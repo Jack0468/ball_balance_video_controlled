@@ -28,3 +28,10 @@ pillow-heif
 dvc[s3]
 lerobot==0.4.4
 nemo_toolkit[asr]
+qwen-vl-utils
+transformers
+accelerate
+sentencepiece
+psutil
+av
+nbformat

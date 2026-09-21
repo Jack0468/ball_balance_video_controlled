@@ -106,3 +106,11 @@ derived from what Track 1's code actually imports, not a confirmed-working recip
 6.2.3 above is a chosen target, not yet confirmed by an actual flash — update this doc with
 what the flash/boot actually produced (any version drift, package versions that worked,
 surprises) once it's been run once on the device.
+
+## Arm 2 (large-VLM candidate sweep) environments are separate from this doc's Track 1 environment
+
+Running `deployment/run_arm2_sweep_jetson.py` (Arm 2 minimal-baseline candidates on the GPU) has its own
+environment story -- GPU torch, a transformers-version conflict between candidates, and a
+constraint-frozen install discipline to avoid repeating the numpy/ABI incident above. It is written up in
+`JETSON_ARM2_SWEEP_LOCAL.md`; nothing in this Track 1 doc changes, and none of that work should be
+installed into the Track 1 environment.

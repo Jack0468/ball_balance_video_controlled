@@ -58,6 +58,15 @@ CSV_FIELDS = [
                           # characterize its measurement noise (R) from, not
                           # vision_x_mm/vision_y_mm above. Blank if the caller
                           # didn't pass raw_x/raw_y to send_frame().
+    "vision_inference_ms",  # wall-clock time of the policy's act() call for this
+                             # frame (ArUco homography + CNN forward pass + marker
+                             # classification + state-machine update), NOT the
+                             # full main-loop iteration (rtt_ms/total_ms elsewhere
+                             # also include camera wait and serial I/O). Added
+                             # 2026-09-18 so per-arm inference latency is directly
+                             # comparable once a large-model arm exists on this
+                             # same telemetry schema. Blank if the caller didn't
+                             # pass inference_ms to send_frame() (older callers).
     "target_x_mm",  # target in force for that frame
     "target_y_mm",
     "mcu_vision_x_mm",  # what the MCU was actually acting on (echo)
@@ -71,6 +80,15 @@ CSV_FIELDS = [
     "raw_err_x_mm",  # raw_vision - touch -- the actual measurement-noise signal
     "raw_err_y_mm",
     "raw_err_mm",
+    "target_err_x_mm",  # target - touch -- CONTROL tracking error (distinct from
+    "target_err_y_mm",   # err_x_mm/err_y_mm above, which are a VISION accuracy
+    "target_err_mm",      # signal, vision - touch. evaluate_system_control.py
+                           # already derives this same quantity downstream as its
+                           # own error_mm column for Steady-State Error/Settling
+                           # Time; persisted here too (2026-09-18) so the raw
+                           # per-frame telemetry is self-contained without
+                           # requiring that derivation. Blank if target_x_mm/
+                           # target_y_mm or touch_valid aren't available this row.
     "motor_a",  # actual stepper positions
     "motor_b",
     "motor_c",
@@ -114,7 +132,7 @@ class TouchTelemetryLogger:
 
     # -- main-thread API ----------------------------------------------------
 
-    def send_frame(self, seq, vision_x, vision_y, target_x, target_y, raw_x=None, raw_y=None):
+    def send_frame(self, seq, vision_x, vision_y, target_x, target_y, raw_x=None, raw_y=None, inference_ms=None):
         """Enqueue a "V,<seq>,..." line for the worker thread to write, and
         register it so the eventual "T,..." echo can be joined back to it.
         Replaces calling ser.write() directly from the main thread -- this
@@ -127,7 +145,12 @@ class TouchTelemetryLogger:
         gets SENT (the fully processed output), which is the wrong signal to
         characterize measurement noise from for anything meant to replace
         that processing stack. Pass None (default) if not available; the CSV
-        row's raw_vision_*/raw_err_* columns are left blank in that case."""
+        row's raw_vision_*/raw_err_* columns are left blank in that case.
+
+        inference_ms (optional): wall-clock time of the caller's policy.act()
+        call for this frame -- see CSV_FIELDS' vision_inference_ms comment for
+        why this is timed separately from rtt_ms/the main loop's total_ms.
+        Pass None (default) if the caller isn't measuring it."""
         send_ts = time.perf_counter()
         payload = f"V,{seq},{vision_x:.2f},{vision_y:.2f},{target_x:.2f},{target_y:.2f}\n".encode("ascii")
         with self._pending_lock:
@@ -139,6 +162,7 @@ class TouchTelemetryLogger:
                 float(target_y),
                 float(raw_x) if raw_x is not None else None,
                 float(raw_y) if raw_y is not None else None,
+                float(inference_ms) if inference_ms is not None else None,
             )
             while len(self._pending) > PENDING_MAX:
                 self._pending.popitem(last=False)
@@ -277,8 +301,9 @@ class TouchTelemetryLogger:
             vis_x, vis_y = mcu_vis_x, mcu_vis_y
             tgt_x = tgt_y = ""
             raw_x = raw_y = None
+            inference_ms = None
         else:
-            send_ts, vis_x, vis_y, tgt_x, tgt_y, raw_x, raw_y = sent
+            send_ts, vis_x, vis_y, tgt_x, tgt_y, raw_x, raw_y, inference_ms = sent
             rtt_ms = round((recv_ts - send_ts) * 1000.0, 3)
 
         if valid:
@@ -292,12 +317,19 @@ class TouchTelemetryLogger:
                 raw_err = (raw_err_x * raw_err_x + raw_err_y * raw_err_y) ** 0.5
             else:
                 raw_err_x = raw_err_y = raw_err = ""
+            if tgt_x != "" and tgt_y != "":
+                target_err_x = tgt_x - touch_x
+                target_err_y = tgt_y - touch_y
+                target_err = (target_err_x * target_err_x + target_err_y * target_err_y) ** 0.5
+            else:
+                target_err_x = target_err_y = target_err = ""
         else:
             # No ball on the plate -> no ground truth -> no error. Leaving these
             # blank rather than 0 keeps them out of any mean you compute later.
             self.touch_lost += 1
             err_x = err_y = err = ""
             raw_err_x = raw_err_y = raw_err = ""
+            target_err_x = target_err_y = target_err = ""
 
         if self._writer is None:
             return
@@ -312,6 +344,7 @@ class TouchTelemetryLogger:
             "vision_y_mm": round(vis_y, 3),
             "raw_vision_x_mm": round(raw_x, 3) if raw_x is not None else "",
             "raw_vision_y_mm": round(raw_y, 3) if raw_y is not None else "",
+            "vision_inference_ms": round(inference_ms, 3) if inference_ms is not None else "",
             "target_x_mm": round(tgt_x, 3) if tgt_x != "" else "",
             "target_y_mm": round(tgt_y, 3) if tgt_y != "" else "",
             "mcu_vision_x_mm": mcu_vis_x,
@@ -325,6 +358,9 @@ class TouchTelemetryLogger:
             "raw_err_x_mm": round(raw_err_x, 3) if raw_err_x != "" else "",
             "raw_err_y_mm": round(raw_err_y, 3) if raw_err_y != "" else "",
             "raw_err_mm": round(raw_err, 3) if raw_err != "" else "",
+            "target_err_x_mm": round(target_err_x, 3) if target_err_x != "" else "",
+            "target_err_y_mm": round(target_err_y, 3) if target_err_y != "" else "",
+            "target_err_mm": round(target_err, 3) if target_err != "" else "",
             "motor_a": mot_a,
             "motor_b": mot_b,
             "motor_c": mot_c,

@@ -45,6 +45,25 @@ Both aim at the same task on **different, merely similar, training data** — th
 - The marker heatmap training target was a single degenerate Gaussian centered on the mean of *all* visible markers combined (near-constant across frames on the real sheets' symmetric layout) rather than one peak per marker — a network could hit near-zero loss without learning anything. Fixed via per-connected-component Gaussians.
 - `RandomHorizontalFlip`/`fliplr` is permanently forbidden on this dataset — it mirrors the board into a physically impossible layout and destroys the intrinsic coordinate system. Geometric augmentations that preserve intrinsic board-relative labels (translate/rotate/zoom) are fine and intentional.
 
+## Known, flagged issues (not yet fixed) — check before assuming a clean baseline
+
+(Full detail in `docs/PROJECT_LOGBOOK.md`'s 18/09/2026 entry.)
+- **Touch-plate ground-truth sensor artifact reaches training data.** 281 of Dataset 8's 52,772
+  labeled frames (0.53%) carry a corrupted `ball_x_px`/`ball_y_px` label — the same touch-plate
+  sensor glitch found and filtered in the Track 1 live-evaluation telemetry also exists in the
+  older PID-firmware telemetry behind Dataset 8's four raw sessions. Full flagged-frame list:
+  `host_software/data/01_bronze/touch_ground_truth_spike_audit_summary.json`. This very likely
+  explains `shared_vision_backbone_v2`'s previously-unexplained outlier tail (`ball_px_error_max`
+  114.6px, `Max_Euclidean_Error_mm` 156.2mm). **Not yet acted on**: whether to drop/re-derive these
+  frames and retrain is an open decision; a retrain-and-compare experiment (not yet run) is the
+  only way to confirm whether this measurably affected the model's learned accuracy, as opposed to
+  only its reported evaluation statistics.
+- **Vision accuracy may degrade during high-velocity motion.** A small number of large residual
+  vision-estimate errors, observed in live Track 1 telemetry after the touch-plate artifact above
+  was filtered out, each coincide with the fastest motion in their run (ball-placement transient,
+  a directional-command transition) — not yet quantified systematically, worth a dedicated
+  velocity-stratified accuracy analysis before assuming it's noise.
+
 ## Boundaries
 
 Your writes stay inside `host_software/ml_vision/`. Coordinate outputs must match exactly what the Audio/Fusion state machine and the STM32/FPGA control loop expect — final `(x_mm, y_mm)` only, per `CLAUDE.md`'s coordinate contract.

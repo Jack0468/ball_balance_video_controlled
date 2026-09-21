@@ -565,6 +565,25 @@ Confirmed via direct code inspection that this notebook had **no resume support 
 
 **Not retroactive:** the existing `NOISE_MIX` seed0/seed1 checkpoints predate `save_last=True` and have no `last.ckpt` to resume from -- they remain stuck as evaluated via `evaluate_nemo_checkpoint.py`, same as before. This only prevents the failure mode going forward.
 
+**Correction (2026-09-18): the seed0 checkpoint is no longer stuck.** `models/checkpoints_3x1x64_noisemix_seed0/` now contains `last-v1.ckpt` and a new `matchboxnet_3x1x64_noisemix_finetuned-seed0-epoch=027-val_acc_micro_top_1=0.9575.ckpt` (both dated 2026-09-18, i.e. training resumed and continued past the epoch-16 checkpoint this section was written against). Re-ran `evaluate_nemo_checkpoint.py` against the epoch=027 checkpoint: offline accuracy is 95.75% (2344/2448) -- bit-for-bit identical correct-count to epoch=016 -- but the per-class distribution is not identical, so this is a plateau, not a no-op:
+
+| class | epoch=016 | epoch=027 | delta |
+|---|---|---|---|
+| `_background_` | 89.9% (358/398) | 90.2% (359/398) | +0.3 |
+| `backward` | 100% (123/123) | 99.2% (122/123) | -0.8 |
+| `forward` | 91.1% (113/124) | 91.9% (114/124) | +0.8 |
+| `go_blue` | 99.2% (238/240) | 96.7% (232/240) | -2.5 |
+| `go_green` | 98.75% (237/240) | 99.2% (238/240) | +0.45 |
+| `go_grey` | 99.2% (124/125) | 98.4% (123/125) | -0.8 |
+| `go_red` | 90.4% (216/239) | 93.3% (223/239) | +2.9 |
+| `go_yellow` | 99.6% (239/240) | 99.6% (239/240) | 0 |
+| `hold` | 96.2% (225/234) | 97.4% (228/234) | +1.2 |
+| `left` | 98.3% (119/121) | 98.3% (119/121) | 0 |
+| `right` | 92.7% (115/124) | 98.4% (122/124) | **+5.7** |
+| `stop` | 98.75% (237/240) | 93.8% (225/240) | **-5.0** |
+
+Net: the extra 11 epochs mostly traded `stop`/`go_blue` recall for `right`/`go_red` recall rather than improving overall -- consistent with this run having plateaued rather than meaningfully improved, and not (yet) evidence that resuming past epoch 16 was worth it. Report: [`evaluations/reports/nemo_finetune_confusion_matrix_3x1x64_noisemix_seed0_20260918T074046Z.json`](../../evaluations/reports/nemo_finetune_confusion_matrix_3x1x64_noisemix_seed0_20260918T074046Z.json). Re-exported `.nemo`/`.onnx` in `models/nemo_matchboxnet_3x1x64_noisemix_seed0/` from this epoch=027 checkpoint (overwrites the epoch=016-derived export that was there before). **Live-stream re-eval against this new export has not been run** -- `evaluate_nemo_live_receiver_stream.py` instantiates `NemoAudioCommandReceiver`, which imports `sounddevice` at module level even in its pre-recorded-file-replay mode, and this session's auto-mode classifier blocked running it as a precaution against physical audio-hardware access; it needs to be run by the user directly (see command handed back at the end of that session's report) before this checkpoint's live-stream number can be filled in here.
+
 ## Proposed Modular Refactor
 
 Target layout for `host_software/ml_audio/`, mirroring the `ml_vision` convention:

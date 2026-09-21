@@ -25,6 +25,18 @@ class PIDController:
         self.prev_time = time.time()
         self.last_detected_time = time.time()
 
+        # Exposed (2026-09-18) so a future logging integration can persist this --
+        # conceptually the same quantity as RLControl.cpp's internal filt_vel
+        # (EMA-filtered ball velocity, fed to the RL net each cycle), which is
+        # otherwise unobservable from outside that firmware. Logging both would
+        # give a directly comparable internal-state signal across PID vs. RL
+        # control, not just external outcome metrics. No caller currently reads
+        # this (PIDController has no active call site in the codebase as of this
+        # date -- see docs/PROJECT_LOGBOOK.md 18/09/2026), so this is forward-
+        # looking exposure only, not a live telemetry integration.
+        self.last_ball_vel_x = 0.0
+        self.last_ball_vel_y = 0.0
+
     def calculate_angles(self, setpoint_x, setpoint_y, ball_x, ball_y):
         t = time.time()
         dt = t - self.prev_time
@@ -40,6 +52,8 @@ class PIDController:
         ball_vel_y = (ball_y - self.prev_ball_y) / (dt * 50)
         self.prev_ball_x = ball_x
         self.prev_ball_y = ball_y
+        self.last_ball_vel_x = ball_vel_x
+        self.last_ball_vel_y = ball_vel_y
 
         error_x = ball_x - setpoint_x
         error_y = ball_y - setpoint_y

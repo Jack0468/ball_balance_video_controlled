@@ -528,7 +528,13 @@ def main() -> None:
             command = policy.audio_receiver.get_latest_command()
             if command:
                 last_audio_command = command
+            _inference_t0 = time.perf_counter()
             cmd_out = policy.act(frame, command, state={})
+            # Isolated ArUco+CNN+marker-classify+state-machine time -- distinct from
+            # rtt_ms (serial round trip) and total_ms (full loop incl. camera wait/
+            # serial I/O) below. Recorded so per-arm latency is directly comparable
+            # once a large-model arm exists on this same telemetry schema (2026-09-18).
+            inference_ms = (time.perf_counter() - _inference_t0) * 1000.0
 
             if (
                 policy.last_debug.get("gate_reason") == "seeded"
@@ -580,6 +586,7 @@ def main() -> None:
                         t_x, t_y,
                         theta_a, theta_b, theta_c,
                         last_audio_command,
+                        vision_inference_ms=inference_ms,
                     )
 
                 if args.remote_control:
@@ -604,7 +611,10 @@ def main() -> None:
                     # the laptop the one time two threads touched the handle concurrently).
                     seq += 1
                     raw_x, raw_y = policy.last_debug["raw_ball_xy_mm"]
-                    touch_logger.send_frame(seq, bx, by, cmd_out.target_x_mm, cmd_out.target_y_mm, raw_x=raw_x, raw_y=raw_y)
+                    touch_logger.send_frame(
+                        seq, bx, by, cmd_out.target_x_mm, cmd_out.target_y_mm,
+                        raw_x=raw_x, raw_y=raw_y, inference_ms=inference_ms,
+                    )
                 else:
                     # Tagged form (matches touch_logger.send_frame() on the laptop) --
                     # see module docstring. seq wraps at 2**32 to match SerialCoords.cpp's

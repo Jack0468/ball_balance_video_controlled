@@ -69,6 +69,16 @@ TELEMETRY_CSV_FIELDS = [
     # generate_vla_dataset.py itself only reads the 9 columns above by name (pandas), so
     # this extra column is harmless to it.
     "audio_command",
+    # Wall-clock time of the policy's act() call for this frame (ArUco
+    # homography + CNN forward pass + marker classification + state-machine
+    # update) -- same semantics and same reason as touch_logger.py's
+    # vision_inference_ms column (added 2026-09-18, see its comment there for
+    # the full rationale): per-arm inference latency needs to be directly
+    # comparable once a large-model arm exists on this same telemetry shape.
+    # Another column beyond generate_vla_dataset.py's 9-field minimum, same as
+    # audio_command above -- harmless to that reader, which only looks up
+    # columns by name.
+    "vision_inference_ms",
 ]
 
 
@@ -164,10 +174,15 @@ class SessionRecorder:
         theta_b: Optional[float],
         theta_c: Optional[float],
         audio_command: Optional[str],
+        vision_inference_ms: Optional[float] = None,
     ) -> None:
         """Main-loop call: copies the frame (the camera receiver reuses its buffer, so a
         copy is required here, not optional) and enqueues everything the worker needs.
-        No I/O happens on the calling thread."""
+        No I/O happens on the calling thread.
+
+        vision_inference_ms (optional): wall-clock time of the caller's policy.act()
+        call for this frame -- see TELEMETRY_CSV_FIELDS' comment for why. Pass None
+        (default) if the caller isn't measuring it."""
         self._queue.put(
             (
                 frame_bgr.copy(),
@@ -180,6 +195,7 @@ class SessionRecorder:
                 theta_b,
                 theta_c,
                 audio_command,
+                vision_inference_ms,
             )
         )
 
@@ -200,6 +216,7 @@ class SessionRecorder:
                 theta_b,
                 theta_c,
                 cmd,
+                vision_inference_ms,
             ) = item
 
             if self._writer_video is None:
@@ -233,6 +250,9 @@ class SessionRecorder:
                     "theta_b": theta_b if theta_b is not None else "",
                     "theta_c": theta_c if theta_c is not None else "",
                     "audio_command": cmd or "",
+                    "vision_inference_ms": (
+                        round(vision_inference_ms, 3) if vision_inference_ms is not None else ""
+                    ),
                 }
             )
             self._frame_index += 1

@@ -72,6 +72,20 @@ substrate is the point of that arm).
    **standalone** on the Jetson AGX Orin 64GB Developer Kit model: p3730: own camera, own inference, own control loop.
    This is what this directory (`ml_jetson_vla/`) is for.
 
+   **Correction, 2026-09-18 — read `ARM2_MINIMAL_BASELINE_SCOPE.md` before assuming which
+   arm-2 work below answers the comparison.** The actual comparison axis for arm 2 is
+   general-purpose/minimum-coding-effort deployment vs. arm 1's high-specialization
+   purpose-built model — not peak performance. The multi-head/action-chunking/fine-tuning
+   work referenced under "Immediate blockers" item 1 below (`MULTI_HEAD_OUTPUT_DESIGN.md`,
+   `MULTI_HEAD_ARCHITECTURE_SPEC.md`, `core/qwen_multihead_policy.py`,
+   `ACTION_CHUNK_CONTROL_SUBSYSTEM_BOOTSTRAP.md`, Track 4's Stage 0/1 fine-tuning
+   data-staging) is real but is **specialization-track** infrastructure, parked for a
+   secondary question — it does not itself constitute the minimal baseline this comparison
+   needs first. The minimal baseline still reuses nothing from arm 1's execution pipeline
+   (see the "standalone" rationale below) and still has no accepting firmware endpoint for
+   a computed motor-angle output — see the scope doc for the current, unresolved state of
+   both.
+
 3. **Photonic computing platform — confirmed 2026-08-14 as a genuine end-to-end execution
    target**, not a partial matrix-multiply accelerator sitting behind other digital compute.
    Runs **the same class of large VLA model as arm 2** — an earlier framing considered

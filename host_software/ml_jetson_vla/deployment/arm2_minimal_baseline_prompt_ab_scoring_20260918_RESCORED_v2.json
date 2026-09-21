@@ -1,0 +1,4723 @@
+{
+  "backend": "qwen2_5_vl_3b_instruct",
+  "prompt_variants": [
+    "baseline",
+    "oriented"
+  ],
+  "tolerance_mm": 20.0,
+  "scoring_frame_version": 2,
+  "rescored_from": "arm2_minimal_baseline_prompt_ab_scoring_20260918.json",
+  "rescore_note": "Model outputs unchanged; error/hit recomputed with (1) telemetry target_x/y converted to the manifest mm frame and (2) Qwen's answers interpreted in the resized model-input space (see module docstring and score_prediction()). error_mm_alt_raw = as-parsed pixels taken as raw-frame pixels; error_mm_legacy = the original 2026-09-18 value.",
+  "sessions": [
+    {
+      "session": "session_jetson_track4_20260915_151627",
+      "variants": {
+        "baseline": {
+          "mean_error_mm_alt_raw": 79.24782727108926,
+          "n_frames_sampled": 6,
+          "n_frames_scored": 6,
+          "n_parsed": 6,
+          "parse_success_rate": 1.0,
+          "hit_rate": 0.5,
+          "mean_error_mm": 40.64664574618943,
+          "median_error_mm": 28.274609969854247,
+          "n_settled": 6,
+          "hit_rate_settled": 0.5,
+          "mean_error_mm_settled": 40.64664574618943,
+          "mean_error_mm_legacy": 200.45888217849622,
+          "mean_generate_latency_s": 133.34826922416687,
+          "frames": [
+            {
+              "frame_index": 1,
+              "instruction": "go_green",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [125, 79]}",
+              "act_s": 195.54651188850403,
+              "generate_latency_s": 164.2617425918579,
+              "true_target_x_mm": 0.4159553986330522,
+              "true_target_y_mm": 29.606630074525924,
+              "target_point_px": [
+                125.0,
+                79.0
+              ],
+              "pred_target_x_mm": 218.90966796875,
+              "pred_target_y_mm": 137.58779907226562,
+              "error_mm": 130.90776922912644,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                158.73015873015873,
+                104.17582417582418
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.33404460136694,
+              "true_target_manifest_y_mm": 100.60663007452592,
+              "error_mm_alt_raw": 155.17640108001083,
+              "error_mm_alt_norm1000": 191.67470761288325,
+              "error_mm_legacy": 269.1154238261899,
+              "error_mm_alt_model_input": 130.90776922912644
+            },
+            {
+              "frame_index": 162,
+              "instruction": "go_green",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [312, 117]}",
+              "act_s": 123.904461145401,
+              "generate_latency_s": 123.84392213821411,
+              "true_target_x_mm": 0.3906403323665287,
+              "true_target_y_mm": 29.619330994382004,
+              "target_point_px": [
+                312.0,
+                117.0
+              ],
+              "pred_target_x_mm": 86.7030029296875,
+              "pred_target_y_mm": 104.7044448852539,
+              "error_mm": 7.809944975746834,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                396.1904761904762,
+                154.28571428571428
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.35935966763347,
+              "true_target_manifest_y_mm": 100.61933099438201,
+              "error_mm_alt_raw": 48.35078505569449,
+              "error_mm_alt_norm1000": 123.76636397623213,
+              "error_mm_legacy": 165.29349130620483,
+              "error_mm_alt_model_input": 7.809944975746834
+            },
+            {
+              "frame_index": 323,
+              "instruction": "go_yellow",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [259, 150], \"label\": \"yellow marker\"}",
+              "act_s": 165.49733328819275,
+              "generate_latency_s": 165.40911197662354,
+              "true_target_x_mm": -28.730514990504865,
+              "true_target_y_mm": 0.1915827978866829,
+              "target_point_px": [
+                259.0,
+                150.0
+              ],
+              "pred_target_x_mm": 123.76860046386719,
+              "pred_target_y_mm": 78.3529281616211,
+              "error_mm": 7.276264948815936,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                328.8888888888889,
+                197.8021978021978
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 122.48051499050487,
+              "true_target_manifest_y_mm": 71.19158279788668,
+              "error_mm_alt_raw": 54.17241965823424,
+              "error_mm_alt_norm1000": 128.80223033576434,
+              "error_mm_legacy": 219.27816282757814,
+              "error_mm_alt_model_input": 7.276264948815936
+            },
+            {
+              "frame_index": 485,
+              "instruction": "go_yellow",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [295, 117]}",
+              "act_s": 119.28472089767456,
+              "generate_latency_s": 119.22382521629333,
+              "true_target_x_mm": -27.24324174366286,
+              "true_target_y_mm": -0.5130372019570928,
+              "target_point_px": [
+                295.0,
+                117.0
+              ],
+              "pred_target_x_mm": 97.7413101196289,
+              "pred_target_y_mm": 104.66397857666016,
+              "error_mm": 41.336675383738864,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                374.6031746031746,
+                154.28571428571428
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 120.99324174366286,
+              "true_target_manifest_y_mm": 70.48696279804291,
+              "error_mm_alt_raw": 61.95874356243113,
+              "error_mm_alt_norm1000": 128.85368926983557,
+              "error_mm_legacy": 212.79157753217825,
+              "error_mm_alt_model_input": 41.336675383738864
+            },
+            {
+              "frame_index": 1128,
+              "instruction": "go_red",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [295, 157]}",
+              "act_s": 105.0921368598938,
+              "generate_latency_s": 105.03252458572388,
+              "true_target_x_mm": 31.02452878780685,
+              "true_target_y_mm": 0.161663631665219,
+              "target_point_px": [
+                295.0,
+                157.0
+              ],
+              "pred_target_x_mm": 99.61332702636719,
+              "pred_target_y_mm": 74.42072296142578,
+              "error_mm": 37.031545664233256,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                374.6031746031746,
+                207.03296703296704
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 62.72547121219315,
+              "true_target_manifest_y_mm": 71.16166363166522,
+              "error_mm_alt_raw": 86.73019076280592,
+              "error_mm_alt_norm1000": 164.7785976362877,
+              "error_mm_legacy": 153.07669069936782,
+              "error_mm_alt_model_input": 37.031545664233256
+            },
+            {
+              "frame_index": 1531,
+              "instruction": "go_black",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [279, 154], \"label\": \"black marker\"}",
+              "act_s": 122.37790417671204,
+              "generate_latency_s": 122.31848883628845,
+              "true_target_x_mm": 1.9457600192146611,
+              "true_target_y_mm": -0.1693512405821394,
+              "target_point_px": [
+                279.0,
+                154.0
+              ],
+              "pred_target_x_mm": 110.74626159667969,
+              "pred_target_y_mm": 75.53590393066406,
+              "error_mm": 19.51767427547524,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                354.2857142857143,
+                203.07692307692307
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 91.80423998078534,
+              "true_target_manifest_y_mm": 70.83064875941785,
+              "error_mm_alt_raw": 69.098423507359,
+              "error_mm_alt_norm1000": 145.81596101389047,
+              "error_mm_legacy": 183.19794687945847,
+              "error_mm_alt_model_input": 19.51767427547524
+            }
+          ]
+        },
+        "oriented": {
+          "mean_error_mm_alt_raw": 62.274758091486234,
+          "n_frames_sampled": 6,
+          "n_frames_scored": 6,
+          "n_parsed": 6,
+          "parse_success_rate": 1.0,
+          "hit_rate": 0.16666666666666666,
+          "mean_error_mm": 52.23922655994849,
+          "median_error_mm": 46.48713369925218,
+          "n_settled": 6,
+          "hit_rate_settled": 0.16666666666666666,
+          "mean_error_mm_settled": 52.23922655994849,
+          "mean_error_mm_legacy": 173.09764565227533,
+          "mean_generate_latency_s": 162.9229826927185,
+          "frames": [
+            {
+              "frame_index": 1,
+              "instruction": "go_green",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [190, 70]}",
+              "act_s": 199.49527668952942,
+              "generate_latency_s": 199.40961599349976,
+              "true_target_x_mm": 0.4159553986330522,
+              "true_target_y_mm": 29.606630074525924,
+              "target_point_px": [
+                190.0,
+                70.0
+              ],
+              "pred_target_x_mm": 172.85101318359375,
+              "pred_target_y_mm": 144.75779724121094,
+              "error_mm": 90.95204150917894,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                241.26984126984127,
+                92.3076923076923
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.33404460136694,
+              "true_target_manifest_y_mm": 100.60663007452592,
+              "error_mm_alt_raw": 124.08903725324147,
+              "error_mm_alt_norm1000": 171.77121453146395,
+              "error_mm_legacy": 240.2942692697911,
+              "error_mm_alt_model_input": 90.95204150917894
+            },
+            {
+              "frame_index": 162,
+              "instruction": "go_green",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [309, 118]}",
+              "act_s": 164.77508211135864,
+              "generate_latency_s": 164.7192244529724,
+              "true_target_x_mm": 0.3906403323665287,
+              "true_target_y_mm": 29.619330994382004,
+              "target_point_px": [
+                309.0,
+                118.0
+              ],
+              "pred_target_x_mm": 88.83255004882812,
+              "pred_target_y_mm": 103.89598083496094,
+              "error_mm": 5.588241181505546,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                392.3809523809524,
+                155.6043956043956
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.35935966763347,
+              "true_target_manifest_y_mm": 100.61933099438201,
+              "error_mm_alt_raw": 49.38662541504465,
+              "error_mm_alt_norm1000": 124.49834781752938,
+              "error_mm_legacy": 166.26529821629936,
+              "error_mm_alt_model_input": 5.588241181505546
+            },
+            {
+              "frame_index": 323,
+              "instruction": "go_yellow",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [292, 116]}",
+              "act_s": 158.98836493492126,
+              "generate_latency_s": 158.92523837089539,
+              "true_target_x_mm": -28.730514990504865,
+              "true_target_y_mm": 0.1915827978866829,
+              "target_point_px": [
+                292.0,
+                116.0
+              ],
+              "pred_target_x_mm": 100.498046875,
+              "pred_target_y_mm": 105.11976623535156,
+              "error_mm": 40.42710150153551,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                370.7936507936508,
+                152.96703296703296
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 122.48051499050487,
+              "true_target_manifest_y_mm": 71.19158279788668,
+              "error_mm_alt_raw": 61.855731956759854,
+              "error_mm_alt_norm1000": 128.67539933644778,
+              "error_mm_legacy": 215.6779702091032,
+              "error_mm_alt_model_input": 40.42710150153551
+            },
+            {
+              "frame_index": 485,
+              "instruction": "go_yellow",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [339, 156]}",
+              "act_s": 150.95087218284607,
+              "generate_latency_s": 150.88782596588135,
+              "true_target_x_mm": -27.24324174366286,
+              "true_target_y_mm": -0.5130372019570928,
+              "target_point_px": [
+                339.0,
+                156.0
+              ],
+              "pred_target_x_mm": 68.51415252685547,
+              "pred_target_y_mm": 73.16088104248047,
+              "error_mm": 52.54716589696885,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                430.4761904761905,
+                205.71428571428572
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 120.99324174366286,
+              "true_target_manifest_y_mm": 70.48696279804291,
+              "error_mm_alt_raw": 33.75127757160685,
+              "error_mm_alt_norm1000": 108.49178841216143,
+              "error_mm_legacy": 178.46397407618005,
+              "error_mm_alt_model_input": 52.54716589696885
+            },
+            {
+              "frame_index": 1128,
+              "instruction": "go_red",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [309, 156]}",
+              "act_s": 155.39633321762085,
+              "generate_latency_s": 155.33533000946045,
+              "true_target_x_mm": 31.02452878780685,
+              "true_target_y_mm": 0.161663631665219,
+              "target_point_px": [
+                309.0,
+                156.0
+              ],
+              "pred_target_x_mm": 90.01448822021484,
+              "pred_target_y_mm": 75.04361724853516,
+              "error_mm": 27.563744541473802,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                392.3809523809524,
+                205.71428571428572
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 62.72547121219315,
+              "true_target_manifest_y_mm": 71.16166363166522,
+              "error_mm_alt_raw": 79.91857475808143,
+              "error_mm_alt_norm1000": 160.60939941782138,
+              "error_mm_legacy": 147.91935225312662,
+              "error_mm_alt_model_input": 27.563744541473802
+            },
+            {
+              "frame_index": 1531,
+              "instruction": "go_black",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [429, 234]}",
+              "act_s": 148.33439016342163,
+              "generate_latency_s": 148.26066136360168,
+              "true_target_x_mm": 1.9457600192146611,
+              "true_target_y_mm": -0.1693512405821394,
+              "target_point_px": [
+                429.0,
+                234.0
+              ],
+              "pred_target_x_mm": 13.609930992126465,
+              "pred_target_y_mm": 14.524930000305176,
+              "error_mm": 96.35706472902831,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                544.7619047619048,
+                308.57142857142856
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 91.80423998078534,
+              "true_target_manifest_y_mm": 70.83064875941785,
+              "error_mm_alt_raw": 24.64730159418316,
+              "error_mm_alt_norm1000": 87.54233305192193,
+              "error_mm_legacy": 89.96500988915159,
+              "error_mm_alt_model_input": 96.35706472902831
+            }
+          ]
+        }
+      }
+    },
+    {
+      "session": "session_jetson_track4_20260915_153053",
+      "variants": {
+        "baseline": {
+          "mean_error_mm_alt_raw": 64.71099051827298,
+          "n_frames_sampled": 6,
+          "n_frames_scored": 6,
+          "n_parsed": 6,
+          "parse_success_rate": 1.0,
+          "hit_rate": 0.5,
+          "mean_error_mm": 32.25442931406082,
+          "median_error_mm": 16.04821708566643,
+          "n_settled": 5,
+          "hit_rate_settled": 0.6,
+          "mean_error_mm_settled": 16.719463698674456,
+          "mean_error_mm_legacy": 175.40240803862153,
+          "mean_generate_latency_s": 116.96241180102031,
+          "frames": [
+            {
+              "frame_index": 1,
+              "instruction": "go_green",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [125, 79]}",
+              "act_s": 111.07595491409302,
+              "generate_latency_s": 111.0343713760376,
+              "true_target_x_mm": 0.2982046639447659,
+              "true_target_y_mm": 29.607133997726685,
+              "target_point_px": [
+                125.0,
+                79.0
+              ],
+              "pred_target_x_mm": 198.47438049316406,
+              "pred_target_y_mm": 133.083251953125,
+              "error_mm": 109.92925739099267,
+              "hit": false,
+              "target_transition": true,
+              "target_point_raw_px": [
+                158.73015873015873,
+                104.17582417582418
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.45179533605524,
+              "true_target_manifest_y_mm": 100.60713399772669,
+              "error_mm_alt_raw": 134.6956945488954,
+              "error_mm_alt_norm1000": 171.95129479774567,
+              "error_mm_legacy": 249.2784935874045,
+              "error_mm_alt_model_input": 109.92925739099267
+            },
+            {
+              "frame_index": 162,
+              "instruction": "go_green",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [259, 137]}",
+              "act_s": 116.98101782798767,
+              "generate_latency_s": 116.90480732917786,
+              "true_target_x_mm": -2.210322618484497,
+              "true_target_y_mm": 23.70398330688477,
+              "target_point_px": [
+                259.0,
+                137.0
+              ],
+              "pred_target_x_mm": 99.97989654541016,
+              "pred_target_y_mm": 89.50221252441406,
+              "error_mm": 6.573841633883983,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                328.8888888888889,
+                180.65934065934067
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 95.9603226184845,
+              "true_target_manifest_y_mm": 94.70398330688477,
+              "error_mm_alt_raw": 48.43932091068284,
+              "error_mm_alt_norm1000": 119.53742781268757,
+              "error_mm_legacy": 168.93729663611222,
+              "error_mm_alt_model_input": 6.573841633883983
+            },
+            {
+              "frame_index": 323,
+              "instruction": "go_yellow",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [265, 197]}",
+              "act_s": 124.99040007591248,
+              "generate_latency_s": 124.92995405197144,
+              "true_target_x_mm": -29.46535971599669,
+              "true_target_y_mm": -0.0742905465594063,
+              "target_point_px": [
+                265.0,
+                197.0
+              ],
+              "pred_target_x_mm": 95.1971664428711,
+              "pred_target_y_mm": 44.185909271240234,
+              "error_mm": 38.73029909611108,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                336.5079365079365,
+                259.7802197802198
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 123.2153597159967,
+              "true_target_manifest_y_mm": 70.92570945344059,
+              "error_mm_alt_raw": 14.31928846572519,
+              "error_mm_alt_norm1000": 97.74137963381006,
+              "error_mm_legacy": 182.58746789625067,
+              "error_mm_alt_model_input": 38.73029909611108
+            },
+            {
+              "frame_index": 970,
+              "instruction": "go_red",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [307, 156]}",
+              "act_s": 114.14896845817566,
+              "generate_latency_s": 114.09605407714844,
+              "true_target_x_mm": 31.17137619158528,
+              "true_target_y_mm": -0.3586461048958526,
+              "target_point_px": [
+                307.0,
+                156.0
+              ],
+              "pred_target_x_mm": 67.5794906616211,
+              "pred_target_y_mm": 74.30072021484375,
+              "error_mm": 6.196743592044357,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                389.8412698412698,
+                205.71428571428572
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 62.57862380841472,
+              "true_target_manifest_y_mm": 70.64135389510415,
+              "error_mm_alt_raw": 60.177238797261104,
+              "error_mm_alt_norm1000": 142.3917773307862,
+              "error_mm_legacy": 131.89556405627337,
+              "error_mm_alt_model_input": 6.196743592044357
+            },
+            {
+              "frame_index": 1131,
+              "instruction": "go_red",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [305, 152]}",
+              "act_s": 123.79916763305664,
+              "generate_latency_s": 123.73992419242859,
+              "true_target_x_mm": 31.160650096373587,
+              "true_target_y_mm": -0.3535991306593217,
+              "target_point_px": [
+                305.0,
+                152.0
+              ],
+              "pred_target_x_mm": 69.97134399414062,
+              "pred_target_y_mm": 77.6048355102539,
+              "error_mm": 10.144636484578829,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                387.3015873015873,
+                200.43956043956044
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 62.58934990362641,
+              "true_target_manifest_y_mm": 70.64640086934068,
+              "error_mm_alt_raw": 63.43713030155307,
+              "error_mm_alt_norm1000": 143.93882179560146,
+              "error_mm_legacy": 135.34614198795128,
+              "error_mm_alt_model_input": 10.144636484578829
+            },
+            {
+              "frame_index": 1533,
+              "instruction": "go_black",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [241, 150]}",
+              "act_s": 111.12071299552917,
+              "generate_latency_s": 111.06935977935791,
+              "true_target_x_mm": 0.1198046694068864,
+              "true_target_y_mm": 0.1215018329306389,
+              "target_point_px": [
+                241.0,
+                150.0
+              ],
+              "pred_target_x_mm": 114.21686553955078,
+              "pred_target_y_mm": 78.74189758300781,
+              "error_mm": 21.95179768675403,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                306.031746031746,
+                197.8021978021978
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.63019533059311,
+              "true_target_manifest_y_mm": 71.12150183293063,
+              "error_mm_alt_raw": 67.19727008552029,
+              "error_mm_alt_norm1000": 136.62855379356182,
+              "error_mm_legacy": 184.3694840677373,
+              "error_mm_alt_model_input": 21.95179768675403
+            }
+          ]
+        },
+        "oriented": {
+          "mean_error_mm_alt_raw": 62.849190543874194,
+          "n_frames_sampled": 6,
+          "n_frames_scored": 6,
+          "n_parsed": 6,
+          "parse_success_rate": 1.0,
+          "hit_rate": 0.3333333333333333,
+          "mean_error_mm": 45.420127807106944,
+          "median_error_mm": 42.29837552444126,
+          "n_settled": 5,
+          "hit_rate_settled": 0.4,
+          "mean_error_mm_settled": 40.054329680415506,
+          "mean_error_mm_legacy": 158.8954423294572,
+          "mean_generate_latency_s": 145.5283980369568,
+          "frames": [
+            {
+              "frame_index": 1,
+              "instruction": "go_green",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [190, 70]}",
+              "act_s": 155.07917642593384,
+              "generate_latency_s": 155.02131962776184,
+              "true_target_x_mm": 0.2982046639447659,
+              "true_target_y_mm": 29.607133997726685,
+              "target_point_px": [
+                190.0,
+                70.0
+              ],
+              "pred_target_x_mm": 152.74095153808594,
+              "pred_target_y_mm": 141.89552307128906,
+              "error_mm": 72.2491184405641,
+              "hit": false,
+              "target_transition": true,
+              "target_point_raw_px": [
+                241.26984126984127,
+                92.3076923076923
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.45179533605524,
+              "true_target_manifest_y_mm": 100.60713399772669,
+              "error_mm_alt_raw": 105.07985433039178,
+              "error_mm_alt_norm1000": 152.82691192300715,
+              "error_mm_legacy": 221.93133277318432,
+              "error_mm_alt_model_input": 72.2491184405641
+            },
+            {
+              "frame_index": 162,
+              "instruction": "go_green",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [249, 136]}",
+              "act_s": 135.71849465370178,
+              "generate_latency_s": 135.62435626983643,
+              "true_target_x_mm": -2.210322618484497,
+              "true_target_y_mm": 23.70398330688477,
+              "target_point_px": [
+                249.0,
+                136.0
+              ],
+              "pred_target_x_mm": 106.93417358398438,
+              "pred_target_y_mm": 90.09405517578125,
+              "error_mm": 11.902808172315563,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                316.1904761904762,
+                179.34065934065933
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 95.9603226184845,
+              "true_target_manifest_y_mm": 94.70398330688477,
+              "error_mm_alt_raw": 53.76264510743001,
+              "error_mm_alt_norm1000": 122.80329109830208,
+              "error_mm_legacy": 173.92846580674288,
+              "error_mm_alt_model_input": 11.902808172315563
+            },
+            {
+              "frame_index": 323,
+              "instruction": "go_yellow",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [269, 118]}",
+              "act_s": 149.9720437526703,
+              "generate_latency_s": 149.91033148765564,
+              "true_target_x_mm": -29.46535971599669,
+              "true_target_y_mm": -0.0742905465594063,
+              "target_point_px": [
+                269.0,
+                118.0
+              ],
+              "pred_target_x_mm": 94.88748168945312,
+              "pred_target_y_mm": 104.84342956542969,
+              "error_mm": 44.19140652979898,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                341.58730158730157,
+                155.6043956043956
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 123.2153597159967,
+              "true_target_manifest_y_mm": 70.92570945344059,
+              "error_mm_alt_raw": 57.08773119340555,
+              "error_mm_alt_norm1000": 116.93157868996316,
+              "error_mm_legacy": 208.5997071087669,
+              "error_mm_alt_model_input": 44.19140652979898
+            },
+            {
+              "frame_index": 970,
+              "instruction": "go_red",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [309, 156]}",
+              "act_s": 140.5237283706665,
+              "generate_latency_s": 140.43801474571228,
+              "true_target_x_mm": 31.17137619158528,
+              "true_target_y_mm": -0.3586461048958526,
+              "target_point_px": [
+                309.0,
+                156.0
+              ],
+              "pred_target_x_mm": 66.21220397949219,
+              "pred_target_y_mm": 74.34956359863281,
+              "error_mm": 5.191697609163262,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                392.3809523809524,
+                205.71428571428572
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 62.57862380841472,
+              "true_target_manifest_y_mm": 70.64135389510415,
+              "error_mm_alt_raw": 59.26758705405269,
+              "error_mm_alt_norm1000": 141.8058115329326,
+              "error_mm_legacy": 131.2404124242925,
+              "error_mm_alt_model_input": 5.191697609163262
+            },
+            {
+              "frame_index": 1131,
+              "instruction": "go_red",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [269, 194]}",
+              "act_s": 150.22995567321777,
+              "generate_latency_s": 150.1727318763733,
+              "true_target_x_mm": 31.160650096373587,
+              "true_target_y_mm": -0.3535991306593217,
+              "target_point_px": [
+                269.0,
+                194.0
+              ],
+              "pred_target_x_mm": 93.68594360351562,
+              "pred_target_y_mm": 44.84729766845703,
+              "error_mm": 40.40534451908354,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                341.58730158730157,
+                255.82417582417582
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 62.58934990362641,
+              "true_target_manifest_y_mm": 70.64640086934068,
+              "error_mm_alt_raw": 71.93414805996078,
+              "error_mm_alt_norm1000": 146.86855897899235,
+              "error_mm_legacy": 130.10821324130063,
+              "error_mm_alt_model_input": 40.40534451908354
+            },
+            {
+              "frame_index": 1533,
+              "instruction": "go_black",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [390, 242]}",
+              "act_s": 142.08439254760742,
+              "generate_latency_s": 142.00363421440125,
+              "true_target_x_mm": 0.1198046694068864,
+              "true_target_y_mm": 0.1215018329306389,
+              "target_point_px": [
+                390.0,
+                242.0
+              ],
+              "pred_target_x_mm": 13.199685096740723,
+              "pred_target_y_mm": 14.121268272399902,
+              "error_mm": 98.58039157171616,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                495.23809523809524,
+                319.1208791208791
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.63019533059311,
+              "true_target_manifest_y_mm": 71.12150183293063,
+              "error_mm_alt_raw": 29.963177518004404,
+              "error_mm_alt_norm1000": 77.71920298166425,
+              "error_mm_legacy": 87.56452262245611,
+              "error_mm_alt_model_input": 98.58039157171616
+            }
+          ]
+        }
+      }
+    },
+    {
+      "session": "session_jetson_track4_20260915_153247",
+      "variants": {
+        "baseline": {
+          "mean_error_mm_alt_raw": 69.8190214201545,
+          "n_frames_sampled": 6,
+          "n_frames_scored": 6,
+          "n_parsed": 6,
+          "parse_success_rate": 1.0,
+          "hit_rate": 0.6666666666666666,
+          "mean_error_mm": 28.44022311067236,
+          "median_error_mm": 11.175168700691977,
+          "n_settled": 5,
+          "hit_rate_settled": 0.8,
+          "mean_error_mm_settled": 12.12524363900694,
+          "mean_error_mm_legacy": 196.77133705754082,
+          "mean_generate_latency_s": 120.10492146015167,
+          "frames": [
+            {
+              "frame_index": 1,
+              "instruction": "go_green",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [125, 79]}",
+              "act_s": 133.51593279838562,
+              "generate_latency_s": 133.46489596366882,
+              "true_target_x_mm": 0.2660995892865188,
+              "true_target_y_mm": 29.57120968512983,
+              "target_point_px": [
+                125.0,
+                79.0
+              ],
+              "pred_target_x_mm": 198.37513732910156,
+              "pred_target_y_mm": 133.75486755371094,
+              "error_mm": 110.01512046899946,
+              "hit": false,
+              "target_transition": true,
+              "target_point_raw_px": [
+                158.73015873015873,
+                104.17582417582418
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.48390041071349,
+              "true_target_manifest_y_mm": 100.57120968512983,
+              "error_mm_alt_raw": 134.92216862044762,
+              "error_mm_alt_norm1000": 172.39657209199552,
+              "error_mm_legacy": 249.64670145747604,
+              "error_mm_alt_model_input": 110.01512046899946
+            },
+            {
+              "frame_index": 162,
+              "instruction": "go_green",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [265, 117]}",
+              "act_s": 131.2956418991089,
+              "generate_latency_s": 131.2172532081604,
+              "true_target_x_mm": -3.4077937602996826,
+              "true_target_y_mm": 24.80783462524414,
+              "target_point_px": [
+                265.0,
+                117.0
+              ],
+              "pred_target_x_mm": 98.13813018798828,
+              "pred_target_y_mm": 105.36450958251953,
+              "error_mm": 9.606825477256669,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                336.5079365079365,
+                154.28571428571428
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 97.15779376029968,
+              "true_target_manifest_y_mm": 95.80783462524414,
+              "error_mm_alt_raw": 51.968897068834146,
+              "error_mm_alt_norm1000": 119.67786635361348,
+              "error_mm_legacy": 175.061345392989,
+              "error_mm_alt_model_input": 9.606825477256669
+            },
+            {
+              "frame_index": 324,
+              "instruction": "go_yellow",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [195, 152]}",
+              "act_s": 131.79229307174683,
+              "generate_latency_s": 131.70537161827087,
+              "true_target_x_mm": -28.87772362249541,
+              "true_target_y_mm": -0.1023086289835035,
+              "target_point_px": [
+                195.0,
+                152.0
+              ],
+              "pred_target_x_mm": 145.03025817871094,
+              "pred_target_y_mm": 74.47512817382812,
+              "error_mm": 22.686374955478055,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                247.61904761904762,
+                200.43956043956044
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 122.62772362249541,
+              "true_target_manifest_y_mm": 70.89769137101649,
+              "error_mm_alt_raw": 61.4863594629967,
+              "error_mm_alt_norm1000": 124.73278789856649,
+              "error_mm_legacy": 228.59106780432631,
+              "error_mm_alt_model_input": 22.686374955478055
+            },
+            {
+              "frame_index": 485,
+              "instruction": "go_yellow",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [219, 147], \"label\": \"yellow marker\"}",
+              "act_s": 115.31544971466064,
+              "generate_latency_s": 115.24862957000732,
+              "true_target_x_mm": -29.226870655771855,
+              "true_target_y_mm": 0.1512974300704996,
+              "target_point_px": [
+                219.0,
+                147.0
+              ],
+              "pred_target_x_mm": 129.22006225585938,
+              "pred_target_y_mm": 77.01020050048828,
+              "error_mm": 8.561786410788018,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                278.0952380952381,
+                193.84615384615384
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 122.97687065577185,
+              "true_target_manifest_y_mm": 71.1512974300705,
+              "error_mm_alt_raw": 52.06888007941402,
+              "error_mm_alt_norm1000": 119.41223119985744,
+              "error_mm_legacy": 218.76884809039979,
+              "error_mm_alt_model_input": 8.561786410788018
+            },
+            {
+              "frame_index": 1131,
+              "instruction": "go_red",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [312, 151]}",
+              "act_s": 104.44626498222351,
+              "generate_latency_s": 104.39223551750183,
+              "true_target_x_mm": 31.1553432012117,
+              "true_target_y_mm": -0.3632949771656257,
+              "target_point_px": [
+                312.0,
+                151.0
+              ],
+              "pred_target_x_mm": 64.8843765258789,
+              "pred_target_y_mm": 77.28095245361328,
+              "error_mm": 7.027719427384673,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                396.1904761904762,
+                199.12087912087912
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 62.5946567987883,
+              "true_target_manifest_y_mm": 70.63670502283438,
+              "error_mm_alt_raw": 59.59426910437316,
+              "error_mm_alt_norm1000": 140.57800240068053,
+              "error_mm_legacy": 132.10609379164993,
+              "error_mm_alt_model_input": 7.027719427384673
+            },
+            {
+              "frame_index": 1534,
+              "instruction": "go_black",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [251, 157]}",
+              "act_s": 104.66649460792542,
+              "generate_latency_s": 104.60114288330078,
+              "true_target_x_mm": -0.1656101097704976,
+              "true_target_y_mm": 0.072507429401061,
+              "target_point_px": [
+                251.0,
+                157.0
+              ],
+              "pred_target_x_mm": 106.62661743164062,
+              "pred_target_y_mm": 71.98211669921875,
+              "error_mm": 12.743511924127285,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                318.73015873015873,
+                207.03296703296704
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.9156101097705,
+              "true_target_manifest_y_mm": 71.07250742940106,
+              "error_mm_alt_raw": 58.873554184861305,
+              "error_mm_alt_norm1000": 131.60516255434243,
+              "error_mm_legacy": 176.45396580840395,
+              "error_mm_alt_model_input": 12.743511924127285
+            }
+          ]
+        },
+        "oriented": {
+          "mean_error_mm_alt_raw": 65.42476452629444,
+          "n_frames_sampled": 6,
+          "n_frames_scored": 6,
+          "n_parsed": 6,
+          "parse_success_rate": 1.0,
+          "hit_rate": 0.6666666666666666,
+          "mean_error_mm": 33.80157505747401,
+          "median_error_mm": 13.798449781648504,
+          "n_settled": 5,
+          "hit_rate_settled": 0.8,
+          "mean_error_mm_settled": 28.61657054823531,
+          "mean_error_mm_legacy": 185.88410122654554,
+          "mean_generate_latency_s": 161.46168490250906,
+          "frames": [
+            {
+              "frame_index": 1,
+              "instruction": "go_green",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [190, 100]}",
+              "act_s": 164.47724843025208,
+              "generate_latency_s": 164.3925211429596,
+              "true_target_x_mm": 0.2660995892865188,
+              "true_target_y_mm": 29.57120968512983,
+              "target_point_px": [
+                190.0,
+                100.0
+              ],
+              "pred_target_x_mm": 150.7550506591797,
+              "pred_target_y_mm": 117.52059936523438,
+              "error_mm": 59.726597603667535,
+              "hit": false,
+              "target_transition": true,
+              "target_point_raw_px": [
+                241.26984126984127,
+                131.86813186813185
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.48390041071349,
+              "true_target_manifest_y_mm": 100.57120968512983,
+              "error_mm_alt_raw": 94.82144995175759,
+              "error_mm_alt_norm1000": 147.4628538700272,
+              "error_mm_legacy": 210.26039233424206,
+              "error_mm_alt_model_input": 59.726597603667535
+            },
+            {
+              "frame_index": 162,
+              "instruction": "go_green",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [269, 117]}",
+              "act_s": 172.71869468688965,
+              "generate_latency_s": 172.66549396514893,
+              "true_target_x_mm": -3.4077937602996826,
+              "true_target_y_mm": 24.80783462524414,
+              "target_point_px": [
+                269.0,
+                117.0
+              ],
+              "pred_target_x_mm": 95.34254455566406,
+              "pred_target_y_mm": 105.48522186279297,
+              "error_mm": 9.846164401451114,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                341.58730158730157,
+                154.28571428571428
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 97.15779376029968,
+              "true_target_manifest_y_mm": 95.80783462524414,
+              "error_mm_alt_raw": 50.26166554753578,
+              "error_mm_alt_norm1000": 118.52351158934012,
+              "error_mm_legacy": 173.31594022378354,
+              "error_mm_alt_model_input": 9.846164401451114
+            },
+            {
+              "frame_index": 324,
+              "instruction": "go_yellow",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [229, 154]}",
+              "act_s": 170.87490916252136,
+              "generate_latency_s": 170.81082725524902,
+              "true_target_x_mm": -28.87772362249541,
+              "true_target_y_mm": -0.1023086289835035,
+              "target_point_px": [
+                229.0,
+                154.0
+              ],
+              "pred_target_x_mm": 121.79083251953125,
+              "pred_target_y_mm": 73.75640869140625,
+              "error_mm": 2.9786996216666366,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                290.7936507936508,
+                203.07692307692307
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 122.62772362249541,
+              "true_target_manifest_y_mm": 70.89769137101649,
+              "error_mm_alt_raw": 46.1123191243728,
+              "error_mm_alt_norm1000": 115.46227966358688,
+              "error_mm_legacy": 211.8651106626121,
+              "error_mm_alt_model_input": 2.9786996216666366
+            },
+            {
+              "frame_index": 485,
+              "instruction": "go_yellow",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [219, 148]}",
+              "act_s": 148.4750576019287,
+              "generate_latency_s": 148.42049098014832,
+              "true_target_x_mm": -29.226870655771855,
+              "true_target_y_mm": 0.1512974300704996,
+              "target_point_px": [
+                219.0,
+                148.0
+              ],
+              "pred_target_x_mm": 129.17294311523438,
+              "pred_target_y_mm": 76.22147369384766,
+              "error_mm": 8.00612273629872,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                278.0952380952381,
+                195.16483516483515
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 122.97687065577185,
+              "true_target_manifest_y_mm": 71.1512974300705,
+              "error_mm_alt_raw": 51.63599149755429,
+              "error_mm_alt_norm1000": 119.1713137691516,
+              "error_mm_legacy": 218.4279130925402,
+              "error_mm_alt_model_input": 8.00612273629872
+            },
+            {
+              "frame_index": 1131,
+              "instruction": "go_red",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [290, 154]}",
+              "act_s": 144.8025631904602,
+              "generate_latency_s": 144.75170826911926,
+              "true_target_x_mm": 31.1553432012117,
+              "true_target_y_mm": -0.3632949771656257,
+              "target_point_px": [
+                290.0,
+                154.0
+              ],
+              "pred_target_x_mm": 79.96844482421875,
+              "pred_target_y_mm": 74.27539825439453,
+              "error_mm": 17.750735161845896,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                368.25396825396825,
+                203.07692307692307
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 62.5946567987883,
+              "true_target_manifest_y_mm": 70.63670502283438,
+              "error_mm_alt_raw": 68.68591237707082,
+              "error_mm_alt_norm1000": 146.3370919530113,
+              "error_mm_legacy": 137.95021697895166,
+              "error_mm_alt_model_input": 17.750735161845896
+            },
+            {
+              "frame_index": 1534,
+              "instruction": "go_black",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [390, 86]}",
+              "act_s": 167.79858589172363,
+              "generate_latency_s": 167.7290678024292,
+              "true_target_x_mm": -0.1656101097704976,
+              "true_target_y_mm": 0.072507429401061,
+              "target_point_px": [
+                390.0,
+                86.0
+              ],
+              "pred_target_x_mm": 9.51848030090332,
+              "pred_target_y_mm": 132.697265625,
+              "error_mm": 104.50113081991417,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                495.23809523809524,
+                113.4065934065934
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.9156101097705,
+              "true_target_manifest_y_mm": 71.07250742940106,
+              "error_mm_alt_raw": 81.03124865947527,
+              "error_mm_alt_norm1000": 118.04139880945067,
+              "error_mm_legacy": 163.4850340671438,
+              "error_mm_alt_model_input": 104.50113081991417
+            }
+          ]
+        }
+      }
+    },
+    {
+      "session": "session_jetson_track4_20260915_160025",
+      "variants": {
+        "baseline": {
+          "mean_error_mm_alt_raw": 59.77049126961423,
+          "n_frames_sampled": 6,
+          "n_frames_scored": 6,
+          "n_parsed": 6,
+          "parse_success_rate": 1.0,
+          "hit_rate": 0.8333333333333334,
+          "mean_error_mm": 19.494145199596854,
+          "median_error_mm": 13.075944436763718,
+          "n_settled": 6,
+          "hit_rate_settled": 0.8333333333333334,
+          "mean_error_mm_settled": 19.494145199596854,
+          "mean_error_mm_legacy": 202.1844082612682,
+          "mean_generate_latency_s": 104.09602558612823,
+          "frames": [
+            {
+              "frame_index": 1454,
+              "instruction": "go_yellow",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [135, 152]}",
+              "act_s": 116.64663672447205,
+              "generate_latency_s": 116.61282634735107,
+              "true_target_x_mm": -29.51750775709843,
+              "true_target_y_mm": -0.0465547603702376,
+              "target_point_px": [
+                135.0,
+                152.0
+              ],
+              "pred_target_x_mm": 185.87608337402344,
+              "pred_target_y_mm": 72.55379486083984,
+              "error_mm": 62.62902569647978,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                171.42857142857142,
+                200.43956043956044
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 123.26750775709843,
+              "true_target_manifest_y_mm": 70.95344523962976,
+              "error_mm_alt_raw": 90.68097695862565,
+              "error_mm_alt_norm1000": 143.3622742162437,
+              "error_mm_legacy": 258.9003536855261,
+              "error_mm_alt_model_input": 62.62902569647978
+            },
+            {
+              "frame_index": 1695,
+              "instruction": "go_yellow",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [225, 151]}",
+              "act_s": 106.3221263885498,
+              "generate_latency_s": 106.25150966644287,
+              "true_target_x_mm": -29.352288169448467,
+              "true_target_y_mm": 0.0346474670976107,
+              "target_point_px": [
+                225.0,
+                151.0
+              ],
+              "pred_target_x_mm": 124.85967254638672,
+              "pred_target_y_mm": 75.72203063964844,
+              "error_mm": 5.005992494462937,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                285.7142857142857,
+                199.12087912087912
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 123.10228816944847,
+              "true_target_manifest_y_mm": 71.03464746709761,
+              "error_mm_alt_raw": 49.01583301662935,
+              "error_mm_alt_norm1000": 118.40658102317641,
+              "error_mm_legacy": 215.58944276437592,
+              "error_mm_alt_model_input": 5.005992494462937
+            },
+            {
+              "frame_index": 2179,
+              "instruction": "go_yellow",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [215, 152]}",
+              "act_s": 96.99806571006775,
+              "generate_latency_s": 96.93055605888367,
+              "true_target_x_mm": -29.07705649986471,
+              "true_target_y_mm": 0.1682615414795449,
+              "target_point_px": [
+                215.0,
+                152.0
+              ],
+              "pred_target_x_mm": 130.91049194335938,
+              "pred_target_y_mm": 75.66091918945312,
+              "error_mm": 9.248021480892081,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                273.015873015873,
+                200.43956043956044
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 122.82705649986471,
+              "true_target_manifest_y_mm": 71.16826154147954,
+              "error_mm_alt_raw": 52.97971207316985,
+              "error_mm_alt_norm1000": 121.2123573839346,
+              "error_mm_legacy": 219.57708010213983,
+              "error_mm_alt_model_input": 9.248021480892081
+            },
+            {
+              "frame_index": 2662,
+              "instruction": "go_red",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [291, 151]}",
+              "act_s": 92.14447712898254,
+              "generate_latency_s": 92.08320736885071,
+              "true_target_x_mm": 31.13863692592335,
+              "true_target_y_mm": -0.3634351402247319,
+              "target_point_px": [
+                291.0,
+                151.0
+              ],
+              "pred_target_x_mm": 77.62689208984375,
+              "pred_target_y_mm": 78.40023803710938,
+              "error_mm": 16.903867392635355,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                369.5238095238095,
+                199.12087912087912
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 62.61136307407665,
+              "true_target_manifest_y_mm": 70.63656485977526,
+              "error_mm_alt_raw": 68.7563108228045,
+              "error_mm_alt_norm1000": 147.32550307018184,
+              "error_mm_legacy": 139.82300348330253,
+              "error_mm_alt_model_input": 16.903867392635355
+            },
+            {
+              "frame_index": 3631,
+              "instruction": "go_green",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [265, 117]}",
+              "act_s": 99.38301825523376,
+              "generate_latency_s": 99.34488582611084,
+              "true_target_x_mm": 0.269272201275777,
+              "true_target_y_mm": 29.579797763441206,
+              "target_point_px": [
+                265.0,
+                117.0
+              ],
+              "pred_target_x_mm": 98.16010284423828,
+              "pred_target_y_mm": 103.90019226074219,
+              "error_mm": 5.737732168225211,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                336.5079365079365,
+                154.28571428571428
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.48072779872422,
+              "true_target_manifest_y_mm": 100.5797977634412,
+              "error_mm_alt_raw": 51.75101277203919,
+              "error_mm_alt_norm1000": 119.47157119967754,
+              "error_mm_legacy": 168.55297049197273,
+              "error_mm_alt_model_input": 5.737732168225211
+            },
+            {
+              "frame_index": 4356,
+              "instruction": "go_yellow",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [215, 179]}",
+              "act_s": 113.39927387237549,
+              "generate_latency_s": 113.35316824913025,
+              "true_target_x_mm": -27.750232567378788,
+              "true_target_y_mm": 0.0042988339516796,
+              "target_point_px": [
+                215.0,
+                179.0
+              ],
+              "pred_target_x_mm": 130.3145751953125,
+              "pred_target_y_mm": 55.95541000366211,
+              "error_mm": 17.440231964885776,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                273.015873015873,
+                236.04395604395606
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 121.50023256737879,
+              "true_target_manifest_y_mm": 71.00429883395168,
+              "error_mm_alt_raw": 45.4391019744168,
+              "error_mm_alt_norm1000": 115.84768508760808,
+              "error_mm_legacy": 210.66359904029215,
+              "error_mm_alt_model_input": 17.440231964885776
+            }
+          ]
+        },
+        "oriented": {
+          "mean_error_mm_alt_raw": 58.67932935601155,
+          "n_frames_sampled": 6,
+          "n_frames_scored": 6,
+          "n_parsed": 6,
+          "parse_success_rate": 1.0,
+          "hit_rate": 0.3333333333333333,
+          "mean_error_mm": 32.96457360164013,
+          "median_error_mm": 41.850596608377195,
+          "n_settled": 6,
+          "hit_rate_settled": 0.3333333333333333,
+          "mean_error_mm_settled": 32.96457360164013,
+          "mean_error_mm_legacy": 193.98364244582365,
+          "mean_generate_latency_s": 134.43357602755228,
+          "frames": [
+            {
+              "frame_index": 1454,
+              "instruction": "go_yellow",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [139, 154]}",
+              "act_s": 129.8550157546997,
+              "generate_latency_s": 129.7980854511261,
+              "true_target_x_mm": -29.51750775709843,
+              "true_target_y_mm": -0.0465547603702376,
+              "target_point_px": [
+                139.0,
+                154.0
+              ],
+              "pred_target_x_mm": 183.00341796875,
+              "pred_target_y_mm": 71.07453155517578,
+              "error_mm": 59.736032934153826,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                176.5079365079365,
+                203.07692307692307
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 123.26750775709843,
+              "true_target_manifest_y_mm": 70.95344523962976,
+              "error_mm_alt_raw": 88.09874464515798,
+              "error_mm_alt_norm1000": 141.76192559170244,
+              "error_mm_legacy": 256.3028784889512,
+              "error_mm_alt_model_input": 59.736032934153826
+            },
+            {
+              "frame_index": 1695,
+              "instruction": "go_yellow",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [229, 150]}",
+              "act_s": 138.37323689460754,
+              "generate_latency_s": 138.33253622055054,
+              "true_target_x_mm": -29.352288169448467,
+              "true_target_y_mm": 0.0346474670976107,
+              "target_point_px": [
+                229.0,
+                150.0
+              ],
+              "pred_target_x_mm": 122.15921020507812,
+              "pred_target_y_mm": 76.59972381591797,
+              "error_mm": 5.644419440038153,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                290.7936507936508,
+                197.8021978021978
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 123.10228816944847,
+              "true_target_manifest_y_mm": 71.03464746709761,
+              "error_mm_alt_raw": 47.91240249600835,
+              "error_mm_alt_norm1000": 117.63583394177901,
+              "error_mm_legacy": 214.0449395956189,
+              "error_mm_alt_model_input": 5.644419440038153
+            },
+            {
+              "frame_index": 2179,
+              "instruction": "go_yellow",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [269, 116]}",
+              "act_s": 142.41115641593933,
+              "generate_latency_s": 142.3611879348755,
+              "true_target_x_mm": -29.07705649986471,
+              "true_target_y_mm": 0.1682615414795449,
+              "target_point_px": [
+                269.0,
+                116.0
+              ],
+              "pred_target_x_mm": 94.76039123535156,
+              "pred_target_y_mm": 105.14105224609375,
+              "error_mm": 44.066860647540466,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                341.58730158730157,
+                152.96703296703296
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 122.82705649986471,
+              "true_target_manifest_y_mm": 71.16826154147954,
+              "error_mm_alt_raw": 57.594692036615974,
+              "error_mm_alt_norm1000": 117.61831434433483,
+              "error_mm_legacy": 208.33345777280792,
+              "error_mm_alt_model_input": 44.066860647540466
+            },
+            {
+              "frame_index": 2662,
+              "instruction": "go_red",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [260, 190]}",
+              "act_s": 145.62106657028198,
+              "generate_latency_s": 145.56852650642395,
+              "true_target_x_mm": 31.13863692592335,
+              "true_target_y_mm": -0.3634351402247319,
+              "target_point_px": [
+                260.0,
+                190.0
+              ],
+              "pred_target_x_mm": 98.11573028564453,
+              "pred_target_y_mm": 48.38267135620117,
+              "error_mm": 41.90221792652835,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                330.1587301587302,
+                250.54945054945054
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 62.61136307407665,
+              "true_target_manifest_y_mm": 70.63656485977526,
+              "error_mm_alt_raw": 75.47461824105865,
+              "error_mm_alt_norm1000": 149.48189883339327,
+              "error_mm_legacy": 134.67553263292115,
+              "error_mm_alt_model_input": 41.90221792652835
+            },
+            {
+              "frame_index": 3631,
+              "instruction": "go_green",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [269, 116]}",
+              "act_s": 130.0310184955597,
+              "generate_latency_s": 129.9628632068634,
+              "true_target_x_mm": 0.269272201275777,
+              "true_target_y_mm": 29.579797763441206,
+              "target_point_px": [
+                269.0,
+                116.0
+              ],
+              "pred_target_x_mm": 95.38770294189453,
+              "pred_target_y_mm": 104.80864715576172,
+              "error_mm": 4.638935371353971,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                341.58730158730157,
+                152.96703296703296
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.48072779872422,
+              "true_target_manifest_y_mm": 100.5797977634412,
+              "error_mm_alt_raw": 50.212787197027104,
+              "error_mm_alt_norm1000": 118.46177372614603,
+              "error_mm_legacy": 167.17226388344085,
+              "error_mm_alt_model_input": 4.638935371353971
+            },
+            {
+              "frame_index": 4356,
+              "instruction": "go_yellow",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [290, 155]}",
+              "act_s": 120.6316146850586,
+              "generate_latency_s": 120.57825684547424,
+              "true_target_x_mm": -27.750232567378788,
+              "true_target_y_mm": 0.0042988339516796,
+              "target_point_px": [
+                290.0,
+                155.0
+              ],
+              "pred_target_x_mm": 79.94384765625,
+              "pred_target_y_mm": 75.5010986328125,
+              "error_mm": 41.79897529022604,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                368.25396825396825,
+                204.3956043956044
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 121.50023256737879,
+              "true_target_manifest_y_mm": 71.00429883395168,
+              "error_mm_alt_raw": 32.782731520201175,
+              "error_mm_alt_norm1000": 103.17947538775614,
+              "error_mm_legacy": 183.3727823012019,
+              "error_mm_alt_model_input": 41.79897529022604
+            }
+          ]
+        }
+      }
+    },
+    {
+      "session": "session_jetson_track4_20260915_160509",
+      "variants": {
+        "baseline": {
+          "mean_error_mm_alt_raw": 59.12577573937304,
+          "n_frames_sampled": 6,
+          "n_frames_scored": 6,
+          "n_parsed": 6,
+          "parse_success_rate": 1.0,
+          "hit_rate": 0.6666666666666666,
+          "mean_error_mm": 20.315267836674007,
+          "median_error_mm": 16.755198507743145,
+          "n_settled": 5,
+          "hit_rate_settled": 0.8,
+          "mean_error_mm_settled": 18.54523053079339,
+          "mean_error_mm_legacy": 167.46933159084006,
+          "mean_generate_latency_s": 104.43162222703297,
+          "frames": [
+            {
+              "frame_index": 1,
+              "instruction": "go_red",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [312, 157]}",
+              "act_s": 110.96410250663757,
+              "generate_latency_s": 110.91493105888367,
+              "true_target_x_mm": 0.0,
+              "true_target_y_mm": 0.0,
+              "target_point_px": [
+                312.0,
+                157.0
+              ],
+              "pred_target_x_mm": 64.64006805419922,
+              "pred_target_y_mm": 72.79877471923828,
+              "error_mm": 29.165454366077064,
+              "hit": false,
+              "target_transition": true,
+              "target_point_raw_px": [
+                396.1904761904762,
+                207.03296703296704
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.75,
+              "true_target_manifest_y_mm": 71.0,
+              "error_mm_alt_raw": 35.33106654710399,
+              "error_mm_alt_norm1000": 116.01254896217222,
+              "error_mm_legacy": 150.66040066176936,
+              "error_mm_alt_model_input": 29.165454366077064
+            },
+            {
+              "frame_index": 243,
+              "instruction": "go_red",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [259, 170]}",
+              "act_s": 94.03293538093567,
+              "generate_latency_s": 93.96486234664917,
+              "true_target_x_mm": 30.16563515477768,
+              "true_target_y_mm": -0.060278109194003,
+              "target_point_px": [
+                259.0,
+                170.0
+              ],
+              "pred_target_x_mm": 101.23485565185547,
+              "pred_target_y_mm": 60.63780212402344,
+              "error_mm": 39.034459248996804,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                328.8888888888889,
+                224.17582417582418
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 63.584364845222325,
+              "true_target_manifest_y_mm": 70.939721890806,
+              "error_mm_alt_raw": 79.52511421854898,
+              "error_mm_alt_norm1000": 152.20716470644885,
+              "error_mm_legacy": 143.21443018005257,
+              "error_mm_alt_model_input": 39.034459248996804
+            },
+            {
+              "frame_index": 727,
+              "instruction": "go_green",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [261, 115]}",
+              "act_s": 92.03115725517273,
+              "generate_latency_s": 91.96847224235535,
+              "true_target_x_mm": 0.2368131108948304,
+              "true_target_y_mm": 29.51227461272331,
+              "target_point_px": [
+                261.0,
+                115.0
+              ],
+              "pred_target_x_mm": 101.65777587890625,
+              "pred_target_y_mm": 104.42850494384766,
+              "error_mm": 9.037211396177879,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                331.42857142857144,
+                151.64835164835165
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.51318688910517,
+              "true_target_manifest_y_mm": 100.5122746127233,
+              "error_mm_alt_raw": 54.09196416994447,
+              "error_mm_alt_norm1000": 119.96033651737186,
+              "error_mm_legacy": 170.75341044602573,
+              "error_mm_alt_model_input": 9.037211396177879
+            },
+            {
+              "frame_index": 1695,
+              "instruction": "go_black",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [245, 151]}",
+              "act_s": 102.30498790740967,
+              "generate_latency_s": 102.26071643829346,
+              "true_target_x_mm": 0.0238385474833833,
+              "true_target_y_mm": 0.0172154685177062,
+              "target_point_px": [
+                245.0,
+                151.0
+              ],
+              "pred_target_x_mm": 111.75123596191406,
+              "pred_target_y_mm": 76.99760437011719,
+              "error_mm": 18.991270691654726,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                311.1111111111111,
+                199.12087912087912
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.72616145251662,
+              "true_target_manifest_y_mm": 71.0172154685177,
+              "error_mm_alt_raw": 64.7512449495776,
+              "error_mm_alt_norm1000": 135.14125212326377,
+              "error_mm_legacy": 182.09916248278998,
+              "error_mm_alt_model_input": 18.991270691654726
+            },
+            {
+              "frame_index": 2905,
+              "instruction": "go_yellow",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [215, 150]}",
+              "act_s": 113.3849937915802,
+              "generate_latency_s": 113.32202982902527,
+              "true_target_x_mm": -28.82555229950099,
+              "true_target_y_mm": 0.2718182948841999,
+              "target_point_px": [
+                215.0,
+                150.0
+              ],
+              "pred_target_x_mm": 132.4436798095703,
+              "pred_target_y_mm": 76.44972229003906,
+              "error_mm": 11.144084993305977,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                273.015873015873,
+                197.8021978021978
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 122.575552299501,
+              "true_target_manifest_y_mm": 71.2718182948842,
+              "error_mm_alt_raw": 54.22193262104588,
+              "error_mm_alt_norm1000": 120.98539234550276,
+              "error_mm_legacy": 220.52884048629346,
+              "error_mm_alt_model_input": 11.144084993305977
+            },
+            {
+              "frame_index": 4356,
+              "instruction": "go_red",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [297, 150]}",
+              "act_s": 114.22543454170227,
+              "generate_latency_s": 114.15872144699097,
+              "true_target_x_mm": 31.11009331718452,
+              "true_target_y_mm": -0.3320304300621771,
+              "target_point_px": [
+                297.0,
+                150.0
+              ],
+              "pred_target_x_mm": 75.67481231689453,
+              "pred_target_y_mm": 77.06298828125,
+              "error_mm": 14.519126323831564,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                377.14285714285717,
+                197.8021978021978
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 62.63990668281548,
+              "true_target_manifest_y_mm": 70.66796956993782,
+              "error_mm_alt_raw": 66.83333193001731,
+              "error_mm_alt_norm1000": 145.635354867429,
+              "error_mm_legacy": 137.5597452881093,
+              "error_mm_alt_model_input": 14.519126323831564
+            }
+          ]
+        },
+        "oriented": {
+          "mean_error_mm_alt_raw": 64.06791801770815,
+          "n_frames_sampled": 6,
+          "n_frames_scored": 6,
+          "n_parsed": 6,
+          "parse_success_rate": 1.0,
+          "hit_rate": 0.3333333333333333,
+          "mean_error_mm": 41.1736459479641,
+          "median_error_mm": 34.88313900778241,
+          "n_settled": 5,
+          "hit_rate_settled": 0.4,
+          "mean_error_mm_settled": 43.97405606106266,
+          "mean_error_mm_legacy": 165.19547823295412,
+          "mean_generate_latency_s": 135.50594691435495,
+          "frames": [
+            {
+              "frame_index": 1,
+              "instruction": "go_red",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [309, 156]}",
+              "act_s": 137.57012820243835,
+              "generate_latency_s": 137.51869750022888,
+              "true_target_x_mm": 0.0,
+              "true_target_y_mm": 0.0,
+              "target_point_px": [
+                309.0,
+                156.0
+              ],
+              "pred_target_x_mm": 66.6965103149414,
+              "pred_target_y_mm": 73.53067016601562,
+              "error_mm": 27.171595382471256,
+              "hit": false,
+              "target_transition": true,
+              "target_point_raw_px": [
+                392.3809523809524,
+                205.71428571428572
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.75,
+              "true_target_manifest_y_mm": 71.0,
+              "error_mm_alt_raw": 36.67039776564537,
+              "error_mm_alt_norm1000": 117.01295393991025,
+              "error_mm_legacy": 152.28214619013391,
+              "error_mm_alt_model_input": 27.171595382471256
+            },
+            {
+              "frame_index": 243,
+              "instruction": "go_red",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [269, 116]}",
+              "act_s": 143.89717149734497,
+              "generate_latency_s": 143.85191178321838,
+              "true_target_x_mm": 30.16563515477768,
+              "true_target_y_mm": -0.060278109194003,
+              "target_point_px": [
+                269.0,
+                116.0
+              ],
+              "pred_target_x_mm": 95.84274291992188,
+              "pred_target_y_mm": 103.80574035644531,
+              "error_mm": 46.051906863820534,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                341.58730158730157,
+                152.96703296703296
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 63.584364845222325,
+              "true_target_manifest_y_mm": 70.939721890806,
+              "error_mm_alt_raw": 91.47281037798803,
+              "error_mm_alt_norm1000": 159.93145311904283,
+              "error_mm_legacy": 164.8081387168146,
+              "error_mm_alt_model_input": 46.051906863820534
+            },
+            {
+              "frame_index": 727,
+              "instruction": "go_green",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [264, 114]}",
+              "act_s": 141.40607523918152,
+              "generate_latency_s": 141.35121154785156,
+              "true_target_x_mm": 0.2368131108948304,
+              "true_target_y_mm": 29.51227461272331,
+              "target_point_px": [
+                264.0,
+                114.0
+              ],
+              "pred_target_x_mm": 99.58344268798828,
+              "pred_target_y_mm": 105.34222412109375,
+              "error_mm": 7.757346048571119,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                335.23809523809524,
+                150.32967032967034
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.51318688910517,
+              "true_target_manifest_y_mm": 100.5122746127233,
+              "error_mm_alt_raw": 52.99169428875377,
+              "error_mm_alt_norm1000": 119.24719028799228,
+              "error_mm_legacy": 169.81459518806693,
+              "error_mm_alt_model_input": 7.757346048571119
+            },
+            {
+              "frame_index": 1695,
+              "instruction": "go_black",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [390, 86]}",
+              "act_s": 128.78380393981934,
+              "generate_latency_s": 128.71627759933472,
+              "true_target_x_mm": 0.0238385474833833,
+              "true_target_y_mm": 0.0172154685177062,
+              "target_point_px": [
+                390.0,
+                86.0
+              ],
+              "pred_target_x_mm": 9.851554870605469,
+              "pred_target_y_mm": 132.98008728027344,
+              "error_mm": 104.28013766979043,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                495.23809523809524,
+                113.4065934065934
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.72616145251662,
+              "true_target_manifest_y_mm": 71.0172154685177,
+              "error_mm_alt_raw": 81.15488599224084,
+              "error_mm_alt_norm1000": 118.63136900322077,
+              "error_mm_legacy": 164.0057653281757,
+              "error_mm_alt_model_input": 104.28013766979043
+            },
+            {
+              "frame_index": 2905,
+              "instruction": "go_yellow",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [269, 116]}",
+              "act_s": 122.85738372802734,
+              "generate_latency_s": 122.7901291847229,
+              "true_target_x_mm": -28.82555229950099,
+              "true_target_y_mm": 0.2718182948841999,
+              "target_point_px": [
+                269.0,
+                116.0
+              ],
+              "pred_target_x_mm": 96.3787841796875,
+              "pred_target_y_mm": 104.85807037353516,
+              "error_mm": 42.59468263309357,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                341.58730158730157,
+                152.96703296703296
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 122.575552299501,
+              "true_target_manifest_y_mm": 71.2718182948842,
+              "error_mm_alt_raw": 57.132837551291246,
+              "error_mm_alt_norm1000": 116.86760917688608,
+              "error_mm_legacy": 208.7705220294632,
+              "error_mm_alt_model_input": 42.59468263309357
+            },
+            {
+              "frame_index": 4356,
+              "instruction": "go_red",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [290, 168]}",
+              "act_s": 138.85828828811646,
+              "generate_latency_s": 138.80745387077332,
+              "true_target_x_mm": 31.11009331718452,
+              "true_target_y_mm": -0.3320304300621771,
+              "target_point_px": [
+                290.0,
+                168.0
+              ],
+              "pred_target_x_mm": 80.1722183227539,
+              "pred_target_y_mm": 62.87511444091797,
+              "error_mm": 19.186207090037666,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                368.25396825396825,
+                221.53846153846155
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 62.63990668281548,
+              "true_target_manifest_y_mm": 70.66796956993782,
+              "error_mm_alt_raw": 64.9848821303297,
+              "error_mm_alt_norm1000": 144.1705639930913,
+              "error_mm_legacy": 131.49170194507028,
+              "error_mm_alt_model_input": 19.186207090037666
+            }
+          ]
+        }
+      }
+    },
+    {
+      "session": "session_jetson_track4_20260915_161239",
+      "variants": {
+        "baseline": {
+          "mean_error_mm_alt_raw": 70.19813590721516,
+          "n_frames_sampled": 6,
+          "n_frames_scored": 6,
+          "n_parsed": 6,
+          "parse_success_rate": 1.0,
+          "hit_rate": 0.5,
+          "mean_error_mm": 34.32207617624915,
+          "median_error_mm": 20.07033117008481,
+          "n_settled": 6,
+          "hit_rate_settled": 0.5,
+          "mean_error_mm_settled": 34.32207617624915,
+          "mean_error_mm_legacy": 175.1587465395761,
+          "mean_generate_latency_s": 102.66373745600383,
+          "frames": [
+            {
+              "frame_index": 1515,
+              "instruction": "go_green",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [265, 117]}",
+              "act_s": 99.33030891418457,
+              "generate_latency_s": 99.28130578994751,
+              "true_target_x_mm": 0.3973703173576425,
+              "true_target_y_mm": 29.586492008573863,
+              "target_point_px": [
+                265.0,
+                117.0
+              ],
+              "pred_target_x_mm": 98.72540283203125,
+              "pred_target_y_mm": 103.39879608154297,
+              "error_mm": 6.064300908895673,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                336.5079365079365,
+                154.28571428571428
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.35262968264236,
+              "true_target_manifest_y_mm": 100.58649200857386,
+              "error_mm_alt_raw": 52.37143214855464,
+              "error_mm_alt_norm1000": 120.5998762233146,
+              "error_mm_legacy": 168.8837744102452,
+              "error_mm_alt_model_input": 6.064300908895673
+            },
+            {
+              "frame_index": 1860,
+              "instruction": "go_green",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [172, 159]}",
+              "act_s": 92.46314430236816,
+              "generate_latency_s": 92.40219902992249,
+              "true_target_x_mm": 0.1942773169150271,
+              "true_target_y_mm": 29.562531663510235,
+              "target_point_px": [
+                172.0,
+                159.0
+              ],
+              "pred_target_x_mm": 159.4954833984375,
+              "pred_target_y_mm": 66.58428192138672,
+              "error_mm": 74.17933336675428,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                218.4126984126984,
+                209.67032967032966
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.55572268308498,
+              "true_target_manifest_y_mm": 100.56253166351024,
+              "error_mm_alt_raw": 93.93795723562636,
+              "error_mm_alt_norm1000": 142.14801567023144,
+              "error_mm_legacy": 198.6304337047609,
+              "error_mm_alt_model_input": 74.17933336675428
+            },
+            {
+              "frame_index": 2206,
+              "instruction": "go_red",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [215, 152]}",
+              "act_s": 95.11835193634033,
+              "generate_latency_s": 95.06558084487915,
+              "true_target_x_mm": 31.14746498136833,
+              "true_target_y_mm": -0.3662725311269369,
+              "target_point_px": [
+                215.0,
+                152.0
+              ],
+              "pred_target_x_mm": 131.50616455078125,
+              "pred_target_y_mm": 74.89702606201172,
+              "error_mm": 69.03539583139923,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                273.015873015873,
+                200.43956043956044
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 62.60253501863167,
+              "true_target_manifest_y_mm": 70.63372746887306,
+              "error_mm_alt_raw": 107.19946925208389,
+              "error_mm_alt_norm1000": 170.30957279183067,
+              "error_mm_legacy": 169.09295061979057,
+              "error_mm_alt_model_input": 69.03539583139923
+            },
+            {
+              "frame_index": 3365,
+              "instruction": "go_black",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [245, 150]}",
+              "act_s": 111.0170636177063,
+              "generate_latency_s": 110.96349954605103,
+              "true_target_x_mm": 0.1493497807164018,
+              "true_target_y_mm": 0.1491695752559067,
+              "target_point_px": [
+                245.0,
+                150.0
+              ],
+              "pred_target_x_mm": 111.2943344116211,
+              "pred_target_y_mm": 77.41381072998047,
+              "error_mm": 18.769981062740648,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                311.1111111111111,
+                197.8021978021978
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.6006502192836,
+              "true_target_manifest_y_mm": 71.14916957525591,
+              "error_mm_alt_raw": 64.75251938466087,
+              "error_mm_alt_norm1000": 135.63870554876016,
+              "error_mm_legacy": 181.91893238049738,
+              "error_mm_alt_model_input": 18.769981062740648
+            },
+            {
+              "frame_index": 4263,
+              "instruction": "go_black",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [251, 179]}",
+              "act_s": 114.77195000648499,
+              "generate_latency_s": 114.70836591720581,
+              "true_target_x_mm": 0.0455641544005501,
+              "true_target_y_mm": 0.1985184882427802,
+              "target_point_px": [
+                251.0,
+                179.0
+              ],
+              "pred_target_x_mm": 106.81868743896484,
+              "pred_target_y_mm": 54.324798583984375,
+              "error_mm": 21.37068127742897,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                318.73015873015873,
+                236.04395604395606
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.70443584559945,
+              "true_target_manifest_y_mm": 71.19851848824278,
+              "error_mm_alt_raw": 53.32996092901394,
+              "error_mm_alt_norm1000": 128.0251609240724,
+              "error_mm_legacy": 168.59228042588512,
+              "error_mm_alt_model_input": 21.37068127742897
+            },
+            {
+              "frame_index": 4847,
+              "instruction": "go_green",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [257, 139]}",
+              "act_s": 103.63323307037354,
+              "generate_latency_s": 103.56147360801697,
+              "true_target_x_mm": 0.3029905144247962,
+              "true_target_y_mm": 29.562337834112924,
+              "target_point_px": [
+                257.0,
+                139.0
+              ],
+              "pred_target_x_mm": 102.20463562011719,
+              "pred_target_y_mm": 86.56321716308594,
+              "error_mm": 16.51276461027613,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                326.3492063492063,
+                183.2967032967033
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.44700948557521,
+              "true_target_manifest_y_mm": 100.56233783411292,
+              "error_mm_alt_raw": 49.59747649335122,
+              "error_mm_alt_norm1000": 118.43173821270018,
+              "error_mm_legacy": 163.83410769627747,
+              "error_mm_alt_model_input": 16.51276461027613
+            }
+          ]
+        },
+        "oriented": {
+          "mean_error_mm_alt_raw": 64.33155762053609,
+          "n_frames_sampled": 6,
+          "n_frames_scored": 6,
+          "n_parsed": 6,
+          "parse_success_rate": 1.0,
+          "hit_rate": 0.16666666666666666,
+          "mean_error_mm": 55.52606353674394,
+          "median_error_mm": 43.04854934144165,
+          "n_settled": 6,
+          "hit_rate_settled": 0.16666666666666666,
+          "mean_error_mm_settled": 55.52606353674394,
+          "mean_error_mm_legacy": 159.93284066956969,
+          "mean_generate_latency_s": 132.02365668614706,
+          "frames": [
+            {
+              "frame_index": 1515,
+              "instruction": "go_green",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [265, 115]}",
+              "act_s": 142.26308465003967,
+              "generate_latency_s": 142.21720814704895,
+              "true_target_x_mm": 0.3973703173576425,
+              "true_target_y_mm": 29.586492008573863,
+              "target_point_px": [
+                265.0,
+                115.0
+              ],
+              "pred_target_x_mm": 98.7799072265625,
+              "pred_target_y_mm": 105.05109405517578,
+              "error_mm": 7.027660561898386,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                336.5079365079365,
+                151.64835164835165
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.35262968264236,
+              "true_target_manifest_y_mm": 100.58649200857386,
+              "error_mm_alt_raw": 53.066957209922286,
+              "error_mm_alt_norm1000": 120.99840842862442,
+              "error_mm_legacy": 169.68726881272315,
+              "error_mm_alt_model_input": 7.027660561898386
+            },
+            {
+              "frame_index": 1860,
+              "instruction": "go_green",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [259, 168]}",
+              "act_s": 145.3037052154541,
+              "generate_latency_s": 145.2529354095459,
+              "true_target_x_mm": 0.1942773169150271,
+              "true_target_y_mm": 29.562531663510235,
+              "target_point_px": [
+                259.0,
+                168.0
+              ],
+              "pred_target_x_mm": 100.15580749511719,
+              "pred_target_y_mm": 61.930152893066406,
+              "error_mm": 39.19211411737134,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                328.8888888888889,
+                221.53846153846155
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.55572268308498,
+              "true_target_manifest_y_mm": 100.56253166351024,
+              "error_mm_alt_raw": 46.766252348458615,
+              "error_mm_alt_norm1000": 112.14321625725795,
+              "error_mm_legacy": 152.93941545920447,
+              "error_mm_alt_model_input": 39.19211411737134
+            },
+            {
+              "frame_index": 2206,
+              "instruction": "go_red",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [269, 116]}",
+              "act_s": 136.3809027671814,
+              "generate_latency_s": 136.312926530838,
+              "true_target_x_mm": 31.14746498136833,
+              "true_target_y_mm": -0.3662725311269369,
+              "target_point_px": [
+                269.0,
+                116.0
+              ],
+              "pred_target_x_mm": 95.2013931274414,
+              "pred_target_y_mm": 104.35897064208984,
+              "error_mm": 46.90498456551196,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                341.58730158730157,
+                152.96703296703296
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 62.60253501863167,
+              "true_target_manifest_y_mm": 70.63372746887306,
+              "error_mm_alt_raw": 92.50290339103353,
+              "error_mm_alt_norm1000": 161.07984156787734,
+              "error_mm_legacy": 164.81855968669697,
+              "error_mm_alt_model_input": 46.90498456551196
+            },
+            {
+              "frame_index": 3365,
+              "instruction": "go_black",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [390, 84]}",
+              "act_s": 124.3075921535492,
+              "generate_latency_s": 124.23386669158936,
+              "true_target_x_mm": 0.1493497807164018,
+              "true_target_y_mm": 0.1491695752559067,
+              "target_point_px": [
+                390.0,
+                84.0
+              ],
+              "pred_target_x_mm": 10.011163711547852,
+              "pred_target_y_mm": 133.8330841064453,
+              "error_mm": 104.48193813085778,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                495.23809523809524,
+                110.76923076923077
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.6006502192836,
+              "true_target_manifest_y_mm": 71.14916957525591,
+              "error_mm_alt_raw": 81.80280654066141,
+              "error_mm_alt_norm1000": 119.10100243450633,
+              "error_mm_legacy": 164.4370325739323,
+              "error_mm_alt_model_input": 104.48193813085778
+            },
+            {
+              "frame_index": 4263,
+              "instruction": "go_black",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [390, 84]}",
+              "act_s": 122.27717089653015,
+              "generate_latency_s": 122.2239158153534,
+              "true_target_x_mm": 0.0455641544005501,
+              "true_target_y_mm": 0.1985184882427802,
+              "target_point_px": [
+                390.0,
+                84.0
+              ],
+              "pred_target_x_mm": 9.670748710632324,
+              "pred_target_y_mm": 134.63504028320312,
+              "error_mm": 105.28937681903155,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                495.23809523809524,
+                110.76923076923077
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.70443584559945,
+              "true_target_manifest_y_mm": 71.19851848824278,
+              "error_mm_alt_raw": 82.44378484231176,
+              "error_mm_alt_norm1000": 119.94225414351251,
+              "error_mm_legacy": 165.14060504321287,
+              "error_mm_alt_model_input": 105.28937681903155
+            },
+            {
+              "frame_index": 4847,
+              "instruction": "go_green",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [290, 156]}",
+              "act_s": 121.95164752006531,
+              "generate_latency_s": 121.90108752250671,
+              "true_target_x_mm": 0.3029905144247962,
+              "true_target_y_mm": 29.562337834112924,
+              "target_point_px": [
+                290.0,
+                156.0
+              ],
+              "pred_target_x_mm": 79.16454315185547,
+              "pred_target_y_mm": 73.88468170166016,
+              "error_mm": 30.260307025792592,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                368.25396825396825,
+                205.71428571428572
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.44700948557521,
+              "true_target_manifest_y_mm": 100.56233783411292,
+              "error_mm_alt_raw": 29.40664139082896,
+              "error_mm_alt_norm1000": 105.01790441311968,
+              "error_mm_legacy": 142.5741624416483,
+              "error_mm_alt_model_input": 30.260307025792592
+            }
+          ]
+        }
+      }
+    },
+    {
+      "session": "session_jetson_track4_20260915_161712",
+      "variants": {
+        "baseline": {
+          "mean_error_mm_alt_raw": 49.98148473831622,
+          "n_frames_sampled": 6,
+          "n_frames_scored": 6,
+          "n_parsed": 6,
+          "parse_success_rate": 1.0,
+          "hit_rate": 0.6666666666666666,
+          "mean_error_mm": 17.500246455748684,
+          "median_error_mm": 8.397642095583528,
+          "n_settled": 5,
+          "hit_rate_settled": 0.8,
+          "mean_error_mm_settled": 15.099772697493739,
+          "mean_error_mm_legacy": 156.54970477578493,
+          "mean_generate_latency_s": 104.92780987421672,
+          "frames": [
+            {
+              "frame_index": 1,
+              "instruction": "go_red",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [312, 157]}",
+              "act_s": 105.17220520973206,
+              "generate_latency_s": 105.13845014572144,
+              "true_target_x_mm": 0.0,
+              "true_target_y_mm": 0.0,
+              "target_point_px": [
+                312.0,
+                157.0
+              ],
+              "pred_target_x_mm": 64.28076934814453,
+              "pred_target_y_mm": 72.40312194824219,
+              "error_mm": 29.50261524702339,
+              "hit": false,
+              "target_transition": true,
+              "target_point_raw_px": [
+                396.1904761904762,
+                207.03296703296704
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.75,
+              "true_target_manifest_y_mm": 71.0,
+              "error_mm_alt_raw": 34.697353933122926,
+              "error_mm_alt_norm1000": 115.5336944832052,
+              "error_mm_legacy": 150.04869669350964,
+              "error_mm_alt_model_input": 29.50261524702339
+            },
+            {
+              "frame_index": 441,
+              "instruction": "go_green",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [271, 115]}",
+              "act_s": 113.34229803085327,
+              "generate_latency_s": 113.28717827796936,
+              "true_target_x_mm": 0.310182266078948,
+              "true_target_y_mm": 29.57645246075977,
+              "target_point_px": [
+                271.0,
+                115.0
+              ],
+              "pred_target_x_mm": 93.67545318603516,
+              "pred_target_y_mm": 106.27656555175781,
+              "error_mm": 5.704981447512368,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                344.12698412698415,
+                151.64835164835165
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.43981773392105,
+              "true_target_manifest_y_mm": 100.57645246075977,
+              "error_mm_alt_raw": 49.78178566400547,
+              "error_mm_alt_norm1000": 118.2491782911457,
+              "error_mm_legacy": 166.7845889126262,
+              "error_mm_alt_model_input": 5.704981447512368
+            },
+            {
+              "frame_index": 1096,
+              "instruction": "go_green",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [259, 127]}",
+              "act_s": 106.03796768188477,
+              "generate_latency_s": 105.98281192779541,
+              "true_target_x_mm": 0.3831811481401473,
+              "true_target_y_mm": 29.61966546118581,
+              "target_point_px": [
+                259.0,
+                127.0
+              ],
+              "pred_target_x_mm": 102.34406280517578,
+              "pred_target_y_mm": 96.72504425048828,
+              "error_mm": 9.785651913498791,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                328.8888888888889,
+                167.47252747252747
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.36681885185985,
+              "true_target_manifest_y_mm": 100.6196654611858,
+              "error_mm_alt_raw": 52.305593410054364,
+              "error_mm_alt_norm1000": 119.8098353367093,
+              "error_mm_legacy": 167.95057150296915,
+              "error_mm_alt_model_input": 9.785651913498791
+            },
+            {
+              "frame_index": 2028,
+              "instruction": "go_green",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [251, 179]}",
+              "act_s": 97.55432939529419,
+              "generate_latency_s": 97.49399709701538,
+              "true_target_x_mm": 0.2474148034838052,
+              "true_target_y_mm": 29.626417310416,
+              "target_point_px": [
+                251.0,
+                179.0
+              ],
+              "pred_target_x_mm": 104.19306945800781,
+              "pred_target_y_mm": 55.791343688964844,
+              "error_mm": 46.091976312435825,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                318.73015873015873,
+                236.04395604395606
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.5025851965162,
+              "true_target_manifest_y_mm": 100.626417310416,
+              "error_mm_alt_raw": 50.133698284477994,
+              "error_mm_alt_norm1000": 112.04370644129716,
+              "error_mm_legacy": 153.41276737947692,
+              "error_mm_alt_model_input": 46.091976312435825
+            },
+            {
+              "frame_index": 2392,
+              "instruction": "go_green",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [259, 120]}",
+              "act_s": 103.62489032745361,
+              "generate_latency_s": 103.56548023223877,
+              "true_target_x_mm": 0.0511152023906689,
+              "true_target_y_mm": 29.607827221562548,
+              "target_point_px": [
+                259.0,
+                120.0
+              ],
+              "pred_target_x_mm": 100.52664947509766,
+              "pred_target_y_mm": 102.19419860839844,
+              "error_mm": 7.009632277668265,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                328.8888888888889,
+                158.24175824175825
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.69888479760934,
+              "true_target_manifest_y_mm": 100.60782722156254,
+              "error_mm_alt_raw": 52.28730836880658,
+              "error_mm_alt_norm1000": 119.5132496606738,
+              "error_mm_legacy": 169.29744901763078,
+              "error_mm_alt_model_input": 7.009632277668265
+            },
+            {
+              "frame_index": 4401,
+              "instruction": "go_red",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [307, 159]}",
+              "act_s": 104.15883922576904,
+              "generate_latency_s": 104.09894156455994,
+              "true_target_x_mm": 31.202614904187715,
+              "true_target_y_mm": -0.4519399333248771,
+              "target_point_px": [
+                307.0,
+                159.0
+              ],
+              "pred_target_x_mm": 68.9743881225586,
+              "pred_target_y_mm": 73.076904296875,
+              "error_mm": 6.906621536353458,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                389.8412698412698,
+                209.67032967032966
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 62.54738509581229,
+              "true_target_manifest_y_mm": 70.54806006667512,
+              "error_mm_alt_raw": 60.68316876943,
+              "error_mm_alt_norm1000": 141.03841168315589,
+              "error_mm_legacy": 131.8041551484969,
+              "error_mm_alt_model_input": 6.906621536353458
+            }
+          ]
+        },
+        "oriented": {
+          "mean_error_mm_alt_raw": 57.61161841504119,
+          "n_frames_sampled": 6,
+          "n_frames_scored": 6,
+          "n_parsed": 6,
+          "parse_success_rate": 1.0,
+          "hit_rate": 0.5,
+          "mean_error_mm": 24.494460755743315,
+          "median_error_mm": 17.253271336458493,
+          "n_settled": 5,
+          "hit_rate_settled": 0.6,
+          "mean_error_mm_settled": 23.893970827842235,
+          "mean_error_mm_legacy": 163.66337708331127,
+          "mean_generate_latency_s": 131.4799116452535,
+          "frames": [
+            {
+              "frame_index": 1,
+              "instruction": "go_red",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [309, 156]}",
+              "act_s": 119.94576954841614,
+              "generate_latency_s": 119.88091707229614,
+              "true_target_x_mm": 0.0,
+              "true_target_y_mm": 0.0,
+              "target_point_px": [
+                309.0,
+                156.0
+              ],
+              "pred_target_x_mm": 66.33561706542969,
+              "pred_target_y_mm": 73.12877655029297,
+              "error_mm": 27.496910395248722,
+              "hit": false,
+              "target_transition": true,
+              "target_point_raw_px": [
+                392.3809523809524,
+                205.71428571428572
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.75,
+              "true_target_manifest_y_mm": 71.0,
+              "error_mm_alt_raw": 36.03471046929357,
+              "error_mm_alt_norm1000": 116.53979193700444,
+              "error_mm_legacy": 151.671101529823,
+              "error_mm_alt_model_input": 27.496910395248722
+            },
+            {
+              "frame_index": 441,
+              "instruction": "go_green",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [269, 115]}",
+              "act_s": 123.2768771648407,
+              "generate_latency_s": 123.21805548667908,
+              "true_target_x_mm": 0.310182266078948,
+              "true_target_y_mm": 29.57645246075977,
+              "target_point_px": [
+                269.0,
+                115.0
+              ],
+              "pred_target_x_mm": 95.0751724243164,
+              "pred_target_y_mm": 106.22853088378906,
+              "error_mm": 5.883908179388205,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                341.58730158730157,
+                151.64835164835165
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.43981773392105,
+              "true_target_manifest_y_mm": 100.57645246075977,
+              "error_mm_alt_raw": 50.69983236164921,
+              "error_mm_alt_norm1000": 118.84804098430213,
+              "error_mm_legacy": 167.66402918820958,
+              "error_mm_alt_model_input": 5.883908179388205
+            },
+            {
+              "frame_index": 1096,
+              "instruction": "go_green",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [229, 155]}",
+              "act_s": 132.5892186164856,
+              "generate_latency_s": 132.54544353485107,
+              "true_target_x_mm": 0.3831811481401473,
+              "true_target_y_mm": 29.61966546118581,
+              "target_point_px": [
+                229.0,
+                155.0
+              ],
+              "pred_target_x_mm": 122.13738250732422,
+              "pred_target_y_mm": 74.14148712158203,
+              "error_mm": 39.100374182825796,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                290.7936507936508,
+                204.3956043956044
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.36681885185985,
+              "true_target_manifest_y_mm": 100.6196654611858,
+              "error_mm_alt_raw": 64.02318841546303,
+              "error_mm_alt_norm1000": 124.63154902924498,
+              "error_mm_legacy": 172.9547765111886,
+              "error_mm_alt_model_input": 39.100374182825796
+            },
+            {
+              "frame_index": 2028,
+              "instruction": "go_green",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [190, 160]}",
+              "act_s": 140.36676049232483,
+              "generate_latency_s": 140.32135891914368,
+              "true_target_x_mm": 0.2474148034838052,
+              "true_target_y_mm": 29.626417310416,
+              "target_point_px": [
+                190.0,
+                160.0
+              ],
+              "pred_target_x_mm": 146.09231567382812,
+              "pred_target_y_mm": 68.92224884033203,
+              "error_mm": 61.40711725896094,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                241.26984126984127,
+                210.98901098901098
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.5025851965162,
+              "true_target_manifest_y_mm": 100.626417310416,
+              "error_mm_alt_raw": 82.51582365110637,
+              "error_mm_alt_norm1000": 134.85033874610832,
+              "error_mm_legacy": 188.75320576476045,
+              "error_mm_alt_model_input": 61.40711725896094
+            },
+            {
+              "frame_index": 2392,
+              "instruction": "go_green",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [259, 120]}",
+              "act_s": 145.67130255699158,
+              "generate_latency_s": 145.619149684906,
+              "true_target_x_mm": 0.0511152023906689,
+              "true_target_y_mm": 29.607827221562548,
+              "target_point_px": [
+                259.0,
+                120.0
+              ],
+              "pred_target_x_mm": 100.52664947509766,
+              "pred_target_y_mm": 102.19419860839844,
+              "error_mm": 7.009632277668265,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                328.8888888888889,
+                158.24175824175825
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.69888479760934,
+              "true_target_manifest_y_mm": 100.60782722156254,
+              "error_mm_alt_raw": 52.28730836880658,
+              "error_mm_alt_norm1000": 119.5132496606738,
+              "error_mm_legacy": 169.29744901763078,
+              "error_mm_alt_model_input": 7.009632277668265
+            },
+            {
+              "frame_index": 4401,
+              "instruction": "go_red",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [309, 158]}",
+              "act_s": 127.36360788345337,
+              "generate_latency_s": 127.29454517364502,
+              "true_target_x_mm": 31.202614904187715,
+              "true_target_y_mm": -0.4519399333248771,
+              "target_point_px": [
+                309.0,
+                158.0
+              ],
+              "pred_target_x_mm": 67.60417175292969,
+              "pred_target_y_mm": 73.90357971191406,
+              "error_mm": 6.0688222403679815,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                392.3809523809524,
+                208.35164835164835
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 62.54738509581229,
+              "true_target_manifest_y_mm": 70.54806006667512,
+              "error_mm_alt_raw": 60.1088472239284,
+              "error_mm_alt_norm1000": 140.67160955123646,
+              "error_mm_legacy": 131.63970048825524,
+              "error_mm_alt_model_input": 6.0688222403679815
+            }
+          ]
+        }
+      }
+    },
+    {
+      "session": "session_jetson_track4_20260915_163702",
+      "variants": {
+        "baseline": {
+          "mean_error_mm_alt_raw": 55.525119237406706,
+          "n_frames_sampled": 6,
+          "n_frames_scored": 6,
+          "n_parsed": 6,
+          "parse_success_rate": 1.0,
+          "hit_rate": 1.0,
+          "mean_error_mm": 10.608705092377216,
+          "median_error_mm": 11.66300957029252,
+          "n_settled": 6,
+          "hit_rate_settled": 1.0,
+          "mean_error_mm_settled": 10.608705092377216,
+          "mean_error_mm_legacy": 159.3326422685199,
+          "mean_generate_latency_s": 110.6724116007487,
+          "frames": [
+            {
+              "frame_index": 1086,
+              "instruction": "go_yellow",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [307, 159]}",
+              "act_s": 112.15154671669006,
+              "generate_latency_s": 112.12801361083984,
+              "true_target_x_mm": 29.942885885647986,
+              "true_target_y_mm": 0.1782616731756505,
+              "target_point_px": [
+                307.0,
+                159.0
+              ],
+              "pred_target_x_mm": 69.91437530517578,
+              "pred_target_y_mm": 74.32524871826172,
+              "error_mm": 6.870383301889467,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                389.8412698412698,
+                209.67032967032966
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 63.80711411435202,
+              "true_target_manifest_y_mm": 71.17826167317565,
+              "error_mm_alt_raw": 60.89422067686051,
+              "error_mm_alt_norm1000": 142.39463390461705,
+              "error_mm_legacy": 134.12959489606888,
+              "error_mm_alt_model_input": 6.870383301889467
+            },
+            {
+              "frame_index": 1294,
+              "instruction": "go_yellow",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [325, 157]}",
+              "act_s": 106.2902626991272,
+              "generate_latency_s": 106.24136233329773,
+              "true_target_x_mm": 29.66329045560561,
+              "true_target_y_mm": 0.1363129994941133,
+              "target_point_px": [
+                325.0,
+                157.0
+              ],
+              "pred_target_x_mm": 56.599491119384766,
+              "pred_target_y_mm": 77.91442108154297,
+              "error_mm": 10.099563798290486,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                412.6984126984127,
+                207.03296703296704
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 64.0867095443944,
+              "true_target_manifest_y_mm": 71.13631299949411,
+              "error_mm_alt_raw": 53.899643894200246,
+              "error_mm_alt_norm1000": 137.43466844498397,
+              "error_mm_legacy": 130.20699639084046,
+              "error_mm_alt_model_input": 10.099563798290486
+            },
+            {
+              "frame_index": 1502,
+              "instruction": "go_yellow",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [312, 157]}",
+              "act_s": 106.16244840621948,
+              "generate_latency_s": 106.11677527427673,
+              "true_target_x_mm": 29.77217161812085,
+              "true_target_y_mm": 0.1067859902226459,
+              "target_point_px": [
+                312.0,
+                157.0
+              ],
+              "pred_target_x_mm": 65.6834487915039,
+              "pred_target_y_mm": 75.4566650390625,
+              "error_mm": 4.672321555850413,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                396.1904761904762,
+                207.03296703296704
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 63.97782838187915,
+              "true_target_manifest_y_mm": 71.10678599022265,
+              "error_mm_alt_raw": 58.392438709418734,
+              "error_mm_alt_norm1000": 140.76870218578654,
+              "error_mm_legacy": 132.83564289391066,
+              "error_mm_alt_model_input": 4.672321555850413
+            },
+            {
+              "frame_index": 1711,
+              "instruction": "go_black",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [279, 185], \"label\": \"black marker\"}",
+              "act_s": 114.75020909309387,
+              "generate_latency_s": 114.70019578933716,
+              "true_target_x_mm": 0.3038749983837391,
+              "true_target_y_mm": -30.00376098748445,
+              "target_point_px": [
+                279.0,
+                185.0
+              ],
+              "pred_target_x_mm": 88.70069885253906,
+              "pred_target_y_mm": 53.34209060668945,
+              "error_mm": 13.226455342294553,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                354.2857142857143,
+                243.95604395604394
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.44612500161627,
+              "true_target_manifest_y_mm": 40.996239012515545,
+              "error_mm_alt_raw": 58.71004314503052,
+              "error_mm_alt_norm1000": 141.96267268742662,
+              "error_mm_legacy": 174.63596948111265,
+              "error_mm_alt_model_input": 13.226455342294553
+            },
+            {
+              "frame_index": 2287,
+              "instruction": "go_black",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [297, 215], \"label\": \"black marker\"}",
+              "act_s": 111.74457788467407,
+              "generate_latency_s": 111.69922947883606,
+              "true_target_x_mm": -0.1078647706342565,
+              "true_target_y_mm": -29.86030887229881,
+              "target_point_px": [
+                297.0,
+                215.0
+              ],
+              "pred_target_x_mm": 81.06980895996094,
+              "pred_target_y_mm": 34.300357818603516,
+              "error_mm": 14.502098176809742,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                377.14285714285717,
+                283.5164835164835
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.85786477063425,
+              "true_target_manifest_y_mm": 41.13969112770119,
+              "error_mm_alt_raw": 43.74884958750494,
+              "error_mm_alt_norm1000": 135.88655359864276,
+              "error_mm_legacy": 160.76103379865623,
+              "error_mm_alt_model_input": 14.502098176809742
+            },
+            {
+              "frame_index": 2801,
+              "instruction": "go_red",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [219, 157]}",
+              "act_s": 113.20387172698975,
+              "generate_latency_s": 113.14889311790466,
+              "true_target_x_mm": -29.590966262802635,
+              "true_target_y_mm": 0.0230072290336664,
+              "target_point_px": [
+                219.0,
+                157.0
+              ],
+              "pred_target_x_mm": 132.32586669921875,
+              "pred_target_y_mm": 82.12391662597656,
+              "error_mm": 14.281408379128633,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                278.0952380952381,
+                207.03296703296704
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 123.34096626280264,
+              "true_target_manifest_y_mm": 71.02300722903367,
+              "error_mm_alt_raw": 57.505519411425254,
+              "error_mm_alt_norm1000": 124.10462411246687,
+              "error_mm_legacy": 223.42661615053058,
+              "error_mm_alt_model_input": 14.281408379128633
+            }
+          ]
+        },
+        "oriented": {
+          "mean_error_mm_alt_raw": 62.1911803240535,
+          "n_frames_sampled": 6,
+          "n_frames_scored": 6,
+          "n_parsed": 6,
+          "parse_success_rate": 1.0,
+          "hit_rate": 0.5,
+          "mean_error_mm": 41.68820226230961,
+          "median_error_mm": 31.943679765717153,
+          "n_settled": 6,
+          "hit_rate_settled": 0.5,
+          "mean_error_mm_settled": 41.68820226230961,
+          "mean_error_mm_legacy": 152.087446649194,
+          "mean_generate_latency_s": 131.91536124547324,
+          "frames": [
+            {
+              "frame_index": 1086,
+              "instruction": "go_yellow",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [309, 156]}",
+              "act_s": 136.81163001060486,
+              "generate_latency_s": 136.76439690589905,
+              "true_target_x_mm": 29.942885885647986,
+              "true_target_y_mm": 0.1782616731756505,
+              "target_point_px": [
+                309.0,
+                156.0
+              ],
+              "pred_target_x_mm": 68.5382080078125,
+              "pred_target_y_mm": 76.68120574951172,
+              "error_mm": 7.257109819757535,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                392.3809523809524,
+                205.71428571428572
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 63.80711411435202,
+              "true_target_manifest_y_mm": 71.17826167317565,
+              "error_mm_alt_raw": 61.0435125017144,
+              "error_mm_alt_norm1000": 142.43388620786723,
+              "error_mm_legacy": 134.9187021942724,
+              "error_mm_alt_model_input": 7.257109819757535
+            },
+            {
+              "frame_index": 1294,
+              "instruction": "go_yellow",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [329, 151]}",
+              "act_s": 136.51311540603638,
+              "generate_latency_s": 136.46228575706482,
+              "true_target_x_mm": 29.66329045560561,
+              "true_target_y_mm": 0.1363129994941133,
+              "target_point_px": [
+                329.0,
+                151.0
+              ],
+              "pred_target_x_mm": 53.84602355957031,
+              "pred_target_y_mm": 82.6389389038086,
+              "error_mm": 15.400715961746032,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                417.77777777777777,
+                199.12087912087912
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 64.0867095443944,
+              "true_target_manifest_y_mm": 71.13631299949411,
+              "error_mm_alt_raw": 54.93143909229887,
+              "error_mm_alt_norm1000": 137.60972182369153,
+              "error_mm_legacy": 132.10313435976508,
+              "error_mm_alt_model_input": 15.400715961746032
+            },
+            {
+              "frame_index": 1502,
+              "instruction": "go_yellow",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [309, 156]}",
+              "act_s": 125.333744764328,
+              "generate_latency_s": 125.26583623886108,
+              "true_target_x_mm": 29.77217161812085,
+              "true_target_y_mm": 0.1067859902226459,
+              "target_point_px": [
+                309.0,
+                156.0
+              ],
+              "pred_target_x_mm": 67.73444366455078,
+              "pred_target_y_mm": 76.19109344482422,
+              "error_mm": 6.321577388193486,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                392.3809523809524,
+                205.71428571428572
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 63.97782838187915,
+              "true_target_manifest_y_mm": 71.10678599022265,
+              "error_mm_alt_raw": 60.08761750087915,
+              "error_mm_alt_norm1000": 141.83014288392837,
+              "error_mm_legacy": 134.31974609277043,
+              "error_mm_alt_model_input": 6.321577388193486
+            },
+            {
+              "frame_index": 1711,
+              "instruction": "go_black",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [390, 160]}",
+              "act_s": 130.72272944450378,
+              "generate_latency_s": 130.66600370407104,
+              "true_target_x_mm": 0.3038749983837391,
+              "true_target_y_mm": -30.00376098748445,
+              "target_point_px": [
+                390.0,
+                160.0
+              ],
+              "pred_target_x_mm": 13.107560157775879,
+              "pred_target_y_mm": 74.0488052368164,
+              "error_mm": 86.87207339058818,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                495.23809523809524,
+                210.98901098901098
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.44612500161627,
+              "true_target_manifest_y_mm": 40.996239012515545,
+              "error_mm_alt_raw": 66.77457843941127,
+              "error_mm_alt_norm1000": 126.74475938585232,
+              "error_mm_legacy": 150.4780485241485,
+              "error_mm_alt_model_input": 86.87207339058818
+            },
+            {
+              "frame_index": 2287,
+              "instruction": "go_black",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [392, 158]}",
+              "act_s": 127.96095967292786,
+              "generate_latency_s": 127.90141415596008,
+              "true_target_x_mm": -0.1078647706342565,
+              "true_target_y_mm": -29.86030887229881,
+              "target_point_px": [
+                392.0,
+                158.0
+              ],
+              "pred_target_x_mm": 14.72668743133545,
+              "pred_target_y_mm": 74.28133392333984,
+              "error_mm": 85.79109344388417,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                497.77777777777777,
+                208.35164835164835
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.85786477063425,
+              "true_target_manifest_y_mm": 41.13969112770119,
+              "error_mm_alt_raw": 69.52466080676483,
+              "error_mm_alt_norm1000": 131.52607192850203,
+              "error_mm_legacy": 153.04220289047558,
+              "error_mm_alt_model_input": 85.79109344388417
+            },
+            {
+              "frame_index": 2801,
+              "instruction": "go_red",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [279, 124]}",
+              "act_s": 134.4786810874939,
+              "generate_latency_s": 134.43223071098328,
+              "true_target_x_mm": -29.590966262802635,
+              "true_target_y_mm": 0.0230072290336664,
+              "target_point_px": [
+                279.0,
+                124.0
+              ],
+              "pred_target_x_mm": 90.65155029296875,
+              "pred_target_y_mm": 106.83301544189453,
+              "error_mm": 48.486643569688276,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                354.2857142857143,
+                163.5164835164835
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 123.34096626280264,
+              "true_target_manifest_y_mm": 71.02300722903367,
+              "error_mm_alt_raw": 60.785273603252435,
+              "error_mm_alt_norm1000": 119.3221692824575,
+              "error_mm_legacy": 207.66284583373204,
+              "error_mm_alt_model_input": 48.486643569688276
+            }
+          ]
+        }
+      }
+    },
+    {
+      "session": "session_jetson_track4_20260915_164115",
+      "variants": {
+        "baseline": {
+          "mean_error_mm_alt_raw": 90.37128354055426,
+          "n_frames_sampled": 6,
+          "n_frames_scored": 6,
+          "n_parsed": 6,
+          "parse_success_rate": 1.0,
+          "hit_rate": 0.5,
+          "mean_error_mm": 53.548598170987795,
+          "median_error_mm": 21.557868495485152,
+          "n_settled": 5,
+          "hit_rate_settled": 0.6,
+          "mean_error_mm_settled": 58.695967136008846,
+          "mean_error_mm_legacy": 210.39720012650764,
+          "mean_generate_latency_s": 108.58684162298839,
+          "frames": [
+            {
+              "frame_index": 2898,
+              "instruction": "go_black",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [245, 170]}",
+              "act_s": 108.73272585868835,
+              "generate_latency_s": 108.69517302513123,
+              "true_target_x_mm": 0.1563369619725918,
+              "true_target_y_mm": -29.467570032221964,
+              "target_point_px": [
+                245.0,
+                170.0
+              ],
+              "pred_target_x_mm": 110.66106414794922,
+              "pred_target_y_mm": 63.491424560546875,
+              "error_mm": 27.811753345882586,
+              "hit": false,
+              "target_transition": true,
+              "target_point_raw_px": [
+                311.1111111111111,
+                224.17582417582418
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.59366303802742,
+              "true_target_manifest_y_mm": 41.532429967778036,
+              "error_mm_alt_raw": 75.47793385767125,
+              "error_mm_alt_norm1000": 150.58597242480326,
+              "error_mm_legacy": 192.3881623667739,
+              "error_mm_alt_model_input": 27.811753345882586
+            },
+            {
+              "frame_index": 3198,
+              "instruction": "go_black",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [251, 197]}",
+              "act_s": 100.79972434043884,
+              "generate_latency_s": 100.75361776351929,
+              "true_target_x_mm": 1.9721851348876955,
+              "true_target_y_mm": -30.129758834838867,
+              "target_point_px": [
+                251.0,
+                197.0
+              ],
+              "pred_target_x_mm": 105.53978729248047,
+              "pred_target_y_mm": 43.13486099243164,
+              "error_mm": 13.94705660896622,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                318.73015873015873,
+                259.7802197802198
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 91.7778148651123,
+              "true_target_manifest_y_mm": 40.87024116516113,
+              "error_mm_alt_raw": 63.290557940912365,
+              "error_mm_alt_norm1000": 144.85342440949924,
+              "error_mm_legacy": 177.76078903274214,
+              "error_mm_alt_model_input": 13.94705660896622
+            },
+            {
+              "frame_index": 3308,
+              "instruction": "go_black",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [251, 197]}",
+              "act_s": 110.67920589447021,
+              "generate_latency_s": 110.63100671768188,
+              "true_target_x_mm": 1.9721851348876955,
+              "true_target_y_mm": -30.129758834838867,
+              "target_point_px": [
+                251.0,
+                197.0
+              ],
+              "pred_target_x_mm": 106.29228210449219,
+              "pred_target_y_mm": 45.722267150878906,
+              "error_mm": 15.303983645087719,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                318.73015873015873,
+                259.7802197802198
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 91.7778148651123,
+              "true_target_manifest_y_mm": 40.87024116516113,
+              "error_mm_alt_raw": 65.00157860993696,
+              "error_mm_alt_norm1000": 145.19613227021344,
+              "error_mm_legacy": 179.48323748343074,
+              "error_mm_alt_model_input": 15.303983645087719
+            },
+            {
+              "frame_index": 3418,
+              "instruction": "go_black",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [305, 12], \"label\": \"black marker\"}",
+              "act_s": 114.2200288772583,
+              "generate_latency_s": 114.15393900871277,
+              "true_target_x_mm": 1.9721851348876955,
+              "true_target_y_mm": -30.129758834838867,
+              "target_point_px": [
+                305.0,
+                12.0
+              ],
+              "pred_target_x_mm": 65.21946716308594,
+              "pred_target_y_mm": 195.27764892578125,
+              "error_mm": 156.6748014328282,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                387.3015873015873,
+                15.824175824175825
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 91.7778148651123,
+              "true_target_manifest_y_mm": 40.87024116516113,
+              "error_mm_alt_raw": 158.53815154292548,
+              "error_mm_alt_norm1000": 182.6431981568995,
+              "error_mm_legacy": 253.63566743359917,
+              "error_mm_alt_model_input": 156.6748014328282
+            },
+            {
+              "frame_index": 3528,
+              "instruction": "go_black",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [125, 179]}",
+              "act_s": 105.41043329238892,
+              "generate_latency_s": 105.36114954948425,
+              "true_target_x_mm": 1.9721851348876955,
+              "true_target_y_mm": -30.129758834838867,
+              "target_point_px": [
+                125.0,
+                179.0
+              ],
+              "pred_target_x_mm": 189.82037353515625,
+              "pred_target_y_mm": 56.717918395996094,
+              "error_mm": 99.31511558761704,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                158.73015873015873,
+                236.04395604395606
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 91.7778148651123,
+              "true_target_manifest_y_mm": 40.87024116516113,
+              "error_mm_alt_raw": 127.82065398221795,
+              "error_mm_alt_norm1000": 181.51467210748592,
+              "error_mm_legacy": 239.9416118721031,
+              "error_mm_alt_model_input": 99.31511558761704
+            },
+            {
+              "frame_index": 3748,
+              "instruction": "go_red",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [217, 154]}",
+              "act_s": 111.99470067024231,
+              "generate_latency_s": 111.92616367340088,
+              "true_target_x_mm": -29.645645902214746,
+              "true_target_y_mm": 0.0688090395355971,
+              "target_point_px": [
+                217.0,
+                154.0
+              ],
+              "pred_target_x_mm": 129.9372100830078,
+              "pred_target_y_mm": 76.07750701904297,
+              "error_mm": 8.23887840554503,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                275.55555555555554,
+                203.07692307692307
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 123.39564590221474,
+              "true_target_manifest_y_mm": 71.0688090395356,
+              "error_mm_alt_raw": 52.09882530966149,
+              "error_mm_alt_norm1000": 121.09263138883888,
+              "error_mm_legacy": 219.17373257039688,
+              "error_mm_alt_model_input": 8.23887840554503
+            }
+          ]
+        },
+        "oriented": {
+          "mean_error_mm_alt_raw": 68.15421356258084,
+          "n_frames_sampled": 6,
+          "n_frames_scored": 6,
+          "n_parsed": 6,
+          "parse_success_rate": 1.0,
+          "hit_rate": 0.16666666666666666,
+          "mean_error_mm": 77.48464943307091,
+          "median_error_mm": 82.6144239149641,
+          "n_settled": 5,
+          "hit_rate_settled": 0.2,
+          "mean_error_mm_settled": 68.05333784050559,
+          "mean_error_mm_legacy": 168.6920523390182,
+          "mean_generate_latency_s": 133.4563500881195,
+          "frames": [
+            {
+              "frame_index": 2898,
+              "instruction": "go_black",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [390, 82]}",
+              "act_s": 132.12334823608398,
+              "generate_latency_s": 132.06801199913025,
+              "true_target_x_mm": 0.1563369619725918,
+              "true_target_y_mm": -29.467570032221964,
+              "target_point_px": [
+                390.0,
+                82.0
+              ],
+              "pred_target_x_mm": 9.559856414794922,
+              "pred_target_y_mm": 133.5854034423828,
+              "error_mm": 124.64120739589747,
+              "hit": false,
+              "target_transition": true,
+              "target_point_raw_px": [
+                495.23809523809524,
+                108.13186813186813
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.59366303802742,
+              "true_target_manifest_y_mm": 41.532429967778036,
+              "error_mm_alt_raw": 111.53177173884114,
+              "error_mm_alt_norm1000": 146.55349831635527,
+              "error_mm_legacy": 191.8820941152212,
+              "error_mm_alt_model_input": 124.64120739589747
+            },
+            {
+              "frame_index": 3198,
+              "instruction": "go_black",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [390, 232]}",
+              "act_s": 135.11317324638367,
+              "generate_latency_s": 135.04698038101196,
+              "true_target_x_mm": 1.9721851348876955,
+              "true_target_y_mm": -30.129758834838867,
+              "target_point_px": [
+                390.0,
+                232.0
+              ],
+              "pred_target_x_mm": 15.165934562683105,
+              "pred_target_y_mm": 18.068376541137695,
+              "error_mm": 79.93312976360947,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                495.23809523809524,
+                305.9340659340659
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 91.7778148651123,
+              "true_target_manifest_y_mm": 40.87024116516113,
+              "error_mm_alt_raw": 29.482534646524584,
+              "error_mm_alt_norm1000": 105.02358569035235,
+              "error_mm_legacy": 110.96431532502697,
+              "error_mm_alt_model_input": 79.93312976360947
+            },
+            {
+              "frame_index": 3308,
+              "instruction": "go_black",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [392, 240]}",
+              "act_s": 127.93809747695923,
+              "generate_latency_s": 127.86784315109253,
+              "true_target_x_mm": 1.9721851348876955,
+              "true_target_y_mm": -30.129758834838867,
+              "target_point_px": [
+                392.0,
+                240.0
+              ],
+              "pred_target_x_mm": 14.448859214782715,
+              "pred_target_y_mm": 15.23079776763916,
+              "error_mm": 81.46869607220539,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                497.77777777777777,
+                316.4835164835165
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 91.7778148651123,
+              "true_target_manifest_y_mm": 40.87024116516113,
+              "error_mm_alt_raw": 28.685762625441974,
+              "error_mm_alt_norm1000": 104.15658586853439,
+              "error_mm_legacy": 109.3414142590612,
+              "error_mm_alt_model_input": 81.46869607220539
+            },
+            {
+              "frame_index": 3418,
+              "instruction": "go_black",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [390, 160]}",
+              "act_s": 134.4756259918213,
+              "generate_latency_s": 134.4263379573822,
+              "true_target_x_mm": 1.9721851348876955,
+              "true_target_y_mm": -30.129758834838867,
+              "target_point_px": [
+                390.0,
+                160.0
+              ],
+              "pred_target_x_mm": 9.925640106201172,
+              "pred_target_y_mm": 72.88391876220703,
+              "error_mm": 87.8900111847241,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                495.23809523809524,
+                210.98901098901098
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 91.7778148651123,
+              "true_target_manifest_y_mm": 40.87024116516113,
+              "error_mm_alt_raw": 67.41858340641228,
+              "error_mm_alt_norm1000": 124.94686212316299,
+              "error_mm_legacy": 147.08458074905957,
+              "error_mm_alt_model_input": 87.8900111847241
+            },
+            {
+              "frame_index": 3528,
+              "instruction": "go_black",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [190, 120]}",
+              "act_s": 132.4479546546936,
+              "generate_latency_s": 132.38794827461243,
+              "true_target_x_mm": 1.9721851348876955,
+              "true_target_y_mm": -30.129758834838867,
+              "target_point_px": [
+                190.0,
+                120.0
+              ],
+              "pred_target_x_mm": 148.77976989746094,
+              "pred_target_y_mm": 102.24238586425781,
+              "error_mm": 83.76015175772281,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                241.26984126984127,
+                158.24175824175825
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 91.7778148651123,
+              "true_target_manifest_y_mm": 40.87024116516113,
+              "error_mm_alt_raw": 120.51809180650854,
+              "error_mm_alt_norm1000": 177.10682648830598,
+              "error_mm_legacy": 234.65810526543558,
+              "error_mm_alt_model_input": 83.76015175772281
+            },
+            {
+              "frame_index": 3748,
+              "instruction": "go_red",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [219, 154]}",
+              "act_s": 138.991779088974,
+              "generate_latency_s": 138.94097876548767,
+              "true_target_x_mm": -29.645645902214746,
+              "true_target_y_mm": 0.0688090395355971,
+              "target_point_px": [
+                219.0,
+                154.0
+              ],
+              "pred_target_x_mm": 128.586669921875,
+              "pred_target_y_mm": 76.07931518554688,
+              "error_mm": 7.21470042426618,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                278.0952380952381,
+                203.07692307692307
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 123.39564590221474,
+              "true_target_manifest_y_mm": 71.0688090395356,
+              "error_mm_alt_raw": 51.28853715175643,
+              "error_mm_alt_norm1000": 120.58283462641218,
+              "error_mm_legacy": 218.22180432030478,
+              "error_mm_alt_model_input": 7.21470042426618
+            }
+          ]
+        }
+      }
+    },
+    {
+      "session": "session_jetson_track4_20260915_164743",
+      "variants": {
+        "baseline": {
+          "mean_error_mm_alt_raw": 61.14816409238164,
+          "n_frames_sampled": 6,
+          "n_frames_scored": 6,
+          "n_parsed": 6,
+          "parse_success_rate": 1.0,
+          "hit_rate": 0.8333333333333334,
+          "mean_error_mm": 22.201033250743695,
+          "median_error_mm": 7.301751602694049,
+          "n_settled": 5,
+          "hit_rate_settled": 1.0,
+          "mean_error_mm_settled": 7.080121017637346,
+          "mean_error_mm_legacy": 194.47763395870587,
+          "mean_generate_latency_s": 100.89349861939748,
+          "frames": [
+            {
+              "frame_index": 1,
+              "instruction": "go_red",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [125, 157]}",
+              "act_s": 107.0676782131195,
+              "generate_latency_s": 107.04082918167114,
+              "true_target_x_mm": 0.0,
+              "true_target_y_mm": 0.0,
+              "target_point_px": [
+                125.0,
+                157.0
+              ],
+              "pred_target_x_mm": 191.51219177246094,
+              "pred_target_y_mm": 73.91344451904297,
+              "error_mm": 97.80559441627544,
+              "hit": false,
+              "target_transition": true,
+              "target_point_raw_px": [
+                158.73015873015873,
+                207.03296703296704
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.75,
+              "true_target_manifest_y_mm": 71.0,
+              "error_mm_alt_raw": 122.24965158878416,
+              "error_mm_alt_norm1000": 168.71626904217717,
+              "error_mm_legacy": 235.52209735787542,
+              "error_mm_alt_model_input": 97.80559441627544
+            },
+            {
+              "frame_index": 897,
+              "instruction": "go_green",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [265, 117]}",
+              "act_s": 105.47120404243469,
+              "generate_latency_s": 105.40845394134521,
+              "true_target_x_mm": -0.0440786899126678,
+              "true_target_y_mm": 30.013175523444566,
+              "target_point_px": [
+                265.0,
+                117.0
+              ],
+              "pred_target_x_mm": 96.7037353515625,
+              "pred_target_y_mm": 103.67481994628906,
+              "error_mm": 3.9434062588506436,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                336.5079365079365,
+                154.28571428571428
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.79407868991267,
+              "true_target_manifest_y_mm": 101.01317552344457,
+              "error_mm_alt_raw": 49.79067079320772,
+              "error_mm_alt_norm1000": 117.96769258056027,
+              "error_mm_legacy": 167.2765394707916,
+              "error_mm_alt_model_input": 3.9434062588506436
+            },
+            {
+              "frame_index": 1892,
+              "instruction": "go_green",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [279, 125]}",
+              "act_s": 98.21032881736755,
+              "generate_latency_s": 98.1426842212677,
+              "true_target_x_mm": -0.0036518146808631,
+              "true_target_y_mm": 30.03166838299204,
+              "target_point_px": [
+                279.0,
+                125.0
+              ],
+              "pred_target_x_mm": 87.2455825805664,
+              "pred_target_y_mm": 98.65814971923828,
+              "error_mm": 6.927377281714529,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                354.2857142857143,
+                164.83516483516485
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.75365181468086,
+              "true_target_manifest_y_mm": 101.03166838299204,
+              "error_mm_alt_raw": 40.81427581555747,
+              "error_mm_alt_norm1000": 111.0380434983744,
+              "error_mm_legacy": 158.28631000921817,
+              "error_mm_alt_model_input": 6.927377281714529
+            },
+            {
+              "frame_index": 2353,
+              "instruction": "go_red",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [215, 157]}",
+              "act_s": 96.19075393676758,
+              "generate_latency_s": 96.12446618080139,
+              "true_target_x_mm": -29.600565285820142,
+              "true_target_y_mm": 0.0581948215522416,
+              "target_point_px": [
+                215.0,
+                157.0
+              ],
+              "pred_target_x_mm": 131.0144805908203,
+              "pred_target_y_mm": 71.4909896850586,
+              "error_mm": 7.676125923673569,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                273.015873015873,
+                207.03296703296704
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 123.35056528582014,
+              "true_target_manifest_y_mm": 71.05819482155223,
+              "error_mm_alt_raw": 49.57183480706304,
+              "error_mm_alt_norm1000": 116.89098553713441,
+              "error_mm_legacy": 217.42729591395923,
+              "error_mm_alt_model_input": 7.676125923673569
+            },
+            {
+              "frame_index": 4036,
+              "instruction": "go_green",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [265, 117]}",
+              "act_s": 102.89454436302185,
+              "generate_latency_s": 102.84668493270874,
+              "true_target_x_mm": -0.0038099659173852,
+              "true_target_y_mm": 29.94357493613736,
+              "target_point_px": [
+                265.0,
+                117.0
+              ],
+              "pred_target_x_mm": 98.29279327392578,
+              "pred_target_y_mm": 104.81352233886719,
+              "error_mm": 5.964801955662412,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                336.5079365079365,
+                154.28571428571428
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.75380996591738,
+              "true_target_manifest_y_mm": 100.94357493613737,
+              "error_mm_alt_raw": 51.211933823188176,
+              "error_mm_alt_norm1000": 117.85496134624925,
+              "error_mm_legacy": 168.60775047712835,
+              "error_mm_alt_model_input": 5.964801955662412
+            },
+            {
+              "frame_index": 4497,
+              "instruction": "go_red",
+              "prompt_variant": "baseline",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [215, 150]}",
+              "act_s": 95.86125540733337,
+              "generate_latency_s": 95.7978732585907,
+              "true_target_x_mm": -29.57463675735512,
+              "true_target_y_mm": 0.0354788070896304,
+              "target_point_px": [
+                215.0,
+                150.0
+              ],
+              "pred_target_x_mm": 130.01837158203125,
+              "pred_target_y_mm": 79.62395477294922,
+              "error_mm": 10.888893668285576,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                273.015873015873,
+                197.8021978021978
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 123.32463675735512,
+              "true_target_manifest_y_mm": 71.03547880708963,
+              "error_mm_alt_raw": 53.25061772648928,
+              "error_mm_alt_norm1000": 119.21818075526741,
+              "error_mm_legacy": 219.74581052326255,
+              "error_mm_alt_model_input": 10.888893668285576
+            }
+          ]
+        },
+        "oriented": {
+          "mean_error_mm_alt_raw": 53.634066863457626,
+          "n_frames_sampled": 6,
+          "n_frames_scored": 6,
+          "n_parsed": 6,
+          "parse_success_rate": 1.0,
+          "hit_rate": 0.3333333333333333,
+          "mean_error_mm": 31.998817331260668,
+          "median_error_mm": 40.647126208609606,
+          "n_settled": 5,
+          "hit_rate_settled": 0.4,
+          "mean_error_mm_settled": 27.607365258791525,
+          "mean_error_mm_legacy": 181.34504695240403,
+          "mean_generate_latency_s": 139.83524978160858,
+          "frames": [
+            {
+              "frame_index": 1,
+              "instruction": "go_red",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [190, 160]}",
+              "act_s": 129.1988332271576,
+              "generate_latency_s": 129.11573314666748,
+              "true_target_x_mm": 0.0,
+              "true_target_y_mm": 0.0,
+              "target_point_px": [
+                190.0,
+                160.0
+              ],
+              "pred_target_x_mm": 147.7034912109375,
+              "pred_target_y_mm": 71.52830505371094,
+              "error_mm": 53.95607769360637,
+              "hit": false,
+              "target_transition": true,
+              "target_point_raw_px": [
+                241.26984126984127,
+                210.98901098901098
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.75,
+              "true_target_manifest_y_mm": 71.0,
+              "error_mm_alt_raw": 88.11749370300262,
+              "error_mm_alt_norm1000": 148.3372832209173,
+              "error_mm_legacy": 203.52548483934754,
+              "error_mm_alt_model_input": 53.95607769360637
+            },
+            {
+              "frame_index": 897,
+              "instruction": "go_green",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [269, 116]}",
+              "act_s": 138.11307573318481,
+              "generate_latency_s": 138.0607087612152,
+              "true_target_x_mm": -0.0440786899126678,
+              "true_target_y_mm": 30.013175523444566,
+              "target_point_px": [
+                269.0,
+                116.0
+              ],
+              "pred_target_x_mm": 93.95011901855469,
+              "pred_target_y_mm": 104.50332641601562,
+              "error_mm": 3.493637336226704,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                341.58730158730157,
+                152.96703296703296
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.79407868991267,
+              "true_target_manifest_y_mm": 101.01317552344457,
+              "error_mm_alt_raw": 48.28869529158866,
+              "error_mm_alt_norm1000": 116.9688018510188,
+              "error_mm_legacy": 165.88095888075836,
+              "error_mm_alt_model_input": 3.493637336226704
+            },
+            {
+              "frame_index": 1892,
+              "instruction": "go_green",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [309, 156]}",
+              "act_s": 144.79632091522217,
+              "generate_latency_s": 144.74267959594727,
+              "true_target_x_mm": -0.0036518146808631,
+              "true_target_y_mm": 30.03166838299204,
+              "target_point_px": [
+                309.0,
+                156.0
+              ],
+              "pred_target_x_mm": 67.08628845214844,
+              "pred_target_y_mm": 74.71002960205078,
+              "error_mm": 37.46968023380621,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                392.3809523809524,
+                205.71428571428572
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.75365181468086,
+              "true_target_manifest_y_mm": 101.03166838299204,
+              "error_mm_alt_raw": 18.24347354398078,
+              "error_mm_alt_norm1000": 96.39351906601352,
+              "error_mm_legacy": 133.9004274453492,
+              "error_mm_alt_model_input": 37.46968023380621
+            },
+            {
+              "frame_index": 2353,
+              "instruction": "go_red",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [269, 116]}",
+              "act_s": 144.0132131576538,
+              "generate_latency_s": 143.93595147132874,
+              "true_target_x_mm": -29.600565285820142,
+              "true_target_y_mm": 0.0581948215522416,
+              "target_point_px": [
+                269.0,
+                116.0
+              ],
+              "pred_target_x_mm": 94.93162536621094,
+              "pred_target_y_mm": 104.41920471191406,
+              "error_mm": 43.824572183413004,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                341.58730158730157,
+                152.96703296703296
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 123.35056528582014,
+              "true_target_manifest_y_mm": 71.05819482155223,
+              "error_mm_alt_raw": 56.60170563838366,
+              "error_mm_alt_norm1000": 114.84888076286143,
+              "error_mm_legacy": 207.6106243928971,
+              "error_mm_alt_model_input": 43.824572183413004
+            },
+            {
+              "frame_index": 4036,
+              "instruction": "go_green",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [264, 116]}",
+              "act_s": 139.4027750492096,
+              "generate_latency_s": 139.34567832946777,
+              "true_target_x_mm": -0.0038099659173852,
+              "true_target_y_mm": 29.94357493613736,
+              "target_point_px": [
+                264.0,
+                116.0
+              ],
+              "pred_target_x_mm": 98.98445129394531,
+              "pred_target_y_mm": 105.60755157470703,
+              "error_mm": 7.008015895215804,
+              "hit": true,
+              "target_transition": false,
+              "target_point_raw_px": [
+                335.23809523809524,
+                152.96703296703296
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 93.75380996591738,
+              "true_target_manifest_y_mm": 100.94357493613737,
+              "error_mm_alt_raw": 52.0174169082966,
+              "error_mm_alt_norm1000": 118.34152923969499,
+              "error_mm_legacy": 169.4286150742288,
+              "error_mm_alt_model_input": 7.008015895215804
+            },
+            {
+              "frame_index": 4497,
+              "instruction": "go_red",
+              "prompt_variant": "oriented",
+              "parse_ok": true,
+              "parse_reason": "asked_json_contract",
+              "raw_text": "{\"target_point_xy\": [269, 116]}",
+              "act_s": 143.85540056228638,
+              "generate_latency_s": 143.81074738502502,
+              "true_target_x_mm": -29.57463675735512,
+              "true_target_y_mm": 0.0354788070896304,
+              "target_point_px": [
+                269.0,
+                116.0
+              ],
+              "pred_target_x_mm": 93.57495880126953,
+              "pred_target_y_mm": 106.43575286865234,
+              "error_mm": 46.24092064529592,
+              "hit": false,
+              "target_transition": false,
+              "target_point_raw_px": [
+                341.58730158730157,
+                152.96703296703296
+              ],
+              "coord_space": "model_input",
+              "model_input_hw": [
+                364,
+                504
+              ],
+              "true_target_manifest_x_mm": 123.32463675735512,
+              "true_target_manifest_y_mm": 71.03547880708963,
+              "error_mm_alt_raw": 58.53561609549344,
+              "error_mm_alt_norm1000": 115.77163922581562,
+              "error_mm_legacy": 207.72417108184322,
+              "error_mm_alt_model_input": 46.24092064529592
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
