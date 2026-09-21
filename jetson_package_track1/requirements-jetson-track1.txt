@@ -1,5 +1,0 @@
-numpy<2
-onnxruntime==1.18.0
-pyserial
-sounddevice
-pandas
