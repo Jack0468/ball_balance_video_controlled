@@ -44,7 +44,15 @@ RUN python3 -c "import cv2, cv2.aruco" \
  || python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all: opencv-contrib-python-headless
 
 COPY requirements-jetson-arm2-common.txt requirements-jetson-arm2-fallback-transformers5.txt /opt/arm2reqs/
+# The base image points pip at a Jetson-specific mirror (jetson.webredirect.org, for torch/torchvision
+# wheels that plain PyPI doesn't carry for aarch64). Confirmed on-device 2026-09-22: that mirror is
+# unreachable from this network (DNS resolution fails), while pypi.org resolves fine. Everything this
+# layer installs (transformers, accelerate, qwen-vl-utils, etc.) is ordinary pure-Python/aarch64-wheel
+# PyPI content -- torch/torchvision (the packages that actually need the Jetson mirror) are already in
+# the base image and untouched here -- so pin this install to plain PyPI explicitly rather than inherit
+# the base image's unreachable default index.
 RUN python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all: \
+      --index-url https://pypi.org/simple \
       -r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt \
  && python3 -m pip check
 

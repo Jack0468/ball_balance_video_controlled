@@ -40,7 +40,12 @@ RUN python3 -c "import cv2, cv2.aruco" \
  || python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all: opencv-contrib-python-headless
 
 COPY requirements-jetson-arm2-common.txt requirements-jetson-arm2.txt /opt/arm2reqs/
+# Same fix as Dockerfile.arm2-transformers5: the base image's default pip index
+# (jetson.webredirect.org, for torch/torchvision) is unreachable from this network (confirmed
+# 2026-09-22, DNS resolution fails there while pypi.org resolves fine). Everything here is ordinary
+# PyPI content -- pin explicitly rather than inherit the unreachable default.
 RUN python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all: \
+      --index-url https://pypi.org/simple \
       -r /opt/arm2reqs/requirements-jetson-arm2.txt \
  && python3 -m pip check
 
