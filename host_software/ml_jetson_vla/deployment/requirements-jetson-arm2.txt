@@ -1,12 +1,27 @@
-# Arm 2 sweep, Jetson AGX Orin -- THE environment (one venv, all four candidates), 2026-09-22 plan.
-# See host_software/ml_jetson_vla/docs/JETSON_ARM2_SWEEP_LOCAL.md section 2 for the decision and the
-# exact install sequence (numpy pin -> Jetson torch -> this file, all under frozen constraints).
+# Arm 2 sweep, Jetson AGX Orin -- the transformers<5 CONTAINER image's extra packages, built by
+# Dockerfile.arm2-transformers4 (this directory). Container pivot, 2026-09-22 -- see
+# host_software/ml_jetson_vla/docs/JETSON_ARM2_SWEEP_LOCAL.md section 2 for the full decision and build
+# commands.
 #
-# Why transformers>=4.56,<5 for everything: Moondream2's remote code (pinned revision 2025-06-21) is reported
-# broken on transformers>=5 (docs/ARM2_MINIMAL_BASELINE_MULTI_CANDIDATE.md S8.4), so <5 is the only line all
-# four candidates can share. 4.57.6 was the newest 4.x on 2026-09-22 (the pin resolves there). Qwen2.5-VL under
-# it is NOT proven to reproduce the local reference (which ran on 5.17.0): the validation gate decides. If the
-# gate fails, build the fallback environment from requirements-jetson-arm2-fallback-transformers5.txt for Qwen.
+# CORRECTED 2026-09-22 (real on-device probe, this session): this file previously assumed transformers
+# 4.56-4.57 could run all four candidate model families ("Qwen2.5-VL under it is NOT proven to reproduce
+# the local reference; the gate decides") and treated the >=5 environment as an occasional fallback for
+# Qwen only. A real probe on this Jetson under transformers==4.57.6 (the newest 4.x, exactly what the
+# range below resolves to) showed `Qwen2_5_VLForConditionalGeneration` AND `PaliGemmaForConditionalGeneration`
+# both MISSING from the installed transformers -- not "unproven," genuinely absent. So this is no longer
+# the "everything" environment: it is the environment for the two candidates that specifically need
+# transformers<5 or run under either version --
+#   - Moondream2 (`:query` / `:point`): remote code (pinned revision 2025-06-21) is reported broken on
+#     transformers>=5 (`all_tied_weights_keys`, docs/ARM2_MINIMAL_BASELINE_MULTI_CANDIDATE.md S8.4) -- MUST
+#     run here.
+#   - InternVL2.5-4B: works under both transformers majors (its remote code does not depend on either
+#     missing class) -- runs here so it is not duplicated across both images.
+# Qwen2.5-VL and PaliGemma2 run from Dockerfile.arm2-transformers5 / requirements-jetson-arm2-fallback-
+# transformers5.txt instead (that file's own header has the matching correction). The driver
+# (`run_arm2_sweep_jetson.py`) needs NO code change for this: `candidate_issues()` already checks
+# `transformers_has_qwen2_5_vl` / `transformers_has_paligemma` / the moondream2 `>=5` rule at runtime and
+# BLOCKED-skips (before any download) whichever candidates don't belong in a given container -- it was
+# already correct, only this file's own framing of "which env is default" was stale.
 -r requirements-jetson-arm2-common.txt
 
 transformers>=4.56,<5
@@ -17,7 +32,7 @@ huggingface_hub     # pip resolves 0.3x under transformers<5; also needed for th
 #       DropPath` at module top level (flash_attn / apex imports are inside try/except).
 #   moondream2 @ 9a7d402 vision_encoder.py: `from einops import rearrange`, `from torchvision.transforms.v2 import ...`
 #       at module top level. (`pyvips` is imported inside try/except with a PIL LANCZOS fallback; pyvips is
-#       sdist-only on PyPI, so it is deliberately NOT installed under --only-binary; the fallback resamples
+#       sdist-only on PyPI, so it is deliberately NOT installed under --only-binary: the fallback resamples
 #       with PIL instead of libvips -- a small preprocessing difference, no crash. `torchao` is likewise optional.)
 timm                # 1.0.x still ships the deprecated timm.models.layers shim InternVL imports (checked in timm 1.0.29)
 einops

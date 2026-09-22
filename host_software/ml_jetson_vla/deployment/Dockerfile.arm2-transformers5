@@ -1,0 +1,64 @@
+# Arm 2 sweep, Jetson AGX Orin -- PRIMARY container image (2026-09-22, container pivot).
+# transformers==5.17.0. Runs: qwen2_5_vl_3b (+ the validation gate) and paligemma2_3b_mix (:prompt/:detect).
+# Confirmed by a real on-device probe this session: under transformers==4.57.6, both
+# Qwen2_5_VLForConditionalGeneration and PaliGemmaForConditionalGeneration are MISSING -- these two
+# candidates need transformers>=5, full stop, not "might work." See requirements-jetson-arm2-fallback-
+# transformers5.txt for the corrected reasoning (the filename says "fallback" for historical reasons; this
+# is the required environment for these two candidates, not a conditional fallback).
+#
+# Base: dustynv/l4t-pytorch:r36.4.0 (6.3GB, confirmed pulled and running with real CUDA torch 2.4.0 --
+# `torch.cuda.is_available() == True` -- on this exact Jetson AGX Orin p3730 / JetPack 6.2.3 / L4T r36.4,
+# 2026-09-22). Do not swap to a different/larger base image without a stated reason: disk space on this
+# device is a real, already-hit constraint (57GB total; a 20-30GB NGC training image exhausted it once
+# this session).
+#
+# Build (from host_software/ml_jetson_vla/deployment/ on the Jetson):
+#   docker build -f Dockerfile.arm2-transformers5 -t arm2-t5:r36.4.0 .
+#
+# Expected size: base 6.3GB (this layer is byte-identical to, and therefore shared on disk with,
+# Dockerfile.arm2-transformers4's base layer -- Docker only stores an image layer once no matter how many
+# derived images reference it) + roughly 1-1.4GB for opencv + transformers 5.17.0/tokenizers/
+# huggingface_hub/safetensors + accelerate/qwen-vl-utils/sentencepiece/av/pandas/pillow. Model checkpoints
+# (Qwen2.5-VL-3B, PaliGemma2-3b-mix-448) are NOT baked into the image -- they land in the bind-mounted
+# Hugging Face cache at container run time (see JETSON_ARM2_SWEEP_LOCAL.md section 4), so they don't count
+# against this image's size and survive independently of it.
+
+FROM dustynv/l4t-pytorch:r36.4.0
+
+# Freeze exactly what the base image ships (torch, torchvision, numpy -- the CUDA-enabled stack this
+# session spent real effort landing) BEFORE installing anything else. Every pip install below is
+# constrained against this file, so it can only ADD packages, never silently upgrade one the base image
+# already solved correctly -- the container-build equivalent of the frozen-constraints venv discipline in
+# JETSON_ARM2_SWEEP_LOCAL.md section 2 (protecting against the class of bug the bare-metal `lerobot`
+# install caused: an unconstrained pip install silently moving numpy underneath a working cv2/onnxruntime).
+RUN python3 -m pip freeze --exclude-editable > /opt/base_constraints.txt \
+ && python3 -c "import numpy, torch; print('base numpy', numpy.__version__, 'torch', torch.__version__, 'cuda_available', torch.cuda.is_available())"
+
+# OpenCV + ArUco: NOT confirmed present in l4t-pytorch (a PyTorch-only image in the jetson-containers
+# family -- opencv is typically a separate stacked package, not bundled here). Installed only if actually
+# missing, under the base image's frozen numpy constraint -- the old bare-metal rule ("apt python3-opencv
+# needs numpy<2") protected a shared HOST environment; there is no shared host environment inside an
+# isolated container, so that constraint is not reapplied verbatim, only the real one (don't move the base
+# image's numpy), checked directly rather than assumed.
+RUN python3 -c "import cv2, cv2.aruco" \
+ || python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all: opencv-contrib-python-headless
+
+COPY requirements-jetson-arm2-common.txt requirements-jetson-arm2-fallback-transformers5.txt /opt/arm2reqs/
+RUN python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all: \
+      -r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt \
+ && python3 -m pip check
+
+# Proof nothing from the base image moved, and that the two candidates this image exists for are actually
+# importable (fail the build loudly here, not silently at sweep time on-device).
+RUN python3 -m pip freeze --exclude-editable | grep -E '^(numpy|torch|torchvision)==' \
+ && python3 -c "import cv2; print('cv2', cv2.__version__, 'aruco', hasattr(cv2, 'aruco'))" \
+ && python3 -c "\
+import transformers as tr; \
+print('transformers', tr.__version__); \
+assert hasattr(tr, 'Qwen2_5_VLForConditionalGeneration'), 'Qwen2.5-VL class missing -- this image is useless without it'; \
+assert hasattr(tr, 'PaliGemmaForConditionalGeneration'), 'PaliGemma class missing -- this image is useless without it'; \
+print('Qwen2_5_VLForConditionalGeneration: OK  PaliGemmaForConditionalGeneration: OK')"
+
+WORKDIR /workspace/VRI_2026
+ENV PYTHONUNBUFFERED=1
+CMD ["/bin/bash"]

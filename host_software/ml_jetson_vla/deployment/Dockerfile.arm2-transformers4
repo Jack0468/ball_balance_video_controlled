@@ -1,0 +1,65 @@
+# Arm 2 sweep, Jetson AGX Orin -- SECONDARY container image (2026-09-22, container pivot).
+# transformers>=4.56,<5. Runs: internvl2_5_4b and moondream2 (:query/:point).
+# Moondream2's remote code (pinned revision 2025-06-21) is reported broken on transformers>=5
+# (`all_tied_weights_keys`, docs/ARM2_MINIMAL_BASELINE_MULTI_CANDIDATE.md S8.4) -- it MUST run here.
+# InternVL2.5-4B works under either transformers major (confirmed this session); it lives in this image
+# rather than being duplicated into Dockerfile.arm2-transformers5 as well. See requirements-jetson-arm2.txt
+# for the full correction: this file previously assumed transformers<5 could run all four candidates
+# (including Qwen2.5-VL and PaliGemma2); a real on-device probe under transformers==4.57.6 showed both of
+# those classes genuinely MISSING from transformers, not just "unproven" -- they run from
+# Dockerfile.arm2-transformers5 instead.
+#
+# Base: dustynv/l4t-pytorch:r36.4.0 (6.3GB, confirmed pulled and running with real CUDA torch 2.4.0 --
+# `torch.cuda.is_available() == True` -- on this exact Jetson AGX Orin p3730 / JetPack 6.2.3 / L4T r36.4,
+# 2026-09-22). Do not swap to a different/larger base image without a stated reason: disk space on this
+# device is a real, already-hit constraint (57GB total; a 20-30GB NGC training image exhausted it once
+# this session).
+#
+# Build (from host_software/ml_jetson_vla/deployment/ on the Jetson):
+#   docker build -f Dockerfile.arm2-transformers4 -t arm2-t4:r36.4.0 .
+#
+# Expected size: base 6.3GB (byte-identical to, and shared on disk with, Dockerfile.arm2-transformers5's
+# base layer -- build/pull that one first, or either order, Docker de-dupes by layer hash either way) +
+# roughly 1.2-1.6GB for opencv + transformers 4.57.x/tokenizers/huggingface_hub/safetensors +
+# accelerate/qwen-vl-utils/sentencepiece/timm/einops/av/pandas/pillow (timm+einops are the only packages
+# not also in the transformers5 image). Model checkpoints (InternVL2_5-4B, moondream2) are NOT baked into
+# the image -- they land in the bind-mounted Hugging Face cache at container run time (see
+# JETSON_ARM2_SWEEP_LOCAL.md section 4).
+
+FROM dustynv/l4t-pytorch:r36.4.0
+
+# Freeze exactly what the base image ships (torch, torchvision, numpy) BEFORE installing anything else --
+# see Dockerfile.arm2-transformers5's matching comment for the full rationale (same mechanism, same base
+# image, same reason: protect the CUDA-enabled stack this session spent real effort landing).
+RUN python3 -m pip freeze --exclude-editable > /opt/base_constraints.txt \
+ && python3 -c "import numpy, torch; print('base numpy', numpy.__version__, 'torch', torch.__version__, 'cuda_available', torch.cuda.is_available())"
+
+# OpenCV + ArUco: same rationale as Dockerfile.arm2-transformers5 -- not confirmed present in l4t-pytorch,
+# installed only if missing, under the frozen base-image numpy constraint.
+RUN python3 -c "import cv2, cv2.aruco" \
+ || python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all: opencv-contrib-python-headless
+
+COPY requirements-jetson-arm2-common.txt requirements-jetson-arm2.txt /opt/arm2reqs/
+RUN python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all: \
+      -r /opt/arm2reqs/requirements-jetson-arm2.txt \
+ && python3 -m pip check
+
+# Proof nothing from the base image moved, and that the two candidates this image exists for are actually
+# usable: InternVL2.5 needs torchvision+timm+einops importable (checked directly, not the model itself --
+# its own remote code load is what the driver's smoke stage tests); Moondream2 needs the SAME plus
+# transformers<5 (checked here as a hard assert, matching `candidate_issues()`'s own rule in
+# run_arm2_sweep_jetson.py, so a build against the wrong transformers range fails at build time, not
+# silently at sweep time on-device).
+RUN python3 -m pip freeze --exclude-editable | grep -E '^(numpy|torch|torchvision)==' \
+ && python3 -c "import cv2; print('cv2', cv2.__version__, 'aruco', hasattr(cv2, 'aruco'))" \
+ && python3 -c "import timm, einops, torchvision; print('timm', timm.__version__, 'einops', einops.__version__)" \
+ && python3 -c "\
+import transformers as tr; \
+major = int(tr.__version__.split('.')[0]); \
+print('transformers', tr.__version__); \
+assert major < 5, f'transformers {tr.__version__} is >=5 -- Moondream2 needs <5, this image is built wrong'; \
+print('transformers major < 5: OK')"
+
+WORKDIR /workspace/VRI_2026
+ENV PYTHONUNBUFFERED=1
+CMD ["/bin/bash"]

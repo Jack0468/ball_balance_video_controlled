@@ -1,20 +1,37 @@
-# Arm 2 sweep, Jetson AGX Orin -- packages common to every Arm 2 environment (2026-09-22 plan).
-# See host_software/ml_jetson_vla/docs/JETSON_ARM2_SWEEP_LOCAL.md section 2. NOT a replacement for the root
-# requirements.txt (never install that verbatim on the Jetson, see JETSON_ENV_SETUP.md).
+# Arm 2 sweep, Jetson AGX Orin -- packages common to BOTH Arm 2 container images (2026-09-22, container
+# pivot). Installed inside Dockerfile.arm2-transformers5 and Dockerfile.arm2-transformers4 (this
+# directory), not a bare-metal venv -- see host_software/ml_jetson_vla/docs/JETSON_ARM2_SWEEP_LOCAL.md
+# section 2. The earlier venv-based plan this file was originally written for is superseded: bare-metal
+# wheel resolution failed repeatedly on-device this session (wrong wheel via --extra-index-url, a 20-30GB
+# NGC image that exhausted disk), while `dustynv/l4t-pytorch:r36.4.0` gave a confirmed-working CUDA torch
+# in one `docker run` with no bare-metal install at all. NOT a replacement for the root requirements.txt
+# (never install that verbatim on the Jetson, see JETSON_ENV_SETUP.md); these packages are container-scoped
+# and are not added to the root file either.
 #
-# NOT in this file, on purpose (each is installed by its own earlier step):
-#   numpy         pinned FIRST to 1.26.4: apt's python3-opencv (cv2 4.5.4, the only cv2 with aruco here) is
-#                 built against the numpy 1.x ABI; an unpinned install once pulled numpy 2.x and broke
-#                 `import cv2` / onnxruntime (the lerobot incident, JETSON_ENV_SETUP.md).
-#   torch/torchvision  from NVIDIA's Jetson AI Lab wheel index (CUDA build), installed --no-deps BEFORE
-#                 this file so nothing from generic PyPI can replace them with the CPU-only aarch64 wheel.
-#   opencv        apt python3-opencv, visible through the venv's --system-site-packages. Never pip-install
-#                 any cv2 wheel here.
+# NOT in this file, on purpose (each is handled by the Dockerfile itself, not a package list):
+#   numpy              comes from the base image and is left exactly as it ships it. Each Dockerfile
+#                      captures `pip freeze` of the base image as its first layer, BEFORE installing
+#                      anything else, and installs everything below under that as a `-c` constraints file --
+#                      pip can then only ADD packages, never silently upgrade numpy/torch/torchvision the
+#                      way the bare-metal `lerobot` install once did (the ABI break in JETSON_ENV_SETUP.md).
+#                      The old rule ("apt's python3-opencv needs numpy<2") was protecting a SHARED bare-metal
+#                      host environment (Track 1's own numpy pin); that shared-environment risk does not
+#                      exist inside an isolated container, so it is not reapplied verbatim here -- the real
+#                      constraint, checked directly rather than assumed, is simply "don't move whatever
+#                      numpy the base image already validated its CUDA torch build against."
+#   torch/torchvision  already in the base image (confirmed: torch 2.4.0, `cuda.is_available()==True`, on
+#                      this exact Jetson AGX Orin p3730, JetPack 6.2.3 / L4T r36.4). Neither this file nor
+#                      either Dockerfile installs them.
+#   opencv             NOT confirmed present in l4t-pytorch (a PyTorch-only image in the jetson-containers
+#                      family; opencv is normally a separate stacked package there). Each Dockerfile checks
+#                      for `cv2.aruco` first and pip-installs `opencv-contrib-python-headless` (under the
+#                      base image's frozen numpy constraint, `--only-binary=:all:`) only if it's missing --
+#                      see the Dockerfiles, not this file, for that step.
 #
-# HOW TO INSTALL (mandatory form; the doc has the full sequence and the audit):
-#   python -m pip install -c ~/arm2_constraints.txt --only-binary=:all: -r requirements-jetson-arm2.txt
-# `-c` (frozen exact pins of everything already installed, incl. numpy/torch/torchvision) makes pip FAIL
-# LOUDLY instead of silently upgrading a shared package; `--only-binary=:all:` forbids aarch64 source builds.
+# HOW TO INSTALL: see Dockerfile.arm2-transformers5 / Dockerfile.arm2-transformers4 (this directory) and
+# JETSON_ARM2_SWEEP_LOCAL.md section 2 for the exact build commands. Both Dockerfiles use the same
+# `pip install -c <base image's own pip freeze> --only-binary=:all: -r <this file + the version-specific
+# file>` form the old venv plan used -- the safety mechanism is unchanged, only the delivery vehicle is.
 #
 # Wheel availability, checked 2026-09-22 with `pip install --dry-run --report --python-version 3.10
 # --implementation cp --abi cp310 --platform manylinux_2_17/2_28_aarch64 --only-binary=:all:` against PyPI
@@ -23,18 +40,21 @@
 # Python >= 3.11, so pip picks 2.3.x), pillow (manylinux_2_27/2_28), sentencepiece (manylinux_2_27),
 # tokenizers / safetensors (abi3), psutil, PyYAML, regex, MarkupSafe. No --only-binary exception and no apt
 # package is needed for any of them. (Wheel availability is not the same as "runs on the Orin": that is what
-# the driver's probe/smoke stages are for.)
+# the driver's probe/smoke stages are for.) Still expected to hold inside the container -- same aarch64
+# cp310 target, same PyPI -- but not re-verified against the base image's exact pip/base-image date;
+# `docker build` will fail loudly (not silently) if any wheel has since disappeared.
 
 accelerate          # from_pretrained(device_map=...) for every candidate
 qwen-vl-utils       # Qwen2.5-VL vision preprocessing (imports av + pillow + requests)
 sentencepiece       # precautionary: Gemma tokenizer for PaliGemma2 (not proven strictly required)
 av                  # PyAV: sequential rgb_video.mp4 decode (score_minimal_baseline_offline.read_frames_at_indices)
 pandas              # telemetry.csv + result tables
-pillow              # PIL.Image.fromarray in every backend; shadows apt's python3-pil inside the venv only
+pillow              # PIL.Image.fromarray in every backend
 
-# torch's own runtime dependencies. The Jetson torch wheel is installed with --no-deps (so pip never asks
-# the Jetson index for these); listing them here makes pip install them from PyPI now. (`pip check` at the
-# end of the doc's install step proves nothing is missing.)
+# torch's own runtime dependencies. The base image's torch build is expected to already carry these, but
+# they are listed explicitly as a no-cost safety net (pip confirms-and-skips if already satisfied under the
+# frozen constraints, installs from PyPI if genuinely missing). `pip check` at the end of each Dockerfile's
+# install layer proves nothing is missing.
 filelock
 typing_extensions
 sympy

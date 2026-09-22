@@ -1,0 +1,16 @@
+numpy
+pandas
+av
+opencv-contrib-python-headless
+Pillow
+torch
+torchvision
+transformers
+tokenizers
+huggingface_hub
+safetensors
+accelerate
+qwen-vl-utils
+sentencepiece
+timm
+einops
