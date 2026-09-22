@@ -461,16 +461,46 @@ def parse_minimal_baseline_output(
     )
 
 
+# Coordinate spaces a backend may declare for its parsed (x, y). A trailing "_yx" means the model
+# answered (row, column) i.e. the parsed pair is (y, x) and is swapped before mapping. Added
+# 2026-09-22 (`deployment/coord_space_probe.py`): the calibration probe evaluates exactly these
+# names as hypotheses, so the fix it recommends for a mismatched backend is a string this function
+# already understands (`norm1000`/`norm1` were previously only diagnostics in `score_prediction`).
+COORD_SPACES = ("raw_image", "model_input", "norm1000", "norm1")
+
+
+def parse_coord_space(coord_space: str) -> tuple:
+    """`(base_space, swapped)` for a declared coord_space name; ValueError on an unknown name
+    (a typo must never silently fall back to raw pixels)."""
+    swapped = coord_space.endswith("_yx")
+    base = coord_space[:-3] if swapped else coord_space
+    if base not in COORD_SPACES:
+        raise ValueError(f"unknown coord_space {coord_space!r}; known: {list(COORD_SPACES)} (each optionally "
+                         f"suffixed '_yx' for row-first answers)")
+    return base, swapped
+
+
 def to_raw_px(
     x: float, y: float, coord_space: str, model_input_hw: Optional[tuple], raw_hw: tuple
 ) -> tuple:
-    """Maps a parsed point into the RAW frame's pixel space. `coord_space="model_input"` with a
-    known `model_input_hw=(h, w)` rescales by raw/model_input per axis; anything else (the
-    "raw_image" default, or an unknown model-input size) is returned unchanged."""
-    if coord_space == "model_input" and model_input_hw:
+    """Maps a parsed point into the RAW frame's pixel space.
+      - `"raw_image"` (default): unchanged.
+      - `"model_input"` with a known `model_input_hw=(h, w)`: rescales by raw/model_input per axis
+        (unknown size: returned unchanged, as before).
+      - `"norm1000"`: 0-1000 normalized over the raw frame (InternVL's native grounding convention).
+      - `"norm1"`: 0-1 normalized over the raw frame.
+      - any of the above + `"_yx"`: the model answered (y, x); swapped first."""
+    base, swapped = parse_coord_space(coord_space)
+    if swapped:
+        x, y = y, x
+    raw_h, raw_w = raw_hw
+    if base == "model_input" and model_input_hw:
         mi_h, mi_w = model_input_hw
-        raw_h, raw_w = raw_hw
         return x * raw_w / float(mi_w), y * raw_h / float(mi_h)
+    if base == "norm1000":
+        return x / 1000.0 * raw_w, y / 1000.0 * raw_h
+    if base == "norm1":
+        return float(x) * raw_w, float(y) * raw_h
     return float(x), float(y)
 
 

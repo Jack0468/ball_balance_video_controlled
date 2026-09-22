@@ -1,0 +1,43 @@
+# Arm 2 sweep, Jetson AGX Orin -- packages common to every Arm 2 environment (2026-09-22 plan).
+# See host_software/ml_jetson_vla/docs/JETSON_ARM2_SWEEP_LOCAL.md section 2. NOT a replacement for the root
+# requirements.txt (never install that verbatim on the Jetson, see JETSON_ENV_SETUP.md).
+#
+# NOT in this file, on purpose (each is installed by its own earlier step):
+#   numpy         pinned FIRST to 1.26.4: apt's python3-opencv (cv2 4.5.4, the only cv2 with aruco here) is
+#                 built against the numpy 1.x ABI; an unpinned install once pulled numpy 2.x and broke
+#                 `import cv2` / onnxruntime (the lerobot incident, JETSON_ENV_SETUP.md).
+#   torch/torchvision  from NVIDIA's Jetson AI Lab wheel index (CUDA build), installed --no-deps BEFORE
+#                 this file so nothing from generic PyPI can replace them with the CPU-only aarch64 wheel.
+#   opencv        apt python3-opencv, visible through the venv's --system-site-packages. Never pip-install
+#                 any cv2 wheel here.
+#
+# HOW TO INSTALL (mandatory form; the doc has the full sequence and the audit):
+#   python -m pip install -c ~/arm2_constraints.txt --only-binary=:all: -r requirements-jetson-arm2.txt
+# `-c` (frozen exact pins of everything already installed, incl. numpy/torch/torchvision) makes pip FAIL
+# LOUDLY instead of silently upgrading a shared package; `--only-binary=:all:` forbids aarch64 source builds.
+#
+# Wheel availability, checked 2026-09-22 with `pip install --dry-run --report --python-version 3.10
+# --implementation cp --abi cp310 --platform manylinux_2_17/2_28_aarch64 --only-binary=:all:` against PyPI
+# (Ubuntu 22.04 = glibc 2.35): every package below, and every transitive dependency, resolves to a binary
+# wheel for cp310 aarch64 -- av 17.x (manylinux_2_28, bundles ffmpeg), pandas 2.3.x (pandas 3 needs
+# Python >= 3.11, so pip picks 2.3.x), pillow (manylinux_2_27/2_28), sentencepiece (manylinux_2_27),
+# tokenizers / safetensors (abi3), psutil, PyYAML, regex, MarkupSafe. No --only-binary exception and no apt
+# package is needed for any of them. (Wheel availability is not the same as "runs on the Orin": that is what
+# the driver's probe/smoke stages are for.)
+
+accelerate          # from_pretrained(device_map=...) for every candidate
+qwen-vl-utils       # Qwen2.5-VL vision preprocessing (imports av + pillow + requests)
+sentencepiece       # precautionary: Gemma tokenizer for PaliGemma2 (not proven strictly required)
+av                  # PyAV: sequential rgb_video.mp4 decode (score_minimal_baseline_offline.read_frames_at_indices)
+pandas              # telemetry.csv + result tables
+pillow              # PIL.Image.fromarray in every backend; shadows apt's python3-pil inside the venv only
+
+# torch's own runtime dependencies. The Jetson torch wheel is installed with --no-deps (so pip never asks
+# the Jetson index for these); listing them here makes pip install them from PyPI now. (`pip check` at the
+# end of the doc's install step proves nothing is missing.)
+filelock
+typing_extensions
+sympy
+networkx
+jinja2
+fsspec

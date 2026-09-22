@@ -1,0 +1,23 @@
+# Arm 2 sweep, Jetson AGX Orin -- THE environment (one venv, all four candidates), 2026-09-22 plan.
+# See host_software/ml_jetson_vla/docs/JETSON_ARM2_SWEEP_LOCAL.md section 2 for the decision and the
+# exact install sequence (numpy pin -> Jetson torch -> this file, all under frozen constraints).
+#
+# Why transformers>=4.56,<5 for everything: Moondream2's remote code (pinned revision 2025-06-21) is reported
+# broken on transformers>=5 (docs/ARM2_MINIMAL_BASELINE_MULTI_CANDIDATE.md S8.4), so <5 is the only line all
+# four candidates can share. 4.57.6 was the newest 4.x on 2026-09-22 (the pin resolves there). Qwen2.5-VL under
+# it is NOT proven to reproduce the local reference (which ran on 5.17.0): the validation gate decides. If the
+# gate fails, build the fallback environment from requirements-jetson-arm2-fallback-transformers5.txt for Qwen.
+-r requirements-jetson-arm2-common.txt
+
+transformers>=4.56,<5
+huggingface_hub     # pip resolves 0.3x under transformers<5; also needed for the gated-repo probe and downloads
+
+# VERIFIED 2026-09-22 by reading the real remote-code files (not a belief any more):
+#   InternVL2_5-4B modeling_intern_vit.py: `from einops import rearrange` and `from timm.models.layers import
+#       DropPath` at module top level (flash_attn / apex imports are inside try/except).
+#   moondream2 @ 9a7d402 vision_encoder.py: `from einops import rearrange`, `from torchvision.transforms.v2 import ...`
+#       at module top level. (`pyvips` is imported inside try/except with a PIL LANCZOS fallback; pyvips is
+#       sdist-only on PyPI, so it is deliberately NOT installed under --only-binary; the fallback resamples
+#       with PIL instead of libvips -- a small preprocessing difference, no crash. `torchao` is likewise optional.)
+timm                # 1.0.x still ships the deprecated timm.models.layers shim InternVL imports (checked in timm 1.0.29)
+einops

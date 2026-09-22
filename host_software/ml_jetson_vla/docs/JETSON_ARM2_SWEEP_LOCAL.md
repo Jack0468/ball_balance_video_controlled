@@ -128,11 +128,12 @@ export R=$HOME/arm2_jetson_sweep_results       # checkpoints/results, deliberate
 export D=$REPO/host_software/ml_jetson_vla/deployment
 ```
 
-**Step 0 -- code (git pull).** The dev machine must have committed and pushed first: at the time of
-writing the Arm 2 files were untracked/modified locally, so a pull would NOT deliver them (list in the
-report). Then on the Jetson:
+**Step 0 -- code (git pull).** Everything this needs was committed and pushed in `515230e` (the Arm 2
+files had been untracked until that commit), so `git log -1` on the Jetson must show `515230e` or
+later. Only `data/01_bronze/*` (gitignored; already on the device) and the Qwen checkpoint
+(`models.dvc`) do not arrive via git. On the Jetson:
 ```bash
-cd $REPO && git pull
+cd $REPO && git pull && git log -1 --oneline
 ls $D/run_arm2_sweep_jetson.py $D/colab_sweep.py $D/score_minimal_baseline_offline.py \
    $D/arm2_minimal_baseline_prompt_ab_scoring_20260918_RESCORED_v2.json \
    $REPO/host_software/ml_jetson_vla/core/vlm_backends.py $REPO/host_software/ml_jetson_vla/core/minimal_vlm_policy.py

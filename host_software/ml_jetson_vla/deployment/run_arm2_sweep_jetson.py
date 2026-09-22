@@ -37,6 +37,17 @@ from the Colab version, and how each difference is handled:
   invocation (typically from the OTHER venv, without Qwen in its `--candidates`) refuses to burn a
   long run unless a passing (or explicitly forced) gate record exists for that `--run-label`
   (`--skip-validation-gate` bypasses knowingly).
+- **Coordinate-space calibration (`--stage calibrate`, logic in `deployment/coord_space_probe.py`).**
+  Before any long sweep, every candidate is shown synthetic 640x480 frames with one large saturated
+  red disc at KNOWN, asymmetric positions, through the same prompt/backend/parser path as the sweep,
+  and its answers are tested against every coordinate-space hypothesis (`to_raw_px`'s names: raw px,
+  model-input px, 0-1000, 0-1, each also axis-swapped) plus a free per-axis linear fit. The outcome
+  is recorded in the checkpoint (`stages["_coord_calibration"]`), like the validation gate's. A
+  later sweep DROPS (loudly, exit code 2) any candidate whose declared `coord_space` is materially
+  worse than what fits, or that was never calibrated; `--allow-coord-mismatch KEY` overrides for a
+  named candidate, `--skip-coord-calibration` bypasses the whole mechanism. A candidate that cannot
+  localize even the big red dot only gets a warning (capability finding, not a mapping error). The
+  raw answers go to `<results-dir>/coord_probe_<run-label>.json`.
 - **Local-disk checkpointing.** `CheckpointStore` (unchanged) does atomic temp-file + `os.replace`
   writes after every single `generate()` call and skip-done resume: the CLAUDE.md >30-minute
   checkpointing rule. Separate invocations from different environments share one checkpoint file
@@ -69,6 +80,7 @@ for _p in (_HOST_SOFTWARE_DIR, _REPO_ROOT_DIR):
 # lazily by `_load_engine()` AFTER the environment probe, so `--stage probe` still works in an
 # environment that is missing some of those packages -- which is exactly when you want it.
 from ml_jetson_vla.core.minimal_vlm_policy import PROMPT_VARIANTS  # noqa: E402
+from ml_jetson_vla.deployment import coord_space_probe as csp  # noqa: E402  (numpy + policy only; light)
 
 cs: Any = None  # the colab_sweep module, set by _load_engine()
 
@@ -77,9 +89,14 @@ DEFAULT_REFERENCE_JSON = os.path.join(
     _THIS_DIR, "arm2_minimal_baseline_prompt_ab_scoring_20260918_RESCORED_v2.json"
 )
 DEFAULT_RESULTS_DIR = os.path.join(_THIS_DIR, "arm2_jetson_sweep_results")
-STAGES = ("probe", "frames", "hfauth", "smoke", "validate", "sweep", "export", "all")
+STAGES = ("probe", "frames", "hfauth", "smoke", "calibrate", "validate", "sweep", "export", "all")
 GATE_REQUIRED_VARIANTS = ("baseline", "oriented")
 GATE_STAGE_KEY = "_validation_gate"
+CAL_STAGE_KEY = "_coord_calibration"
+# Documented input resolutions for backends that do not report one at run time (only Qwen does).
+# PaliGemma2-mix-448 resizes to a 448x448 square. A HINT: enables the `model_input` hypotheses in
+# the probe and is recorded as a hint, never as a measurement. (h, w).
+MODEL_INPUT_HW_HINTS = {"paligemma2_3b_mix": (448, 448)}
 QWEN_KEY = "qwen2_5_vl_3b"
 INTERNVL35_FALLBACK_KEY = "internvl3_5_4b_hf"
 PROBE_PACKAGES = (
@@ -209,6 +226,12 @@ def candidate_issues(backend: str, info: Dict[str, Any]) -> List[Tuple[str, str]
         if not have("qwen_vl_utils"):
             issues.append(("BLOCKED", "qwen_vl_utils missing"))
     elif backend == "moondream2":
+        # Verified 2026-09-22 by reading the pinned revision's files (9a7d402...): vision_encoder.py
+        # imports einops.rearrange and torchvision.transforms.v2 at module top level; transformers'
+        # remote-code loader refuses to load a repo whose top-level imports are missing.
+        for req in ("einops", "torchvision"):
+            if not have(req):
+                issues.append(("BLOCKED", f"{req} missing (Moondream2's remote code imports it unconditionally)"))
         if (_major(pk["transformers"]["version"]) or 0) >= 5:
             issues.append(("BLOCKED", f"transformers {pk['transformers']['version']} >= 5: Moondream2's remote code "
                                       "(revision 2025-06-21) is reported broken there (all_tied_weights_keys); "
@@ -216,10 +239,10 @@ def candidate_issues(backend: str, info: Dict[str, Any]) -> List[Tuple[str, str]
     elif backend == "internvl2_5_4b":
         if not have("torchvision"):
             issues.append(("BLOCKED", "torchvision missing (InternVL dynamic-tiling preprocessing imports it)"))
-        for opt in ("timm", "einops"):
-            if not have(opt):
-                issues.append(("WARN", f"{opt} not installed; InternVL2.5's remote code is believed to import it "
-                                       "(not verified this session) -- a ModuleNotFoundError at smoke is the tell"))
+        for req in ("timm", "einops"):
+            if not have(req):  # verified 2026-09-22 from OpenGVLab/InternVL2_5-4B's modeling files
+                issues.append(("BLOCKED", f"{req} missing (InternVL2.5's modeling files import "
+                                          f"{'timm.models.layers.DropPath' if req == 'timm' else 'einops.rearrange'} unconditionally)"))
     elif backend == "paligemma2_3b_mix":
         if not info.get("transformers_has_paligemma"):
             issues.append(("BLOCKED", "installed transformers has no PaliGemmaForConditionalGeneration"))
@@ -298,6 +321,20 @@ def build_arg_parser() -> argparse.ArgumentParser:
     ap.add_argument("--force-continue", action="store_true",
                      help="Run the gate but proceed even if it FAILED (recorded as forced). Leave off: "
                           "a failed gate means something is wrong on this machine.")
+    ap.add_argument("--calibrate-variants", nargs="*", default=["baseline"], choices=list(PROMPT_VARIANTS.keys()),
+                    help="Prompt variants shown to each prompt-taking candidate in --stage calibrate "
+                         "(native-API specs always run once). Default: baseline only -- the oriented_aruco "
+                         "text describes ArUco markers a synthetic frame does not contain. A refusal from "
+                         "any variant that IS probed counts.")
+    ap.add_argument("--recalibrate", action="store_true",
+                    help="Re-run calibration even where a non-refusing record for the same candidate "
+                         "config already exists (refusing/failed records are always re-run).")
+    ap.add_argument("--allow-coord-mismatch", nargs="+", default=None, metavar="KEY",
+                    help="Knowingly sweep these candidates although their calibration refuses them (or is "
+                         "missing). The override is recorded in the checkpoint. Prefer fixing the backend's "
+                         "declared coord_space (the calibration output names the field).")
+    ap.add_argument("--skip-coord-calibration", action="store_true",
+                    help="Bypass calibration entirely (neither run in --stage all nor required before a sweep).")
     ap.add_argument("--stage", choices=STAGES, default="all")
     return ap
 
@@ -455,6 +492,144 @@ def stage_smoke(args: argparse.Namespace, specs: Sequence[Any], frames: Sequence
     return runnable
 
 
+def spec_config_hash(spec: Any) -> str:
+    """Identity of a candidate's configuration for calibration records (same ingredients as the sweep's
+    item keys: constructor kwargs minus mock fault-injection switches, and the effective dtype)."""
+    kwargs = {k: v for k, v in spec.kwargs.items() if k not in cs._NON_IDENTITY_KWARGS}
+    return cs._sha({"backend": spec.backend, "kwargs": kwargs, "dtype": cs.effective_dtype_name(spec)})
+
+
+def _calibrate_one(args: argparse.Namespace, store: Any, spec: Any, chash: str, hf_token: Optional[str],
+                   probe_path: str, env: Dict[str, Any]) -> Dict[str, Any]:
+    """Loads one candidate, runs the probe for each of its variants, returns its checkpoint record."""
+    base: Dict[str, Any] = {"config_hash": chash, "backend": spec.backend, "env": env,
+                            "checked_at": time.strftime("%Y-%m-%dT%H:%M:%S")}
+    if spec.hf_gated_repo:
+        ok, msg = cs.check_hf_access(spec.hf_gated_repo, hf_token)
+        if not ok:
+            print(f"  SKIPPED (gated / no access): {msg[:300]}")
+            return {**base, "verdict": "GATED_SKIPPED", "detail": msg[:300]}
+    backend = None
+    analyses: Dict[str, Dict[str, Any]] = {}
+    raw: Dict[str, Any] = {}
+    try:
+        try:
+            backend = cs.build_backend(spec, args.max_new_tokens)
+            backend.load()
+        except Exception as exc:
+            print(f"  LOAD FAILED: {type(exc).__name__}: {str(exc)[:300]}")
+            store.record_error(spec.key, "calibrate_load", exc)
+            return {**base, "verdict": "LOAD_FAILED", "detail": f"{type(exc).__name__}: {str(exc)[:300]}"}
+        for variant in cs.spec_variants(spec, args.calibrate_variants):
+            obs = csp.run_probe_variant(backend, variant)
+            analysis = csp.analyze(obs, (csp.FRAME_H, csp.FRAME_W), MODEL_INPUT_HW_HINTS.get(spec.backend))
+            analyses[variant] = analysis
+            raw[variant] = {"observations": obs, "analysis": analysis}
+            print(csp.format_report(spec.key, variant, analysis))
+            csp.save_candidate_record(probe_path, spec.key, {"config_hash": chash, "backend": spec.backend,
+                                                             "variants": raw})
+    finally:
+        if backend is not None:
+            try:
+                backend.unload()
+            except Exception:
+                pass
+        backend = None
+        cs.free_gpu_memory()
+    refusing = [csp.recommendation(spec.key, spec.backend, v, a) for v, a in analyses.items()
+                if a["verdict"] in csp.REFUSING_VERDICTS]
+    return {**base, "verdict": csp.worst_verdict([a["verdict"] for a in analyses.values()]),
+            "variants": csp.summarize_for_checkpoint(analyses), "recommendations": refusing}
+
+
+def stage_calibrate(args: argparse.Namespace, specs: Sequence[Any], hf_token: Optional[str],
+                    env: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    """Coordinate-space calibration for every spec, recorded in the checkpoint. Never raises for a bad
+    verdict (enforcement happens at sweep time, see `enforce_calibration`)."""
+    if args.skip_coord_calibration:
+        print("\n=== coordinate-space calibration: skipped (--skip-coord-calibration) ===")
+        return {}
+    problems = csp.validate_positions(csp.PROBE_POSITIONS)
+    if problems:
+        raise SystemExit(f"probe position set is badly designed: {problems}")
+    print(f"\n=== coordinate-space calibration: {len(csp.PROBE_POSITIONS)} synthetic frames "
+          f"({csp.FRAME_W}x{csp.FRAME_H}, {csp.DISC_DIAMETER_PX}px red disc) x {len(specs)} candidate(s) ===")
+    store = _store(args, "checkpoint")
+    probe_path = os.path.join(args.results_dir, f"coord_probe_{args.run_label}.json")
+    csp.write_probe_frames(os.path.join(args.results_dir, "coord_probe_frames"))
+    records: Dict[str, Dict[str, Any]] = {}
+    for spec in specs:
+        chash = spec_config_hash(spec)
+        prior = store.stages.get(CAL_STAGE_KEY, {}).get(spec.key)
+        print(f"\n--- {spec.key}  [{spec.backend}] ---")
+        if (prior and prior.get("config_hash") == chash and not args.recalibrate
+                and prior.get("verdict") in (csp.VERDICT_CONSISTENT, csp.VERDICT_NO_FIT, csp.VERDICT_INSUFFICIENT)):
+            print(f"  cached calibration record from {prior.get('checked_at')}: {prior['verdict']} "
+                  f"(--recalibrate to redo)")
+            records[spec.key] = prior
+            continue
+        rec = _calibrate_one(args, store, spec, chash, hf_token, probe_path, env)
+        store.set_stage(CAL_STAGE_KEY, **{spec.key: rec})
+        records[spec.key] = rec
+    print("\ncalibration summary:")
+    for spec in specs:
+        rec = records.get(spec.key)
+        if rec is None:
+            continue
+        print(f"  {spec.key:<28} {rec['verdict']}")
+        for msg in rec.get("recommendations", []):
+            print("    " + msg.replace("\n", "\n    "))
+    print(f"raw answers: {probe_path}   synthetic frames: {os.path.join(args.results_dir, 'coord_probe_frames')}")
+    return records
+
+
+def enforce_calibration(args: argparse.Namespace, store: Any, specs: Sequence[Any]) -> Tuple[List[Any], List[Dict[str, Any]]]:
+    """Splits `specs` into (allowed, refused). A candidate is refused when its calibration record (same
+    config hash) has a MISMATCH verdict, or when no record exists (never calibrated) -- except under
+    --use-mock, where a missing record is tolerated so the plumbing tests need not calibrate first.
+    `--allow-coord-mismatch KEY` overrides for a named candidate; `--skip-coord-calibration` bypasses
+    everything. Every decision is written into the candidate's stage record."""
+    if args.skip_coord_calibration:
+        for s in specs:
+            store.set_stage(s.key, coord_calibration={"skipped": True})
+        return list(specs), []
+    allowed_keys = set(args.allow_coord_mismatch or [])
+    unknown = sorted(allowed_keys - {s.key for s in specs})
+    if unknown:
+        print(f"  note: --allow-coord-mismatch names candidates not in this invocation: {unknown}")
+    recs = store.stages.get(CAL_STAGE_KEY, {})
+    keep: List[Any] = []
+    refused: List[Dict[str, Any]] = []
+    print("\n=== coordinate-space calibration check ===")
+    for s in specs:
+        rec = recs.get(s.key)
+        fresh = rec is not None and rec.get("config_hash") == spec_config_hash(s)
+        reason: Optional[str] = None
+        verdict = rec["verdict"] if fresh else None
+        if not fresh:
+            if not args.use_mock:
+                reason = ("no calibration record for this candidate/config" if rec is None else
+                          "calibration record is for a different candidate configuration (stale)")
+                reason += f" -- run `--stage calibrate --candidates {s.key}` first"
+        elif verdict in csp.REFUSING_VERDICTS:
+            reason = "\n      ".join(rec.get("recommendations") or [f"calibration verdict {verdict}"])
+        if reason is None:
+            print(f"  ok       {s.key:<28} {verdict or '(not calibrated; --use-mock)'}")
+            store.set_stage(s.key, coord_calibration={"verdict": verdict, "override": False})
+            keep.append(s)
+        elif s.key in allowed_keys:
+            print(f"  OVERRIDE {s.key:<28} {verdict or 'no record'} -- sweeping anyway (--allow-coord-mismatch); "
+                  f"its numbers may measure a mapping error:\n      {reason}")
+            store.set_stage(s.key, coord_calibration={"verdict": verdict, "override": True, "reason": reason[:600]})
+            keep.append(s)
+        else:
+            print(f"  REFUSED  {s.key:<28} {verdict or 'no record'}\n      {reason}\n      "
+                  f"(knowing override: --allow-coord-mismatch {s.key})")
+            store.set_stage(s.key, status="calibration_refused", detail=reason[:600])
+            refused.append({"key": s.key, "verdict": verdict, "reason": reason})
+    return keep, refused
+
+
 def gate_applicable(args: argparse.Namespace, specs: Sequence[Any]) -> Tuple[bool, str]:
     if not any(s.key == QWEN_KEY for s in specs):
         return False, f"{QWEN_KEY} is not in this invocation's candidates"
@@ -534,16 +709,21 @@ def require_gate_record(args: argparse.Namespace, store: Any) -> None:
 
 
 def stage_sweep(args: argparse.Namespace, specs: Sequence[Any], frames: Sequence[Any],
-                hf_token: Optional[str], env: Dict[str, Any]) -> Any:
+                hf_token: Optional[str], env: Dict[str, Any]) -> Tuple[Any, List[Dict[str, Any]]]:
+    """Returns `(store, refused)`; `refused` = candidates dropped by the calibration check."""
     store = _store(args, "checkpoint")
     require_gate_record(args, store)
+    specs, refused = enforce_calibration(args, store, specs)
+    if not specs:
+        print("\nNo candidate passed the calibration check; nothing swept.")
+        return store, refused
     print(f"\n=== full sweep: {[s.key for s in specs]} ===")
     t0 = time.time()
     status = cs.run_sweep(specs, frames, args.prompt_variants, store, tolerance_mm=args.tolerance_mm,
                           max_new_tokens=args.max_new_tokens, hf_token=hf_token)
     _record_env(store, status, env)
     print(f"\nsweep finished in {(time.time() - t0) / 60:.1f} min: {status}")
-    return store
+    return store, refused
 
 
 def stage_export(args: argparse.Namespace, specs: Sequence[Any], frames: Sequence[Any]) -> str:
@@ -592,7 +772,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     specs = build_specs(args)
     print(f"candidates requested this invocation: {[s.key for s in specs]}")
 
-    runs_models = args.stage in ("smoke", "validate", "sweep", "all")
+    runs_models = args.stage in ("smoke", "calibrate", "validate", "sweep", "all")
     if runs_models:
         specs = preflight(args, info, specs)
         print(f"candidates that can run here: {[s.key for s in specs]}")
@@ -603,17 +783,25 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         if args.stage in ("sweep", "all") and not gate_runs_here:
             require_gate_record(args, _store(args, "checkpoint", with_meta=False))
 
-    frames: List[Any] = [] if args.stage == "hfauth" else stage_frames(args)
+    frames: List[Any] = [] if args.stage in ("hfauth", "calibrate") else stage_frames(args)
     hf_token = stage_hf_auth(args, specs) if (runs_models or args.stage == "hfauth") else None
 
     if args.stage in ("smoke", "all") and not args.skip_smoke:
         stage_smoke(args, specs, frames, hf_token, env)
+    if args.stage in ("calibrate", "all"):
+        stage_calibrate(args, specs, hf_token, env)
     if args.stage in ("validate", "all"):
         stage_validate(args, specs, frames, hf_token, env)
+    refused: List[Dict[str, Any]] = []
     if args.stage in ("sweep", "all"):
-        stage_sweep(args, specs, frames, hf_token, env)
+        _store_unused, refused = stage_sweep(args, specs, frames, hf_token, env)
     if args.stage in ("export", "all"):
         stage_export(args, specs, frames)
+    if refused:
+        print(f"\nEXIT 2: {len(refused)} candidate(s) were refused by the coordinate-space calibration check and NOT "
+              f"swept: {[r['key'] for r in refused]}. Fix the declared coord_space (see the evidence above), re-run "
+              f"`--stage calibrate`, then the sweep -- or override knowingly with --allow-coord-mismatch.")
+        return 2
     return 0
 
 

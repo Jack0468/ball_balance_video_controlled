@@ -198,6 +198,10 @@ def score_prediction(
       - `error_mm_alt_model_input`: taken as living in `model_input_hw` (only if known),
       - `error_mm_alt_norm1000`: taken as 0-1000 normalized over the raw frame (InternVL's own
         native grounding convention),
+      - `error_mm_alt_norm1` (added 2026-09-22): taken as 0-1 normalized over the raw frame
+        (Moondream2's native convention). These four alternatives are the `to_raw_px` names in
+        `minimal_vlm_policy.COORD_SPACES` (axis-swapped `_yx` variants are only evaluated by the
+        pre-sweep probe, `deployment/coord_space_probe.py`, on synthetic frames with known truth),
       - `error_mm_legacy`: the pre-2026-09-19 value (as-parsed raw pixels vs. telemetry target
         in the WRONG frame) -- kept only so a re-run can be checked against the historical
         183.8/170.3mm numbers.
@@ -225,7 +229,10 @@ def score_prediction(
         "error_mm": error_mm,                    # PRIMARY (v2)
         "hit": error_mm <= tolerance_mm,
         "error_mm_alt_raw": err_raw,
-        "error_mm_alt_norm1000": _err(px / 1000.0 * raw_w, py / 1000.0 * raw_h)[2],
+        # Every alt hypothesis is a `to_raw_px` coord-space name (`COORD_SPACES`): ONE hypothesis
+        # list, shared with the pre-sweep probe (`coord_space_probe.py`).
+        "error_mm_alt_norm1000": _err(*to_raw_px(px, py, "norm1000", None, raw_hw))[2],
+        "error_mm_alt_norm1": _err(*to_raw_px(px, py, "norm1", None, raw_hw))[2],
         "error_mm_legacy": float(np.hypot(raw_mx - true_target_x_tel, raw_my - true_target_y_tel)),
     }
     if model_input_hw:

@@ -139,6 +139,10 @@ class BackendOutput:
     # asks for); "model_input" = the resized image the model's vision tower actually sees, whose
     # size is `model_input_hw` (h, w). Qwen2.5-VL is "model_input" -- verified empirically, the
     # local 60-frame run scores 40/60 hits under it vs 1/60 as raw pixels.
+    # 2026-09-22: "norm1000" / "norm1" (0-1000 / 0-1 normalized over the raw frame) and an optional
+    # "_yx" suffix (row-first answers) are also understood by `minimal_vlm_policy.to_raw_px`. The
+    # Jetson driver's `--stage calibrate` (`deployment/coord_space_probe.py`) tells you which one a
+    # candidate really answers in; set this field (in that backend's `generate()`) accordingly.
     coord_space: str = "raw_image"
     model_input_hw: Optional[tuple] = None
 

@@ -94,8 +94,12 @@ def main() -> int:
               any(lv == "BLOCKED" for lv, _ in d.candidate_issues("paligemma2_3b_mix", fake_info(accelerate=None))))
         check("Qwen without qwen_vl_utils is BLOCKED",
               any(lv == "BLOCKED" for lv, _ in d.candidate_issues("qwen2_5_vl_3b_instruct", fake_info(qwen_vl_utils=None))))
-        check("missing timm is only a WARN for InternVL2.5 (not a hard block)",
-              [lv for lv, _ in d.candidate_issues("internvl2_5_4b", fake_info(timm=None))] == ["WARN"])
+        check("missing timm / einops BLOCK InternVL2.5 (verified: its modeling files import them unconditionally)",
+              [lv for lv, _ in d.candidate_issues("internvl2_5_4b", fake_info(timm=None))] == ["BLOCKED"]
+              and [lv for lv, _ in d.candidate_issues("internvl2_5_4b", fake_info(einops=None))] == ["BLOCKED"])
+        check("missing einops / torchvision BLOCK Moondream2 (its remote code imports them at module top level)",
+              any(lv == "BLOCKED" for lv, _ in d.candidate_issues("moondream2", fake_info(einops=None)))
+              and any(lv == "BLOCKED" for lv, _ in d.candidate_issues("moondream2", fake_info(torchvision=None))))
         rc, out = run_main(["--stage", "probe", "--results-dir", tmp])
         check("--stage probe runs and exits 0 in this (fully provisioned dev) environment", rc == 0 and "Per-candidate feasibility" in out)
 
@@ -316,7 +320,7 @@ sys.exit(d.main({argv!r}))
                     fr = next(x for x in frames if x.session == s["session"] and x.frame_index == f["frame_index"])
                     store.items[cs.item_key(qspec, v, fr, 24)] = dict(f, candidate=qspec.key, variant=v, session=s["session"])
         store.flush()
-        args_p = d.build_arg_parser().parse_args(["--results-dir", pass_dir, "--run-label", "p"])
+        args_p = d.build_arg_parser().parse_args(["--results-dir", pass_dir, "--run-label", "p", "--skip-coord-calibration"])
         gate_out = io.StringIO()
         with contextlib.redirect_stdout(gate_out):
             d.stage_validate(args_p, mock_specs, frames, None, env)
@@ -351,8 +355,15 @@ sys.exit(d.main({argv!r}))
                   refused and calls["n"] == 0, f"run_sweep calls={calls['n']}")
             with contextlib.redirect_stdout(io.StringIO()):
                 rc = d.main(["--results-dir", early_dir, "--run-label", "e", "--candidates", "moondream2:point",
-                             "--stage", "sweep", "--skip-validation-gate"])
-            check("--skip-validation-gate lets the same sweep proceed (knowingly)", rc == 0 and calls["n"] == 1, f"calls={calls['n']}")
+                             "--stage", "sweep", "--skip-validation-gate", "--skip-coord-calibration"])
+            check("--skip-validation-gate (+ --skip-coord-calibration) lets the same sweep proceed (knowingly)",
+                  rc == 0 and calls["n"] == 1, f"calls={calls['n']}")
+            calls["n"] = 0
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc2 = d.main(["--results-dir", early_dir, "--run-label", "e", "--candidates", "moondream2:point",
+                              "--stage", "sweep", "--skip-validation-gate"])
+            check("without a calibration record a real sweep is refused (exit 2, no model work), even with the gate skipped",
+                  rc2 == 2 and calls["n"] == 0, f"rc={rc2} calls={calls['n']}")
         finally:
             d.probe_environment, cs.run_sweep = real_probe, real_run
     finally:
