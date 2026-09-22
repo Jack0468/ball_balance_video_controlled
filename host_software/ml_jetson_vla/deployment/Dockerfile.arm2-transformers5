@@ -55,8 +55,12 @@ RUN python3 -m pip freeze --exclude-editable > /opt/base_constraints.txt \
 # needs numpy<2") protected a shared HOST environment; there is no shared host environment inside an
 # isolated container, so that constraint is not reapplied verbatim, only the real one (don't move the base
 # image's numpy), checked directly rather than assumed.
+# This base image (dustynv/pytorch) points pip at pypi.jetson-ai-lab.dev/jp6/cu128 by default --
+# unreachable from this network, same class of issue as the l4t-pytorch base's jetson.webredirect.org
+# (confirmed 2026-09-22). opencv-contrib-python-headless is ordinary PyPI content, pin explicitly.
 RUN python3 -c "import cv2, cv2.aruco" \
- || python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all: opencv-contrib-python-headless
+ || python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all: \
+      --index-url https://pypi.org/simple opencv-contrib-python-headless
 
 COPY requirements-jetson-arm2-common.txt requirements-jetson-arm2-fallback-transformers5.txt /opt/arm2reqs/
 # The base image points pip at a Jetson-specific mirror (jetson.webredirect.org, for torch/torchvision
