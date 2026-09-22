@@ -6,11 +6,20 @@
 # transformers5.txt for the corrected reasoning (the filename says "fallback" for historical reasons; this
 # is the required environment for these two candidates, not a conditional fallback).
 #
-# Base: dustynv/l4t-pytorch:r36.4.0 (6.3GB, confirmed pulled and running with real CUDA torch 2.4.0 --
-# `torch.cuda.is_available() == True` -- on this exact Jetson AGX Orin p3730 / JetPack 6.2.3 / L4T r36.4,
-# 2026-09-22). Do not swap to a different/larger base image without a stated reason: disk space on this
-# device is a real, already-hit constraint (57GB total; a 20-30GB NGC training image exhausted it once
-# this session).
+# Base: dustynv/pytorch:2.7-r36.4.0-cu128-24.04 (5.5GB, torch 2.7 / CUDA 12.8, same dusty-nv
+# jetson-containers family as the l4t-pytorch image the transformers4 Dockerfile uses -- switched from
+# l4t-pytorch:r36.4.0 (torch 2.4.0) 2026-09-22 after a real on-device mock run showed transformers==5.17.0
+# refuses to enable its PyTorch backend below torch 2.5 ("[transformers] Disabling PyTorch because
+# PyTorch >= 2.5 is required but found 2.4.0" -- confirmed live, not a docs guess). This is a GENUINE
+# functional requirement, not a version-pin nicety: without it, no model in this image can load at all,
+# even though the build-time class-existence assert below still passes (it only checks the class is
+# importable, not that PyTorch is enabled -- a real gap this comment exists to flag for next time).
+# Do NOT swap to a different/larger base image without a stated reason: disk space on this device is a
+# real, already-hit constraint (57GB total, briefly down to 7.9GB free during this session).
+# UNVERIFIED, check on first build: this image is from the `dustynv/pytorch` family, not `l4t-pytorch`
+# -- confirm torchvision is present and importable (torchvision must be built against the exact same
+# torch/CUDA combo); if missing, install the matching dustynv-provided torchvision wheel, do not
+# `pip install torchvision` generically (same CPU-wheel-substitution risk hit earlier this session).
 #
 # Build (from host_software/ml_jetson_vla/deployment/ on the Jetson):
 #   docker build -f Dockerfile.arm2-transformers5 -t arm2-t5:r36.4.0 .
@@ -23,7 +32,7 @@
 # Hugging Face cache at container run time (see JETSON_ARM2_SWEEP_LOCAL.md section 4), so they don't count
 # against this image's size and survive independently of it.
 
-FROM dustynv/l4t-pytorch:r36.4.0
+FROM dustynv/pytorch:2.7-r36.4.0-cu128-24.04
 
 # Freeze exactly what the base image ships (torch, torchvision, numpy -- the CUDA-enabled stack this
 # session spent real effort landing) BEFORE installing anything else. Every pip install below is
@@ -32,7 +41,13 @@ FROM dustynv/l4t-pytorch:r36.4.0
 # JETSON_ARM2_SWEEP_LOCAL.md section 2 (protecting against the class of bug the bare-metal `lerobot`
 # install caused: an unconstrained pip install silently moving numpy underneath a working cv2/onnxruntime).
 RUN python3 -m pip freeze --exclude-editable > /opt/base_constraints.txt \
- && python3 -c "import numpy, torch; print('base numpy', numpy.__version__, 'torch', torch.__version__, 'cuda_available', torch.cuda.is_available())"
+ && python3 -c "import numpy, torch; print('base numpy', numpy.__version__, 'torch', torch.__version__, 'cuda_available', torch.cuda.is_available())" \
+ && python3 -c "assert tuple(map(int, __import__('torch').__version__.split('+')[0].split('.')[:2])) >= (2, 5), 'torch < 2.5 -- transformers>=5 will disable its PyTorch backend, this image is built wrong'; print('torch >= 2.5: OK')" \
+ && (python3 -c "import torchvision; print('base torchvision', torchvision.__version__)" \
+     || echo "torchvision MISSING from this base image -- dustynv/pytorch is torch-only, not l4t-pytorch. \
+        Must install the dusty-nv-matched torchvision wheel for THIS exact torch/CUDA build, never a \
+        generic 'pip install torchvision' (repeats this session's earlier CPU-wheel-substitution bug). \
+        Build will fail at the next explicit check below if this isn't resolved.")
 
 # OpenCV + ArUco: NOT confirmed present in l4t-pytorch (a PyTorch-only image in the jetson-containers
 # family -- opencv is typically a separate stacked package, not bundled here). Installed only if actually
@@ -59,15 +74,22 @@ RUN python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all: \
       ninja) unrelated to this image's purpose. The real gate is the explicit class-import assert below.")
 
 # Proof nothing from the base image moved, and that the two candidates this image exists for are actually
-# importable (fail the build loudly here, not silently at sweep time on-device).
+# USABLE, not just importable (fail the build loudly here, not silently at sweep/mock-run time on-device).
+# 2026-09-22 lesson: the l4t-pytorch/torch-2.4.0 build of this image passed a class-existence-only version
+# of this check yet was completely non-functional at runtime ("Disabling PyTorch because PyTorch >= 2.5 is
+# required but found 2.4.0" -- transformers.utils.is_torch_available() was False the whole time). Checking
+# hasattr() alone does not catch this; check is_torch_available() explicitly too.
 RUN python3 -m pip freeze --exclude-editable | grep -E '^(numpy|torch|torchvision)==' \
+ && python3 -c "import torchvision; print('torchvision', torchvision.__version__)" \
  && python3 -c "import cv2; print('cv2', cv2.__version__, 'aruco', hasattr(cv2, 'aruco'))" \
  && python3 -c "\
 import transformers as tr; \
+from transformers.utils import is_torch_available; \
 print('transformers', tr.__version__); \
+assert is_torch_available(), 'transformers.utils.is_torch_available() is False -- PyTorch backend is DISABLED (torch too old, or torchvision broken); this image cannot load any model despite classes being importable'; \
 assert hasattr(tr, 'Qwen2_5_VLForConditionalGeneration'), 'Qwen2.5-VL class missing -- this image is useless without it'; \
 assert hasattr(tr, 'PaliGemmaForConditionalGeneration'), 'PaliGemma class missing -- this image is useless without it'; \
-print('Qwen2_5_VLForConditionalGeneration: OK  PaliGemmaForConditionalGeneration: OK')"
+print('is_torch_available(): OK  Qwen2_5_VLForConditionalGeneration: OK  PaliGemmaForConditionalGeneration: OK')"
 
 WORKDIR /workspace/VRI_2026
 ENV PYTHONUNBUFFERED=1
