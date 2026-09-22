@@ -34,6 +34,14 @@
 
 FROM dustynv/pytorch:2.7-r36.4.0-cu128-24.04
 
+# System lib, not a pip package: transformers' Qwen2_5_VLForConditionalGeneration import chain
+# transitively pulls in transformers/audio_utils.py -> soundfile -> libsndfile (shared multi-modal
+# import path, unrelated to anything this image actually does with audio). Confirmed on-device
+# 2026-09-22: OSError: ctypes.util.find_library() did not manage to locate a library called 'sndfile'.
+# Same category as this project's existing sounddevice/libportaudio2 apt dependency elsewhere.
+RUN apt-get update && apt-get install -y --no-install-recommends libsndfile1 \
+ && rm -rf /var/lib/apt/lists/*
+
 # Freeze exactly what the base image ships (torch, torchvision, numpy -- the CUDA-enabled stack this
 # session spent real effort landing) BEFORE installing anything else. Every pip install below is
 # constrained against this file, so it can only ADD packages, never silently upgrade one the base image
