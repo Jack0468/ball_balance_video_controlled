@@ -161,6 +161,28 @@ complete reasoning) -- summarized here:
   `debug["directional_fallback"] = True` so it's never mistaken for a working
   directional-understanding result.
 
+### 3.1 Open gap (2026-09-23): joint ball + marker prediction not in this contract
+
+The user's actual stated goal is for the vision output/understanding framework to predict
+**both** the ball's location **and** the colored markers' locations. That's already true and
+locked for Arm 1 -- CLAUDE.md's Architecture Decisions table specifies the Shared Backbone CNN
+as "one CNN, two heads (Ball + Markers)," built and working per the Current State table.
+
+It is **not** true of this minimal-baseline contract. §3 above asks each candidate for exactly
+**one** point per call: `target_label` resolves to either `"ball"` (directional/hold/stop
+fallback) or a single named color marker (`"red marker"` etc., for `go_*` commands) -- never
+both, and never all four markers at once (`core/minimal_vlm_policy.py:314-347`). A `go_red` frame
+never asks where the ball currently is; a `hold`/`stop` frame never asks where the markers are.
+
+This is a real, undecided scope gap, not a design that was considered and rejected. Closing it
+would mean either (a) a second prompt/call per frame for the complementary target, doubling
+latency-per-frame for every candidate, or (b) a redesigned single-call prompt/parse contract
+asking for all five points (ball + 4 markers) at once, which every candidate would need
+re-running against for a fair comparison (including Qwen2.5-VL-3B's already-complete 60-frame
+sweep). Neither has been chosen. Flagged here per explicit user instruction (2026-09-23) to
+document the gap without disrupting the PaliGemma2 sweep in progress on the Jetson at the time
+this note was added.
+
 ## 4. Code infrastructure -- file paths
 
 | File | What it is |
@@ -393,3 +415,133 @@ clone with `transformers>=4.56,<5` for the other three) and the exact ordered co
 `JETSON_ARM2_SWEEP_LOCAL.md`. Dry-run-verified with mock backends only
 (`deployment/test_run_arm2_sweep_jetson_mock.py`); no real model has run through it yet. The Colab
 notebook remains a working alternative and was not modified.
+
+## 10. 2026-09-23: real PaliGemma2-3b-mix-448 results on the Jetson (`jetson_run1`, results2)
+
+Full sweep completed after fixing the gated-access/corrupted-cache issue (§9's environment). Real
+numbers, `arm2_jetson_sweep_results2/aggregate_table_jetson_run1.csv`, same 60 frames/scorer as Qwen's
+§8.2 result:
+
+| variant | parse_rate | hit@20mm | mean_err_mm | median_err_mm |
+|---|---|---|---|---|
+| `:prompt` baseline | 0/60 | -- | -- | -- |
+| `:prompt` oriented | 0/60 | -- | -- | -- |
+| `:prompt` oriented_aruco | 0/60 | -- | -- | -- |
+| `:detect` (native `detect {label}`, prompt ignored) | 9/60 (15%) | 2/9 (22%) | 113.5 | 122.3 |
+| *[ref] constant platform-centre guess* | *60/60* | *9/60 (15%)* | *25.2* | *29.6* |
+
+**`:prompt` mode: total failure, not a parsing bug.** Confirmed live during the run (raw outputs
+included `'unanswerable'` and degenerate token loops like `'{ x: 0, 0, 0, 1, 1, 1'`) — the
+prompt/image are reaching the model correctly (ruling out a wiring issue), but this checkpoint is
+task-prefix-trained (`"detect <thing>"`, `"answer en <question>"`), not instruction-following, so it
+cannot produce the asked-for free-form JSON at all. 0/60 across all three variants is the expected
+result of asking a non-chat model to follow a chat-style instruction, not a bug to fix.
+
+**`:detect` mode (the fair, native-API comparison): also genuinely poor**, and not just because of
+the low parse rate. The 9 frames it *did* parse average 113.5mm error / 22% hit rate — **worse than
+the reference constant-centre guess** (25.2mm / 15% hit, and that reference "hits" purely by the
+platform's targets clustering near its own centre, with zero vision). This is a real negative result
+for this checkpoint on this platform (small top-down 640x480/448x448-resized frame, small colored
+circular markers), not an infrastructure problem — same category of finding as Qwen's real §8.2
+numbers, just the opposite direction.
+
+Not yet investigated: whether `detect {target_label}`'s exact phrasing (e.g. `"detect red marker"`
+vs. a more canonical single-noun form) affects the 15% parse rate, or whether the 448x448 resize is
+disproportionately hurting localization of markers that are already small in the raw 640x480 frame.
+Flagged, not pursued — three more candidates (InternVL2.5-4B, Moondream2 `:query`/`:point`) are still
+pending and take priority per the existing run plan.
+
+### 10.1 2026-09-23: per-frame follow-up — `:detect`'s 51 unparsed frames are a distinct failure mode, not the same small-object gap as the 9 that parsed
+
+Read the real per-frame scorer JSON (not just the aggregate table) for both results directories:
+
+- **All 51/51 unparsed `:detect` frames have a literally EMPTY `raw_text`** — not garbled or
+  off-convention text, nothing at all — and run in ~0.42s mean vs. ~1.0s for the 9 that did parse.
+  This looks like the model hitting immediate-EOS on ~85% of calls, a generation/stop-token
+  behavior specific to `:detect` mode's exact prompt+image combination, not the same "small
+  object, out-of-distribution domain" explanation given above for why the 9 parsed answers were
+  themselves inaccurate. That explanation still stands for those 9 (113.5mm mean, worse than the
+  centre-guess reference) — it just doesn't explain the other 51, which is a different, previously
+  uncharacterized problem worth a real look (e.g. compare against a plain `generate()` call with no
+  `max_new_tokens`/sampling-config changes from the smoke test, check for a truncated/mismatched
+  `<image>` token count on this specific prompt shape) before assuming `:detect` mode is simply "the
+  model doesn't work here." Among the 9 that did parse: black x5, red x3, yellow x1, green x0 — too
+  small an n to read as a real color pattern.
+- `target_label` doesn't exist in Qwen's logged JSON schema (always absent) — any future per-label
+  breakdown for Qwen needs to key off `instruction` instead.
+
+**Per-command breakdown, Qwen baseline (new, not in §8.2)** — real spread, `go_black` is the
+accuracy drag, not a uniform ~25mm across all four colors:
+
+| instruction | n | mean err (mm) | median (mm) | hit-rate |
+|---|---|---|---|---|
+| go_black | 13 | 41.2 | 21.4 | 0.38 |
+| go_green | 18 | 27.5 | 7.5 | 0.72 |
+| go_red | 16 | 20.2 | 14.3 | 0.75 |
+| go_yellow | 13 | 12.6 | 8.8 | 0.85 |
+
+The 60 sampled frames are go_red/green/yellow/black only — no directional/hold/stop frames are in
+this sample, so whether the "point to the ball" fallback (§3) performs differently is still
+untested.
+
+**Session outlier**: `session_jetson_track4_20260915_151627` (the first session recorded that day)
+is a real outlier at 50.95mm mean / 33% hit-rate vs. 67-85% for every other session (11.4-37.1mm
+range). No per-frame lighting/environment metadata is logged, so a cold-start/warm-up cause is a
+plausible guess, not confirmed.
+
+**Error magnitude, Qwen baseline**: mostly close misses, not categorical confusion — 41/60 under
+20mm (hits), 10/60 in the 20-40mm band, only 6/60 (10%) above 80mm (max 153mm). The 20mm hit
+threshold is somewhat harsh given the 20-40mm "just missed" band, but a real ~10% tail of wild
+misses exists too, consistent with occasional wrong-marker confusion rather than pure localization
+noise.
+
+**Latency vs. accuracy (Qwen)**: no meaningful relationship — hit-frame mean latency 1.70s vs.
+miss-frame 1.70s, Pearson r=0.22 (weak). Not informative for prioritizing candidates by a
+speed/accuracy tradeoff based on this data alone.
+
+## 11. 2026-09-24: real InternVL2.5-4B results, Moondream2 hard-blocked by a torch/transformers conflict
+
+Full sweep run on the Jetson (`arm2-t4:r36.4.0`, `jetson_run1`, `arm2_jetson_sweep_results3`).
+
+**InternVL2.5-4B: complete, 100% parse rate, but badly inaccurate — worse than a no-vision
+constant-centre guess, and gets WORSE with more prompt context:**
+
+| variant | parse_rate | hit@20mm | mean_err_mm | median_err_mm |
+|---|---|---|---|---|
+| baseline | 60/60 | 3.3% (2/60) | 88.0 | 88.4 |
+| oriented | 60/60 | 0% | 129.7 | 130.7 |
+| oriented_aruco | 60/60 | 0% | 151.8 | 133.2 |
+| *[ref] constant platform-centre guess* | *60/60* | *15% (9/60)* | *25.2* | *29.6* |
+
+Unlike PaliGemma2 (mostly can't produce an answer at all), InternVL2.5-4B confidently produces a
+parseable point on every call — it's just consistently wrong, and the `oriented_aruco` variant
+(the one adding the most real platform/marker context, expected to help) is the *worst* of the
+three. Not yet investigated why more context makes it worse; a real, notable finding on its own
+worth a closer look if this candidate stays in scope.
+
+**Moondream2 (`:query` and `:point`, all variants): hard-blocked, 0/180 and 0/60, not a data or
+prompt problem.** Every single call fails identically:
+```
+TypeError: scaled_dot_product_attention() got an unexpected keyword argument 'enable_gqa'
+```
+Moondream2's pinned remote code (revision `2025-06-21`, `9a7d4024050840e001defacec2b00727e89149e6`)
+calls PyTorch's `scaled_dot_product_attention` with an `enable_gqa` kwarg that only exists in newer
+torch. `arm2-t4` is built on `dustynv/l4t-pytorch:r36.4.0` (torch 2.4.0) — kept on this older base
+because Moondream2 (and InternVL2.5) need `transformers<5` (`Dockerfile.arm2-transformers4`'s own
+docstring), and at the time that Dockerfile was written the newer-torch requirement was only known
+to apply to `transformers>=5` (Qwen/PaliGemma2's `arm2-t5` image). This run shows that assumption
+was incomplete: **Moondream2 independently needs `torch>=2.5` (for `enable_gqa`) AND
+`transformers<5` at the same time** — a combination neither `arm2-t4` nor `arm2-t5` currently
+provides. Not fixed tonight: a live torch upgrade inside the working `arm2-t4` container was
+deliberately not attempted this session, given the real risk of silently breaking the
+just-confirmed-working InternVL2.5-4B pairing (same class of risk as this project's earlier
+torch/torchvision CPU-wheel-substitution incident) and being near a rate-limit boundary late at
+night. **Next step for a future session**: either build a third image (`transformers<5` +
+`torch>=2.5`, matching wheel provenance carefully) or confirm whether a newer Moondream2 revision
+drops the `enable_gqa` call before deciding an environment change is even needed.
+
+**Candidate coverage status after this run**: Qwen2.5-VL-3B (complete, real, best performer so
+far), PaliGemma2-3b-mix-448 (complete, real, poor), InternVL2.5-4B (complete, real, poor and
+context-inverted), Moondream2 (blocked, 0 real data). Per `ARM2_MINIMAL_BASELINE_SCOPE.md`'s gate,
+the zero-shot baseline sweep is not yet complete enough to unpark the fine-tuning/specialization
+track — Moondream2's environment gap is the one remaining blocker.

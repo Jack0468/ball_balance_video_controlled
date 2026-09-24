@@ -188,8 +188,8 @@ Dockerfile.
 
 Variables (adjust the paths that are specific to this device):
 ```bash
-export REPO=$HOME/VRI_2026                        # the git checkout on the Jetson
-export R=$HOME/arm2_jetson_sweep_results           # checkpoints/results, deliberately OUTSIDE the git tree
+export REPO=$HOME/Documents/2026_robotics_vla_demo/ball_balance_video_controlled/                        # the git checkout on the Jetson
+export R=$REPO/host_software/data/arm2_jetson_sweep_results           # checkpoints/results, deliberately OUTSIDE the git tree
 export D=$REPO/host_software/ml_jetson_vla/deployment
 export HFCACHE=$HOME/.cache/huggingface            # HF token + downloaded checkpoints, host-persisted
 ```
@@ -234,6 +234,20 @@ docker run --rm --runtime nvidia \
   arm2-t5:r36.4.0 \
   python3 -u ml_jetson_vla/deployment/run_arm2_sweep_jetson.py \
     --use-mock --stage all --results-dir /workspace/arm2_results --run-label mock 2>&1 | tail -40
+```
+
+**step what we actually run on the jetson
+```
+docker run --rm --runtime nvidia --init \
+  -v "$REPO":/workspace/VRI_2026 \
+  -v "$REPO/host_software/data/01_bronze":/workspace/VRI_2026/host_software/data/01_bronze:ro \
+  -v "$R":/workspace/arm2_results \
+  -v "$HFCACHE":/root/.cache/huggingface \
+  -w /workspace/VRI_2026/host_software \
+  arm2-t5:r36.4.0 \
+  python3 -u ml_jetson_vla/deployment/run_arm2_sweep_jetson.py \
+    --candidates paligemma2_3b_mix:prompt paligemma2_3b_mix:detect --stage all \
+    --results-dir /workspace/arm2_results --run-label jetson_run1
 ```
 Expect `reference-locked, 10 sessions`, `60 frames prepared`, `'identical': True`, all six mock
 candidates `complete`, oracle errors of a few mm with `HIT` on colour frames. Anything else: stop.

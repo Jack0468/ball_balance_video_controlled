@@ -1,0 +1,78 @@
+# Arm 2 sweep, Jetson AGX Orin -- EXPERIMENTAL third image (2026-09-24).
+# transformers<5 (same range as Dockerfile.arm2-transformers4) + torch>=2.5 (same base image as
+# Dockerfile.arm2-transformers5). Built under a SEPARATE tag (arm2-t4-alt:r36.4.0) -- never
+# overwrites or replaces arm2-t4:r36.4.0, which is confirmed working for InternVL2.5-4B.
+#
+# Why this exists: a real overnight sweep (2026-09-23/24) found Moondream2's pinned remote code
+# (revision 2025-06-21) calls `torch.nn.functional.scaled_dot_product_attention(..., enable_gqa=...)`,
+# a kwarg that only exists in newer torch. arm2-t4:r36.4.0 is built on `dustynv/l4t-pytorch:r36.4.0`
+# (torch 2.4.0) -- kept old only because, at the time that Dockerfile was written, the newer-torch
+# requirement was believed to apply only to transformers>=5 (Qwen/PaliGemma2, arm2-t5). This run
+# showed that assumption was incomplete: Moondream2 needs transformers<5 AND torch>=2.5 at the same
+# time, a combination neither existing image provides. See
+# docs/ARM2_MINIMAL_BASELINE_MULTI_CANDIDATE.md section 11 for the full real-error evidence.
+#
+# Base image choice: reuse `dustynv/pytorch:2.7-r36.4.0-cu128-24.04` -- the EXACT base
+# Dockerfile.arm2-transformers5 already confirmed working with real CUDA (torch 2.7.0,
+# cuda_available=True) on this Jetson. Deliberately NOT a generic `pip install torch==2.7` inside
+# the old l4t-pytorch base -- this project already hit a real CPU-wheel-substitution bug once from
+# an unconstrained/generic torch install; reusing a base image whose torch/torchvision pairing is
+# already proven on this exact hardware is the safe way to get a newer torch, not a fresh pip
+# resolve. Only the transformers-version-specific requirements differ from arm2-t5 (this file
+# installs `requirements-jetson-arm2.txt`, the transformers<5 + timm/einops set, not
+# `requirements-jetson-arm2-fallback-transformers5.txt`).
+#
+# Build (from host_software/ml_jetson_vla/deployment/ on the Jetson):
+#   docker build -f Dockerfile.arm2-transformers4-torch27 -t arm2-t4-alt:r36.4.0 .
+#
+# This image is EXPERIMENTAL and unattended-run-only by design: `run_moondream_fix_overnight.sh`
+# builds it, smoke-tests it (including an InternVL2.5-4B regression check against the real
+# confirmed-working arm2-t4 image), and ABORTS before running anything further if either smoke
+# test fails -- it never overwrites arm2-t4:r36.4.0 and never runs unsupervised beyond its own
+# smoke gate. If it works out, consider folding this into Dockerfile.arm2-transformers4 directly
+# in a later, human-reviewed session -- not done automatically here.
+
+FROM dustynv/pytorch:2.7-r36.4.0-cu128-24.04
+
+# Same discipline as both existing Arm 2 Dockerfiles: freeze what the base image ships before
+# installing anything, and prove torch>=2.5 + torchvision are both real before going further.
+RUN python3 -m pip freeze --exclude-editable > /opt/base_constraints.txt \
+ && python3 -c "import numpy, torch; print('base numpy', numpy.__version__, 'torch', torch.__version__, 'cuda_available', torch.cuda.is_available())" \
+ && python3 -c "assert tuple(map(int, __import__('torch').__version__.split('+')[0].split('.')[:2])) >= (2, 5), 'torch < 2.5 -- this image exists specifically to fix enable_gqa, wrong base if this fails'; print('torch >= 2.5: OK')" \
+ && python3 -c "import torchvision; print('base torchvision', torchvision.__version__)"
+
+# OpenCV + ArUco -- same rationale/mechanism as both existing Arm 2 Dockerfiles.
+RUN python3 -c "import cv2, cv2.aruco" \
+ || python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all: \
+      --index-url https://pypi.org/simple opencv-contrib-python-headless
+
+COPY requirements-jetson-arm2-common.txt requirements-jetson-arm2.txt /opt/arm2reqs/
+# Same PyPI-index-override fix as both existing Arm 2 Dockerfiles (the base image's default index
+# is unreachable from this network).
+RUN python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all: \
+      --index-url https://pypi.org/simple \
+      -r /opt/arm2reqs/requirements-jetson-arm2.txt \
+ && (python3 -m pip check || echo "pip check reported issues above -- informational only, see both \
+      existing Arm 2 Dockerfiles' matching comment for why.")
+
+# Proof nothing moved, and that this image actually has what it was built for: transformers<5 (for
+# Moondream2's remote code) AND torch>=2.5 (for enable_gqa) AT THE SAME TIME -- the specific
+# combination neither arm2-t4 nor arm2-t5 provides.
+RUN python3 -m pip freeze --exclude-editable | grep -E '^(numpy|torch|torchvision)==' \
+ && python3 -c "import cv2; print('cv2', cv2.__version__, 'aruco', hasattr(cv2, 'aruco'))" \
+ && python3 -c "import timm, einops, torchvision; print('timm', timm.__version__, 'einops', einops.__version__)" \
+ && python3 -c "\
+import torch, transformers as tr; \
+major = int(tr.__version__.split('.')[0]); \
+torch_ok = tuple(map(int, torch.__version__.split('+')[0].split('.')[:2])) >= (2, 5); \
+print('transformers', tr.__version__, 'torch', torch.__version__); \
+assert major < 5, f'transformers {tr.__version__} is >=5 -- Moondream2 needs <5, this image is built wrong'; \
+assert torch_ok, 'torch < 2.5 -- this image exists specifically to fix enable_gqa, wrong base if this fails'; \
+import inspect; \
+sdpa_params = inspect.signature(torch.nn.functional.scaled_dot_product_attention).parameters; \
+assert 'enable_gqa' in sdpa_params, 'enable_gqa still missing from scaled_dot_product_attention -- this image does NOT fix the real bug, do not proceed'; \
+print('transformers <5: OK  torch >=2.5: OK  enable_gqa present: OK')"
+
+WORKDIR /workspace/VRI_2026
+ENV PYTHONUNBUFFERED=1
+CMD ["/bin/bash"]

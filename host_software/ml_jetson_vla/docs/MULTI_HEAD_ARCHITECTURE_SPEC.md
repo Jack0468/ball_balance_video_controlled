@@ -368,6 +368,20 @@ this exact file.
     delta to the head architecture — per skill point 3, restated here because it's the most
     likely place this project would otherwise repeat its existing small-vs-medium-vision
     data-confound situation.
+11. **Open gap (2026-09-23): no head predicts colored-marker locations.** Head B's
+    `observation.state` is ball position only (§2.1, 2-dim), Head C outputs only
+    `theta_a/b/c` (§3.2), and Head A is used for grounding-question logging only (item 9) —
+    none of the three is designed to jointly predict the ball's position *and* the colored
+    markers' positions the way Arm 1's Shared Backbone CNN already does (two heads, Ball +
+    Markers, CLAUDE.md's Architecture Decisions table). `convert_to_lerobot.py`'s schema
+    carries no marker-position columns today, so adding this would need both a new data
+    column (or a derived-from-`ground_truth_manifest.json` static one, since markers are
+    fixed once placed — see `PROJECT_LOGBOOK.md`'s "Movable Target Detection" entry for why
+    they aren't in the manifest itself) and a new head or an extended Head B output. Not
+    designed here; flagged per explicit user instruction to document rather than implement
+    against the in-progress Arm 2 Jetson sweep. See the matching gap note in
+    `ARM2_MINIMAL_BASELINE_MULTI_CANDIDATE.md` §3.1 for the parallel gap in the (separate,
+    already-running) minimal-baseline prompt contract.
 
 ## 6. Deployment-compatibility risk (skill point 2 — check before training investment)
 

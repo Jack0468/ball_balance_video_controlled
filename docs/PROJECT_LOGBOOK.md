@@ -1,5 +1,113 @@
 # VRI 2026 Project Logbook
 
+## 23-24/09/2026 (overnight)
+### Steady-State Error Root Cause: Vision Calibration Bias, Not Integration — Per-Session Correction Designed and Offline-Validated, NOT Hardware-Tested
+
+- **Goal, from the user directly**: Steady-State Error target is **<3mm** (not the
+  ~10mm `docs/EVALUATION_STRATEGY.md` implies as "near-perfect") — a much larger gap
+  from the ~9-17mm actually being measured than previously assumed. No hardware access
+  available overnight; everything below is offline re-analysis of already-recorded
+  video/telemetry, explicitly authorized by the user as "continue working... until
+  morning" with the standing constraint that hardware access stays with the user.
+- **Ruled out, each via a direct test against real data, in order**: serial/integration
+  staleness (MCU-echoed vision matched host-sent to 0.01mm; touch-telemetry-row-per-
+  vision-`seq` was 1:1 in 95% of frames); touch-sensor noise floor as the limiting
+  factor (settled-window touch position lag-1 autocorrelation 0.64-0.93 — real
+  correlated motion, not white sensor noise); per-frame ArUco/homography estimation
+  noise (an `ml-vision` subagent anchored the homography from 150 averaged early
+  frames per session instead of recomputing fresh every frame, re-ran the full
+  pipeline over all 10 real Track 4 sessions [40,713 frames] — made error WORSE in
+  9/10 sessions, pooled 6.40mm→6.86mm, and the position-dependent error's R² did not
+  drop, which it should have if per-frame noise were the cause); radial lens
+  distortion (correlation of error vs. distance from platform center: r=-0.0008, flat
+  across octiles); a fixed touch-sensor calibration nonlinearity (the
+  position-dependent quadratic error terms' coefficient of variation across sessions
+  is 0.96-4.81 — far too unstable to be one fixed hardware property).
+- **Best-supported explanation**: each recording session has its own slightly
+  different physical camera/platform geometry (not fixable by better estimation of
+  the SAME session — the geometry itself differs each time recording starts),
+  producing a session-specific affine (position-dependent) vision error pattern
+  (R² up to 0.22), stacked on a separately-stable global positive Y-axis bias
+  (+1.57 to +3.04mm across all 10 sessions) consistent with the coordinate-frame
+  mismatch `firmware/.../TouchProbe.cpp`'s own "FRAME MATCH" comment already flags —
+  its documented 5-point calibration procedure has still never been run.
+- **Technique designed and validated**: a per-session affine correction
+  (`err = a1*x + a2*y + a3` per axis), fit from a deliberately spread-out 3×3
+  calibration grid (~107-135 points depending on sampling method), applied to the
+  CNN's raw position before `PredictionGate`. A naive first attempt (calibrate from
+  whatever the ball visits in the first 10-30% of a session) was tried FIRST and made
+  things 2-4x WORSE — natural early motion often never reaches the platform edges, so
+  the fitted linear model was extrapolated far outside where it was fit; confirmed
+  directly by comparing each session's early-window coordinate range against its
+  full range. The deliberate-grid version, properly held out (calibration and test
+  frames disjoint, same session), gives a real, validated improvement: **5.63-5.64mm
+  → 4.41-4.51mm mean vision error (19.9-21.8% reduction)**, reproduced across two
+  independently-written validation methodologies (ad hoc `pd.cut` binning vs.
+  nearest-neighbor-to-grid-point selection).
+- **Honest inconsistency flagged, not papered over**: whether blending the
+  per-session fit 75/25 with a global (all-sessions-pooled) correction beats pure
+  per-session calibration is NOT robust — it won in the first validation run
+  (4.36mm vs. 4.41mm) and lost in the second, cleaner one (4.57mm vs. 4.51mm). The
+  robust finding is that per-session correction alone helps substantially and pure
+  global-only correction helps less (captures only the stable Y-bias, not the
+  session-specific component); the specific blending recommendation needs a proper
+  alpha re-sweep against independent data before being trusted.
+- **Against the <3mm target**: even the best validated result (~4.4-4.5mm) remains
+  above target. This is a real, worthwhile improvement (roughly halves the gap from
+  the ~9-17mm currently measured) but not sufficient alone — a second lever
+  (most likely control-loop/settling dynamics: Kalman R/Q, `PredictionGate`
+  parameters) is still needed and was not investigated as deeply this session.
+- **Averaging-vs-per-session question, answered directly on request**: tested
+  whether pooling all historical sessions into one global correction (rather than
+  calibrating fresh per session) helps — it does (5.64mm→4.96mm, 12.1%) but
+  underperforms a fresh per-session calibration (4.41mm), because it can only
+  capture the cross-session-stable bias component, not the genuinely
+  session-specific one. A 70-80% per-session / 20-30% global blend was the
+  swept optimum in the first validation run (see inconsistency note above for why
+  this isn't treated as settled).
+- **A genuine architectural design question surfaced, not resolved here**: every
+  validated number above uses touch position at BOTH fit time and apply time (an
+  "oracle" evaluation, assuming continuous touch access) — but this project's own
+  design principle is that touch is a sensor-only, evaluation-independent reference
+  that "never feeds the controller" (`BallBalancingBot.ino`'s own comment). A
+  real deployment following that principle would calibrate once (while touch is
+  available) then apply using only vision position afterward — that specific variant
+  has NOT been tested, and the two options are flagged for the user's explicit
+  decision, not assumed.
+- **New module, explicitly NOT integrated, NOT hardware-tested**:
+  `host_software/ml_jetson_vla/core/vision_calibration.py` (fit/apply/blend/grid
+  generation/sample-settle-detection — `AffineCorrection`, `fit_affine_correction`,
+  `apply_correction`, `blend_corrections`, `fit_global_correction`,
+  `generate_calibration_grid`, `CalibrationSampleCollector`), verified only for
+  structural correctness via its own `self_test()` (same limitation
+  `control_net.py`'s own "NOT YET HARDWARE-VALIDATED" banner already documents for a
+  different module, for the same reason: no live hardware access from this
+  environment). `deployment/validate_vision_calibration.py` reproduces the validated
+  numbers above from a pooled per-frame CSV, calling the real module functions
+  rather than re-deriving the math separately. Full writeup, root-cause table, and
+  the specific hardware experiments recommended to close remaining gaps:
+  `host_software/ml_jetson_vla/docs/VISION_CALIBRATION_PROPOSAL.md`.
+- **Not yet done / explicitly open**: (1) re-validate the fit-on-touch/apply-on-vision
+  deployment variant specifically, not just the oracle version; (2)
+  `TargetStateMachine` has no way to command an arbitrary `(x_mm, y_mm)` target yet —
+  needed to actually drive the ball through a calibration grid, not built; (3) not
+  wired into `run_jetson_standalone.py` — the insertion point (right after
+  `px_to_touch_mm()`, before `PredictionGate.filter()`) is identified but this is a
+  new layer on CLAUDE.md's LOCKED coordinate-mapping decision and needs explicit
+  user sign-off before integration; (4) the specific root cause of the
+  session-to-session geometry variation itself (camera/process restart artifact vs.
+  physical handling vs. environmental) is still unknown — a prioritized 3-step
+  hardware diagnostic (repeat calibration within one continuous session; back-to-back
+  restarts with nothing touched; a deliberate measured physical nudge) is proposed in
+  the linked doc but not run; (5) the control-loop/settling-dynamics lever needed to
+  close the remaining gap to <3mm was not investigated this session.
+
+## 23/09/2026
+### First Real Inference-Latency Data Folded Into `report/small_model_evaluation/report.md`
+- **Context**: the `vision_inference_ms` instrumentation added 18/09/2026 had no real data behind it at the time (all telemetry that existed predated it). Real data now exists: three sessions recorded 2026-09-22 (`track1_report_20260922`, raw comparison output labels `run1_103659_partial`/`run2_103838_complete`/`run3_104113_partial`) carry the column with populated values. Also noticed in passing: `docs/EVALUATION_STRATEGY.md` and `evaluate_system_control.py` had both progressed further than this report's own last-known state (the "Inference Latency" doc section now documents a `plot_comparison()` chart panel and several new coverage caveats dated 22/09, and the evaluator picked up `Any`/`Dict`/`List` type hints) -- consistent with other work continuing on this file between sessions, not a conflict with anything here.
+- **Added Section 6.8 to the report**, pooling all three sessions' logged frames (n=5,819): mean 33.55ms, median 32.57ms, P95 41.50ms, max 63.10ms, min 28.38ms. Carried forward `EVALUATION_STRATEGY.md`'s own scope caveats (vision-policy-call only; excludes audio inference, the STM32-side RL control net, camera capture, and serial RTT; cold-start frames aren't logged at all) so the number isn't misread as a full system-latency figure.
+- **Deliberately NOT merged into the report's Section 6.1-6.7 baseline tables**: the three 9/22 sessions are self-labeled "partial"/"complete" in their own output and show irregular inter-command timing (10s/5s/5s/10s/10s/11s/9s gaps) inconsistent with the fixed-10-second-per-command `--eval-sequence` protocol the 9/15 baseline runs used -- and their other metrics differ substantially from that baseline (Steady-State Error 15.0-17.0mm vs. 9.7-12.7mm; Task Success 71-100% vs. 100%). Not diagnosed further here (which input path produced this timing is not recoverable from `touch_logger.py`'s telemetry alone), but flagged plainly in the report rather than silently averaged in alongside a different test condition. Only the inference-latency figures were pulled from this session; everything else about it is described but kept out of the aggregate stats.
+
 ## 22/09/2026
 ### Arm 2 Minimal-Baseline Offline Scorer Had Two Bugs — Earlier "0/60 Hits, Not Hardware-Ready" Verdict Retracted
 - **Context**: found while building the Colab sandbox sweep (`host_software/ml_jetson_vla/deployment/arm2_colab_sweep.ipynb`) for the Arm 2 minimal-baseline candidate comparison (`docs/ARM2_MINIMAL_BASELINE_MULTI_CANDIDATE.md`). The 2026-09-18 offline accuracy run (`deployment/score_minimal_baseline_offline.py`, n=60 real frames across all 10 `session_jetson_track4_*` sessions) had reported 0/60 hits at 20mm tolerance for both the baseline and "oriented" prompts against Qwen2.5-VL-3B, and was reported to the user as a gate finding that this candidate/approach wasn't ready for real hardware testing. **That verdict was wrong and has been retracted.**
