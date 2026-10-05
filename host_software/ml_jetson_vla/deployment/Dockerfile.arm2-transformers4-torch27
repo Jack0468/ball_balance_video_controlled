@@ -68,10 +68,9 @@ torch_ok = tuple(map(int, torch.__version__.split('+')[0].split('.')[:2])) >= (2
 print('transformers', tr.__version__, 'torch', torch.__version__); \
 assert major < 5, f'transformers {tr.__version__} is >=5 -- Moondream2 needs <5, this image is built wrong'; \
 assert torch_ok, 'torch < 2.5 -- this image exists specifically to fix enable_gqa, wrong base if this fails'; \
-import inspect; \
-sdpa_params = inspect.signature(torch.nn.functional.scaled_dot_product_attention).parameters; \
-assert 'enable_gqa' in sdpa_params, 'enable_gqa still missing from scaled_dot_product_attention -- this image does NOT fix the real bug, do not proceed'; \
-print('transformers <5: OK  torch >=2.5: OK  enable_gqa present: OK')"
+q = torch.zeros(1, 4, 2, 8); k = torch.zeros(1, 2, 2, 8); v = torch.zeros(1, 2, 2, 8); \
+torch.nn.functional.scaled_dot_product_attention(q, k, v, enable_gqa=True); \
+print('transformers <5: OK  torch >=2.5: OK  enable_gqa functional call: OK')"
 
 WORKDIR /workspace/VRI_2026
 ENV PYTHONUNBUFFERED=1

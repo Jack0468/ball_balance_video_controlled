@@ -35,6 +35,27 @@ vs. only structurally checked.
 untouched), and the "no firmware changes, no fine-tuning" boundary. This doc does not relitigate
 any of that.
 
+## Executive summary (2026-09-24, current as of §12)
+
+**Bottom line: of the 3 real candidates run so far, Qwen2.5-VL-3B is the clear and only viable
+one.** It's the only candidate that beats a dumb "guess the platform centre" reference on hit-rate;
+InternVL2.5-4B and PaliGemma2-3b-mix-448 both lose to a model that doesn't look at the image at all.
+
+| Candidate | Real data? | hit@20mm | mean err (mm) | Verdict |
+|---|---|---|---|---|
+| **Qwen2.5-VL-3B** | yes | **68.3%** | **25.3** | Best by ~20x hit-rate; only real contender |
+| InternVL2.5-4B | yes | 3.3% | 88.0 | Worse than no-vision baseline; degrades further with more prompt context (real mechanism found, §12.1 — likely unit/scale confusion, not just noise) |
+| PaliGemma2-3b-mix | yes | 3.3%* | 113.5 | `:prompt` mode 0% (task-prefix model, not instruction-following, expected); `:detect` mode mostly empty output (§10.1, distinct generation bug) |
+| Moondream2 | **no** | — | — | Hard-blocked by a real `torch`/`transformers` version conflict (§11); an unattended overnight fix attempt is the last unresolved piece |
+
+\*of all 60 frames; 22% of the 9 frames it actually parsed.
+
+**What this means going forward**: per `ARM2_MINIMAL_BASELINE_SCOPE.md`'s own gate, the
+fine-tuning/specialization track stays parked until Moondream2 has real data too — that's the one
+blocker left. Full evidence, per-command/session breakdowns, and the reasoning behind each verdict
+above live in §8.2 (Qwen), §10/§10.1 (PaliGemma2), §11 (InternVL2.5/Moondream2), and §12
+(cross-candidate comparison) below — this summary is a pointer, not a replacement for them.
+
 ## 1. Confirmed: which candidates even belong in "minimal baseline" scope
 
 The minimal-baseline framing only makes sense for **general-purpose, promptable VLMs** -- models
@@ -545,3 +566,66 @@ far), PaliGemma2-3b-mix-448 (complete, real, poor), InternVL2.5-4B (complete, re
 context-inverted), Moondream2 (blocked, 0 real data). Per `ARM2_MINIMAL_BASELINE_SCOPE.md`'s gate,
 the zero-shot baseline sweep is not yet complete enough to unpark the fine-tuning/specialization
 track — Moondream2's environment gap is the one remaining blocker.
+
+## 12. 2026-09-24: current standings across all three real candidates
+
+Unified comparison, each candidate's fairest/native mode, same 60 frames, real numbers (not
+re-derived — read directly from each results directory's aggregate table and per-frame scorer
+JSON):
+
+| Candidate (fair variant) | parse_rate | hit@20mm /60 | mean_err_mm | median_err_mm | mean_gen_s | peak_mem_gb |
+|---|---|---|---|---|---|---|
+| **Qwen2.5-VL-3B** (baseline) | 100% | **68.3% (41/60)** | **25.3** | **14.3** | 1.70 | 7.05 |
+| InternVL2.5-4B (baseline) | 100% | 3.3% (2/60) | 88.0 | 88.4 | 4.27 | 7.72 |
+| PaliGemma2-3b-mix (`:detect`) | 15% | 3.3%\* (2/60) | 113.5 | 122.3 | 0.51 | 5.85 |
+| *[ref] constant platform-centre guess* | *100%* | *15.0% (9/60)* | *25.2* | *29.6* | — | — |
+| *[ref] uniform-random point* | *100%* | *4.8%* | *67.3* | *67.0* | — | — |
+
+\*PaliGemma2's own aggregate row reports 22.2% (2/9) of *parsed* frames only; normalized to all 60
+sampled frames (apples-to-apples with the others), it's 3.3% — identical to InternVL2.5's.
+
+**Qwen2.5-VL-3B is unambiguously the best performer** — ~20x the hit rate of either other real
+candidate, 3.5-4.5x lower mean error. It's also the *only* candidate that beats the no-vision
+constant-centre-guess reference on hit-rate and median (its mean, 25.3mm, is essentially tied with
+the centre-guess's 25.2mm, which is expected since real targets cluster near the platform centre).
+**InternVL2.5-4B and PaliGemma2 both do worse than a dumb constant guess on every metric.**
+
+### 12.1 InternVL2.5's "more context makes it worse" — a real mechanism, not noise
+
+Per-frame join across all 3 prompt variants (60/60 frames matched) found a genuine, evidence-backed
+cause, not just small-sample variance:
+
+- **The model does read the longer prompt** — baseline vs. `oriented_aruco` predictions differ by a
+  mean 234mm (0/60 pairs agree within 2mm), so it isn't simply ignoring the added text.
+- **But it collapses into near-constant output as the prompt grows.** Distinct raw-pixel outputs
+  across the 60 frames: `baseline` 26 distinct points (realistic spread, x:320-590, y:220-370,
+  tracks real per-frame variation) → `oriented` only 9 distinct points, 78% of all 60 frames output
+  one of just two exact points → `oriented_aruco` 12 distinct points, clustered in a suspiciously
+  small 12-175.5 numeric range (vs. baseline's 320-590).
+- **Likely mechanism: unit/scale confusion, not spatial confusion.** The `oriented_aruco` prompt
+  injects the platform's physical dimensions (187.5mm x 142.0mm) and marker size (22.5mm) as
+  mm-scale numbers. Its outputs (12-175.5) sit almost exactly in that mm range, not the 640x480
+  pixel range the contract asks for and `baseline` actually produces — while still being scored as
+  raw pixels, landing near the image corner and producing the 100-250mm errors. Plausible and
+  evidence-backed, not proven at the logit level — reported as a strong hypothesis, not a fact.
+- **Baseline itself has a real systematic bias worth flagging separately**: mean predicted point
+  (18.8, 42.1)mm vs. true target mean (94.2, 76.2)mm — a ~75mm/~34mm systematic offset, even though
+  per-frame spread is comparable to the true targets' spread. So baseline is "poor but genuinely
+  content-sensitive," and it's specifically the *added context* that pushes it into collapse, not a
+  from-the-start "ignores the image" pattern.
+- **No stable per-color or per-session driver — rankings actually invert between variants**, which
+  itself argues for collapse/noise over a real content-based cause: baseline's best command
+  (`go_black`, 64.6mm) is `oriented_aruco`'s worst (211.0mm); baseline's best session is
+  `oriented_aruco`'s worst.
+- **Error magnitude (baseline)**: no catastrophic tail (max 179mm) but a heavy 80-120mm band
+  (33/60, 55%) — consistent with "pointing at a plausible-but-wrong region," not random scatter.
+
+### 12.2 Cross-candidate agreement (informational)
+
+Frame keys are consistent across all three result files, full 60/60 join succeeded. **All-three
+hit@20mm: 0/60. All-three miss: 17/60** — but this is dominated by PaliGemma2's low parse rate (48
+of its 60 frames auto-count as a miss regardless of content), so treat it as weak evidence only, not
+a clean three-way difficulty signal. The 17 hardest frames span all 4 colors (no single color
+dominates) and recur most in session `session_jetson_track4_20260915_151627` (4 of the 17) — the
+same session already flagged as Qwen's real outlier in §10.1, suggesting that session may be
+broadly harder across models, not just for Qwen specifically.

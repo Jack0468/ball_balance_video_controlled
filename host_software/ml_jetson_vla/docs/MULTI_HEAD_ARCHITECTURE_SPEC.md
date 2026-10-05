@@ -323,13 +323,41 @@ this exact file.
 1. **SmolVLA vs. Qwen2.5-VL-3B** — still unresolved, carried over from
    `MULTI_HEAD_OUTPUT_DESIGN.md` §0. This doc designs against Qwen2.5-VL-3B per that doc's
    stated operative-decision framing, but the user has not confirmed it.
-2. **Custom-head deployment compatibility through MLC-LLM/TensorRT-LLM** — §0 point 2 /
-   §6. The single biggest unverified assumption in this design. Needs a scoped smoke test,
-   not assumed to work post-training.
-3. **INT4 quantization of a checkpoint carrying two new custom heads** — does the
-   quantization pipeline treat the new `Linear` heads the same way it treats backbone
-   weights, or do they need to stay FP16/BF16 while only the backbone quantizes? Not
-   researched here.
+2. **Custom-head deployment compatibility through MLC-LLM/TensorRT-LLM** — §0 point 2 / §6.
+   **Researched 2026-09-24 (real, cited, still not a confirmed recipe).** TensorRT-LLM's
+   classic compiled-engine path has no documented way to pull mid-graph hidden states out at
+   all (a maintainer-unanswered closed issue confirms this:
+   [#2499](https://github.com/NVIDIA/TensorRT-LLM/issues/2499)). Its newer, explicitly
+   "experimental" **PyTorch backend** (`tensorrt_llm._torch`) is different in kind — you write
+   `forward()` yourself in Python, optionally swapping in TRT-LLM's fast `Linear`/attention
+   modules ([Adding a New Model in PyTorch Backend](https://nvidia.github.io/TensorRT-LLM/torch/adding_new_model.html))
+   — so splicing Heads B/C's pooling + regression onto the hidden states is architecturally
+   possible there, but the docs give zero examples of auxiliary non-LM heads; this would be
+   genuine custom engineering, not a documented pattern. Qwen2.5-VL is in this backend's
+   support matrix, but live open issues show rough edges even for the stock model (FP4/NVFP4
+   quant bugs: [#8077](https://github.com/NVIDIA/TensorRT-LLM/issues/8077),
+   [#8404](https://github.com/NVIDIA/TensorRT-LLM/issues/8404)). MLC-LLM's extension point
+   (TVM `nn.Module`, [Define New Model Architectures](https://llm.mlc.ai/docs/compilation/define_new_models.html))
+   requires defining the whole graph pre-compilation, not splicing a head onto a compiled
+   artifact — and Qwen2.5-VL support in MLC-LLM is unconfirmed (Qwen2-VL only, via a community
+   PR: [#3125](https://github.com/mlc-ai/mlc-llm/pull/3125)). **Assessment: TensorRT-LLM's
+   PyTorch backend is the more plausible of the two, but this is still a genuinely novel
+   combination with no end-to-end precedent found** — §6's "needs a scoped smoke test" stands,
+   now with a specific backend to target rather than an open "which framework" question.
+3. **INT4 quantization of a checkpoint carrying two new custom heads** — **researched
+   2026-09-24.** TensorRT-LLM's `QuantConfig.exclude_modules` is real and documented
+   (glob/regex/hierarchical name-pattern matching to skip named submodules from INT4/AWQ
+   quantization — [modeling_utils.py docs](https://nvidia.github.io/TensorRT-LLM/_modules/tensorrt_llm/models/modeling_utils.html)),
+   in principle exactly the mechanism needed to keep Heads B/C in FP16 while the backbone
+   quantizes. But an **open, unresolved** Model-Optimizer issue shows a user's custom exclude
+   pattern silently not taking effect beyond the default `lm_head` exclusion
+   ([TensorRT-Model-Optimizer #33](https://github.com/NVIDIA/TensorRT-Model-Optimizer/issues/33))
+   — documented, but not confirmed reliable for arbitrary custom module names in practice.
+   MLC-LLM's quantization docs ([Configure Quantization](https://llm.mlc.ai/docs/compilation/configure_quantization.html))
+   describe only monolithic per-model quant formats (`q4f16_1`, `q4f16_awq`, etc.) with no
+   exclude-list mechanism found at all. **Not well-trodden either way** — treat as needing real
+   prototyping to confirm `exclude_modules` actually works for Heads B/C specifically, not as
+   a solved problem just because the config option exists on paper.
 4. **Chunk size `N`** — a starting experimental range, not a value: this project's real
    control/telemetry rate is 30Hz (`session_recorder.py`'s default `fps=30`, matching
    `RLControl.cpp`'s `CONTROL_DT` = 1/30s exactly) and the settling-time metric
@@ -344,11 +372,37 @@ this exact file.
    `convert_to_lerobot.py` changes) only if BC training shows the 2-dim state is
    insufficient. Not decided which will actually be needed.
 6. **Whether `theta_a/b/c` is best understood as lag-affected feedback or a cleaner
-   target** — `motor_geometry.py`'s docstring and `run_jetson_standalone.py`'s call site
-   both point to "real measured position," analogous to `RLControl.cpp`'s `actual_steps`,
-   but this hasn't been confirmed against the live control loop's actual read/command timing
-   the way `RLControl.cpp`'s own design notes explicitly call out the lag as load-bearing.
-   Worth confirming before treating the BC imitation target as clean ground truth.
+   target** — **investigated 2026-09-24, real evidence gathered, not fully resolved.**
+   `RLControl.cpp` (lines 152-158) has an explicit design comment confirming the STM32 case
+   IS intentionally lag-affected: "Read ACTUAL stepper positions — the network trained on
+   lagged motor state, so we must NOT feed it the last commanded target," where
+   `actual_steps[]` is AccelStepper's live position mid-acceleration-ramp toward the last
+   `moveTo()` target — a genuine electromechanical lag, load-bearing for the trained policy,
+   with no fixed N-ms/N-frame magnitude documented (it's ramp-dependent, not constant).
+   The Jetson pipeline's risk is a **different mechanism, same category**: `motor_geometry.py`
+   only does the steps→degrees linear conversion (no origin-offset issue there), but
+   `run_jetson_standalone.py`'s call site explicitly documents `touch_logger.get_latest_touch()`
+   as "a best-effort, non-blocking snapshot" of the async `T,...` serial uplink, which "runs at
+   its own ~25Hz cadence, independent of this loop's rate, so it may lag or... be None" —
+   async-polling staleness, not a physical ramp, but the same qualitative risk (measured state
+   trails true state at read time).
+   **Real log evidence** (4 of the 10 Track 4 sessions, 2,294-5,193 frames each): camera loop
+   runs ~24.2fps, close enough to the ~25Hz uplink to plausibly alias. Consecutive-frame-identical
+   `touch_x` occurs on 34-39% of frames (stale runs up to ~2s in the worst case); `theta_a`
+   repeats far less (10-12%), and only ~4.5% of frames show both stale together — if they came
+   from one atomically-cached snapshot they'd repeat in lockstep, so this looks more like
+   touch-sensor quantization/genuine ball stillness than the documented shared-snapshot
+   mechanism specifically. A cross-correlation check (`theta_a` vs. `touch_x`/its derivative at
+   0-3 frame lags) found no clean nonzero-lag peak, but this test is confounded by platform
+   geometry (a single leg's angle isn't simply linearly related to ball-x on a 3-DOF tilting
+   platform) — all correlations were weak (|r|<0.13) regardless of timing, so this null result
+   doesn't actually clear the lag hypothesis, it's just an inconclusive test.
+   **Verdict: cannot confirm a specific lag magnitude from this data, and `theta_a/b/c` should
+   NOT be treated as provably clean ground truth** — the async-read risk is real and documented
+   in code, loop/uplink rates are close enough to alias, and multi-second stale runs exist in
+   real logs. Before Stage 3 BC training: add explicit staleness filtering/deduplication on the
+   touch snapshot (flag frames where the raw snapshot didn't change) rather than assuming either
+   a fixed lag correction or clean ground truth.
 7. **LoRA rank/depth** (`r=16`, last 12 of 36 LM layers, ~9.98M adapter params by the same
    counting method as §1 — worked as: attention ≈204.8K/layer + MLP ≈626.7K/layer ≈
    831.5K/layer × 12 layers) is a reasoned starting point based on standard LoRA-efficiency
