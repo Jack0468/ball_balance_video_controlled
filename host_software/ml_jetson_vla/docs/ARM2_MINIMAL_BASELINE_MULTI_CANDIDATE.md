@@ -683,3 +683,16 @@ it hits, it's far more precise (median 2.9mm vs 14.3mm). It's still behind Qwen 
 (35/60 vs 41/60), and its black-marker failure is systematic, not noise. Qwen remains the best
 overall performer. Caveats: a single 60-frame sample over 10 sessions, and the `:point` mode ignores
 the prompt entirely, so there's no prompt-variant comparison for it.
+
+## 2026-09-24: overnight unattended Moondream2 environment-fix attempt -- ABORTED
+
+Ran unattended overnight via `run_moondream_fix_overnight.sh` (safe mode: never touches
+`arm2-t4:r36.4.0`, only proceeds to a real sweep if both a regression smoke test and a
+Moondream2 smoke test pass first under a separate `arm2-t4-alt:r36.4.0` image).
+
+**Result: ABORTED**
+
+docker build of arm2-t4-alt:r36.4.0 failed or timed out after 30 min -- see log for the real error
+
+Full log: `host_software/ml_jetson_vla/deployment/overnight_logs/moondream_fix_20260924_193326.log`
+
