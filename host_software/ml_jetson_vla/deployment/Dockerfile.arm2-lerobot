@@ -1,0 +1,65 @@
+# Arm 2 action-head latency bench -- SmolVLA + ACT via lerobot 0.4.4 (2026-10-06). SEPARATE image from
+# Dockerfile.arm2-transformers5 on purpose: lerobot's smolvla extra declares transformers>=4.57.1,<5.0.0, while the
+# Qwen2.5-VL sweep needs transformers 5.x. Sharing one image would force one of the two to lose.
+#
+# Verified locally 2026-10-06 (Windows conda env, lerobot 0.4.4 + transformers 5.17.0): `import lerobot.policies.act`
+# and `import lerobot.policies.smolvla` BOTH fail with `TypeError: non-default argument 'backbone_cfg' follows default
+# argument`, raised from lerobot/policies/groot/groot_n1.py. Cause: transformers 5.x made PretrainedConfig a dataclass.
+# The final RUN below therefore fails the build if transformers resolves to 5.x -- that is the intended gate.
+#
+# Base: dustynv/pytorch:2.7-r36.4.0-cu128-24.04 (same base as arm2-transformers5, so torch/torchvision are the proven
+# CUDA build on this Jetson). Every pip install below is constrained to the base image's own `pip freeze`, so pip can
+# only ADD packages, never move torch/torchvision/numpy.
+#
+# Transformers is NOT pinned here. `lerobot[smolvla]==0.4.4` pulls in lerobot's own declared range
+# (transformers>=4.57.1,<5.0.0). The plain `lerobot==0.4.4` wheel declares no transformers at all, and the lerobot
+# policies package init imports transformers, so the extra is required, not optional.
+#
+# Build (from host_software/ml_jetson_vla/deployment/ on the Jetson):
+#   docker build -f Dockerfile.arm2-lerobot -t arm2-lerobot:r36.4.0 .
+#
+# Run (bench_action_models.py writes its JSON into the bind-mounted repo, not the image):
+#   docker run --runtime nvidia --rm -it -v $HOME/VRI_2026:/workspace/VRI_2026 -v $HOME/.cache/huggingface:/root/.cache/huggingface arm2-lerobot:r36.4.0
+
+FROM dustynv/pytorch:2.7-r36.4.0-cu128-24.04
+
+# libsndfile1: same audio_utils import-chain dependency the transformers5 image hit on-device (2026-09-22).
+RUN apt-get update && apt-get install -y --no-install-recommends libsndfile1 \
+ && rm -rf /var/lib/apt/lists/*
+
+# Freeze exactly what the base image ships, BEFORE installing anything else.
+RUN python3 -m pip freeze --exclude-editable > /opt/base_constraints.txt \
+ && python3 -c "import numpy, torch; print('base numpy', numpy.__version__, 'torch', torch.__version__, 'cuda_available', torch.cuda.is_available())" \
+ && python3 -c "assert tuple(map(int, __import__('torch').__version__.split('+')[0].split('.')[:2])) >= (2, 5), 'torch < 2.5 -- built wrong'; print('torch >= 2.5: OK')" \
+ && (python3 -c "import torchvision; print('base torchvision', torchvision.__version__)" \
+     || echo "torchvision MISSING from base image -- install the dusty-nv-matched wheel, never generic pip torchvision. Build fails at the gate below.")
+
+# OpenCV + ArUco: needed by colab_sweep.prepare_frames (ArUco homography per frame). Same step as arm2-transformers5.
+RUN python3 -c "import cv2, cv2.aruco" \
+ || python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all: \
+      --index-url https://pypi.org/simple opencv-contrib-python-headless
+
+# The base image's default pip index (pypi.jetson-ai-lab.dev) is unreachable from this network, so every install
+# below pins plain PyPI explicitly. [smolvla] = lerobot's own declared extra (transformers<5, accelerate, ...).
+RUN python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all: \
+      --index-url https://pypi.org/simple \
+      'lerobot[smolvla]==0.4.4' \
+ && (python3 -m pip check || echo "pip check reported issues above -- informational; the import gate below is the real check.")
+
+# Gate: fail the build if versions drifted or either policy import is broken. Printed so the build log records what
+# resolved. cuda_available is printed, not asserted: `docker build` may run without the nvidia runtime.
+RUN python3 -m pip freeze --exclude-editable | grep -E '^(numpy|torch|torchvision)==' \
+ && python3 -c "\
+import importlib.metadata as md; \
+import torch, torchvision, transformers, cv2; \
+print('torch', torch.__version__, 'torchvision', torchvision.__version__, 'cuda_available', torch.cuda.is_available()); \
+print('lerobot', md.version('lerobot')); \
+print('transformers', transformers.__version__); \
+print('cv2', cv2.__version__, 'aruco', hasattr(cv2, 'aruco')); \
+assert int(transformers.__version__.split('.')[0]) < 5, 'transformers >= 5 resolved -- lerobot 0.4.4 policies cannot import; this image is built wrong'" \
+ && python3 -c "import lerobot.policies.smolvla; print('import lerobot.policies.smolvla: OK')" \
+ && python3 -c "import lerobot.policies.act; print('import lerobot.policies.act: OK')"
+
+WORKDIR /workspace/VRI_2026
+ENV PYTHONUNBUFFERED=1
+CMD ["/bin/bash"]
