@@ -41,6 +41,9 @@ RUN python3 -c "import cv2, cv2.aruco" \
 
 # The base image's default pip index (pypi.jetson-ai-lab.dev) is unreachable from this network, so every install
 # below pins plain PyPI explicitly. [smolvla] = lerobot's own declared extra (transformers<5, accelerate, ...).
+# docopt (pulled in by num2words) is sdist-only on PyPI, so it is installed first without the binary-only rule.
+RUN python3 -m pip install -c /opt/base_constraints.txt --index-url https://pypi.org/simple docopt==0.6.2 evdev
+# evdev: pulled in by lerobot's pynput (keyboard teleop, unused by policies); source-only on PyPI, so installed here.
 RUN python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all: \
       --index-url https://pypi.org/simple \
       'lerobot[smolvla]==0.4.4' \

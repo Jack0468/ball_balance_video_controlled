@@ -242,6 +242,31 @@ export, and Jetson-side Hz benchmarking. All three need a converter's real outpu
 checkpoint in hand first (Task 2/3 of this kickoff, below) — starting any of them without
 that would be guessing at data shapes this session doesn't have yet.
 
+## MEASURED 2026-10-06 — action-model latency on our AGX Orin (JetPack 6.2.3)
+
+Benchmark: `deployment/bench_action_models.py` in the `arm2-lerobot:r36.4.0` image (lerobot 0.4.4, torch 2.7.0,
+transformers 4.57.6). Dummy inputs, one forward pass per chunk, 5 warmup and 100 timed iterations. Latency only:
+the weights are random (`random_init: true`), so no output here says anything about accuracy.
+
+| Policy | Precision | Chunk length | Chunk duration at 30Hz | p50 | p90 | Fits chunk | Params |
+|---|---|---|---|---|---|---|---|
+| ACT | fp32 | 100 | 3.33 s | 21.3 ms | 22.7 ms | yes | 51.6M |
+| ACT | fp32 | 10 | 0.33 s | 21.4 ms | 22.1 ms | yes | 51.5M |
+| ACT | bf16 | — | — | failed | — | — | — |
+| SmolVLA | fp32 | 50 | 1.67 s | 924 ms | 929 ms | yes, only with asynchronous inference | 450.0M |
+
+- **SmolVLA's output is 6 values per step**, not our 3 motor angles, so a fine-tune needs the output reduced to 3.
+- **Replan rate ~1.08 Hz.** A 50-step chunk at 30Hz lasts 1.67s, leaving ~740ms of slack. The arm can only keep moving if
+  the next chunk is computed while the current one plays out. Weights: `lerobot/smolvla_base` @ `d9f33c94…`, 10 flow steps.
+
+- **Chunk length does not change ACT's cost** (21 ms at chunk 10 and at chunk 100). Chunk length is a control
+  choice, not a latency one.
+- **bf16 failed**: LeRobot's ACT inference path creates its latent sample in float32 regardless of the model's dtype,
+  so a bf16 model rejects it. The fix is autocast with fp32 weights, which the benchmark does not do yet. The result
+  would then need labelling as mixed precision.
+- ACT here is the 51.6M-parameter model with a ResNet18 backbone, not the ~12M `RT1LiteVLA` net. The Orin Nano
+  numbers in the research above are from a different board and a different precision path, so the two are not comparable.
+
 ---
 Sources (web research, 2026-08-18 and 2026-08-19):
 - [Jetson-PI: Towards Onboard Real-Time Robot Control via Foresight-Aligned Asynchronous Inference](https://arxiv.org/html/2607.12659v3)

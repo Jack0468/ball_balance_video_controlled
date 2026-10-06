@@ -365,6 +365,7 @@ def convert(
         },
     }
 
+    episode_sessions: list[dict[str, object]] = []
     for job in jobs:
         session_dir = job["session_dir"]
         session_name = job["session_name"]
@@ -482,6 +483,12 @@ def convert(
             stats["sessions_skipped_missing_files"] += 1
             continue
 
+        episode_sessions.append({
+            "episode_index": stats["sessions_converted"],
+            "session_name": session_name,
+            "regime": regime,
+            "frames": frames_this_episode,
+        })
         dataset.save_episode()
         stats["sessions_converted"] += 1
         stats["frames_written"] += frames_this_episode
@@ -490,8 +497,12 @@ def convert(
         print(f"[convert_to_lerobot] {session_name} ({regime}): {frames_this_episode} frames -> episode saved")
 
     dataset.finalize()
+    sidecar_path = os.path.join(out_root, "meta", "session_episodes.json")
+    with open(sidecar_path, "w") as f:
+        json.dump({"episodes": episode_sessions}, f, indent=2)
     stats["out_root"] = out_root
     stats["repo_id"] = repo_id
+    stats["session_episodes_file"] = sidecar_path
     return stats
 
 
