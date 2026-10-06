@@ -229,7 +229,26 @@ def _build_features(image_h: int, image_w: int) -> dict:
             "shape": (1,),
             "names": ["has_real_language_label"],
         },
+        # 2026-10-06 (risk #3): touch readings repeat across frames because the async serial uplink
+        # is polled, not a fresh measurement -- flag it so the head can't train on repeats as current.
+        "touch_stale": {
+            "dtype": "int64",
+            "shape": (1,),
+            "names": ["touch_stale"],
+        },
     }
+
+
+def compute_touch_stale(df: pd.DataFrame) -> np.ndarray:
+    """Per-row 0/1 flag: 1 when (touch_x, touch_y) exactly equals the previous telemetry row's
+    (touch_x, touch_y) within the same session; first row = 0. A NaN touch never counts as a
+    repeat (NaN != NaN), so rows missing ground truth can't set or inherit the flag."""
+    touch = df[["touch_x", "touch_y"]].to_numpy(dtype=np.float64)
+    flags = np.zeros(len(df), dtype=np.int64)
+    if len(df) > 1:
+        same = np.all(touch[1:] == touch[:-1], axis=1)
+        flags[1:] = same.astype(np.int64)
+    return flags
 
 
 def _probe_first_frame_size(video_path: str) -> tuple:
@@ -381,11 +400,12 @@ def convert(
             stats["sessions_skipped_shape_mismatch"] += 1
             continue
 
+        stale_flags = compute_touch_stale(df)
         cap = cv2.VideoCapture(video_path)
         session_start_ms: Optional[float] = None
         frames_this_episode = 0
         try:
-            for _, row in df.iterrows():
+            for pos, (_, row) in enumerate(df.iterrows()):
                 if max_frames_per_session is not None and frames_this_episode >= max_frames_per_session:
                     break
 
@@ -448,6 +468,7 @@ def convert(
                         ),
                         "regime": regime,
                         "has_real_language_label": np.array([has_real_language_label], dtype=np.int64),
+                        "touch_stale": np.array([stale_flags[pos]], dtype=np.int64),
                         "task": task,
                     }
                 )

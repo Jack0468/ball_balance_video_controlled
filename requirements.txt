@@ -31,6 +31,7 @@ nemo_toolkit[asr]
 qwen-vl-utils
 transformers
 accelerate
+peft==0.19.1  # LoRA (Arm 2); same pin as deployment/requirements-jetson-arm2-fallback-transformers5.txt
 sentencepiece
 psutil
 av

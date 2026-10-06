@@ -46,7 +46,7 @@ InternVL2.5-4B and PaliGemma2-3b-mix-448 both lose to a model that doesn't look 
 | **Qwen2.5-VL-3B** | yes | **68.3%** | **25.3** | Best by ~20x hit-rate; only real contender |
 | InternVL2.5-4B | yes | 3.3% | 88.0 | Worse than no-vision baseline; degrades further with more prompt context (real mechanism found, §12.1 — likely unit/scale confusion, not just noise) |
 | PaliGemma2-3b-mix | yes | 3.3%* | 113.5 | `:prompt` mode 0% (task-prefix model, not instruction-following, expected); `:detect` mode mostly empty output (§10.1, distinct generation bug) |
-| Moondream2 | **no** | — | — | Hard-blocked by a real `torch`/`transformers` version conflict (§11); an unattended overnight fix attempt is the last unresolved piece |
+| Moondream2 (`:point`, native API) | yes (2026-10-06, §13) | 58.3% | 32.2 (median 2.9) | Fastest and smallest; very precise when it hits; **0/13 on black markers**; 9/60 "no point" answers. `:query` mode fails completely (0/60, §13) |
 
 \*of all 60 frames; 22% of the 9 frames it actually parsed.
 
@@ -629,3 +629,57 @@ a clean three-way difficulty signal. The 17 hardest frames span all 4 colors (no
 dominates) and recur most in session `session_jetson_track4_20260915_151627` (4 of the 17) — the
 same session already flagged as Qwen's real outlier in §10.1, suggesting that session may be
 broadly harder across models, not just for Qwen specifically.
+
+## 13. 2026-10-06: Moondream2 full sweep (`arm2-t4-alt:r36.4.0`, `jetson_run1`)
+
+First real Moondream2 data. Built on the experimental image `Dockerfile.arm2-transformers4-torch27`
+(torch 2.7.0 base, transformers 4.57.6), which fixes the `enable_gqa` TypeError that blocked every
+call in the earlier attempts (§11). Confirmed fixed by the build-time functional check and both
+smoke gates (0 `enable_gqa` errors, 0 `CALL FAILED`). Source: `arm2_jetson_sweep_results4/`.
+
+**Aggregate, corrected to all 60 sampled frames.** The aggregate CSV's `hit@20mm` column is over
+parsed frames only (51 for `:point`), so it reads 68.6%. Normalized to all 60 frames, as in §10:
+
+| Candidate (fair variant) | parsed | hits /60 | median err (mm, parsed) | mean err (mm, parsed) | mean gen (s) | peak mem (GB) |
+|---|---|---|---|---|---|---|
+| Qwen2.5-VL-3B (baseline) | 60/60 | 41 (68.3%) | 14.3 | 25.3 | 1.70 | 7.05 |
+| **Moondream2 `:point`** | 51/60 | **35 (58.3%)** | **2.9** | 32.2 | **0.72** | **4.12** |
+| Moondream2 `:query` (baseline) | 60/60 | 0 (0%) | — | 249.1 | 1.62 | 4.12 |
+| Moondream2 `:query` (oriented) | 60/60 | 0 (0%) | — | 266.9 | 1.65 | 4.13 |
+| Moondream2 `:query` (oriented_aruco) | 0/60 | 0 (0%) | — | — | 2.37 | 4.14 |
+
+**`:point` error distribution is bimodal, not uniform.** Of the 51 parsed frames: 31 within 5mm,
+4 in 5-20mm, 3 in 20-80mm, 13 beyond 80mm (max 124mm). The model is either very precise or clearly
+pointing somewhere else. The 2.9mm median is real, but so is the 13-frame tail.
+
+**Per command (`:point`, all 60 frames):**
+
+| command | hits | parsed |
+|---|---|---|
+| go_green | 18/18 | 18/18 |
+| go_red | 10/16 | 13/16 |
+| go_yellow | 7/13 | 7/13 |
+| go_black | **0/13** | 13/13 |
+
+Hits total 35/60. The `go_black` result is a systematic failure: the model answers every black frame,
+and none of those answers land within 20mm. Hypothesis, not yet checked: the platform's ArUco
+calibration markers are also black-and-white squares, so "black marker" may be grounding onto an
+ArUco tag. Qwen also found black its hardest command (38% hit, §10.1), so this may be a shared
+difficulty rather than a Moondream-specific one. Checking it requires looking at real black-command
+frames with the ArUco positions overlaid, which we haven't done.
+
+**Unparsed (9/60, all red or yellow):** the model returned `{'points': []}`, i.e. no point. That's a
+real "not found" answer from the model, not a parser bug. The parser correctly reports
+`no_known_convention_matched` for these.
+
+**`:query` mode is a complete failure on this task.** Both prompt variants that parse collapse onto
+the same corner answers (`[0, 0]` or `[0, 640]`, the latter outside the 480-pixel frame height).
+`oriented_aruco` produces nested lists that no parser convention matches. This matches the
+InternVL2.5 collapse in §12.1: adding prompt context pushes these models toward near-constant output.
+
+**What this changes:** Moondream2 `:point` is a credible candidate, not just a blocked one. It's
+about 2.4x faster than Qwen (0.72s vs 1.70s) and uses about 40% less memory (4.1GB vs 7.1GB). When
+it hits, it's far more precise (median 2.9mm vs 14.3mm). It's still behind Qwen on overall hit rate
+(35/60 vs 41/60), and its black-marker failure is systematic, not noise. Qwen remains the best
+overall performer. Caveats: a single 60-frame sample over 10 sessions, and the `:point` mode ignores
+the prompt entirely, so there's no prompt-variant comparison for it.

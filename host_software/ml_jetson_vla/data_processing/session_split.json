@@ -1,0 +1,23 @@
+{
+  "seed": 20261006,
+  "train": [
+    "session_jetson_track4_20260915_153053",
+    "session_jetson_track4_20260915_153247",
+    "session_jetson_track4_20260915_160025",
+    "session_jetson_track4_20260915_161239",
+    "session_jetson_track4_20260915_161712",
+    "session_jetson_track4_20260915_163702",
+    "session_jetson_track4_20260915_164115",
+    "session_20260728_102908",
+    "session_20260810_104132",
+    "session_20260810_110239",
+    "session_20260810_112047"
+  ],
+  "eval": [
+    "session_jetson_track4_20260915_151627",
+    "session_jetson_track4_20260915_160509",
+    "session_jetson_track4_20260915_164743",
+    "session_20260810_114330"
+  ],
+  "rationale": "Session-level split (unit = whole session, never frame; see docs/MULTI_HEAD_ARCHITECTURE_SPEC.md risk #1). EVAL, Track 4 (3 of 10): session_jetson_track4_20260915_151627 (earliest recording, 15:16), session_jetson_track4_20260915_160509 (median, 16:05), session_jetson_track4_20260915_164743 (latest, 16:47). Chosen by position in recording order so the held-out set spans the whole afternoon rather than one stretch of it. CAVEAT: all 10 Track 4 sessions were recorded on 2026-09-15 between 15:16 and 16:47, so this spreads the eval across time-of-session within one day, not across days; cross-day generalisation of the Track 4 regime is untested. These 3 hold real audio-command labels, so the grounding head can be scored on them. EVAL, PID (1 of 5): session_20260810_114330, drawn with random.Random(20261006) from the 2026-08-10 PID sessions (the day with more than one session). The only 2026-07-28 PID session stays in train, so train covers both PID recording days. PID sessions have no language labels, so this eval item tests state/action only, not grounding. TRAIN: all remaining Track 4 sessions (7) and remaining PID sessions (4). Caveat: 10 Track 4 + 5 PID sessions is a small effective N; report per-session results, not only means (risk #8). Selection is fixed-rule plus one seeded draw; re-running reproduces this file exactly."
+}

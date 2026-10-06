@@ -14,6 +14,49 @@ that's stated explicitly.
 Per this task's scope: no training code, no Colab notebook, no PPO/BC loop, no firmware
 changes, no `PolicyCommand` edit. Those are items 4/5/6, not this doc.
 
+## Decisions (2026-10-06)
+
+**Arm 2 backbone: Qwen2.5-VL-3B-Instruct.** Chosen over Moondream2 `:point` on hit rate (41/60
+vs 35/60, §13 of `ARM2_MINIMAL_BASELINE_MULTI_CANDIDATE.md`). Moondream2 is faster and smaller, but
+it's a different architecture, so switching would mean redesigning every head in this spec. Revisit
+only if Qwen fails on the closed-loop test in Stage 4, not before.
+
+**Training data format: the LeRobot dataset from `convert_to_lerobot.py`, not the flat JSON.**
+Reasons, all from code already in the repo:
+- Head C predicts an action chunk of N frames, which needs episode boundaries. LeRobot has one
+  session = one episode. The flat JSON is per-frame with no episode structure.
+- `regime` and `has_real_language_label` are already real per-frame features that round-trip
+  through `add_frame()`/`save_episode()`, so the grounding-head-only-on-Track-4 rule can be
+  enforced downstream without a second loader.
+- `qwen_multihead_policy.py` and `action_chunk_bootstrap.py` were written against this schema.
+- Cost accepted: Colab must decode `rgb_video.mp4`, and the converter has not yet been run to
+  produce the full dataset.
+- The flat-JSON sample zip from Stage 1 is a plumbing smoke fallback only, not a training source.
+  No Stage 2 work is built on it.
+
+**Where training runs: Colab (GPU), not the Jetson.** This is the agreed plan from earlier in the
+session, not a hard rule. The Jetson is confirmed for inference, and LoRA training on its 64GB
+unified memory is arithmetically plausible (§1), but it has never been run. Training on the Jetson
+would also tie up the robot's compute during lab days. The Jetson's job is:
+- **data collection** in the lab, the main thing to maximise while we have access;
+- **dataset conversion**: `convert_to_lerobot.py` runs on CPU, so it can build the dataset on the Jetson while in the lab;
+- **inference checks**: the LoRA-load test (risk 7), and the closed-loop evaluation later.
+
+## Risk register (2026-10-06, before Arm 2 fine-tuning starts)
+
+| # | Risk | Why it matters | Addressable now? |
+|---|---|---|---|
+| 1 | **Frame leakage**: the 60-frame eval and the training data come from the same 10 sessions | Frame-level splits overstate accuracy | **Yes**: fix a session-level train/eval split and write it to a file before any training |
+| 2 | **Coordinate-frame mismatch** between the converter's `state`/`action` and the scorer's frame | Same class of bug as the earlier 0/60 scorer error | **Yes**: add a test that round-trips a converter row back to the scorer's frame |
+| 3 | **Stale touch readings** (§12/theta-lag investigation: stale runs up to ~2s) | Trains the head on repeated values as if they were current | **Yes**: add a `touch_stale` flag column to the converter, no hardware needed |
+| 4 | **Colab environment drift**: Qwen2.5-VL needs transformers 5.x; the Jetson image pins 5.17.0 + torch 2.7; a T4 has no native bf16 | Training silently runs on a different stack than eval, or fails on dtype | **Yes**: pin versions in the notebook; choose fp16 vs bf16 by GPU |
+| 5 | **Checkpoint identity**: the sweep's Qwen checkpoint must be the fine-tune base | Otherwise the baseline comparison is not like-for-like | **Yes**: record the exact model revision in both the sweep and the notebook |
+| 6 | **Latency vs control rate**: Qwen takes ~1.7s per call; the control loop targets 30Hz | A VLM-driven loop cannot run at 30Hz, so Head C's chunk must be consumed by a faster layer | **Design decision**, not fixable by training. Must be settled before Stage 4 |
+| 7 | **Deployment path**: TensorRT-LLM support for custom heads is experimental (§5 items 2-3) | Blocks the optimized deployment | **Partly**: test plain-PyTorch LoRA load on the Jetson today as the baseline path |
+| 8 | **Small effective data**: 10 sessions; the grounding head has only Track-4 labels | Overfitting to a few sessions | Partly: report per-session results, don't average them away |
+| 9 | **Arm 1 comparison**: metrics not yet mapped onto a closed-loop protocol | Comparison could be apples to oranges | **Yes**: map to `EVALUATION_STRATEGY.md`'s four metrics before training |
+| 10 | **Repo drift**: Jetson commit not pushed; Windows and Jetson can diverge | Results and code stop matching | **Yes**: push once the Jetson is logged in |
+
 ## 0. What the `model-iteration-constraints` skill flagged, and how it shaped this design
 
 Read in full before designing (see skill body). Four of its eight points materially changed

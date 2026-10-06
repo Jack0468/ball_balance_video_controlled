@@ -29,3 +29,11 @@
 
 transformers==5.17.0
 huggingface_hub
+
+# peft: LoRA adapters for the Arm 2 fine-tune and deployment/lora_load_smoke_test.py (risk #7). Pinned 0.19.1.
+# Why this version: checked 2026-10-06 in the local conda env against transformers 5.17.0 (LoRA attach, forward,
+# save, reload on a tiny Qwen2 model) -- passes. 0.21.2 also passed that check; 0.19.1 is the older of the two,
+# chosen to limit drift. NOT yet checked against the base image's torch 2.7 on the Jetson (the local check ran
+# torch 2.10); the first container build is that check. peft's only torch/transformers requirements are
+# lower bounds, so the frozen base constraints still hold.
+peft==0.19.1
