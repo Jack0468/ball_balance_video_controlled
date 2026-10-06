@@ -85,6 +85,11 @@ RUN python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all: \
       checks the WHOLE environment including pre-existing base-image packages (e.g. pygobject/pycairo, \
       ninja) unrelated to this image's purpose. The real gate is the explicit class-import assert below.")
 
+# Base image ships torchao 0.10.0; peft 0.19.1 refuses to import with any torchao below 0.16 even when
+# no quantized module is used, and this image never uses torchao. Removed rather than upgraded: a newer
+# torchao may need a newer torch than the base image's 2.7. Verified 2026-10-06 (lora_load_smoke_test.py).
+RUN python3 -m pip uninstall -y torchao
+
 # Proof nothing from the base image moved, and that the two candidates this image exists for are actually
 # USABLE, not just importable (fail the build loudly here, not silently at sweep/mock-run time on-device).
 # 2026-09-22 lesson: the l4t-pytorch/torch-2.4.0 build of this image passed a class-existence-only version

@@ -54,12 +54,14 @@ from peft import LoraConfig, PeftModel, get_peft_model  # noqa: E402
 from qwen_vl_utils import process_vision_info  # noqa: E402
 
 from ml_jetson_vla.core.vlm_backends import resolve_torch_dtype  # noqa: E402
-from ml_jetson_vla.deployment.qwen_vl_smoke_test import DEFAULT_MODEL_DIR, load_qwen_vl_model  # noqa: E402
+from ml_jetson_vla.deployment.qwen_vl_smoke_test import load_qwen_vl_model  # noqa: E402
 from ml_jetson_vla.deployment import colab_sweep as cs  # noqa: E402
 
 DEFAULT_BRONZE_DIR: str = os.path.join(_HOST_SOFTWARE_DIR, "data", "01_bronze")
 SESSION_SPLIT_PATH: str = os.path.join(_ML_JETSON_VLA_DIR, "data_processing", "session_split.json")
 DEFAULT_OUT_ROOT: str = "/workspace/arm2_results/lora_smoke"
+QWEN_REPO_ID: str = "Qwen/Qwen2.5-VL-3B-Instruct"
+QWEN_REVISION: str = "66285546d2b821cf421d4f5eb2576359d3770cd3"  # the Arm 2 sweep's pinned revision
 # Same pixel budget QwenVLBackend uses (core/vlm_backends.py), so this forward matches the sweep's input size.
 MIN_PIXELS: int = 64 * 28 * 28
 MAX_PIXELS: int = 256 * 28 * 28
@@ -175,8 +177,10 @@ def nonzero_lora_b(peft_model: torch.nn.Module, std: float, seed: int) -> int:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="LoRA load/save/reload smoke test for Qwen2.5-VL-3B (no training).")
-    ap.add_argument("--model-dir", default=DEFAULT_MODEL_DIR,
+    ap.add_argument("--model-dir", default=QWEN_REPO_ID,
                     help="Local Qwen2.5-VL-3B-Instruct checkpoint (default: the sweep's own default).")
+    ap.add_argument("--revision", default=QWEN_REVISION,
+                    help="HF commit to pin (the Arm 2 sweep's own revision). Ignored for local paths.")
     ap.add_argument("--bronze-dir", default=DEFAULT_BRONZE_DIR)
     ap.add_argument("--session", default=None,
                     help="Track 4 session dir name. Default: first Track 4 session in session_split.json's train list.")
@@ -216,7 +220,8 @@ def main() -> int:
     # Step 1: base model.
     with timer.step("1_load_base"):
         base, processor, _dev = load_qwen_vl_model(args.model_dir, device=device, min_pixels=MIN_PIXELS,
-                                                   max_pixels=MAX_PIXELS, dtype=torch_dtype)
+                                                   max_pixels=MAX_PIXELS, dtype=torch_dtype,
+                                                   revision=args.revision)
         base.eval()
     inputs, n_prompt = build_inputs(processor, device, torch_dtype, image_rgb, args.answer)
 
