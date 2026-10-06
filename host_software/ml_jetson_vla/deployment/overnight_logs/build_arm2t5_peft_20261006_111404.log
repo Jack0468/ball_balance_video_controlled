@@ -1,0 +1,268 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.arm2-transformers5
+#1 transferring dockerfile: 9.20kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/dustynv/pytorch:2.7-r36.4.0-cu128-24.04
+#2 DONE 1.5s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [internal] load build context
+#4 DONE 0.0s
+
+#5 [1/8] FROM docker.io/dustynv/pytorch:2.7-r36.4.0-cu128-24.04@sha256:4bb7f0a3852f86629ed271aaf6c4aa000305cc4e4673b8e9f334668ee1b22bc8
+#5 resolve docker.io/dustynv/pytorch:2.7-r36.4.0-cu128-24.04@sha256:4bb7f0a3852f86629ed271aaf6c4aa000305cc4e4673b8e9f334668ee1b22bc8 0.0s done
+#5 DONE 0.0s
+
+#4 [internal] load build context
+#4 transferring context: 128B done
+#4 DONE 0.0s
+
+#6 [2/8] RUN apt-get update && apt-get install -y --no-install-recommends libsndfile1  && rm -rf /var/lib/apt/lists/*
+#6 CACHED
+
+#7 [3/8] RUN python3 -m pip freeze --exclude-editable > /opt/base_constraints.txt  && python3 -c "import numpy, torch; print('base numpy', numpy.__version__, 'torch', torch.__version__, 'cuda_available', torch.cuda.is_available())"  && python3 -c "assert tuple(map(int, __import__('torch').__version__.split('+')[0].split('.')[:2])) >= (2, 5), 'torch < 2.5 -- transformers>=5 will disable its PyTorch backend, this image is built wrong'; print('torch >= 2.5: OK')"  && (python3 -c "import torchvision; print('base torchvision', torchvision.__version__)"      || echo "torchvision MISSING from this base image -- dustynv/pytorch is torch-only, not l4t-pytorch.         Must install the dusty-nv-matched torchvision wheel for THIS exact torch/CUDA build, never a         generic 'pip install torchvision' (repeats this session's earlier CPU-wheel-substitution bug).         Build will fail at the next explicit check below if this isn't resolved.")
+#7 CACHED
+
+#8 [4/8] RUN python3 -c "import cv2, cv2.aruco"  || python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all:       --index-url https://pypi.org/simple opencv-contrib-python-headless
+#8 CACHED
+
+#9 [5/8] COPY requirements-jetson-arm2-common.txt requirements-jetson-arm2-fallback-transformers5.txt /opt/arm2reqs/
+#9 CACHED
+
+#10 [6/8] RUN python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all:       --index-url https://pypi.org/simple       -r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt  && (python3 -m pip check || echo "pip check reported issues above -- informational only, since it       checks the WHOLE environment including pre-existing base-image packages (e.g. pygobject/pycairo,       ninja) unrelated to this image's purpose. The real gate is the explicit class-import assert below.")
+#10 0.694 Using pip 25.0.1 from /opt/venv/lib/python3.12/site-packages/pip (python 3.12)
+#10 0.988 Looking in indexes: https://pypi.org/simple, https://pypi.ngc.nvidia.com
+#10 1.156 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb70c6810>: Failed to establish a new connection: [Errno -2] Name or service not known')': /accelerate/
+#10 1.697 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb70c7080>: Failed to establish a new connection: [Errno -2] Name or service not known')': /accelerate/
+#10 2.739 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb70c48c0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /accelerate/
+#10 4.766 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb70c4d40>: Failed to establish a new connection: [Errno -2] Name or service not known')': /accelerate/
+#10 8.790 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb70c51c0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /accelerate/
+#10 8.844 Collecting accelerate (from -r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 47))
+#10 8.845   Obtaining dependency information for accelerate from https://files.pythonhosted.org/packages/8a/4c/34f0450479d01195027260da68d8a3880683f1640c3ca5adf64acb3185f1/accelerate-1.15.0-py3-none-any.whl.metadata
+#10 9.028   Downloading accelerate-1.15.0-py3-none-any.whl.metadata (19 kB)
+#10 9.240 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb71613a0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /qwen-vl-utils/
+#10 9.843 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb7161430>: Failed to establish a new connection: [Errno -2] Name or service not known')': /qwen-vl-utils/
+#10 10.87 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb7161f70>: Failed to establish a new connection: [Errno -2] Name or service not known')': /qwen-vl-utils/
+#10 12.89 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb713e660>: Failed to establish a new connection: [Errno -2] Name or service not known')': /qwen-vl-utils/
+#10 16.94 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb715f410>: Failed to establish a new connection: [Errno -2] Name or service not known')': /qwen-vl-utils/
+#10 16.98 Collecting qwen-vl-utils (from -r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 48))
+#10 16.98   Obtaining dependency information for qwen-vl-utils from https://files.pythonhosted.org/packages/c4/43/80f67e0336cb2fc725f8e06f7fe35c1d0fe946f4d2b8b2175e797e07349e/qwen_vl_utils-0.0.14-py3-none-any.whl.metadata
+#10 16.99   Downloading qwen_vl_utils-0.0.14-py3-none-any.whl.metadata (9.0 kB)
+#10 17.28 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb70c4d40>: Failed to establish a new connection: [Errno -2] Name or service not known')': /sentencepiece/
+#10 17.92 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb6f482f0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /sentencepiece/
+#10 18.95 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb6f485c0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /sentencepiece/
+#10 20.97 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb6f486b0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /sentencepiece/
+#10 25.00 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb6f48950>: Failed to establish a new connection: [Errno -2] Name or service not known')': /sentencepiece/
+#10 25.11 Collecting sentencepiece (from -r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 49))
+#10 25.11   Obtaining dependency information for sentencepiece from https://files.pythonhosted.org/packages/19/90/cd798935668cff71d309d8ff10385844ecf216b1fe454f1993ed8bf2cb91/sentencepiece-0.2.2-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl.metadata
+#10 25.13   Downloading sentencepiece-0.2.2-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl.metadata (33 kB)
+#10 25.61 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb70c4e00>: Failed to establish a new connection: [Errno -2] Name or service not known')': /av/
+#10 26.32 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb6fdc050>: Failed to establish a new connection: [Errno -2] Name or service not known')': /av/
+#10 27.43 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb6fdc3b0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /av/
+#10 29.46 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb6fdc650>: Failed to establish a new connection: [Errno -2] Name or service not known')': /av/
+#10 33.48 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb6fdc920>: Failed to establish a new connection: [Errno -2] Name or service not known')': /av/
+#10 33.53 Collecting av (from -r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 50))
+#10 33.53   Obtaining dependency information for av from https://files.pythonhosted.org/packages/10/4b/61f138fcf21e7bb50655ed21dd7fdc7a296baf72ea3c7ad8e89cb00b69c1/av-19.0.1-cp312-abi3-manylinux_2_28_aarch64.whl.metadata
+#10 33.54   Downloading av-19.0.1-cp312-abi3-manylinux_2_28_aarch64.whl.metadata (5.0 kB)
+#10 34.31 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb715cf50>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pandas/
+#10 34.91 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb6f48890>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pandas/
+#10 35.94 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb6f4ab40>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pandas/
+#10 37.96 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb6f495b0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pandas/
+#10 42.00 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb6f49700>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pandas/
+#10 42.11 Collecting pandas (from -r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 51))
+#10 42.11   Obtaining dependency information for pandas from https://files.pythonhosted.org/packages/67/fa/613d867c3d9554a61bafdec6f79565c8a3e73235feb52cc4a72ad2e0fa6a/pandas-3.0.6-cp312-cp312-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl.metadata
+#10 42.13   Downloading pandas-3.0.6-cp312-cp312-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl.metadata (79 kB)
+#10 42.34 Requirement already satisfied: pillow in /opt/venv/lib/python3.12/site-packages (from -r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 52)) (11.2.1)
+#10 42.34 Requirement already satisfied: filelock in /opt/venv/lib/python3.12/site-packages (from -r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 58)) (3.18.0)
+#10 42.34 Requirement already satisfied: typing_extensions in /opt/venv/lib/python3.12/site-packages (from -r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 59)) (4.13.2)
+#10 42.34 Requirement already satisfied: sympy in /opt/venv/lib/python3.12/site-packages (from -r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 60)) (1.13.3)
+#10 42.34 Requirement already satisfied: networkx in /opt/venv/lib/python3.12/site-packages (from -r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 61)) (3.4.2)
+#10 42.34 Requirement already satisfied: jinja2 in /opt/venv/lib/python3.12/site-packages (from -r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 62)) (3.1.6)
+#10 42.34 Requirement already satisfied: fsspec in /opt/venv/lib/python3.12/site-packages (from -r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 63)) (2025.3.2)
+#10 42.62 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb67f8290>: Failed to establish a new connection: [Errno -2] Name or service not known')': /transformers/
+#10 43.22 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb67f89e0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /transformers/
+#10 44.25 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb67f8da0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /transformers/
+#10 46.27 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb67f96a0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /transformers/
+#10 50.29 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb67f9e50>: Failed to establish a new connection: [Errno -2] Name or service not known')': /transformers/
+#10 50.36 Collecting transformers==5.17.0 (from -r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 30))
+#10 50.36   Obtaining dependency information for transformers==5.17.0 from https://files.pythonhosted.org/packages/e8/d0/c502b60d684adbd98a8dc7d5bb866842772b816ac4354e4608be240041ae/transformers-5.17.0-py3-none-any.whl.metadata
+#10 50.37   Downloading transformers-5.17.0-py3-none-any.whl.metadata (32 kB)
+#10 50.81 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb6f9ea80>: Failed to establish a new connection: [Errno -2] Name or service not known')': /huggingface-hub/
+#10 51.50 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb6ffb0b0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /huggingface-hub/
+#10 52.53 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb6ffb1a0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /huggingface-hub/
+#10 54.55 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb6ffb380>: Failed to establish a new connection: [Errno -2] Name or service not known')': /huggingface-hub/
+#10 58.59 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb6ffab70>: Failed to establish a new connection: [Errno -2] Name or service not known')': /huggingface-hub/
+#10 58.73 Collecting huggingface_hub (from -r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 31))
+#10 58.73   Obtaining dependency information for huggingface_hub from https://files.pythonhosted.org/packages/33/23/885b3a3b510c305f1d84421913935e19b6a48b93d173a0541674c1e88c2a/huggingface_hub-2.1.1-py3-none-any.whl.metadata
+#10 58.74   Downloading huggingface_hub-2.1.1-py3-none-any.whl.metadata (16 kB)
+#10 59.00 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb6b48170>: Failed to establish a new connection: [Errno -2] Name or service not known')': /peft/
+#10 59.60 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb6b483b0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /peft/
+#10 60.66 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb6b49220>: Failed to establish a new connection: [Errno -2] Name or service not known')': /peft/
+#10 62.68 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb6b49430>: Failed to establish a new connection: [Errno -2] Name or service not known')': /peft/
+#10 66.73 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb6b49550>: Failed to establish a new connection: [Errno -2] Name or service not known')': /peft/
+#10 66.79 Collecting peft==0.19.1 (from -r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 39))
+#10 66.79   Obtaining dependency information for peft==0.19.1 from https://files.pythonhosted.org/packages/e8/b6/f54d676ed93cc2dd2234c3b172ea9c8c3d7d29361e66b1b23dec57a67465/peft-0.19.1-py3-none-any.whl.metadata
+#10 66.81   Downloading peft-0.19.1-py3-none-any.whl.metadata (15 kB)
+#10 66.89 Collecting huggingface_hub (from -r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 31))
+#10 66.89   Obtaining dependency information for huggingface_hub from https://files.pythonhosted.org/packages/fc/16/963096d224b80909432dc16561a615fd33d2d13beef3ce4c63fa25e40867/huggingface_hub-1.33.0-py3-none-any.whl.metadata
+#10 66.90   Downloading huggingface_hub-1.33.0-py3-none-any.whl.metadata (16 kB)
+#10 66.96 Requirement already satisfied: numpy>=1.17 in /opt/venv/lib/python3.12/site-packages (from transformers==5.17.0->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 30)) (2.2.4)
+#10 66.96 Requirement already satisfied: packaging>=20.0 in /opt/venv/lib/python3.12/site-packages (from transformers==5.17.0->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 30)) (24.2)
+#10 66.96 Requirement already satisfied: pyyaml>=5.1 in /opt/venv/lib/python3.12/site-packages (from transformers==5.17.0->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 30)) (6.0.2)
+#10 68.76 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb6b3e330>: Failed to establish a new connection: [Errno -2] Name or service not known')': /regex/
+#10 69.28 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb678d820>: Failed to establish a new connection: [Errno -2] Name or service not known')': /regex/
+#10 70.31 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb5b3c200>: Failed to establish a new connection: [Errno -2] Name or service not known')': /regex/
+#10 72.33 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb5b3c4a0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /regex/
+#10 76.37 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb5b3c7a0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /regex/
+#10 76.61 Collecting regex>=2025.10.22 (from transformers==5.17.0->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 30))
+#10 76.61   Obtaining dependency information for regex>=2025.10.22 from https://files.pythonhosted.org/packages/c9/72/67e7a8ce17f1aea49df215564048efb49cc8c2b31a0e0fc30f36838f8516/regex-2026.9.29-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl.metadata
+#10 76.71   Downloading regex-2026.9.29-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl.metadata (40 kB)
+#10 77.44 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb585c320>: Failed to establish a new connection: [Errno -2] Name or service not known')': /tokenizers/
+#10 77.96 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb585c620>: Failed to establish a new connection: [Errno -2] Name or service not known')': /tokenizers/
+#10 78.99 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb585c830>: Failed to establish a new connection: [Errno -2] Name or service not known')': /tokenizers/
+#10 81.01 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb585c9e0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /tokenizers/
+#10 85.05 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb585cc50>: Failed to establish a new connection: [Errno -2] Name or service not known')': /tokenizers/
+#10 85.10 Collecting tokenizers<0.24.0,>=0.23.1 (from transformers==5.17.0->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 30))
+#10 85.10   Obtaining dependency information for tokenizers<0.24.0,>=0.23.1 from https://files.pythonhosted.org/packages/2e/4d/8f569ed49372a3ed8e57099bd515055fd48d7c95912c4307cda6973c2168/tokenizers-0.23.2-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata
+#10 85.11   Downloading tokenizers-0.23.2-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata (9.8 kB)
+#10 85.25 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb5292ea0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /typer/
+#10 85.79 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb5290410>: Failed to establish a new connection: [Errno -2] Name or service not known')': /typer/
+#10 86.83 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb52907d0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /typer/
+#10 88.86 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb5290d10>: Failed to establish a new connection: [Errno -2] Name or service not known')': /typer/
+#10 92.88 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb585cd10>: Failed to establish a new connection: [Errno -2] Name or service not known')': /typer/
+#10 92.93 Collecting typer (from transformers==5.17.0->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 30))
+#10 92.93   Obtaining dependency information for typer from https://files.pythonhosted.org/packages/dc/bf/205d0004930ede8f542fb58f601526fccf4ae7626075ca1e6c4de5d3d652/typer-0.27.2-py3-none-any.whl.metadata
+#10 92.94   Downloading typer-0.27.2-py3-none-any.whl.metadata (16 kB)
+#10 93.64 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb519c470>: Failed to establish a new connection: [Errno -2] Name or service not known')': /safetensors/
+#10 94.18 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb519c800>: Failed to establish a new connection: [Errno -2] Name or service not known')': /safetensors/
+#10 95.21 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb519c980>: Failed to establish a new connection: [Errno -2] Name or service not known')': /safetensors/
+#10 97.23 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb519cdd0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /safetensors/
+#10 101.3 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb519cda0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /safetensors/
+#10 101.3 Collecting safetensors>=0.8.0 (from transformers==5.17.0->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 30))
+#10 101.3   Obtaining dependency information for safetensors>=0.8.0 from https://files.pythonhosted.org/packages/09/7d/65a7de0af421317bb36a067241e4235fff194eed60b961ed6d3f59a3fc60/safetensors-0.8.0-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata
+#10 101.4   Downloading safetensors-0.8.0-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata (4.2 kB)
+#10 101.4 Requirement already satisfied: tqdm>=4.60 in /opt/venv/lib/python3.12/site-packages (from transformers==5.17.0->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 30)) (4.67.1)
+#10 101.4 Requirement already satisfied: psutil in /opt/venv/lib/python3.12/site-packages (from peft==0.19.1->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 39)) (7.0.0)
+#10 101.4 Requirement already satisfied: torch>=1.13.0 in /opt/venv/lib/python3.12/site-packages (from peft==0.19.1->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 39)) (2.7.0)
+#10 101.5 Requirement already satisfied: requests in /opt/venv/lib/python3.12/site-packages (from qwen-vl-utils->-r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 48)) (2.32.3)
+#10 101.5 Requirement already satisfied: python-dateutil>=2.8.2 in /opt/venv/lib/python3.12/site-packages (from pandas->-r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 51)) (2.9.0.post0)
+#10 101.5 Requirement already satisfied: mpmath<1.4,>=1.1.0 in /opt/venv/lib/python3.12/site-packages (from sympy->-r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 60)) (1.3.0)
+#10 101.5 Requirement already satisfied: MarkupSafe>=2.0 in /opt/venv/lib/python3.12/site-packages (from jinja2->-r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 62)) (3.0.2)
+#10 101.6 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb523d9a0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /click/
+#10 102.2 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb523c3e0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /click/
+#10 103.2 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb52f9eb0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /click/
+#10 105.2 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb52fa240>: Failed to establish a new connection: [Errno -2] Name or service not known')': /click/
+#10 109.3 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb52fa390>: Failed to establish a new connection: [Errno -2] Name or service not known')': /click/
+#10 109.4 Collecting click<9.0.0,>=8.4.2 (from huggingface_hub->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 31))
+#10 109.4   Obtaining dependency information for click<9.0.0,>=8.4.2 from https://files.pythonhosted.org/packages/58/50/6c0d534c5f134586a8e1ba4e330569e32f057e33372ae556463212fb4cd3/click-8.5.0-py3-none-any.whl.metadata
+#10 109.4   Downloading click-8.5.0-py3-none-any.whl.metadata (2.6 kB)
+#10 109.6 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb52fb080>: Failed to establish a new connection: [Errno -2] Name or service not known')': /hf-xet/
+#10 110.2 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb52fb110>: Failed to establish a new connection: [Errno -2] Name or service not known')': /hf-xet/
+#10 111.2 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb52fa0c0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /hf-xet/
+#10 113.2 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb52fa690>: Failed to establish a new connection: [Errno -2] Name or service not known')': /hf-xet/
+#10 117.3 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb52fa240>: Failed to establish a new connection: [Errno -2] Name or service not known')': /hf-xet/
+#10 117.3 Collecting hf-xet<2.0.0,>=1.6.0 (from huggingface_hub->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 31))
+#10 117.3   Obtaining dependency information for hf-xet<2.0.0,>=1.6.0 from https://files.pythonhosted.org/packages/9a/69/1f0cbc2fb22ae6082d094f743d1b8945a3f36f6089cb95f42b7ee348cda7/hf_xet-1.6.0-cp38-abi3-manylinux_2_28_aarch64.whl.metadata
+#10 117.3   Downloading hf_xet-1.6.0-cp38-abi3-manylinux_2_28_aarch64.whl.metadata (4.9 kB)
+#10 117.3 Requirement already satisfied: httpx<1,>=0.23.0 in /opt/venv/lib/python3.12/site-packages (from huggingface_hub->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 31)) (0.28.1)
+#10 117.4 Requirement already satisfied: anyio in /opt/venv/lib/python3.12/site-packages (from httpx<1,>=0.23.0->huggingface_hub->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 31)) (4.9.0)
+#10 117.4 Requirement already satisfied: certifi in /opt/venv/lib/python3.12/site-packages (from httpx<1,>=0.23.0->huggingface_hub->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 31)) (2025.1.31)
+#10 117.4 Requirement already satisfied: httpcore==1.* in /opt/venv/lib/python3.12/site-packages (from httpx<1,>=0.23.0->huggingface_hub->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 31)) (1.0.8)
+#10 117.4 Requirement already satisfied: idna in /opt/venv/lib/python3.12/site-packages (from httpx<1,>=0.23.0->huggingface_hub->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 31)) (3.10)
+#10 117.4 Requirement already satisfied: h11<0.15,>=0.13 in /opt/venv/lib/python3.12/site-packages (from httpcore==1.*->httpx<1,>=0.23.0->huggingface_hub->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 31)) (0.14.0)
+#10 117.4 Requirement already satisfied: six>=1.5 in /usr/lib/python3/dist-packages (from python-dateutil>=2.8.2->pandas->-r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 51)) (1.16.0)
+#10 117.4 Requirement already satisfied: setuptools in /opt/venv/lib/python3.12/site-packages (from torch>=1.13.0->peft==0.19.1->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 39)) (78.1.0)
+#10 117.5 Requirement already satisfied: charset-normalizer<4,>=2 in /opt/venv/lib/python3.12/site-packages (from requests->qwen-vl-utils->-r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 48)) (3.4.1)
+#10 117.5 Requirement already satisfied: urllib3<3,>=1.21.1 in /opt/venv/lib/python3.12/site-packages (from requests->qwen-vl-utils->-r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 48)) (2.4.0)
+#10 117.6 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb516f710>: Failed to establish a new connection: [Errno -2] Name or service not known')': /shellingham/
+#10 118.1 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb516ff50>: Failed to establish a new connection: [Errno -2] Name or service not known')': /shellingham/
+#10 119.1 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb577c200>: Failed to establish a new connection: [Errno -2] Name or service not known')': /shellingham/
+#10 121.1 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb577c4a0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /shellingham/
+#10 125.2 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb577c680>: Failed to establish a new connection: [Errno -2] Name or service not known')': /shellingham/
+#10 125.3 Collecting shellingham>=1.3.0 (from typer->transformers==5.17.0->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 30))
+#10 125.3   Obtaining dependency information for shellingham>=1.3.0 from https://files.pythonhosted.org/packages/e0/f9/0595336914c5619e5f28a1fb793285925a8cd4b432c9da0a987836c7f822/shellingham-1.5.4-py2.py3-none-any.whl.metadata
+#10 125.3   Downloading shellingham-1.5.4-py2.py3-none-any.whl.metadata (3.5 kB)
+#10 125.3 Requirement already satisfied: rich>=13.8.0 in /opt/venv/lib/python3.12/site-packages (from typer->transformers==5.17.0->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 30)) (14.0.0)
+#10 125.4 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb577d820>: Failed to establish a new connection: [Errno -2] Name or service not known')': /annotated-doc/
+#10 125.9 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb577dbb0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /annotated-doc/
+#10 126.9 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb577de80>: Failed to establish a new connection: [Errno -2] Name or service not known')': /annotated-doc/
+#10 128.9 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb577e030>: Failed to establish a new connection: [Errno -2] Name or service not known')': /annotated-doc/
+#10 133.0 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffb577e390>: Failed to establish a new connection: [Errno -2] Name or service not known')': /annotated-doc/
+#10 133.0 Collecting annotated-doc>=0.0.2 (from typer->transformers==5.17.0->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 30))
+#10 133.0   Obtaining dependency information for annotated-doc>=0.0.2 from https://files.pythonhosted.org/packages/3e/30/e900b21425a860e195f32e37657aa1f7c7f2b1bfb26f03ca209b90933c06/annotated_doc-0.0.5-py3-none-any.whl.metadata
+#10 133.1   Downloading annotated_doc-0.0.5-py3-none-any.whl.metadata (6.5 kB)
+#10 133.1 Requirement already satisfied: markdown-it-py>=2.2.0 in /opt/venv/lib/python3.12/site-packages (from rich>=13.8.0->typer->transformers==5.17.0->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 30)) (3.0.0)
+#10 133.1 Requirement already satisfied: pygments<3.0.0,>=2.13.0 in /opt/venv/lib/python3.12/site-packages (from rich>=13.8.0->typer->transformers==5.17.0->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 30)) (2.19.1)
+#10 133.1 Requirement already satisfied: sniffio>=1.1 in /opt/venv/lib/python3.12/site-packages (from anyio->httpx<1,>=0.23.0->huggingface_hub->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 31)) (1.3.1)
+#10 133.1 Requirement already satisfied: mdurl~=0.1 in /opt/venv/lib/python3.12/site-packages (from markdown-it-py>=2.2.0->rich>=13.8.0->typer->transformers==5.17.0->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 30)) (0.1.2)
+#10 133.2 Downloading transformers-5.17.0-py3-none-any.whl (12.3 MB)
+#10 151.3    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 12.3/12.3 MB 684.8 kB/s eta 0:00:00
+#10 151.3 Downloading peft-0.19.1-py3-none-any.whl (680 kB)
+#10 152.3    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 680.7/680.7 kB 694.0 kB/s eta 0:00:00
+#10 152.3 Downloading accelerate-1.15.0-py3-none-any.whl (394 kB)
+#10 152.9 Downloading qwen_vl_utils-0.0.14-py3-none-any.whl (8.1 kB)
+#10 152.9 Downloading sentencepiece-0.2.2-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl (1.3 MB)
+#10 154.9    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 677.0 kB/s eta 0:00:00
+#10 154.9 Downloading av-19.0.1-cp312-abi3-manylinux_2_28_aarch64.whl (32.7 MB)
+#10 202.8    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 32.7/32.7 MB 680.5 kB/s eta 0:00:00
+#10 202.8 Downloading pandas-3.0.6-cp312-cp312-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl (10.3 MB)
+#10 218.2    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 10.3/10.3 MB 671.1 kB/s eta 0:00:00
+#10 218.2 Downloading huggingface_hub-1.33.0-py3-none-any.whl (846 kB)
+#10 219.5    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 846.4/846.4 kB 647.8 kB/s eta 0:00:00
+#10 219.5 Downloading click-8.5.0-py3-none-any.whl (125 kB)
+#10 219.7 Downloading hf_xet-1.6.0-cp38-abi3-manylinux_2_28_aarch64.whl (4.3 MB)
+#10 226.2    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.3/4.3 MB 655.3 kB/s eta 0:00:00
+#10 226.2 Downloading regex-2026.9.29-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (805 kB)
+#10 227.4    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 805.9/805.9 kB 668.8 kB/s eta 0:00:00
+#10 227.5 Downloading safetensors-0.8.0-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (502 kB)
+#10 228.2 Downloading tokenizers-0.23.2-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (3.5 MB)
+#10 233.5    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.5/3.5 MB 660.9 kB/s eta 0:00:00
+#10 233.5 Downloading typer-0.27.2-py3-none-any.whl (123 kB)
+#10 233.7 Downloading annotated_doc-0.0.5-py3-none-any.whl (5.3 kB)
+#10 233.7 Downloading shellingham-1.5.4-py2.py3-none-any.whl (9.8 kB)
+#10 234.2 Installing collected packages: shellingham, sentencepiece, safetensors, regex, hf-xet, click, av, annotated-doc, qwen-vl-utils, pandas, typer, huggingface_hub, tokenizers, accelerate, transformers, peft
+#10 235.4   changing mode of /opt/venv/bin/pyav to 755
+#10 241.7   changing mode of /opt/venv/bin/typer to 755
+#10 242.4   changing mode of /opt/venv/bin/hf to 755
+#10 242.4   changing mode of /opt/venv/bin/huggingface-cli to 755
+#10 242.4   changing mode of /opt/venv/bin/tiny-agents to 755
+#10 242.8   changing mode of /opt/venv/bin/accelerate to 755
+#10 242.8   changing mode of /opt/venv/bin/accelerate-config to 755
+#10 242.8   changing mode of /opt/venv/bin/accelerate-estimate-memory to 755
+#10 242.8   changing mode of /opt/venv/bin/accelerate-launch to 755
+#10 242.8   changing mode of /opt/venv/bin/accelerate-merge-weights to 755
+#10 253.0   changing mode of /opt/venv/bin/transformers to 755
+#10 253.6 Successfully installed accelerate-1.15.0 annotated-doc-0.0.5 av-19.0.1 click-8.5.0 hf-xet-1.6.0 huggingface_hub-1.33.0 pandas-3.0.6 peft-0.19.1 qwen-vl-utils-0.0.14 regex-2026.9.29 safetensors-0.8.0 sentencepiece-0.2.2 shellingham-1.5.4 tokenizers-0.23.2 transformers-5.17.0 typer-0.27.2
+#10 254.6 No broken requirements found.
+#10 DONE 255.0s
+
+#11 [7/8] RUN python3 -m pip freeze --exclude-editable | grep -E '^(numpy|torch|torchvision)=='  && python3 -c "import torchvision; print('torchvision', torchvision.__version__)"  && python3 -c "import cv2; print('cv2', cv2.__version__, 'aruco', hasattr(cv2, 'aruco'))"  && python3 -c "import transformers as tr; from transformers.utils import is_torch_available; print('transformers', tr.__version__); assert is_torch_available(), 'transformers.utils.is_torch_available() is False -- PyTorch backend is DISABLED (torch too old, or torchvision broken); this image cannot load any model despite classes being importable'; assert hasattr(tr, 'Qwen2_5_VLForConditionalGeneration'), 'Qwen2.5-VL class missing -- this image is useless without it'; assert hasattr(tr, 'PaliGemmaForConditionalGeneration'), 'PaliGemma class missing -- this image is useless without it'; print('is_torch_available(): OK  Qwen2_5_VLForConditionalGeneration: OK  PaliGemmaForConditionalGeneration: OK')"
+#11 1.071 numpy==2.2.4
+#11 1.071 torch==2.7.0
+#11 1.071 torchvision==0.22.0
+#11 4.648 torchvision 0.22.0
+#11 5.769 cv2 5.0.0 aruco True
+#11 7.878 transformers 5.17.0
+#11 12.53 is_torch_available(): OK  Qwen2_5_VLForConditionalGeneration: OK  PaliGemmaForConditionalGeneration: OK
+#11 DONE 13.9s
+
+#12 [8/8] WORKDIR /workspace/VRI_2026
+#12 DONE 0.1s
+
+#13 exporting to image
+#13 exporting layers
+#13 exporting layers 31.7s done
+#13 exporting manifest sha256:e71d1ad570610d61d63cf042573737374caf6bfc5b5f8116d9113bfb8dbfee5f 0.0s done
+#13 exporting config sha256:91dd75ca0bb5d557122b4b39b1cbd3b232cf35b4322bca61c9dbaef722e5d77f 0.0s done
+#13 exporting attestation manifest sha256:df6d452d44b5c45f48880098235c811327e6bf2f41c4ca4562a42f253f70ada2
+#13 exporting attestation manifest sha256:df6d452d44b5c45f48880098235c811327e6bf2f41c4ca4562a42f253f70ada2 0.0s done
+#13 exporting manifest list sha256:78cc11e2cf8c4950e9fb2397a9ba84184b197e4390558b3ba3aed93a80977438 0.0s done
+#13 naming to docker.io/library/arm2-t5:r36.4.0 done
+#13 unpacking to docker.io/library/arm2-t5:r36.4.0
+#13 unpacking to docker.io/library/arm2-t5:r36.4.0 7.7s done
+#13 DONE 39.8s

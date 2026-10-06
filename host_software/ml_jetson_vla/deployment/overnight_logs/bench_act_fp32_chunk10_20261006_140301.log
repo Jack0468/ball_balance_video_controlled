@@ -1,0 +1,4 @@
+WARNING:torchao.kernel.intmm:Warning: Detected no triton, on systems without Triton certain kernels will not work
+WARNING:lerobot.configs.policies:Device 'None' is not available. Switching to 'cuda'.
+[bench_action_models] status=ok wrote /workspace/VRI_2026/host_software/ml_jetson_vla/reports/arm2_action_latency/act_fp32_chunk10.json
+  act fp32 chunk=10: p50=21.4ms p90=22.1ms  chunk_duration=333ms  fits=True

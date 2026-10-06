@@ -1,0 +1,364 @@
+python 3.12.3 at /opt/venv/bin/python3
+  prefix=/opt/venv  venv=True  include-system-site-packages=true
+  numpy            2.2.4
+  pandas           3.0.6
+  av               18.1.0
+  cv2              5.0.0
+  PIL              11.2.1
+  torch            2.7.0
+  torchvision      0.22.0
+  transformers     4.57.6
+  tokenizers       0.22.2
+  huggingface_hub  0.36.2
+  safetensors      0.8.0
+  accelerate       1.15.0
+  qwen_vl_utils    present
+  sentencepiece    0.2.2
+  timm             1.0.30
+  einops           0.8.2
+  cv2.aruco        True
+  cuda_available=True torch_cuda_build=12.8 gpu=Orin capability=[8, 7] mem_gb=61.4
+  jetson={'model': None, 'l4t_release': '# R36 (release), REVISION: 5.2, GCID: 46426093, BOARD: generic, EABI: aarch64, DATE: Thu Jul 16 18:56:22 UTC 2026'}
+candidates requested this invocation: ['moondream2:query', 'moondream2:point']
+candidates that can run here: ['moondream2:query', 'moondream2:point']
+Resuming checkpoint /workspace/arm2_results/checkpoint_jetson_run1.json: 600 finished item(s), 10 recorded error(s).
+
+=== frames: reference-locked, 10 sessions ===
+  session_jetson_track4_20260915_151627: 6/6 frames ready
+  session_jetson_track4_20260915_153053: 6/6 frames ready
+  session_jetson_track4_20260915_153247: 6/6 frames ready
+  session_jetson_track4_20260915_160025: 6/6 frames ready
+  session_jetson_track4_20260915_160509: 6/6 frames ready
+  session_jetson_track4_20260915_161239: 6/6 frames ready
+  session_jetson_track4_20260915_161712: 6/6 frames ready
+  session_jetson_track4_20260915_163702: 6/6 frames ready
+  session_jetson_track4_20260915_164115: 6/6 frames ready
+  session_jetson_track4_20260915_164743: 6/6 frames ready
+60 frames prepared
+sampling parity with the local reference run: {'identical': True, 'n_mine': 60, 'n_reference': 60, 'only_mine': [], 'only_reference': []}
+Resuming checkpoint /workspace/arm2_results/smoke_jetson_run1.json: 20 finished item(s), 8 recorded error(s).
+
+=== smoke: 2 frame(s) x 2 candidate(s) ===
+
+=== moondream2:query  [moondream2]  0/6 already done ===
+  loaded in 2.2s  config={'model': 'vikhyatk/moondream2', 'revision': '9a7d4024050840e001defacec2b00727e89149e6', 'mode': 'query', 'dtype': 'default(fp32)', 'trust_remote_code': True, 'pinned_tag': '2025-06-21'}
+  [1/6] baseline        20260915_151627 f1     go_green  parse=Y err=299.9mm     2.1s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [2/6] oriented        20260915_151627 f1     go_green  parse=Y err=299.9mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [3/6] oriented_aruco  20260915_151627 f1     go_green  parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [4/6] baseline        20260915_161239 f1515  go_green  parse=Y err=284.6mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [5/6] oriented        20260915_161239 f1515  go_green  parse=Y err=284.6mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [6/6] oriented_aruco  20260915_161239 f1515  go_green  parse=N err=  -       1.9s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ]\n  ]\n'
+
+=== moondream2:point  [moondream2]  0/2 already done ===
+  loaded in 1.9s  config={'model': 'vikhyatk/moondream2', 'revision': '9a7d4024050840e001defacec2b00727e89149e6', 'mode': 'point', 'dtype': 'default(fp32)', 'trust_remote_code': True, 'pinned_tag': '2025-06-21'}
+  [1/2] baseline        20260915_151627 f1     go_green  parse=Y err=0.7mm HIT 0.8s raw="{'points': [{'x': 0.599609375, 'y': 0.3330078125}]}"
+  [2/2] baseline        20260915_161239 f1515  go_green  parse=Y err=1.7mm HIT 0.7s raw="{'points': [{'x': 0.5390625, 'y': 0.326171875}]}"
+          candidate         variant                     frame       cmd                parse      err_mm     gen_s          dtype                                                                                              raw_text
+0  moondream2:query        baseline  track4_20260915_151627|1  go_green  asked_json_contract  299.856107  2.061365  default(fp32)                                                    {\n  "target_point_xy": [\n    0,\n    640\n  ]\n}
+1  moondream2:query        baseline  ck4_20260915_161239|1515  go_green  asked_json_contract  284.622299  1.611007  default(fp32)                                                    {\n  "target_point_xy": [\n    0,\n    640\n  ]\n}
+2  moondream2:query        oriented  track4_20260915_151627|1  go_green  asked_json_contract  299.856107  1.642779  default(fp32)                                                    {\n  "target_point_xy": [\n    0,\n    640\n  ]\n}
+3  moondream2:query        oriented  ck4_20260915_161239|1515  go_green  asked_json_contract  284.622299  1.652108  default(fp32)                                                    {\n  "target_point_xy": [\n    0,\n    640\n  ]\n}
+4  moondream2:query  oriented_aruco  track4_20260915_151627|1  go_green                 FAIL         NaN  2.472003  default(fp32)  {\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n    [\n      175,\n      0\n    ]\n  
+5  moondream2:query  oriented_aruco  ck4_20260915_161239|1515  go_green                 FAIL         NaN  1.898925  default(fp32)                                  {\n  "target_point_xy": [\n    [\n      12,\n      12\n    ]\n  ]\n}
+6  moondream2:point        baseline  track4_20260915_151627|1  go_green        native_points    0.714757  0.846278  default(fp32)                                                   {'points': [{'x': 0.599609375, 'y': 0.3330078125}]}
+7  moondream2:point        baseline  ck4_20260915_161239|1515  go_green        native_points    1.710038  0.745027  default(fp32)                                                      {'points': [{'x': 0.5390625, 'y': 0.326171875}]}
+  FIRST ERROR [paligemma2_3b_mix:prompt] load: RuntimeError: Task error: File reconstruction error: IO Error: No space left on device (os error 28)
+  FIRST ERROR [paligemma2_3b_mix:detect] load: OSError: You are trying to access a gated repo.
+Make sure to have access to it at https://huggingface.co/google/paligemma2-3b-mix-448.
+401 Client Error. (Request ID: Root=1-6ab31565-6351b1eb1e0f85785cd281c3;9f753cae-458d-497d-8f3c-4bd54b214597)
+
+Cannot access gated repo for url https://huggingface.co/google/
+  FIRST ERROR [moondream2:query] generate: TypeError: scaled_dot_product_attention() got an unexpected keyword argument 'enable_gqa'
+  FIRST ERROR [moondream2:point] generate: TypeError: scaled_dot_product_attention() got an unexpected keyword argument 'enable_gqa'
+
+will run in the full sweep: ['moondream2:query', 'moondream2:point']
+skipped (failed/unparseable/gated): []
+
+=== coordinate-space calibration: 9 synthetic frames (640x480, 30px red disc) x 2 candidate(s) ===
+Resuming checkpoint /workspace/arm2_results/checkpoint_jetson_run1.json: 600 finished item(s), 10 recorded error(s).
+
+--- moondream2:query  [moondream2] ---
+  cached calibration record from 2026-09-24T00:52:10: INSUFFICIENT (--recalibrate to redo)
+
+--- moondream2:point  [moondream2] ---
+  cached calibration record from 2026-09-24T00:52:14: INSUFFICIENT (--recalibrate to redo)
+
+calibration summary:
+  moondream2:query             INSUFFICIENT
+  moondream2:point             INSUFFICIENT
+raw answers: /workspace/arm2_results/coord_probe_jetson_run1.json   synthetic frames: /workspace/arm2_results/coord_probe_frames
+
+=== validation gate: skipped (--skip-validation-gate) ===
+Resuming checkpoint /workspace/arm2_results/checkpoint_jetson_run1.json: 600 finished item(s), 10 recorded error(s).
+
+=== coordinate-space calibration check ===
+  ok       moondream2:query             INSUFFICIENT
+  ok       moondream2:point             INSUFFICIENT
+
+=== full sweep: ['moondream2:query', 'moondream2:point'] ===
+
+=== moondream2:query  [moondream2]  0/180 already done ===
+  loaded in 2.1s  config={'model': 'vikhyatk/moondream2', 'revision': '9a7d4024050840e001defacec2b00727e89149e6', 'mode': 'query', 'dtype': 'default(fp32)', 'trust_remote_code': True, 'pinned_tag': '2025-06-21'}
+  [1/180] baseline        20260915_151627 f1     go_green  parse=Y err=299.9mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [2/180] oriented        20260915_151627 f1     go_green  parse=Y err=299.9mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [3/180] oriented_aruco  20260915_151627 f1     go_green  parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [4/180] baseline        20260915_151627 f162   go_green  parse=Y err=299.4mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [5/180] oriented        20260915_151627 f162   go_green  parse=Y err=299.4mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [6/180] oriented_aruco  20260915_151627 f162   go_green  parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [7/180] baseline        20260915_151627 f323   go_yellow parse=Y err=239.7mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [8/180] oriented        20260915_151627 f323   go_yellow parse=Y err=258.8mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [9/180] oriented_aruco  20260915_151627 f323   go_yellow parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [10/180] baseline        20260915_151627 f485   go_yellow parse=Y err=240.8mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [11/180] oriented        20260915_151627 f485   go_yellow parse=Y err=259.7mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [12/180] oriented_aruco  20260915_151627 f485   go_yellow parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [13/180] baseline        20260915_151627 f1128  go_red    parse=Y err=289.2mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [14/180] oriented        20260915_151627 f1128  go_red    parse=Y err=298.4mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [15/180] oriented_aruco  20260915_151627 f1128  go_red    parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [16/180] baseline        20260915_151627 f1531  go_black  parse=Y err=262.8mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [17/180] oriented        20260915_151627 f1531  go_black  parse=Y err=274.7mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [18/180] oriented_aruco  20260915_151627 f1531  go_black  parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [19/180] baseline        20260915_153053 f1     go_green  parse=Y err=286.7mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [20/180] oriented        20260915_153053 f1     go_green  parse=Y err=286.7mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [21/180] oriented_aruco  20260915_153053 f1     go_green  parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [22/180] baseline        20260915_153053 f162   go_green  parse=Y err=281.3mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [23/180] oriented        20260915_153053 f162   go_green  parse=Y err=281.3mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [24/180] oriented_aruco  20260915_153053 f162   go_green  parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [25/180] baseline        20260915_153053 f323   go_yellow parse=Y err=216.6mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [26/180] oriented        20260915_153053 f323   go_yellow parse=Y err=244.0mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [27/180] oriented_aruco  20260915_153053 f323   go_yellow parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [28/180] baseline        20260915_153053 f970   go_red    parse=Y err=178.8mm     1.6s raw='{\n  "target_point_xy": [\n    640,\n    480\n  ]\n}'
+  [29/180] oriented        20260915_153053 f970   go_red    parse=Y err=281.8mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [30/180] oriented_aruco  20260915_153053 f970   go_red    parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [31/180] baseline        20260915_153053 f1131  go_red    parse=Y err=268.5mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [32/180] oriented        20260915_153053 f1131  go_red    parse=Y err=281.3mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [33/180] oriented_aruco  20260915_153053 f1131  go_red    parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [34/180] baseline        20260915_153053 f1533  go_black  parse=Y err=238.5mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [35/180] oriented        20260915_153053 f1533  go_black  parse=Y err=263.4mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [36/180] oriented_aruco  20260915_153053 f1533  go_black  parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [37/180] baseline        20260915_153247 f1     go_green  parse=Y err=286.7mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [38/180] oriented        20260915_153247 f1     go_green  parse=Y err=286.7mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [39/180] oriented_aruco  20260915_153247 f1     go_green  parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [40/180] baseline        20260915_153247 f162   go_green  parse=Y err=279.4mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [41/180] oriented        20260915_153247 f162   go_green  parse=Y err=279.4mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [42/180] oriented_aruco  20260915_153247 f162   go_green  parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [43/180] baseline        20260915_153247 f324   go_yellow parse=Y err=213.4mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [44/180] oriented        20260915_153247 f324   go_yellow parse=Y err=248.0mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [45/180] oriented_aruco  20260915_153247 f324   go_yellow parse=N err=  -       1.9s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ]\n  ]\n'
+  [46/180] baseline        20260915_153247 f485   go_yellow parse=Y err=213.9mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [47/180] oriented        20260915_153247 f485   go_yellow parse=Y err=246.2mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [48/180] oriented_aruco  20260915_153247 f485   go_yellow parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [49/180] baseline        20260915_153247 f1131  go_red    parse=Y err=182.1mm     1.6s raw='{\n  "target_point_xy": [\n    640,\n    480\n  ]\n}'
+  [50/180] oriented        20260915_153247 f1131  go_red    parse=Y err=279.7mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [51/180] oriented_aruco  20260915_153247 f1131  go_red    parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [52/180] baseline        20260915_153247 f1534  go_black  parse=Y err=238.9mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [53/180] oriented        20260915_153247 f1534  go_black  parse=Y err=262.7mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [54/180] oriented_aruco  20260915_153247 f1534  go_black  parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [55/180] baseline        20260915_160025 f1454  go_yellow parse=Y err=168.4mm     1.6s raw='{\n  "target_point_xy": [\n    460,\n    480\n  ]\n}'
+  [56/180] oriented        20260915_160025 f1454  go_yellow parse=Y err=247.9mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [57/180] oriented_aruco  20260915_160025 f1454  go_yellow parse=N err=  -       2.0s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ]\n  ]\n'
+  [58/180] baseline        20260915_160025 f1695  go_yellow parse=Y err=216.9mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [59/180] oriented        20260915_160025 f1695  go_yellow parse=Y err=247.1mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [60/180] oriented_aruco  20260915_160025 f1695  go_yellow parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [61/180] baseline        20260915_160025 f2179  go_yellow parse=Y err=217.4mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [62/180] oriented        20260915_160025 f2179  go_yellow parse=Y err=246.3mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [63/180] oriented_aruco  20260915_160025 f2179  go_yellow parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [64/180] baseline        20260915_160025 f2662  go_red    parse=Y err=269.4mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [65/180] oriented        20260915_160025 f2662  go_red    parse=Y err=282.0mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [66/180] oriented_aruco  20260915_160025 f2662  go_red    parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [67/180] baseline        20260915_160025 f3631  go_green  parse=Y err=288.2mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [68/180] oriented        20260915_160025 f3631  go_green  parse=Y err=288.2mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [69/180] oriented_aruco  20260915_160025 f3631  go_green  parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [70/180] baseline        20260915_160025 f4356  go_yellow parse=Y err=216.8mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [71/180] oriented        20260915_160025 f4356  go_yellow parse=Y err=249.4mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [72/180] oriented_aruco  20260915_160025 f4356  go_yellow parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [73/180] baseline        20260915_160509 f1     go_red    parse=Y err=204.0mm     1.6s raw='{\n  "target_point_xy": [\n    640,\n    480\n  ]\n}'
+  [74/180] oriented        20260915_160509 f1     go_red    parse=Y err=263.2mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [75/180] oriented_aruco  20260915_160509 f1     go_red    parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [76/180] baseline        20260915_160509 f243   go_red    parse=Y err=265.5mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [77/180] oriented        20260915_160509 f243   go_red    parse=Y err=277.9mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [78/180] oriented_aruco  20260915_160509 f243   go_red    parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [79/180] baseline        20260915_160509 f727   go_green  parse=Y err=287.9mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [80/180] oriented        20260915_160509 f727   go_green  parse=Y err=287.9mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [81/180] oriented_aruco  20260915_160509 f727   go_green  parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [82/180] baseline        20260915_160509 f1695  go_black  parse=Y err=238.2mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [83/180] oriented        20260915_160509 f1695  go_black  parse=Y err=260.8mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [84/180] oriented_aruco  20260915_160509 f1695  go_black  parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [85/180] baseline        20260915_160509 f2905  go_yellow parse=Y err=214.5mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [86/180] oriented        20260915_160509 f2905  go_yellow parse=Y err=248.3mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [87/180] oriented_aruco  20260915_160509 f2905  go_yellow parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [88/180] baseline        20260915_160509 f4356  go_red    parse=Y err=267.2mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [89/180] oriented        20260915_160509 f4356  go_red    parse=Y err=281.3mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [90/180] oriented_aruco  20260915_160509 f4356  go_red    parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [91/180] baseline        20260915_161239 f1515  go_green  parse=Y err=284.6mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [92/180] oriented        20260915_161239 f1515  go_green  parse=Y err=284.6mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [93/180] oriented_aruco  20260915_161239 f1515  go_green  parse=N err=  -       2.0s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ]\n  ]\n'
+  [94/180] baseline        20260915_161239 f1860  go_green  parse=Y err=286.8mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [95/180] oriented        20260915_161239 f1860  go_green  parse=Y err=286.8mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [96/180] oriented_aruco  20260915_161239 f1860  go_green  parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [97/180] baseline        20260915_161239 f2206  go_red    parse=Y err=268.0mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [98/180] oriented        20260915_161239 f2206  go_red    parse=Y err=279.4mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [99/180] oriented_aruco  20260915_161239 f2206  go_red    parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [100/180] baseline        20260915_161239 f3365  go_black  parse=Y err=240.3mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [101/180] oriented        20260915_161239 f3365  go_black  parse=Y err=263.3mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [102/180] oriented_aruco  20260915_161239 f3365  go_black  parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [103/180] baseline        20260915_161239 f4263  go_black  parse=Y err=241.0mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [104/180] oriented        20260915_161239 f4263  go_black  parse=Y err=260.6mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [105/180] oriented_aruco  20260915_161239 f4263  go_black  parse=N err=  -       2.0s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ]\n  ]\n'
+  [106/180] baseline        20260915_161239 f4847  go_green  parse=Y err=286.3mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [107/180] oriented        20260915_161239 f4847  go_green  parse=Y err=286.3mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [108/180] oriented_aruco  20260915_161239 f4847  go_green  parse=N err=  -       2.4s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [109/180] baseline        20260915_161712 f1     go_red    parse=Y err=203.2mm     1.6s raw='{\n  "target_point_xy": [\n    640,\n    480\n  ]\n}'
+  [110/180] oriented        20260915_161712 f1     go_red    parse=Y err=263.0mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [111/180] oriented_aruco  20260915_161712 f1     go_red    parse=N err=  -       1.9s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ]\n  ]\n'
+  [112/180] baseline        20260915_161712 f441   go_green  parse=Y err=284.7mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [113/180] oriented        20260915_161712 f441   go_green  parse=Y err=284.7mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [114/180] oriented_aruco  20260915_161712 f441   go_green  parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [115/180] baseline        20260915_161712 f1096  go_green  parse=Y err=287.4mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [116/180] oriented        20260915_161712 f1096  go_green  parse=Y err=287.4mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [117/180] oriented_aruco  20260915_161712 f1096  go_green  parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [118/180] baseline        20260915_161712 f2028  go_green  parse=Y err=285.9mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [119/180] oriented        20260915_161712 f2028  go_green  parse=Y err=285.9mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [120/180] oriented_aruco  20260915_161712 f2028  go_green  parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [121/180] baseline        20260915_161712 f2392  go_green  parse=Y err=285.7mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [122/180] oriented        20260915_161712 f2392  go_green  parse=Y err=285.7mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [123/180] oriented_aruco  20260915_161712 f2392  go_green  parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [124/180] baseline        20260915_161712 f4401  go_red    parse=Y err=262.9mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [125/180] oriented        20260915_161712 f4401  go_red    parse=Y err=277.3mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [126/180] oriented_aruco  20260915_161712 f4401  go_red    parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [127/180] baseline        20260915_163702 f1086  go_yellow parse=Y err=267.4mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [128/180] oriented        20260915_163702 f1086  go_yellow parse=Y err=277.4mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [129/180] oriented_aruco  20260915_163702 f1086  go_yellow parse=N err=  -       1.9s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ]\n  ]\n'
+  [130/180] baseline        20260915_163702 f1294  go_yellow parse=Y err=265.9mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [131/180] oriented        20260915_163702 f1294  go_yellow parse=Y err=276.9mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [132/180] oriented_aruco  20260915_163702 f1294  go_yellow parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [133/180] baseline        20260915_163702 f1502  go_yellow parse=Y err=267.6mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [134/180] oriented        20260915_163702 f1502  go_yellow parse=Y err=277.5mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [135/180] oriented_aruco  20260915_163702 f1502  go_yellow parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [136/180] baseline        20260915_163702 f1711  go_black  parse=Y err=261.5mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [137/180] oriented        20260915_163702 f1711  go_black  parse=Y err=237.4mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [138/180] oriented_aruco  20260915_163702 f1711  go_black  parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [139/180] baseline        20260915_163702 f2287  go_black  parse=Y err=239.7mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [140/180] oriented        20260915_163702 f2287  go_black  parse=Y err=239.7mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [141/180] oriented_aruco  20260915_163702 f2287  go_black  parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [142/180] baseline        20260915_163702 f2801  go_red    parse=Y err=215.3mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [143/180] oriented        20260915_163702 f2801  go_red    parse=Y err=237.3mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [144/180] oriented_aruco  20260915_163702 f2801  go_red    parse=N err=  -       1.9s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ]\n  ]\n'
+  [145/180] baseline        20260915_164115 f2898  go_black  parse=Y err=256.8mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [146/180] oriented        20260915_164115 f2898  go_black  parse=Y err=235.9mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [147/180] oriented_aruco  20260915_164115 f2898  go_black  parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [148/180] baseline        20260915_164115 f3198  go_black  parse=Y err=262.0mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [149/180] oriented        20260915_164115 f3198  go_black  parse=Y err=235.6mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [150/180] oriented_aruco  20260915_164115 f3198  go_black  parse=N err=  -       1.9s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ]\n  ]\n'
+  [151/180] baseline        20260915_164115 f3308  go_black  parse=Y err=257.4mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [152/180] oriented        20260915_164115 f3308  go_black  parse=Y err=233.4mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [153/180] oriented_aruco  20260915_164115 f3308  go_black  parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [154/180] baseline        20260915_164115 f3418  go_black  parse=Y err=235.0mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [155/180] oriented        20260915_164115 f3418  go_black  parse=Y err=235.0mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [156/180] oriented_aruco  20260915_164115 f3418  go_black  parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [157/180] baseline        20260915_164115 f3528  go_black  parse=Y err=256.0mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [158/180] oriented        20260915_164115 f3528  go_black  parse=Y err=234.0mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [159/180] oriented_aruco  20260915_164115 f3528  go_black  parse=N err=  -       1.9s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ]\n  ]\n'
+  [160/180] baseline        20260915_164115 f3748  go_red    parse=Y err=219.6mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [161/180] oriented        20260915_164115 f3748  go_red    parse=Y err=241.1mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [162/180] oriented_aruco  20260915_164115 f3748  go_red    parse=N err=  -       1.9s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ]\n  ]\n'
+  [163/180] baseline        20260915_164743 f1     go_red    parse=Y err=238.1mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [164/180] oriented        20260915_164743 f1     go_red    parse=Y err=260.9mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [165/180] oriented_aruco  20260915_164743 f1     go_red    parse=N err=  -       2.0s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ]\n  ]\n'
+  [166/180] baseline        20260915_164743 f897   go_green  parse=Y err=225.1mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [167/180] oriented        20260915_164743 f897   go_green  parse=Y err=284.8mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [168/180] oriented_aruco  20260915_164743 f897   go_green  parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [169/180] baseline        20260915_164743 f1892  go_green  parse=Y err=222.0mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [170/180] oriented        20260915_164743 f1892  go_green  parse=Y err=284.1mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [171/180] oriented_aruco  20260915_164743 f1892  go_green  parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [172/180] baseline        20260915_164743 f2353  go_red    parse=Y err=211.1mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [173/180] oriented        20260915_164743 f2353  go_red    parse=Y err=242.3mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [174/180] oriented_aruco  20260915_164743 f2353  go_red    parse=N err=  -       1.9s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ]\n  ]\n'
+  [175/180] baseline        20260915_164743 f4036  go_green  parse=Y err=221.4mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    0\n  ]\n}'
+  [176/180] oriented        20260915_164743 f4036  go_green  parse=Y err=281.7mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [177/180] oriented_aruco  20260915_164743 f4036  go_green  parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [178/180] baseline        20260915_164743 f4497  go_red    parse=Y err=238.9mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [179/180] oriented        20260915_164743 f4497  go_red    parse=Y err=238.9mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [180/180] oriented_aruco  20260915_164743 f4497  go_red    parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+
+=== moondream2:point  [moondream2]  0/60 already done ===
+  loaded in 2.0s  config={'model': 'vikhyatk/moondream2', 'revision': '9a7d4024050840e001defacec2b00727e89149e6', 'mode': 'point', 'dtype': 'default(fp32)', 'trust_remote_code': True, 'pinned_tag': '2025-06-21'}
+  [1/60] baseline        20260915_151627 f1     go_green  parse=Y err=0.7mm HIT 0.8s raw="{'points': [{'x': 0.599609375, 'y': 0.3330078125}]}"
+  [2/60] baseline        20260915_151627 f162   go_green  parse=Y err=4.1mm HIT 0.7s raw="{'points': [{'x': 0.6044921875, 'y': 0.322265625}]}"
+  [3/60] baseline        20260915_151627 f323   go_yellow parse=N err=  -       0.6s raw="{'points': []}"
+  [4/60] baseline        20260915_151627 f485   go_yellow parse=N err=  -       0.6s raw="{'points': []}"
+  [5/60] baseline        20260915_151627 f1128  go_red    parse=N err=  -       0.6s raw="{'points': []}"
+  [6/60] baseline        20260915_151627 f1531  go_black  parse=Y err=99.5mm     0.7s raw="{'points': [{'x': 0.822265625, 'y': 0.23828125}]}"
+  [7/60] baseline        20260915_153053 f1     go_green  parse=Y err=1.9mm HIT 0.7s raw="{'points': [{'x': 0.5322265625, 'y': 0.3330078125}]}"
+  [8/60] baseline        20260915_153053 f162   go_green  parse=Y err=7.9mm HIT 0.7s raw="{'points': [{'x': 0.5341796875, 'y': 0.3330078125}]}"
+  [9/60] baseline        20260915_153053 f323   go_yellow parse=N err=  -       0.6s raw="{'points': []}"
+  [10/60] baseline        20260915_153053 f970   go_red    parse=Y err=1.9mm HIT 0.7s raw="{'points': [{'x': 0.6181640625, 'y': 0.44140625}]}"
+  [11/60] baseline        20260915_153053 f1131  go_red    parse=Y err=0.7mm HIT 0.7s raw="{'points': [{'x': 0.6279296875, 'y': 0.44140625}]}"
+  [12/60] baseline        20260915_153053 f1533  go_black  parse=Y err=99.9mm     0.7s raw="{'points': [{'x': 0.7734375, 'y': 0.6748046875}]}"
+  [13/60] baseline        20260915_153247 f1     go_green  parse=Y err=1.4mm HIT 0.7s raw="{'points': [{'x': 0.5341796875, 'y': 0.3330078125}]}"
+  [14/60] baseline        20260915_153247 f162   go_green  parse=Y err=7.4mm HIT 0.7s raw="{'points': [{'x': 0.5390625, 'y': 0.3330078125}]}"
+  [15/60] baseline        20260915_153247 f324   go_yellow parse=Y err=1.0mm HIT 0.7s raw="{'points': [{'x': 0.4541015625, 'y': 0.431640625}]}"
+  [16/60] baseline        20260915_153247 f485   go_yellow parse=Y err=2.9mm HIT 0.7s raw="{'points': [{'x': 0.451171875, 'y': 0.4150390625}]}"
+  [17/60] baseline        20260915_153247 f1131  go_red    parse=Y err=1.4mm HIT 0.7s raw="{'points': [{'x': 0.6259765625, 'y': 0.43359375}]}"
+  [18/60] baseline        20260915_153247 f1534  go_black  parse=Y err=102.4mm     0.7s raw="{'points': [{'x': 0.7705078125, 'y': 0.2421875}]}"
+  [19/60] baseline        20260915_160025 f1454  go_yellow parse=Y err=1.7mm HIT 0.7s raw="{'points': [{'x': 0.447265625, 'y': 0.4248046875}]}"
+  [20/60] baseline        20260915_160025 f1695  go_yellow parse=Y err=2.9mm HIT 0.7s raw="{'points': [{'x': 0.455078125, 'y': 0.4228515625}]}"
+  [21/60] baseline        20260915_160025 f2179  go_yellow parse=N err=  -       0.6s raw="{'points': []}"
+  [22/60] baseline        20260915_160025 f2662  go_red    parse=N err=  -       0.6s raw="{'points': []}"
+  [23/60] baseline        20260915_160025 f3631  go_green  parse=Y err=1.6mm HIT 0.7s raw="{'points': [{'x': 0.5390625, 'y': 0.328125}]}"
+  [24/60] baseline        20260915_160025 f4356  go_yellow parse=N err=  -       0.6s raw="{'points': []}"
+  [25/60] baseline        20260915_160509 f1     go_red    parse=Y err=28.8mm     0.7s raw="{'points': [{'x': 0.6181640625, 'y': 0.4384765625}]}"
+  [26/60] baseline        20260915_160509 f243   go_red    parse=Y err=1.4mm HIT 0.7s raw="{'points': [{'x': 0.6279296875, 'y': 0.43359375}]}"
+  [27/60] baseline        20260915_160509 f727   go_green  parse=Y err=1.6mm HIT 0.7s raw="{'points': [{'x': 0.5439453125, 'y': 0.3271484375}]}"
+  [28/60] baseline        20260915_160509 f1695  go_black  parse=Y err=103.2mm     0.7s raw="{'points': [{'x': 0.7734375, 'y': 0.2412109375}]}"
+  [29/60] baseline        20260915_160509 f2905  go_yellow parse=N err=  -       0.6s raw="{'points': []}"
+  [30/60] baseline        20260915_160509 f4356  go_red    parse=Y err=0.9mm HIT 0.7s raw="{'points': [{'x': 0.6279296875, 'y': 0.43359375}]}"
+  [31/60] baseline        20260915_161239 f1515  go_green  parse=Y err=1.7mm HIT 0.7s raw="{'points': [{'x': 0.5390625, 'y': 0.326171875}]}"
+  [32/60] baseline        20260915_161239 f1860  go_green  parse=Y err=1.2mm HIT 0.7s raw="{'points': [{'x': 0.5341796875, 'y': 0.3271484375}]}"
+  [33/60] baseline        20260915_161239 f2206  go_red    parse=Y err=1.3mm HIT 0.7s raw="{'points': [{'x': 0.6279296875, 'y': 0.43359375}]}"
+  [34/60] baseline        20260915_161239 f3365  go_black  parse=Y err=102.2mm     0.7s raw="{'points': [{'x': 0.7734375, 'y': 0.2421875}]}"
+  [35/60] baseline        20260915_161239 f4263  go_black  parse=Y err=103.6mm     0.7s raw="{'points': [{'x': 0.7744140625, 'y': 0.240234375}]}"
+  [36/60] baseline        20260915_161239 f4847  go_green  parse=Y err=1.8mm HIT 0.7s raw="{'points': [{'x': 0.5361328125, 'y': 0.328125}]}"
+  [37/60] baseline        20260915_161712 f1     go_red    parse=Y err=29.2mm     0.7s raw="{'points': [{'x': 0.6181640625, 'y': 0.4384765625}]}"
+  [38/60] baseline        20260915_161712 f441   go_green  parse=Y err=2.5mm HIT 0.7s raw="{'points': [{'x': 0.5419921875, 'y': 0.328125}]}"
+  [39/60] baseline        20260915_161712 f1096  go_green  parse=Y err=2.9mm HIT 0.7s raw="{'points': [{'x': 0.5439453125, 'y': 0.328125}]}"
+  [40/60] baseline        20260915_161712 f2028  go_green  parse=Y err=1.3mm HIT 0.7s raw="{'points': [{'x': 0.5302734375, 'y': 0.3330078125}]}"
+  [41/60] baseline        20260915_161712 f2392  go_green  parse=Y err=2.4mm HIT 0.7s raw="{'points': [{'x': 0.5390625, 'y': 0.3310546875}]}"
+  [42/60] baseline        20260915_161712 f4401  go_red    parse=Y err=1.0mm HIT 0.7s raw="{'points': [{'x': 0.6259765625, 'y': 0.443359375}]}"
+  [43/60] baseline        20260915_163702 f1086  go_yellow parse=Y err=1.1mm HIT 0.7s raw="{'points': [{'x': 0.6240234375, 'y': 0.4501953125}]}"
+  [44/60] baseline        20260915_163702 f1294  go_yellow parse=Y err=1.4mm HIT 0.7s raw="{'points': [{'x': 0.619140625, 'y': 0.455078125}]}"
+  [45/60] baseline        20260915_163702 f1502  go_yellow parse=Y err=1.9mm HIT 0.7s raw="{'points': [{'x': 0.619140625, 'y': 0.443359375}]}"
+  [46/60] baseline        20260915_163702 f1711  go_black  parse=Y err=123.6mm     0.7s raw="{'points': [{'x': 0.775390625, 'y': 0.2421875}]}"
+  [47/60] baseline        20260915_163702 f2287  go_black  parse=Y err=119.7mm     0.7s raw="{'points': [{'x': 0.314453125, 'y': 0.265625}]}"
+  [48/60] baseline        20260915_163702 f2801  go_red    parse=Y err=3.9mm HIT 0.7s raw="{'points': [{'x': 0.455078125, 'y': 0.4833984375}]}"
+  [49/60] baseline        20260915_164115 f2898  go_black  parse=Y err=121.8mm     0.7s raw="{'points': [{'x': 0.3037109375, 'y': 0.2314453125}]}"
+  [50/60] baseline        20260915_164115 f3198  go_black  parse=Y err=122.7mm     0.7s raw="{'points': [{'x': 0.3056640625, 'y': 0.234375}]}"
+  [51/60] baseline        20260915_164115 f3308  go_black  parse=Y err=123.0mm     0.7s raw="{'points': [{'x': 0.3017578125, 'y': 0.240234375}]}"
+  [52/60] baseline        20260915_164115 f3418  go_black  parse=Y err=123.5mm     0.7s raw="{'points': [{'x': 0.2919921875, 'y': 0.240234375}]}"
+  [53/60] baseline        20260915_164115 f3528  go_black  parse=Y err=123.5mm     0.7s raw="{'points': [{'x': 0.3017578125, 'y': 0.2314453125}]}"
+  [54/60] baseline        20260915_164115 f3748  go_red    parse=Y err=5.1mm HIT 0.7s raw="{'points': [{'x': 0.447265625, 'y': 0.4228515625}]}"
+  [55/60] baseline        20260915_164743 f1     go_red    parse=Y err=30.1mm     0.7s raw="{'points': [{'x': 0.447265625, 'y': 0.44140625}]}"
+  [56/60] baseline        20260915_164743 f897   go_green  parse=Y err=1.2mm HIT 0.7s raw="{'points': [{'x': 0.5322265625, 'y': 0.3271484375}]}"
+  [57/60] baseline        20260915_164743 f1892  go_green  parse=Y err=4.0mm HIT 0.7s raw="{'points': [{'x': 0.5390625, 'y': 0.322265625}]}"
+  [58/60] baseline        20260915_164743 f2353  go_red    parse=Y err=5.2mm HIT 0.7s raw="{'points': [{'x': 0.451171875, 'y': 0.4150390625}]}"
+  [59/60] baseline        20260915_164743 f4036  go_green  parse=Y err=2.9mm HIT 0.7s raw="{'points': [{'x': 0.5400390625, 'y': 0.3251953125}]}"
+  [60/60] baseline        20260915_164743 f4497  go_red    parse=N err=  -       0.6s raw="{'points': []}"
+
+sweep finished in 6.6 min: {'moondream2:query': 'complete', 'moondream2:point': 'complete'}
+Resuming checkpoint /workspace/arm2_results/checkpoint_jetson_run1.json: 840 finished item(s), 10 recorded error(s).
+
+=== headline table (candidate x variant) ===
+                                candidate                        variant  n_expected  n_done  n_parsed  parse_rate  hit@20mm     hits  mean_err_mm  median_err_mm  mean_err_settled_mm  mean_gen_s  peak_mem_gb          dtype    status
+0                        moondream2:query                       baseline        60.0      60        60        1.00  0.000000   0.0000   249.145428     256.411700           249.502274    1.623506     4.119586  default(fp32)  complete
+1                        moondream2:query                       oriented        60.0      60        60        1.00  0.000000   0.0000   266.859064     275.794565           266.947689    1.654720     4.125153  default(fp32)  complete
+2                        moondream2:query                 oriented_aruco        60.0      60         0        0.00       NaN   0.0000          NaN            NaN                  NaN    2.367615     4.140624  default(fp32)  complete
+3                        moondream2:point  (native API - prompt ignored)        60.0      60        51        0.85  0.686275  35.0000    32.176880       2.875640            31.726848    0.722533     4.119586  default(fp32)  complete
+4    [ref] constant platform-centre guess                              -         NaN      60        60        1.00  0.150000   9.0000    25.191867      29.590068                  NaN         NaN          NaN            NaN       NaN
+5  [ref] uniform-random point on platform                              -         NaN      60        60        1.00  0.048192   2.8915    67.306849      67.046474                  NaN         NaN          NaN            NaN       NaN
+
+=== coordinate-space diagnostic ===
+          candidate                        variant declared_space  primary_mean_mm  primary_hit@20  as_raw_px_mean_mm  as_raw_px_hit@20  as_model_input_mean_mm  as_model_input_hit@20  as_norm1000_mean_mm  as_norm1000_hit@20
+0  moondream2:query                       baseline      raw_image       249.145428        0.000000         249.145428          0.000000                     NaN                    NaN           209.486068                0.05
+1  moondream2:query                       oriented      raw_image       266.859064        0.000000         266.859064          0.000000                     NaN                    NaN           187.442087                0.00
+2  moondream2:point  (native API - prompt ignored)      raw_image        32.176880        0.686275          32.176880          0.686275                     NaN                    NaN           103.614423                0.00
+
+combined results written to: /workspace/arm2_results/arm2_colab_sweep_results_jetson_run1.json

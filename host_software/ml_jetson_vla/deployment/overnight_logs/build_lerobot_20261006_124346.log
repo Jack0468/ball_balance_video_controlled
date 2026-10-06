@@ -1,0 +1,31 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.arm2-lerobot
+#1 transferring dockerfile: 4.73kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/dustynv/pytorch:2.7-r36.4.0-cu128-24.04
+#2 DONE 1.5s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [1/7] FROM docker.io/dustynv/pytorch:2.7-r36.4.0-cu128-24.04@sha256:4bb7f0a3852f86629ed271aaf6c4aa000305cc4e4673b8e9f334668ee1b22bc8
+#4 resolve docker.io/dustynv/pytorch:2.7-r36.4.0-cu128-24.04@sha256:4bb7f0a3852f86629ed271aaf6c4aa000305cc4e4673b8e9f334668ee1b22bc8 0.0s done
+#4 DONE 0.0s
+
+#5 [2/7] RUN apt-get update && apt-get install -y --no-install-recommends libsndfile1  && rm -rf /var/lib/apt/lists/*
+#5 CACHED
+
+#6 [3/7] RUN python3 -m pip freeze --exclude-editable > /opt/base_constraints.txt  && python3 -c "import numpy, torch; print('base numpy', numpy.__version__, 'torch', torch.__version__, 'cuda_available', torch.cuda.is_available())"  && python3 -c "assert tuple(map(int, __import__('torch').__version__.split('+')[0].split('.')[:2])) >= (2, 5), 'torch < 2.5 -- built wrong'; print('torch >= 2.5: OK')"  && (python3 -c "import torchvision; print('base torchvision', torchvision.__version__)"      || echo "torchvision MISSING from base image -- install the dusty-nv-matched wheel, never generic pip torchvision. Build fails at the gate below.")
+#6 CACHED
+
+#7 [4/7] RUN python3 -c "import cv2, cv2.aruco"  || python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all:       --index-url https://pypi.org/simple opencv-contrib-python-headless
+#7 CACHED
+
+#8 [5/7] RUN python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all:       --index-url https://pypi.org/simple       'lerobot[smolvla]==0.4.4'  && (python3 -m pip check || echo "pip check reported issues above -- informational; the import gate below is the real check.")
+#8 0.721 Using pip 25.0.1 from /opt/venv/lib/python3.12/site-packages/pip (python 3.12)
+#8 1.009 Looking in indexes: https://pypi.org/simple, https://pypi.ngc.nvidia.com
+#8 1.115 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffa29def90>: Failed to establish a new connection: [Errno -2] Name or service not known')': /lerobot/
+#8 1.639 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffa29df0b0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /lerobot/

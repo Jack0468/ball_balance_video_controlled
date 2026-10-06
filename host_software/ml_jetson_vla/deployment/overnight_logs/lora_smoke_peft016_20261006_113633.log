@@ -1,0 +1,28 @@
+Using pip 25.0.1 from /opt/venv/lib/python3.12/site-packages/pip (python 3.12)
+Looking in indexes: https://pypi.org/simple, https://pypi.ngc.nvidia.com
+WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffa07b0680>: Failed to establish a new connection: [Errno -2] Name or service not known')': /peft/
+WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffa06162a0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /peft/
+WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffa06161b0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /peft/
+WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffa0616420>: Failed to establish a new connection: [Errno -2] Name or service not known')': /peft/
+WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffa0616690>: Failed to establish a new connection: [Errno -2] Name or service not known')': /peft/
+Collecting peft==0.16.0
+  Obtaining dependency information for peft==0.16.0 from https://files.pythonhosted.org/packages/6a/7b/d10c594d1afd828a0b359bb860965e261e840764fe2672d14a647f5889ee/peft-0.16.0-py3-none-any.whl.metadata
+  Downloading peft-0.16.0-py3-none-any.whl.metadata (14 kB)
+Downloading peft-0.16.0-py3-none-any.whl (472 kB)
+Installing collected packages: peft
+  Attempting uninstall: peft
+    Found existing installation: peft 0.19.1
+    Uninstalling peft-0.19.1:
+      Removing file or directory /opt/venv/lib/python3.12/site-packages/peft-0.19.1.dist-info/
+      Removing file or directory /opt/venv/lib/python3.12/site-packages/peft/
+      Successfully uninstalled peft-0.19.1
+Successfully installed peft-0.16.0
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/opt/venv/lib/python3.12/site-packages/peft/__init__.py", line 17, in <module>
+    from .auto import (
+  File "/opt/venv/lib/python3.12/site-packages/peft/auto.py", line 32, in <module>
+    from .peft_model import (
+  File "/opt/venv/lib/python3.12/site-packages/peft/peft_model.py", line 37, in <module>
+    from transformers import Cache, DynamicCache, EncoderDecoderCache, HybridCache, PreTrainedModel
+ImportError: cannot import name 'HybridCache' from 'transformers' (/opt/venv/lib/python3.12/site-packages/transformers/__init__.py)

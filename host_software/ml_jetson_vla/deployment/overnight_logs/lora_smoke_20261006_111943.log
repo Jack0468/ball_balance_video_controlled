@@ -1,0 +1,16 @@
+device=cuda dtype=bf16 model_dir=/workspace/VRI_2026/host_software/ml_jetson_vla/models/qwen2_5_vl_3b_instruct expected_revision=66285546d2b821cf421d4f5eb2576359d3770cd3
+session=session_jetson_track4_20260915_153053 out_dir=/workspace/arm2_results/lora_smoke/20261006_001951
+  session_jetson_track4_20260915_153053: 2/2 frames ready
+frame: session=session_jetson_track4_20260915_153053 frame_index=1 shape=(480, 640, 3)
+
+=== 1_load_base ===
+Traceback (most recent call last):
+  File "/workspace/VRI_2026/host_software/ml_jetson_vla/deployment/lora_load_smoke_test.py", line 292, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/workspace/VRI_2026/host_software/ml_jetson_vla/deployment/lora_load_smoke_test.py", line 218, in main
+    base, processor, _dev = load_qwen_vl_model(args.model_dir, device=device, min_pixels=MIN_PIXELS,
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/VRI_2026/host_software/ml_jetson_vla/deployment/qwen_vl_smoke_test.py", line 63, in load_qwen_vl_model
+    raise FileNotFoundError(
+FileNotFoundError: Model path /workspace/VRI_2026/host_software/ml_jetson_vla/models/qwen2_5_vl_3b_instruct does not exist and is not a Hugging Face repo id. Ensure the checkpoint has been downloaded or pass an explicit model_path.

@@ -1,0 +1,69 @@
+python 3.12.3 at /opt/venv/bin/python3
+  prefix=/opt/venv  venv=True  include-system-site-packages=true
+  numpy            2.2.4
+  pandas           3.0.6
+  av               18.1.0
+  cv2              5.0.0
+  PIL              11.2.1
+  torch            2.7.0
+  torchvision      0.22.0
+  transformers     4.57.6
+  tokenizers       0.22.2
+  huggingface_hub  0.36.2
+  safetensors      0.8.0
+  accelerate       1.15.0
+  qwen_vl_utils    present
+  sentencepiece    0.2.2
+  timm             1.0.30
+  einops           0.8.2
+  cv2.aruco        True
+  cuda_available=True torch_cuda_build=12.8 gpu=Orin capability=[8, 7] mem_gb=61.4
+  jetson={'model': None, 'l4t_release': '# R36 (release), REVISION: 5.2, GCID: 46426093, BOARD: generic, EABI: aarch64, DATE: Thu Jul 16 18:56:22 UTC 2026'}
+candidates requested this invocation: ['internvl2_5_4b']
+candidates that can run here: ['internvl2_5_4b']
+
+=== frames: reference-locked, 10 sessions ===
+  session_jetson_track4_20260915_151627: 6/6 frames ready
+  session_jetson_track4_20260915_153053: 6/6 frames ready
+  session_jetson_track4_20260915_153247: 6/6 frames ready
+  session_jetson_track4_20260915_160025: 6/6 frames ready
+  session_jetson_track4_20260915_160509: 6/6 frames ready
+  session_jetson_track4_20260915_161239: 6/6 frames ready
+  session_jetson_track4_20260915_161712: 6/6 frames ready
+  session_jetson_track4_20260915_163702: 6/6 frames ready
+  session_jetson_track4_20260915_164115: 6/6 frames ready
+  session_jetson_track4_20260915_164743: 6/6 frames ready
+60 frames prepared
+sampling parity with the local reference run: {'identical': True, 'n_mine': 60, 'n_reference': 60, 'only_mine': [], 'only_reference': []}
+
+=== smoke: 2 frame(s) x 1 candidate(s) ===
+
+=== internvl2_5_4b  [internvl2_5_4b]  0/6 already done ===
+`torch_dtype` is deprecated! Use `dtype` instead!
+/opt/venv/lib/python3.12/site-packages/timm/models/layers/__init__.py:49: FutureWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", FutureWarning)
+FlashAttention2 is not installed.
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|█████     | 1/2 [00:00<00:00,  8.32it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00, 13.47it/s]
+  loaded in 6.3s  config={'model': 'OpenGVLab/InternVL2_5-4B', 'revision': None, 'dtype': 'bf16', 'max_new_tokens': 24, 'max_tiles': 6, 'trust_remote_code': True}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+  [1/6] baseline        20260915_151627 f1     go_green  parse=Y err=101.6mm     4.4s raw='{"target_point_xy": [550, 250]}'
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+  [2/6] oriented        20260915_151627 f1     go_green  parse=Y err=157.6mm     4.1s raw='```json\n{"target_point_xy": [120, 80]}\n```'
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+  [3/6] oriented_aruco  20260915_151627 f1     go_green  parse=Y err=156.3mm     4.3s raw='{"target_point_xy": [125, 75]}'
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+  [4/6] baseline        20260915_161239 f1515  go_green  parse=Y err=81.0mm     3.4s raw='{"target_point_xy": [460, 250]}'
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+  [5/6] oriented        20260915_161239 f1515  go_green  parse=Y err=131.4mm     3.7s raw='{"target_point_xy": [120, 100]}'
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+  [6/6] oriented_aruco  20260915_161239 f1515  go_green  parse=Y err=139.0mm     4.6s raw='{"target_point_xy": [175.5, 12.0]}'
+        candidate         variant                     frame       cmd                parse      err_mm     gen_s dtype                                      raw_text
+0  internvl2_5_4b        baseline  track4_20260915_151627|1  go_green  asked_json_contract  101.566634  4.360789  bf16               {"target_point_xy": [550, 250]}
+1  internvl2_5_4b        baseline  ck4_20260915_161239|1515  go_green  asked_json_contract   81.039919  3.441577  bf16               {"target_point_xy": [460, 250]}
+2  internvl2_5_4b        oriented  track4_20260915_151627|1  go_green  asked_json_contract  157.577382  4.134592  bf16  ```json\n{"target_point_xy": [120, 80]}\n```
+3  internvl2_5_4b        oriented  ck4_20260915_161239|1515  go_green  asked_json_contract  131.440579  3.666071  bf16               {"target_point_xy": [120, 100]}
+4  internvl2_5_4b  oriented_aruco  track4_20260915_151627|1  go_green  asked_json_contract  156.282977  4.311317  bf16                {"target_point_xy": [125, 75]}
+5  internvl2_5_4b  oriented_aruco  ck4_20260915_161239|1515  go_green  asked_json_contract  139.014621  4.555554  bf16            {"target_point_xy": [175.5, 12.0]}
+
+will run in the full sweep: ['internvl2_5_4b']
+skipped (failed/unparseable/gated): []

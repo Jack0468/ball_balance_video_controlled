@@ -1,0 +1,6 @@
+WARNING:torchao.kernel.intmm:Warning: Detected no triton, on systems without Triton certain kernels will not work
+Loading  HuggingFaceTB/SmolVLM2-500M-Video-Instruct weights ...
+`torch_dtype` is deprecated! Use `dtype` instead!
+Reducing the number of VLM layers to 16 ...
+[bench_action_models] status=ok wrote /workspace/VRI_2026/host_software/ml_jetson_vla/reports/arm2_action_latency/smolvla_fp32.json
+  smolvla fp32 chunk=50: p50=924.2ms p90=928.9ms  chunk_duration=1667ms  fits=True

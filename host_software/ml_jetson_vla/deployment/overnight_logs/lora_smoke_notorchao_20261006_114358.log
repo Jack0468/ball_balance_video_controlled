@@ -1,0 +1,44 @@
+Found existing installation: torchao 0.10.0+gitbc4f51d
+Uninstalling torchao-0.10.0+gitbc4f51d:
+  Removing file or directory /opt/venv/lib/python3.12/site-packages/torchao-0.10.0+gitbc4f51d.dist-info/
+  Removing file or directory /opt/venv/lib/python3.12/site-packages/torchao/
+  Successfully uninstalled torchao-0.10.0+gitbc4f51d
+peft 0.19.1
+device=cuda dtype=bf16 model_dir=Qwen/Qwen2.5-VL-3B-Instruct expected_revision=66285546d2b821cf421d4f5eb2576359d3770cd3
+session=session_jetson_track4_20260915_153053 out_dir=/workspace/arm2_results/lora_smoke/20261006_004415
+  session_jetson_track4_20260915_153053: 2/2 frames ready
+frame: session=session_jetson_track4_20260915_153053 frame_index=1 shape=(480, 640, 3)
+
+=== 1_load_base ===
+Fetching 2 files:   0%|          | 0/2 [00:00<?, ?it/s]Fetching 2 files: 100%|██████████| 2/2 [00:00<00:00, 614.15it/s]
+Loading weights:   0%|          | 0/824 [00:00<?, ?it/s]Loading weights:   4%|▍         | 35/824 [00:00<00:02, 348.15it/s]Loading weights:   8%|▊         | 70/824 [00:00<00:03, 245.21it/s]Loading weights:  12%|█▏        | 97/824 [00:00<00:03, 236.96it/s]Loading weights:  15%|█▍        | 122/824 [00:00<00:03, 230.75it/s]Loading weights:  18%|█▊        | 146/824 [00:00<00:03, 224.32it/s]Loading weights:  21%|██        | 169/824 [00:00<00:03, 216.89it/s]Loading weights:  23%|██▎       | 191/824 [00:00<00:02, 215.19it/s]Loading weights:  26%|██▌       | 213/824 [00:00<00:02, 210.18it/s]Loading weights:  29%|██▊       | 235/824 [00:01<00:02, 204.26it/s]Loading weights:  31%|███       | 256/824 [00:01<00:02, 198.41it/s]Loading weights:  34%|███▍      | 280/824 [00:01<00:02, 201.51it/s]Loading weights:  37%|███▋      | 303/824 [00:01<00:02, 208.66it/s]Loading weights:  40%|███▉      | 328/824 [00:01<00:02, 211.76it/s]Loading weights:  43%|████▎     | 352/824 [00:01<00:02, 212.27it/s]Loading weights:  46%|████▌     | 376/824 [00:01<00:02, 211.81it/s]Loading weights:  49%|████▊     | 400/824 [00:01<00:01, 218.91it/s]Loading weights:  51%|█████▏    | 424/824 [00:01<00:01, 215.94it/s]Loading weights:  59%|█████▉    | 487/824 [00:02<00:01, 331.58it/s]Loading weights:  68%|██████▊   | 560/824 [00:02<00:00, 443.50it/s]Loading weights:  77%|███████▋  | 632/824 [00:02<00:00, 522.32it/s]Loading weights:  86%|████████▌ | 706/824 [00:02<00:00, 582.37it/s]Loading weights:  94%|█████████▍| 778/824 [00:02<00:00, 622.32it/s]Loading weights: 100%|██████████| 824/824 [00:02<00:00, 324.92it/s]
+    [1_load_base] wall=12.52s peak_gpu=7.51 GB
+
+=== 2_attach_lora ===
+    lora modules=144 (expected 144), lora_B filled=144, trainable params=3,686,400
+    [2_attach_lora] wall=0.35s peak_gpu=7.53 GB
+
+=== 3_forward ===
+    logits shape=(1, 269, 151936) (batch, seq, vocab)
+    loss=7.075835 finite=True n_prompt_tokens_masked=265
+    max |logits(adapter) - logits(base)| = 3.25 (0 would mean the adapter is inert)
+    [3_forward] wall=3.36s peak_gpu=7.95 GB
+
+=== 4_save_adapter ===
+    saved to /workspace/arm2_results/lora_smoke/20261006_004415/adapter: ['README.md', 'adapter_config.json', 'adapter_model.safetensors']
+    [4_save_adapter] wall=0.51s peak_gpu=7.53 GB
+
+=== 5_reload_fresh_base_and_compare ===
+Fetching 2 files:   0%|          | 0/2 [00:00<?, ?it/s]Fetching 2 files: 100%|██████████| 2/2 [00:00<00:00, 562.84it/s]
+Loading weights:   0%|          | 0/824 [00:00<?, ?it/s]Loading weights:   3%|▎         | 27/824 [00:00<00:03, 256.99it/s]Loading weights:   6%|▋         | 53/824 [00:00<00:03, 205.92it/s]Loading weights:   9%|▉         | 77/824 [00:00<00:03, 217.22it/s]Loading weights:  12%|█▏        | 101/824 [00:00<00:03, 219.76it/s]Loading weights:  15%|█▌        | 124/824 [00:00<00:03, 222.17it/s]Loading weights:  18%|█▊        | 147/824 [00:00<00:03, 224.17it/s]Loading weights:  21%|██        | 171/824 [00:00<00:03, 210.03it/s]Loading weights:  24%|██▍       | 196/824 [00:00<00:02, 213.23it/s]Loading weights:  27%|██▋       | 219/824 [00:01<00:02, 208.59it/s]Loading weights:  29%|██▉       | 243/824 [00:01<00:02, 209.00it/s]Loading weights:  32%|███▏      | 267/824 [00:01<00:02, 217.43it/s]Loading weights:  35%|███▌      | 291/824 [00:01<00:02, 223.20it/s]Loading weights:  38%|███▊      | 315/824 [00:01<00:02, 219.52it/s]Loading weights:  41%|████      | 338/824 [00:01<00:02, 221.39it/s]Loading weights:  44%|████▍     | 361/824 [00:01<00:02, 214.85it/s]Loading weights:  46%|████▋     | 383/824 [00:01<00:02, 209.84it/s]Loading weights:  49%|████▉     | 405/824 [00:01<00:02, 205.19it/s]Loading weights:  52%|█████▏    | 426/824 [00:02<00:01, 199.16it/s]Loading weights:  61%|██████    | 500/824 [00:02<00:00, 348.39it/s]Loading weights:  70%|██████▉   | 574/824 [00:02<00:00, 458.30it/s]Loading weights:  79%|███████▊  | 647/824 [00:02<00:00, 536.39it/s]Loading weights:  87%|████████▋ | 718/824 [00:02<00:00, 586.13it/s]Loading weights:  96%|█████████▌| 790/824 [00:02<00:00, 621.65it/s]Loading weights: 100%|██████████| 824/824 [00:02<00:00, 320.15it/s]
+    max |logits(reloaded) - logits(pre-save)| = 0 (atol=0.0)
+    [5_reload_fresh_base_and_compare] wall=13.10s peak_gpu=7.96 GB
+
+=== timing summary ===
+  1_load_base                        wall=   12.52s  peak_gpu=7.51 GB
+  2_attach_lora                      wall=    0.35s  peak_gpu=7.53 GB
+  3_forward                          wall=    3.36s  peak_gpu=7.95 GB
+  4_save_adapter                     wall=    0.51s  peak_gpu=7.53 GB
+  5_reload_fresh_base_and_compare    wall=   13.10s  peak_gpu=7.96 GB
+
+RESULT: loss_finite=True reload_ok=True

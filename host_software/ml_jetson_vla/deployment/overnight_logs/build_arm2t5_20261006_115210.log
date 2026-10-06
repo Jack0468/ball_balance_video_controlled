@@ -1,0 +1,72 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.arm2-transformers5
+#1 transferring dockerfile: 9.56kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/dustynv/pytorch:2.7-r36.4.0-cu128-24.04
+#2 DONE 2.1s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [internal] load build context
+#4 DONE 0.0s
+
+#5 [1/9] FROM docker.io/dustynv/pytorch:2.7-r36.4.0-cu128-24.04@sha256:4bb7f0a3852f86629ed271aaf6c4aa000305cc4e4673b8e9f334668ee1b22bc8
+#5 resolve docker.io/dustynv/pytorch:2.7-r36.4.0-cu128-24.04@sha256:4bb7f0a3852f86629ed271aaf6c4aa000305cc4e4673b8e9f334668ee1b22bc8 0.0s done
+#5 DONE 0.0s
+
+#4 [internal] load build context
+#4 transferring context: 128B done
+#4 DONE 0.0s
+
+#6 [2/9] RUN apt-get update && apt-get install -y --no-install-recommends libsndfile1  && rm -rf /var/lib/apt/lists/*
+#6 CACHED
+
+#7 [3/9] RUN python3 -m pip freeze --exclude-editable > /opt/base_constraints.txt  && python3 -c "import numpy, torch; print('base numpy', numpy.__version__, 'torch', torch.__version__, 'cuda_available', torch.cuda.is_available())"  && python3 -c "assert tuple(map(int, __import__('torch').__version__.split('+')[0].split('.')[:2])) >= (2, 5), 'torch < 2.5 -- transformers>=5 will disable its PyTorch backend, this image is built wrong'; print('torch >= 2.5: OK')"  && (python3 -c "import torchvision; print('base torchvision', torchvision.__version__)"      || echo "torchvision MISSING from this base image -- dustynv/pytorch is torch-only, not l4t-pytorch.         Must install the dusty-nv-matched torchvision wheel for THIS exact torch/CUDA build, never a         generic 'pip install torchvision' (repeats this session's earlier CPU-wheel-substitution bug).         Build will fail at the next explicit check below if this isn't resolved.")
+#7 CACHED
+
+#8 [4/9] RUN python3 -c "import cv2, cv2.aruco"  || python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all:       --index-url https://pypi.org/simple opencv-contrib-python-headless
+#8 CACHED
+
+#9 [5/9] COPY requirements-jetson-arm2-common.txt requirements-jetson-arm2-fallback-transformers5.txt /opt/arm2reqs/
+#9 CACHED
+
+#10 [6/9] RUN python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all:       --index-url https://pypi.org/simple       -r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt  && (python3 -m pip check || echo "pip check reported issues above -- informational only, since it       checks the WHOLE environment including pre-existing base-image packages (e.g. pygobject/pycairo,       ninja) unrelated to this image's purpose. The real gate is the explicit class-import assert below.")
+#10 CACHED
+
+#11 [7/9] RUN python3 -m pip uninstall -y torchao
+#11 0.933 Found existing installation: torchao 0.10.0+gitbc4f51d
+#11 0.990 Uninstalling torchao-0.10.0+gitbc4f51d:
+#11 1.003   Removing file or directory /opt/venv/lib/python3.12/site-packages/torchao-0.10.0+gitbc4f51d.dist-info/
+#11 1.257   Removing file or directory /opt/venv/lib/python3.12/site-packages/torchao/
+#11 1.257   Successfully uninstalled torchao-0.10.0+gitbc4f51d
+#11 DONE 1.4s
+
+#12 [8/9] RUN python3 -m pip freeze --exclude-editable | grep -E '^(numpy|torch|torchvision)=='  && python3 -c "import torchvision; print('torchvision', torchvision.__version__)"  && python3 -c "import cv2; print('cv2', cv2.__version__, 'aruco', hasattr(cv2, 'aruco'))"  && python3 -c "import transformers as tr; from transformers.utils import is_torch_available; print('transformers', tr.__version__); assert is_torch_available(), 'transformers.utils.is_torch_available() is False -- PyTorch backend is DISABLED (torch too old, or torchvision broken); this image cannot load any model despite classes being importable'; assert hasattr(tr, 'Qwen2_5_VLForConditionalGeneration'), 'Qwen2.5-VL class missing -- this image is useless without it'; assert hasattr(tr, 'PaliGemmaForConditionalGeneration'), 'PaliGemma class missing -- this image is useless without it'; print('is_torch_available(): OK  Qwen2_5_VLForConditionalGeneration: OK  PaliGemmaForConditionalGeneration: OK')"
+#12 0.990 numpy==2.2.4
+#12 0.990 torch==2.7.0
+#12 0.990 torchvision==0.22.0
+#12 4.582 torchvision 0.22.0
+#12 5.737 cv2 5.0.0 aruco True
+#12 7.655 transformers 5.17.0
+#12 12.25 is_torch_available(): OK  Qwen2_5_VLForConditionalGeneration: OK  PaliGemmaForConditionalGeneration: OK
+#12 DONE 13.6s
+
+#13 [9/9] WORKDIR /workspace/VRI_2026
+#13 DONE 0.1s
+
+#14 exporting to image
+#14 exporting layers
+#14 exporting layers 0.4s done
+#14 exporting manifest sha256:1ebfedfa0367ec219cc9334d6da02f0b25fb551923c4a97b7c3d7c5d7a4ecbf8 0.0s done
+#14 exporting config sha256:7df450c8c5799c9d809cca6e9c81b6e53feb102ffe8e1e07cebc80c9847f7776 0.0s done
+#14 exporting attestation manifest sha256:6dd6ba31ca166d739e25515036d87d2d88a734adb218c7c883be04c0f4cb7929 0.0s done
+#14 exporting manifest list sha256:3acd3c5a35e74394b7ba20c2fbd0cc2bb46651e3e7006439c85b588b4660d62f
+#14 exporting manifest list sha256:3acd3c5a35e74394b7ba20c2fbd0cc2bb46651e3e7006439c85b588b4660d62f 0.0s done
+#14 naming to docker.io/library/arm2-t5:r36.4.0 done
+#14 unpacking to docker.io/library/arm2-t5:r36.4.0
+#14 unpacking to docker.io/library/arm2-t5:r36.4.0 0.2s done
+#14 DONE 1.0s

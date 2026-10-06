@@ -1,0 +1,65 @@
+python 3.12.3 at /opt/venv/bin/python3
+  prefix=/opt/venv  venv=True  include-system-site-packages=true
+  numpy            2.2.4
+  pandas           3.0.6
+  av               18.1.0
+  cv2              5.0.0
+  PIL              11.2.1
+  torch            2.7.0
+  torchvision      0.22.0
+  transformers     4.57.6
+  tokenizers       0.22.2
+  huggingface_hub  0.36.2
+  safetensors      0.8.0
+  accelerate       1.15.0
+  qwen_vl_utils    present
+  sentencepiece    0.2.2
+  timm             1.0.30
+  einops           0.8.2
+  cv2.aruco        True
+  cuda_available=True torch_cuda_build=12.8 gpu=Orin capability=[8, 7] mem_gb=61.4
+  jetson={'model': None, 'l4t_release': '# R36 (release), REVISION: 5.2, GCID: 46426093, BOARD: generic, EABI: aarch64, DATE: Thu Jul 16 18:56:22 UTC 2026'}
+candidates requested this invocation: ['moondream2:query', 'moondream2:point']
+candidates that can run here: ['moondream2:query', 'moondream2:point']
+
+=== frames: reference-locked, 10 sessions ===
+  session_jetson_track4_20260915_151627: 6/6 frames ready
+  session_jetson_track4_20260915_153053: 6/6 frames ready
+  session_jetson_track4_20260915_153247: 6/6 frames ready
+  session_jetson_track4_20260915_160025: 6/6 frames ready
+  session_jetson_track4_20260915_160509: 6/6 frames ready
+  session_jetson_track4_20260915_161239: 6/6 frames ready
+  session_jetson_track4_20260915_161712: 6/6 frames ready
+  session_jetson_track4_20260915_163702: 6/6 frames ready
+  session_jetson_track4_20260915_164115: 6/6 frames ready
+  session_jetson_track4_20260915_164743: 6/6 frames ready
+60 frames prepared
+sampling parity with the local reference run: {'identical': True, 'n_mine': 60, 'n_reference': 60, 'only_mine': [], 'only_reference': []}
+
+=== smoke: 2 frame(s) x 2 candidate(s) ===
+
+=== moondream2:query  [moondream2]  0/6 already done ===
+  loaded in 2.5s  config={'model': 'vikhyatk/moondream2', 'revision': '9a7d4024050840e001defacec2b00727e89149e6', 'mode': 'query', 'dtype': 'default(fp32)', 'trust_remote_code': True, 'pinned_tag': '2025-06-21'}
+  [1/6] baseline        20260915_151627 f1     go_green  parse=Y err=299.9mm     2.0s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [2/6] oriented        20260915_151627 f1     go_green  parse=Y err=299.9mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [3/6] oriented_aruco  20260915_151627 f1     go_green  parse=N err=  -       2.5s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n   '
+  [4/6] baseline        20260915_161239 f1515  go_green  parse=Y err=284.6mm     1.6s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [5/6] oriented        20260915_161239 f1515  go_green  parse=Y err=284.6mm     1.7s raw='{\n  "target_point_xy": [\n    0,\n    640\n  ]\n}'
+  [6/6] oriented_aruco  20260915_161239 f1515  go_green  parse=N err=  -       2.0s raw='{\n  "target_point_xy": [\n    [\n      12,\n      12\n    ]\n  ]\n'
+
+=== moondream2:point  [moondream2]  0/2 already done ===
+  loaded in 2.1s  config={'model': 'vikhyatk/moondream2', 'revision': '9a7d4024050840e001defacec2b00727e89149e6', 'mode': 'point', 'dtype': 'default(fp32)', 'trust_remote_code': True, 'pinned_tag': '2025-06-21'}
+  [1/2] baseline        20260915_151627 f1     go_green  parse=Y err=0.7mm HIT 0.8s raw="{'points': [{'x': 0.599609375, 'y': 0.3330078125}]}"
+  [2/2] baseline        20260915_161239 f1515  go_green  parse=Y err=1.7mm HIT 0.7s raw="{'points': [{'x': 0.5390625, 'y': 0.326171875}]}"
+          candidate         variant                     frame       cmd                parse      err_mm     gen_s          dtype                                                                                              raw_text
+0  moondream2:query        baseline  track4_20260915_151627|1  go_green  asked_json_contract  299.856107  2.046573  default(fp32)                                                    {\n  "target_point_xy": [\n    0,\n    640\n  ]\n}
+1  moondream2:query        baseline  ck4_20260915_161239|1515  go_green  asked_json_contract  284.622299  1.632825  default(fp32)                                                    {\n  "target_point_xy": [\n    0,\n    640\n  ]\n}
+2  moondream2:query        oriented  track4_20260915_151627|1  go_green  asked_json_contract  299.856107  1.696119  default(fp32)                                                    {\n  "target_point_xy": [\n    0,\n    640\n  ]\n}
+3  moondream2:query        oriented  ck4_20260915_161239|1515  go_green  asked_json_contract  284.622299  1.686913  default(fp32)                                                    {\n  "target_point_xy": [\n    0,\n    640\n  ]\n}
+4  moondream2:query  oriented_aruco  track4_20260915_151627|1  go_green                 FAIL         NaN  2.519515  default(fp32)  {\n  "target_point_xy": [\n    [\n      12,\n      12\n    ],\n    [\n      175,\n      0\n    ]\n  
+5  moondream2:query  oriented_aruco  ck4_20260915_161239|1515  go_green                 FAIL         NaN  1.985121  default(fp32)                                  {\n  "target_point_xy": [\n    [\n      12,\n      12\n    ]\n  ]\n}
+6  moondream2:point        baseline  track4_20260915_151627|1  go_green        native_points    0.714757  0.827056  default(fp32)                                                   {'points': [{'x': 0.599609375, 'y': 0.3330078125}]}
+7  moondream2:point        baseline  ck4_20260915_161239|1515  go_green        native_points    1.710038  0.748677  default(fp32)                                                      {'points': [{'x': 0.5390625, 'y': 0.326171875}]}
+
+will run in the full sweep: ['moondream2:query', 'moondream2:point']
+skipped (failed/unparseable/gated): []

@@ -1,0 +1,541 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.arm2-lerobot
+#1 transferring dockerfile: 4.95kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/dustynv/pytorch:2.7-r36.4.0-cu128-24.04
+#2 DONE 0.4s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [1/8] FROM docker.io/dustynv/pytorch:2.7-r36.4.0-cu128-24.04@sha256:4bb7f0a3852f86629ed271aaf6c4aa000305cc4e4673b8e9f334668ee1b22bc8
+#4 resolve docker.io/dustynv/pytorch:2.7-r36.4.0-cu128-24.04@sha256:4bb7f0a3852f86629ed271aaf6c4aa000305cc4e4673b8e9f334668ee1b22bc8 0.0s done
+#4 DONE 0.0s
+
+#5 [2/8] RUN apt-get update && apt-get install -y --no-install-recommends libsndfile1  && rm -rf /var/lib/apt/lists/*
+#5 CACHED
+
+#6 [3/8] RUN python3 -m pip freeze --exclude-editable > /opt/base_constraints.txt  && python3 -c "import numpy, torch; print('base numpy', numpy.__version__, 'torch', torch.__version__, 'cuda_available', torch.cuda.is_available())"  && python3 -c "assert tuple(map(int, __import__('torch').__version__.split('+')[0].split('.')[:2])) >= (2, 5), 'torch < 2.5 -- built wrong'; print('torch >= 2.5: OK')"  && (python3 -c "import torchvision; print('base torchvision', torchvision.__version__)"      || echo "torchvision MISSING from base image -- install the dusty-nv-matched wheel, never generic pip torchvision. Build fails at the gate below.")
+#6 CACHED
+
+#7 [4/8] RUN python3 -c "import cv2, cv2.aruco"  || python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all:       --index-url https://pypi.org/simple opencv-contrib-python-headless
+#7 CACHED
+
+#8 [5/8] RUN python3 -m pip install -c /opt/base_constraints.txt --index-url https://pypi.org/simple docopt==0.6.2
+#8 0.710 Using pip 25.0.1 from /opt/venv/lib/python3.12/site-packages/pip (python 3.12)
+#8 0.998 Looking in indexes: https://pypi.org/simple, https://pypi.ngc.nvidia.com
+#8 1.094 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff93621820>: Failed to establish a new connection: [Errno -2] Name or service not known')': /docopt/
+#8 1.617 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff936228d0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /docopt/
+#8 2.642 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff93622ea0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /docopt/
+#8 4.666 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff936230b0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /docopt/
+#8 8.690 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff936232c0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /docopt/
+#8 8.758 Collecting docopt==0.6.2
+#8 8.948   Downloading docopt-0.6.2.tar.gz (25 kB)
+#8 9.020   Preparing metadata (setup.py): started
+#8 9.020   Running command python setup.py egg_info
+#8 9.218   /tmp/pip-install-dxpu6l4_/docopt_3071d1523a784e368273cbccc060c878/docopt.py:165: SyntaxWarning: invalid escape sequence '\S'
+#8 9.218     name = re.findall('(<\S*?>)', source)[0]
+#8 9.218   /tmp/pip-install-dxpu6l4_/docopt_3071d1523a784e368273cbccc060c878/docopt.py:166: SyntaxWarning: invalid escape sequence '\['
+#8 9.218     value = re.findall('\[default: (.*)\]', source, flags=re.I)
+#8 9.219   /tmp/pip-install-dxpu6l4_/docopt_3071d1523a784e368273cbccc060c878/docopt.py:207: SyntaxWarning: invalid escape sequence '\['
+#8 9.219     matched = re.findall('\[default: (.*)\]', description, flags=re.I)
+#8 9.219   /tmp/pip-install-dxpu6l4_/docopt_3071d1523a784e368273cbccc060c878/docopt.py:456: SyntaxWarning: invalid escape sequence '\S'
+#8 9.219     split = re.split('\n *(<\S+?>|-\S+?)', doc)[1:]
+#8 9.398   /opt/venv/lib/python3.12/site-packages/setuptools/dist.py:759: SetuptoolsDeprecationWarning: License classifiers are deprecated.
+#8 9.398   !!
+#8 9.398 
+#8 9.398           ********************************************************************************
+#8 9.398           Please consider removing the following classifiers in favor of a SPDX license expression:
+#8 9.398 
+#8 9.399           License :: OSI Approved :: MIT License
+#8 9.399 
+#8 9.399           See https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license for details.
+#8 9.399           ********************************************************************************
+#8 9.399 
+#8 9.400   !!
+#8 9.400     self._finalize_license_expression()
+#8 9.415   running egg_info
+#8 9.433   creating /tmp/pip-pip-egg-info-qp4otc60/docopt.egg-info
+#8 9.433   writing /tmp/pip-pip-egg-info-qp4otc60/docopt.egg-info/PKG-INFO
+#8 9.434   writing dependency_links to /tmp/pip-pip-egg-info-qp4otc60/docopt.egg-info/dependency_links.txt
+#8 9.434   writing top-level names to /tmp/pip-pip-egg-info-qp4otc60/docopt.egg-info/top_level.txt
+#8 9.434   writing manifest file '/tmp/pip-pip-egg-info-qp4otc60/docopt.egg-info/SOURCES.txt'
+#8 9.487   reading manifest file '/tmp/pip-pip-egg-info-qp4otc60/docopt.egg-info/SOURCES.txt'
+#8 9.487   reading manifest template 'MANIFEST.in'
+#8 9.488   adding license file 'LICENSE-MIT'
+#8 9.489   writing manifest file '/tmp/pip-pip-egg-info-qp4otc60/docopt.egg-info/SOURCES.txt'
+#8 9.545   Preparing metadata (setup.py): finished with status 'done'
+#8 9.553 Building wheels for collected packages: docopt
+#8 9.554   Building wheel for docopt (setup.py): started
+#8 9.555   Running command python setup.py bdist_wheel
+#8 9.879   /opt/venv/lib/python3.12/site-packages/setuptools/dist.py:759: SetuptoolsDeprecationWarning: License classifiers are deprecated.
+#8 9.879   !!
+#8 9.879 
+#8 9.879           ********************************************************************************
+#8 9.879           Please consider removing the following classifiers in favor of a SPDX license expression:
+#8 9.879 
+#8 9.880           License :: OSI Approved :: MIT License
+#8 9.880 
+#8 9.880           See https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license for details.
+#8 9.880           ********************************************************************************
+#8 9.880 
+#8 9.881   !!
+#8 9.881     self._finalize_license_expression()
+#8 9.881   running bdist_wheel
+#8 9.930   The [wheel] section is deprecated. Use [bdist_wheel] instead.
+#8 9.931   /opt/venv/lib/python3.12/site-packages/setuptools/_distutils/cmd.py:135: SetuptoolsDeprecationWarning: bdist_wheel.universal is deprecated
+#8 9.931   !!
+#8 9.932 
+#8 9.932           ********************************************************************************
+#8 9.932           With Python 2.7 end-of-life, support for building universal wheels
+#8 9.932           (i.e., wheels that support both Python 2 and Python 3)
+#8 9.932           is being obviated.
+#8 9.933           Please discontinue using this option, or if you still need it,
+#8 9.933           file an issue with pypa/setuptools describing your use case.
+#8 9.933 
+#8 9.933           This deprecation is overdue, please update your project and remove deprecated
+#8 9.933           calls to avoid build errors in the future.
+#8 9.933           ********************************************************************************
+#8 9.934 
+#8 9.934   !!
+#8 9.934     self.finalize_options()
+#8 9.965   running build
+#8 9.965   running build_py
+#8 9.982   creating build/lib
+#8 9.982   copying docopt.py -> build/lib
+#8 9.999   /opt/venv/lib/python3.12/site-packages/setuptools/_distutils/cmd.py:90: SetuptoolsDeprecationWarning: setup.py install is deprecated.
+#8 10.000   !!
+#8 10.000 
+#8 10.00           ********************************************************************************
+#8 10.00           Please avoid running ``setup.py`` directly.
+#8 10.00           Instead, use pypa/build, pypa/installer or other
+#8 10.00           standards-based tools.
+#8 10.00 
+#8 10.00           See https://blog.ganssle.io/articles/2021/10/setup-py-deprecated.html for details.
+#8 10.00           ********************************************************************************
+#8 10.00 
+#8 10.00   !!
+#8 10.00     self.initialize_options()
+#8 10.02   installing to build/bdist.linux-aarch64/wheel
+#8 10.02   running install
+#8 10.02   running install_lib
+#8 10.04   creating build/bdist.linux-aarch64/wheel
+#8 10.04   copying build/lib/docopt.py -> build/bdist.linux-aarch64/wheel/.
+#8 10.04   running install_egg_info
+#8 10.06   running egg_info
+#8 10.08   writing docopt.egg-info/PKG-INFO
+#8 10.08   writing dependency_links to docopt.egg-info/dependency_links.txt
+#8 10.08   writing top-level names to docopt.egg-info/top_level.txt
+#8 10.09   reading manifest file 'docopt.egg-info/SOURCES.txt'
+#8 10.09   reading manifest template 'MANIFEST.in'
+#8 10.10   adding license file 'LICENSE-MIT'
+#8 10.10   writing manifest file 'docopt.egg-info/SOURCES.txt'
+#8 10.10   Copying docopt.egg-info to build/bdist.linux-aarch64/wheel/./docopt-0.6.2-py3.12.egg-info
+#8 10.10   running install_scripts
+#8 10.10   creating build/bdist.linux-aarch64/wheel/docopt-0.6.2.dist-info/WHEEL
+#8 10.10   creating '/tmp/pip-wheel-tv4yr1lv/docopt-0.6.2-py2.py3-none-any.whl' and adding 'build/bdist.linux-aarch64/wheel' to it
+#8 10.10   adding 'docopt.py'
+#8 10.10   adding 'docopt-0.6.2.dist-info/licenses/LICENSE-MIT'
+#8 10.10   adding 'docopt-0.6.2.dist-info/METADATA'
+#8 10.10   adding 'docopt-0.6.2.dist-info/WHEEL'
+#8 10.10   adding 'docopt-0.6.2.dist-info/top_level.txt'
+#8 10.10   adding 'docopt-0.6.2.dist-info/RECORD'
+#8 10.10   removing build/bdist.linux-aarch64/wheel
+#8 10.16   Building wheel for docopt (setup.py): finished with status 'done'
+#8 10.16   Created wheel for docopt: filename=docopt-0.6.2-py2.py3-none-any.whl size=13781 sha256=bb7e029b2b9aa91910ca0109f636f817eb1369f51a10823f4a1cf7c1f8a94bbe
+#8 10.16   Stored in directory: /tmp/pip-ephem-wheel-cache-otsb_yj7/wheels/1a/bf/a1/4cee4f7678c68c5875ca89eaccf460593539805c3906722228
+#8 10.17 Successfully built docopt
+#8 10.48 Installing collected packages: docopt
+#8 10.52 Successfully installed docopt-0.6.2
+#8 DONE 10.7s
+
+#9 [6/8] RUN python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all:       --index-url https://pypi.org/simple       'lerobot[smolvla]==0.4.4'  && (python3 -m pip check || echo "pip check reported issues above -- informational; the import gate below is the real check.")
+#9 0.856 Using pip 25.0.1 from /opt/venv/lib/python3.12/site-packages/pip (python 3.12)
+#9 1.146 Looking in indexes: https://pypi.org/simple, https://pypi.ngc.nvidia.com
+#9 1.271 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85d9ea80>: Failed to establish a new connection: [Errno -2] Name or service not known')': /lerobot/
+#9 1.811 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85d9ec00>: Failed to establish a new connection: [Errno -2] Name or service not known')': /lerobot/
+#9 2.844 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85d9eea0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /lerobot/
+#9 4.867 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85d9f0b0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /lerobot/
+#9 8.910 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85d9f2c0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /lerobot/
+#9 8.953 Collecting lerobot==0.4.4 (from lerobot[smolvla]==0.4.4)
+#9 8.953   Obtaining dependency information for lerobot==0.4.4 from https://files.pythonhosted.org/packages/cb/2d/2c43b7d99346b04925313f485b8f99596aeb8094f556d4312da9f2e1ca60/lerobot-0.4.4-py3-none-any.whl.metadata
+#9 9.074   Downloading lerobot-0.4.4-py3-none-any.whl.metadata (18 kB)
+#9 9.397 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85e038c0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /datasets/
+#9 9.999 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85e03c80>: Failed to establish a new connection: [Errno -2] Name or service not known')': /datasets/
+#9 11.02 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85d526f0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /datasets/
+#9 13.05 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85e2de50>: Failed to establish a new connection: [Errno -2] Name or service not known')': /datasets/
+#9 17.09 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85e2e600>: Failed to establish a new connection: [Errno -2] Name or service not known')': /datasets/
+#9 17.20 Collecting datasets<5.0.0,>=4.0.0 (from lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 17.20   Obtaining dependency information for datasets<5.0.0,>=4.0.0 from https://files.pythonhosted.org/packages/65/99/00f3196036501b53032c4b1ab8337a0b978dee832ed276dae3815df4e8b5/datasets-4.8.5-py3-none-any.whl.metadata
+#9 17.22   Downloading datasets-4.8.5-py3-none-any.whl.metadata (19 kB)
+#9 17.50 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85cbb260>: Failed to establish a new connection: [Errno -2] Name or service not known')': /diffusers/
+#9 18.20 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85cbb3e0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /diffusers/
+#9 19.23 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85cb8680>: Failed to establish a new connection: [Errno -2] Name or service not known')': /diffusers/
+#9 21.25 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85cb8b30>: Failed to establish a new connection: [Errno -2] Name or service not known')': /diffusers/
+#9 25.29 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85cb8e90>: Failed to establish a new connection: [Errno -2] Name or service not known')': /diffusers/
+#9 25.39 Collecting diffusers<0.36.0,>=0.27.2 (from lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 25.40   Obtaining dependency information for diffusers<0.36.0,>=0.27.2 from https://files.pythonhosted.org/packages/2a/2e/38d9824f8c6bb048c5ba21c6d4da54c29c162a46b58b3ef907a360a76d3e/diffusers-0.35.2-py3-none-any.whl.metadata
+#9 25.47   Downloading diffusers-0.35.2-py3-none-any.whl.metadata (20 kB)
+#9 25.88 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85be4380>: Failed to establish a new connection: [Errno -2] Name or service not known')': /huggingface-hub/
+#9 26.40 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85be46e0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /huggingface-hub/
+#9 27.43 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85be4d10>: Failed to establish a new connection: [Errno -2] Name or service not known')': /huggingface-hub/
+#9 29.45 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85be5460>: Failed to establish a new connection: [Errno -2] Name or service not known')': /huggingface-hub/
+#9 33.49 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85be5bb0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /huggingface-hub/
+#9 33.56 Collecting huggingface-hub<0.36.0,>=0.34.2 (from huggingface-hub[cli,hf-transfer]<0.36.0,>=0.34.2->lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 33.57   Obtaining dependency information for huggingface-hub<0.36.0,>=0.34.2 from https://files.pythonhosted.org/packages/31/a0/651f93d154cb72323358bf2bbae3e642bdb5d2f1bfc874d096f7cb159fa0/huggingface_hub-0.35.3-py3-none-any.whl.metadata
+#9 33.58   Downloading huggingface_hub-0.35.3-py3-none-any.whl.metadata (14 kB)
+#9 33.78 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85b536b0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /accelerate/
+#9 34.47 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85b51490>: Failed to establish a new connection: [Errno -2] Name or service not known')': /accelerate/
+#9 35.50 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85b800b0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /accelerate/
+#9 37.52 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85b805c0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /accelerate/
+#9 41.57 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85b809e0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /accelerate/
+#9 41.62 Collecting accelerate<2.0.0,>=1.10.0 (from lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 41.62   Obtaining dependency information for accelerate<2.0.0,>=1.10.0 from https://files.pythonhosted.org/packages/8a/4c/34f0450479d01195027260da68d8a3880683f1640c3ca5adf64acb3185f1/accelerate-1.15.0-py3-none-any.whl.metadata
+#9 41.63   Downloading accelerate-1.15.0-py3-none-any.whl.metadata (19 kB)
+#9 41.70 Requirement already satisfied: setuptools<81.0.0,>=71.0.0 in /opt/venv/lib/python3.12/site-packages (from lerobot==0.4.4->lerobot[smolvla]==0.4.4) (78.1.0)
+#9 41.71 Requirement already satisfied: cmake<4.2.0,>=3.29.0.1 in /opt/venv/lib/python3.12/site-packages (from lerobot==0.4.4->lerobot[smolvla]==0.4.4) (4.0.0)
+#9 41.77 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85a8b7d0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /einops/
+#9 42.31 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85aa46e0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /einops/
+#9 43.33 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85aa4890>: Failed to establish a new connection: [Errno -2] Name or service not known')': /einops/
+#9 45.36 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85aa4a70>: Failed to establish a new connection: [Errno -2] Name or service not known')': /einops/
+#9 49.38 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85aa4cb0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /einops/
+#9 49.43 Collecting einops<0.9.0,>=0.8.0 (from lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 49.43   Obtaining dependency information for einops<0.9.0,>=0.8.0 from https://files.pythonhosted.org/packages/2a/09/f8d8f8f31e4483c10a906437b4ce31bdf3d6d417b73fe33f1a8b59e34228/einops-0.8.2-py3-none-any.whl.metadata
+#9 49.44   Downloading einops-0.8.2-py3-none-any.whl.metadata (13 kB)
+#9 49.78 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85a24200>: Failed to establish a new connection: [Errno -2] Name or service not known')': /opencv-python-headless/
+#9 50.32 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85a24560>: Failed to establish a new connection: [Errno -2] Name or service not known')': /opencv-python-headless/
+#9 51.34 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85a247a0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /opencv-python-headless/
+#9 53.37 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85a249e0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /opencv-python-headless/
+#9 57.41 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85a24b90>: Failed to establish a new connection: [Errno -2] Name or service not known')': /opencv-python-headless/
+#9 57.46 Collecting opencv-python-headless<4.13.0,>=4.9.0 (from lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 57.46   Obtaining dependency information for opencv-python-headless<4.13.0,>=4.9.0 from https://files.pythonhosted.org/packages/69/4e/116720df7f1f7f3b59abc608ca30fbec9d2b3ae810afe4e4d26483d9dfa0/opencv_python_headless-4.12.0.88-cp37-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.whl.metadata
+#9 57.47   Downloading opencv_python_headless-4.12.0.88-cp37-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.whl.metadata (19 kB)
+#9 57.83 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85ab43e0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /av/
+#9 58.43 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85ab44d0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /av/
+#9 59.46 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85ab4770>: Failed to establish a new connection: [Errno -2] Name or service not known')': /av/
+#9 61.48 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85ab4a10>: Failed to establish a new connection: [Errno -2] Name or service not known')': /av/
+#9 65.52 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85ab4d40>: Failed to establish a new connection: [Errno -2] Name or service not known')': /av/
+#9 65.63 Collecting av<16.0.0,>=15.0.0 (from lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 65.63   Obtaining dependency information for av<16.0.0,>=15.0.0 from https://files.pythonhosted.org/packages/f3/f8/2d781e5e71d02fc829487e775ccb1185e72f95340d05f2e84eb57a11e093/av-15.1.0-cp312-cp312-manylinux_2_28_aarch64.whl.metadata
+#9 65.64   Downloading av-15.1.0-cp312-cp312-manylinux_2_28_aarch64.whl.metadata (4.6 kB)
+#9 65.72 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85ab6090>: Failed to establish a new connection: [Errno -2] Name or service not known')': /jsonlines/
+#9 66.42 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85ab6c90>: Failed to establish a new connection: [Errno -2] Name or service not known')': /jsonlines/
+#9 67.45 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85be4a40>: Failed to establish a new connection: [Errno -2] Name or service not known')': /jsonlines/
+#9 69.47 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85ab6fc0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /jsonlines/
+#9 73.52 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85ab4680>: Failed to establish a new connection: [Errno -2] Name or service not known')': /jsonlines/
+#9 73.61 Collecting jsonlines<5.0.0,>=4.0.0 (from lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 73.61   Obtaining dependency information for jsonlines<5.0.0,>=4.0.0 from https://files.pythonhosted.org/packages/f8/62/d9ba6323b9202dd2fe166beab8a86d29465c41a0288cbe229fac60c1ab8d/jsonlines-4.0.0-py3-none-any.whl.metadata
+#9 73.62   Downloading jsonlines-4.0.0-py3-none-any.whl.metadata (1.6 kB)
+#9 73.63 Requirement already satisfied: packaging<26.0,>=24.2 in /opt/venv/lib/python3.12/site-packages (from lerobot==0.4.4->lerobot[smolvla]==0.4.4) (24.2)
+#9 73.80 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85ab7530>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pynput/
+#9 74.51 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85aa4050>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pynput/
+#9 75.53 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85aa4380>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pynput/
+#9 77.56 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85aa66f0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pynput/
+#9 81.61 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85aa6900>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pynput/
+#9 81.71 Collecting pynput<1.9.0,>=1.7.7 (from lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 81.71   Obtaining dependency information for pynput<1.9.0,>=1.7.7 from https://files.pythonhosted.org/packages/6d/98/bbeb760852adb27f166ce1617f0e51aabb15f21b1e60ea703f2aed3c78ac/pynput-1.8.2-py2.py3-none-any.whl.metadata
+#9 81.72   Downloading pynput-1.8.2-py2.py3-none-any.whl.metadata (32 kB)
+#9 81.84 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85aa78f0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pyserial/
+#9 82.50 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85ae4440>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pyserial/
+#9 83.52 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85ae45f0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pyserial/
+#9 85.55 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85ae47d0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pyserial/
+#9 89.57 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85ae4950>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pyserial/
+#9 89.62 Collecting pyserial<4.0,>=3.5 (from lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 89.62   Obtaining dependency information for pyserial<4.0,>=3.5 from https://files.pythonhosted.org/packages/07/bc/587a445451b253b285629263eb51c2d8e9bcea4fc97826266d186f96f558/pyserial-3.5-py2.py3-none-any.whl.metadata
+#9 89.63   Downloading pyserial-3.5-py2.py3-none-any.whl.metadata (1.6 kB)
+#9 90.23 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85aa78f0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /wandb/
+#9 90.76 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff858cbda0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /wandb/
+#9 91.78 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85b838c0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /wandb/
+#9 93.81 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85a26720>: Failed to establish a new connection: [Errno -2] Name or service not known')': /wandb/
+#9 97.85 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85a24dd0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /wandb/
+#9 103.0 Collecting wandb<0.25.0,>=0.24.0 (from lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 103.0   Obtaining dependency information for wandb<0.25.0,>=0.24.0 from https://files.pythonhosted.org/packages/3e/99/33b0281ac9a0b0c251195e6ce6cb310efa2f84ee117a15e9997fc2f9503b/wandb-0.24.2-py3-none-manylinux_2_28_aarch64.whl.metadata
+#9 103.0   Downloading wandb-0.24.2-py3-none-manylinux_2_28_aarch64.whl.metadata (12 kB)
+#9 103.1 Requirement already satisfied: torch<2.11.0,>=2.2.1 in /opt/venv/lib/python3.12/site-packages (from lerobot==0.4.4->lerobot[smolvla]==0.4.4) (2.7.0)
+#9 103.1 Requirement already satisfied: torchvision<0.26.0,>=0.21.0 in /opt/venv/lib/python3.12/site-packages (from lerobot==0.4.4->lerobot[smolvla]==0.4.4) (0.22.0)
+#9 103.4 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85b412e0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /draccus/
+#9 104.2 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff857afd40>: Failed to establish a new connection: [Errno -2] Name or service not known')': /draccus/
+#9 105.3 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff857ac080>: Failed to establish a new connection: [Errno -2] Name or service not known')': /draccus/
+#9 107.4 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff857ada30>: Failed to establish a new connection: [Errno -2] Name or service not known')': /draccus/
+#9 111.4 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff857af050>: Failed to establish a new connection: [Errno -2] Name or service not known')': /draccus/
+#9 111.8 Collecting draccus==0.10.0 (from lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 111.8   Obtaining dependency information for draccus==0.10.0 from https://files.pythonhosted.org/packages/c4/9a/a83083b230d352ee5d205757b74006dbe084448ca45e3bc5ca99215b1e55/draccus-0.10.0-py3-none-any.whl.metadata
+#9 111.8   Downloading draccus-0.10.0-py3-none-any.whl.metadata (24 kB)
+#9 112.2 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff857e0350>: Failed to establish a new connection: [Errno -2] Name or service not known')': /gymnasium/
+#9 112.8 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff857e0ec0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /gymnasium/
+#9 113.9 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85b43e00>: Failed to establish a new connection: [Errno -2] Name or service not known')': /gymnasium/
+#9 115.9 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff857af3e0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /gymnasium/
+#9 120.0 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff857aca70>: Failed to establish a new connection: [Errno -2] Name or service not known')': /gymnasium/
+#9 120.2 Collecting gymnasium<2.0.0,>=1.1.1 (from lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 120.2   Obtaining dependency information for gymnasium<2.0.0,>=1.1.1 from https://files.pythonhosted.org/packages/38/4e/6a51be94ae8e9dc8eaddd6ea74a6dde754448c4c746b51a232681f81e41c/gymnasium-1.4.0-py3-none-any.whl.metadata
+#9 120.2   Downloading gymnasium-1.4.0-py3-none-any.whl.metadata (9.0 kB)
+#9 120.7 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85b42150>: Failed to establish a new connection: [Errno -2] Name or service not known')': /rerun-sdk/
+#9 121.3 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85b41a90>: Failed to establish a new connection: [Errno -2] Name or service not known')': /rerun-sdk/
+#9 122.3 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85b40290>: Failed to establish a new connection: [Errno -2] Name or service not known')': /rerun-sdk/
+#9 124.3 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85b41220>: Failed to establish a new connection: [Errno -2] Name or service not known')': /rerun-sdk/
+#9 128.4 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85b42ed0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /rerun-sdk/
+#9 128.7 Collecting rerun-sdk<0.27.0,>=0.24.0 (from lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 128.7   Obtaining dependency information for rerun-sdk<0.27.0,>=0.24.0 from https://files.pythonhosted.org/packages/13/29/53d8d98799ab32418fd4ba6834d6a5749c31f56160d3c87f52a7219887e9/rerun_sdk-0.26.2-cp39-abi3-manylinux_2_28_aarch64.whl.metadata
+#9 128.7   Downloading rerun_sdk-0.26.2-cp39-abi3-manylinux_2_28_aarch64.whl.metadata (4.6 kB)
+#9 128.9 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85ae53d0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /deepdiff/
+#9 129.5 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85b40ce0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /deepdiff/
+#9 130.5 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85b429f0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /deepdiff/
+#9 132.5 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85b41e80>: Failed to establish a new connection: [Errno -2] Name or service not known')': /deepdiff/
+#9 136.6 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8596bfb0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /deepdiff/
+#9 136.8 Collecting deepdiff<9.0.0,>=7.0.1 (from lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 136.8   Obtaining dependency information for deepdiff<9.0.0,>=7.0.1 from https://files.pythonhosted.org/packages/2b/5f/c52bd1255db763d0cdcb7084d2e90c42119cb229302c56bdf1d0aa78abd2/deepdiff-8.6.2-py3-none-any.whl.metadata
+#9 136.8   Downloading deepdiff-8.6.2-py3-none-any.whl.metadata (8.8 kB)
+#9 137.0 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8598a690>: Failed to establish a new connection: [Errno -2] Name or service not known')': /imageio/
+#9 137.5 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85ae7c50>: Failed to establish a new connection: [Errno -2] Name or service not known')': /imageio/
+#9 138.6 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8598f650>: Failed to establish a new connection: [Errno -2] Name or service not known')': /imageio/
+#9 140.7 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8598c0e0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /imageio/
+#9 144.8 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8598c530>: Failed to establish a new connection: [Errno -2] Name or service not known')': /imageio/
+#9 144.9 Collecting imageio<3.0.0,>=2.34.0 (from imageio[ffmpeg]<3.0.0,>=2.34.0->lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 144.9   Obtaining dependency information for imageio<3.0.0,>=2.34.0 from https://files.pythonhosted.org/packages/ba/4b/87a794e51d150f62a55715c453c9afbf6103fe24afef6db26a929a8480b7/imageio-2.38.0-py3-none-any.whl.metadata
+#9 144.9   Downloading imageio-2.38.0-py3-none-any.whl.metadata (9.7 kB)
+#9 145.1 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff858a7200>: Failed to establish a new connection: [Errno -2] Name or service not known')': /termcolor/
+#9 145.6 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff858a6810>: Failed to establish a new connection: [Errno -2] Name or service not known')': /termcolor/
+#9 146.6 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85880c50>: Failed to establish a new connection: [Errno -2] Name or service not known')': /termcolor/
+#9 148.7 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85880e30>: Failed to establish a new connection: [Errno -2] Name or service not known')': /termcolor/
+#9 152.8 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85880fb0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /termcolor/
+#9 153.0 Collecting termcolor<4.0.0,>=2.4.0 (from lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 153.0   Obtaining dependency information for termcolor<4.0.0,>=2.4.0 from https://files.pythonhosted.org/packages/33/d1/8bb87d21e9aeb323cc03034f5eaf2c8f69841e40e4853c2627edf8111ed3/termcolor-3.3.0-py3-none-any.whl.metadata
+#9 153.0   Downloading termcolor-3.3.0-py3-none-any.whl.metadata (6.5 kB)
+#9 153.1 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85872c30>: Failed to establish a new connection: [Errno -2] Name or service not known')': /num2words/
+#9 153.6 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85873650>: Failed to establish a new connection: [Errno -2] Name or service not known')': /num2words/
+#9 154.7 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85873830>: Failed to establish a new connection: [Errno -2] Name or service not known')': /num2words/
+#9 156.7 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff858739e0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /num2words/
+#9 160.8 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85873a70>: Failed to establish a new connection: [Errno -2] Name or service not known')': /num2words/
+#9 161.0 Collecting num2words<0.6.0,>=0.5.14 (from lerobot[smolvla]==0.4.4)
+#9 161.0   Obtaining dependency information for num2words<0.6.0,>=0.5.14 from https://files.pythonhosted.org/packages/d6/5b/545e9267a1cc080c8a1be2746113a063e34bcdd0f5173fd665a5c13cb234/num2words-0.5.14-py3-none-any.whl.metadata
+#9 161.0   Downloading num2words-0.5.14-py3-none-any.whl.metadata (13 kB)
+#9 161.6 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85871d30>: Failed to establish a new connection: [Errno -2] Name or service not known')': /safetensors/
+#9 162.2 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85873a10>: Failed to establish a new connection: [Errno -2] Name or service not known')': /safetensors/
+#9 163.2 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff858739e0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /safetensors/
+#9 165.2 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85873b60>: Failed to establish a new connection: [Errno -2] Name or service not known')': /safetensors/
+#9 169.3 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85872c00>: Failed to establish a new connection: [Errno -2] Name or service not known')': /safetensors/
+#9 169.5 Collecting safetensors<1.0.0,>=0.4.3 (from lerobot[smolvla]==0.4.4)
+#9 169.5   Obtaining dependency information for safetensors<1.0.0,>=0.4.3 from https://files.pythonhosted.org/packages/09/7d/65a7de0af421317bb36a067241e4235fff194eed60b961ed6d3f59a3fc60/safetensors-0.8.0-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata
+#9 169.5   Downloading safetensors-0.8.0-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata (4.2 kB)
+#9 169.9 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85129670>: Failed to establish a new connection: [Errno -2] Name or service not known')': /mergedeep/
+#9 170.7 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85129f70>: Failed to establish a new connection: [Errno -2] Name or service not known')': /mergedeep/
+#9 171.7 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8512a120>: Failed to establish a new connection: [Errno -2] Name or service not known')': /mergedeep/
+#9 173.7 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8512a3f0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /mergedeep/
+#9 177.8 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8512a540>: Failed to establish a new connection: [Errno -2] Name or service not known')': /mergedeep/
+#9 178.1 Collecting mergedeep~=1.3 (from draccus==0.10.0->lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 178.1   Obtaining dependency information for mergedeep~=1.3 from https://files.pythonhosted.org/packages/2c/19/04f9b178c2d8a15b076c8b5140708fa6ffc5601fb6f1e975537072df5b2a/mergedeep-1.3.4-py3-none-any.whl.metadata
+#9 178.1   Downloading mergedeep-1.3.4-py3-none-any.whl.metadata (4.3 kB)
+#9 178.1 Requirement already satisfied: pyyaml~=6.0 in /opt/venv/lib/python3.12/site-packages (from draccus==0.10.0->lerobot==0.4.4->lerobot[smolvla]==0.4.4) (6.0.2)
+#9 178.4 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8512bad0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pyyaml-include/
+#9 179.2 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8566cb90>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pyyaml-include/
+#9 180.3 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8566cd40>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pyyaml-include/
+#9 182.3 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8566cf50>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pyyaml-include/
+#9 186.4 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8566d160>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pyyaml-include/
+#9 186.7 Collecting pyyaml-include~=1.4 (from draccus==0.10.0->lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 186.7   Obtaining dependency information for pyyaml-include~=1.4 from https://files.pythonhosted.org/packages/d5/ca/6a2cc3a73170d10b5af1f1613baa2ed1f8f46f62dd0bfab2bffd2c2fe260/pyyaml_include-1.4.1-py3-none-any.whl.metadata
+#9 186.7   Downloading pyyaml_include-1.4.1-py3-none-any.whl.metadata (1.3 kB)
+#9 187.1 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8566eae0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /toml/
+#9 187.7 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8566f020>: Failed to establish a new connection: [Errno -2] Name or service not known')': /toml/
+#9 188.8 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8566ef00>: Failed to establish a new connection: [Errno -2] Name or service not known')': /toml/
+#9 190.8 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85873170>: Failed to establish a new connection: [Errno -2] Name or service not known')': /toml/
+#9 194.9 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff851295e0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /toml/
+#9 195.2 Collecting toml~=0.10 (from draccus==0.10.0->lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 195.2   Obtaining dependency information for toml~=0.10 from https://files.pythonhosted.org/packages/44/6f/7120676b6d73228c96e17f1f794d8ab046fc910d781c8d151120c3f1569e/toml-0.10.2-py2.py3-none-any.whl.metadata
+#9 195.2   Downloading toml-0.10.2-py2.py3-none-any.whl.metadata (7.1 kB)
+#9 195.3 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8566e720>: Failed to establish a new connection: [Errno -2] Name or service not known')': /typing-inspect/
+#9 195.9 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8566fd70>: Failed to establish a new connection: [Errno -2] Name or service not known')': /typing-inspect/
+#9 197.0 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8566ffb0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /typing-inspect/
+#9 199.0 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff851601d0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /typing-inspect/
+#9 203.1 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85160440>: Failed to establish a new connection: [Errno -2] Name or service not known')': /typing-inspect/
+#9 203.3 Collecting typing-inspect~=0.9.0 (from draccus==0.10.0->lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 203.3   Obtaining dependency information for typing-inspect~=0.9.0 from https://files.pythonhosted.org/packages/65/f3/107a22063bf27bdccf2024833d3445f4eea42b2e598abfbd46f6a63b6cb0/typing_inspect-0.9.0-py3-none-any.whl.metadata
+#9 203.4   Downloading typing_inspect-0.9.0-py3-none-any.whl.metadata (1.5 kB)
+#9 203.4 Requirement already satisfied: numpy>=1.17 in /opt/venv/lib/python3.12/site-packages (from accelerate<2.0.0,>=1.10.0->lerobot==0.4.4->lerobot[smolvla]==0.4.4) (2.2.4)
+#9 203.4 Requirement already satisfied: psutil in /opt/venv/lib/python3.12/site-packages (from accelerate<2.0.0,>=1.10.0->lerobot==0.4.4->lerobot[smolvla]==0.4.4) (7.0.0)
+#9 203.4 Requirement already satisfied: filelock in /opt/venv/lib/python3.12/site-packages (from datasets<5.0.0,>=4.0.0->lerobot==0.4.4->lerobot[smolvla]==0.4.4) (3.18.0)
+#9 203.9 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85128680>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pyarrow/
+#9 204.5 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8549c1d0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pyarrow/
+#9 205.5 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8549c470>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pyarrow/
+#9 207.5 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8549c650>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pyarrow/
+#9 211.6 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8549c680>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pyarrow/
+#9 212.0 Collecting pyarrow>=21.0.0 (from datasets<5.0.0,>=4.0.0->lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 212.0   Obtaining dependency information for pyarrow>=21.0.0 from https://files.pythonhosted.org/packages/13/49/d93a57d375f4bf0cf82913dd6bb54acafde83dd993be2282c81ac5616cad/pyarrow-25.0.1-cp312-cp312-manylinux_2_28_aarch64.whl.metadata
+#9 212.0   Downloading pyarrow-25.0.1-cp312-cp312-manylinux_2_28_aarch64.whl.metadata (3.0 kB)
+#9 212.2 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8549e1e0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /dill/
+#9 212.8 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8549e0f0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /dill/
+#9 213.9 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8549d8b0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /dill/
+#9 215.9 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff860f9610>: Failed to establish a new connection: [Errno -2] Name or service not known')': /dill/
+#9 220.0 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8512a120>: Failed to establish a new connection: [Errno -2] Name or service not known')': /dill/
+#9 220.3 Collecting dill<0.4.2,>=0.3.0 (from datasets<5.0.0,>=4.0.0->lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 220.3   Obtaining dependency information for dill<0.4.2,>=0.3.0 from https://files.pythonhosted.org/packages/1e/77/dc8c558f7593132cf8fefec57c4f60c83b16941c574ac5f619abb3ae7933/dill-0.4.1-py3-none-any.whl.metadata
+#9 220.4   Downloading dill-0.4.1-py3-none-any.whl.metadata (10 kB)
+#9 221.3 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff851ec5f0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pandas/
+#9 221.9 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff851ec920>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pandas/
+#9 222.9 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff851ecb30>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pandas/
+#9 225.0 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff851ece30>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pandas/
+#9 229.0 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff851ed100>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pandas/
+#9 229.4 Collecting pandas (from datasets<5.0.0,>=4.0.0->lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 229.4   Obtaining dependency information for pandas from https://files.pythonhosted.org/packages/67/fa/613d867c3d9554a61bafdec6f79565c8a3e73235feb52cc4a72ad2e0fa6a/pandas-3.0.6-cp312-cp312-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl.metadata
+#9 229.4   Downloading pandas-3.0.6-cp312-cp312-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl.metadata (79 kB)
+#9 229.6 Requirement already satisfied: requests>=2.32.2 in /opt/venv/lib/python3.12/site-packages (from datasets<5.0.0,>=4.0.0->lerobot==0.4.4->lerobot[smolvla]==0.4.4) (2.32.3)
+#9 229.6 Requirement already satisfied: httpx<1.0.0 in /opt/venv/lib/python3.12/site-packages (from datasets<5.0.0,>=4.0.0->lerobot==0.4.4->lerobot[smolvla]==0.4.4) (0.28.1)
+#9 229.6 Requirement already satisfied: tqdm>=4.66.3 in /opt/venv/lib/python3.12/site-packages (from datasets<5.0.0,>=4.0.0->lerobot==0.4.4->lerobot[smolvla]==0.4.4) (4.67.1)
+#9 230.3 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85360380>: Failed to establish a new connection: [Errno -2] Name or service not known')': /xxhash/
+#9 230.8 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85360590>: Failed to establish a new connection: [Errno -2] Name or service not known')': /xxhash/
+#9 231.9 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff853607d0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /xxhash/
+#9 233.9 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85360a40>: Failed to establish a new connection: [Errno -2] Name or service not known')': /xxhash/
+#9 238.0 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85360c80>: Failed to establish a new connection: [Errno -2] Name or service not known')': /xxhash/
+#9 238.1 Collecting xxhash (from datasets<5.0.0,>=4.0.0->lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 238.1   Obtaining dependency information for xxhash from https://files.pythonhosted.org/packages/de/bb/542005206af59518bc8d78a210f1e0172217bc53beb32f64a5b632e72b6b/xxhash-4.0.1-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl.metadata
+#9 238.1   Downloading xxhash-4.0.1-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl.metadata (17 kB)
+#9 238.5 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85360620>: Failed to establish a new connection: [Errno -2] Name or service not known')': /multiprocess/
+#9 239.3 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff853608c0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /multiprocess/
+#9 240.4 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85360290>: Failed to establish a new connection: [Errno -2] Name or service not known')': /multiprocess/
+#9 242.4 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85360200>: Failed to establish a new connection: [Errno -2] Name or service not known')': /multiprocess/
+#9 246.5 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85363920>: Failed to establish a new connection: [Errno -2] Name or service not known')': /multiprocess/
+#9 246.8 Collecting multiprocess<0.70.20 (from datasets<5.0.0,>=4.0.0->lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 246.8   Obtaining dependency information for multiprocess<0.70.20 from https://files.pythonhosted.org/packages/71/70/38998b950a97ea279e6bd657575d22d1a2047256caf707d9a10fbce4f065/multiprocess-0.70.19-py312-none-any.whl.metadata
+#9 246.8   Downloading multiprocess-0.70.19-py312-none-any.whl.metadata (7.5 kB)
+#9 246.8 Requirement already satisfied: fsspec<=2026.2.0,>=2023.1.0 in /opt/venv/lib/python3.12/site-packages (from fsspec[http]<=2026.2.0,>=2023.1.0->datasets<5.0.0,>=4.0.0->lerobot==0.4.4->lerobot[smolvla]==0.4.4) (2025.3.2)
+#9 247.1 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8559f8c0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /orderly-set/
+#9 247.8 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8559e870>: Failed to establish a new connection: [Errno -2] Name or service not known')': /orderly-set/
+#9 248.8 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8559fc20>: Failed to establish a new connection: [Errno -2] Name or service not known')': /orderly-set/
+#9 250.9 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8559fd10>: Failed to establish a new connection: [Errno -2] Name or service not known')': /orderly-set/
+#9 254.9 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8559ff50>: Failed to establish a new connection: [Errno -2] Name or service not known')': /orderly-set/
+#9 255.2 Collecting orderly-set<6,>=5.4.1 (from deepdiff<9.0.0,>=7.0.1->lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 255.2   Obtaining dependency information for orderly-set<6,>=5.4.1 from https://files.pythonhosted.org/packages/12/27/fb8d7338b4d551900fa3e580acbe7a0cf655d940e164cb5c00ec31961094/orderly_set-5.5.0-py3-none-any.whl.metadata
+#9 255.2   Downloading orderly_set-5.5.0-py3-none-any.whl.metadata (6.6 kB)
+#9 255.5 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8559dac0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /importlib-metadata/
+#9 256.3 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8559e6c0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /importlib-metadata/
+#9 257.3 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff855d5880>: Failed to establish a new connection: [Errno -2] Name or service not known')': /importlib-metadata/
+#9 259.4 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff855d5e80>: Failed to establish a new connection: [Errno -2] Name or service not known')': /importlib-metadata/
+#9 263.4 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff855d40e0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /importlib-metadata/
+#9 263.8 Collecting importlib_metadata (from diffusers<0.36.0,>=0.27.2->lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 263.8   Obtaining dependency information for importlib_metadata from https://files.pythonhosted.org/packages/b3/55/ecca97ae19075f1fac62def77731e7f535e6c1fb8f92ff08160c5e6dade8/importlib_metadata-9.0.1-py3-none-any.whl.metadata
+#9 263.8   Downloading importlib_metadata-9.0.1-py3-none-any.whl.metadata (4.5 kB)
+#9 265.6 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8556f6b0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /regex/
+#9 266.2 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8556f950>: Failed to establish a new connection: [Errno -2] Name or service not known')': /regex/
+#9 267.2 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8556fa40>: Failed to establish a new connection: [Errno -2] Name or service not known')': /regex/
+#9 269.2 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8556f890>: Failed to establish a new connection: [Errno -2] Name or service not known')': /regex/
+#9 273.3 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8556c0b0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /regex/
+#9 273.5 Collecting regex!=2019.12.17 (from diffusers<0.36.0,>=0.27.2->lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 273.5   Obtaining dependency information for regex!=2019.12.17 from https://files.pythonhosted.org/packages/c9/72/67e7a8ce17f1aea49df215564048efb49cc8c2b31a0e0fc30f36838f8516/regex-2026.9.29-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl.metadata
+#9 273.5   Downloading regex-2026.9.29-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl.metadata (40 kB)
+#9 273.6 Requirement already satisfied: Pillow in /opt/venv/lib/python3.12/site-packages (from diffusers<0.36.0,>=0.27.2->lerobot==0.4.4->lerobot[smolvla]==0.4.4) (11.2.1)
+#9 273.9 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8556fa40>: Failed to establish a new connection: [Errno -2] Name or service not known')': /cloudpickle/
+#9 274.5 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85469eb0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /cloudpickle/
+#9 275.5 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8546a1e0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /cloudpickle/
+#9 277.6 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8546a420>: Failed to establish a new connection: [Errno -2] Name or service not known')': /cloudpickle/
+#9 281.6 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8546a600>: Failed to establish a new connection: [Errno -2] Name or service not known')': /cloudpickle/
+#9 282.0 Collecting cloudpickle>=1.2.0 (from gymnasium<2.0.0,>=1.1.1->lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 282.0   Obtaining dependency information for cloudpickle>=1.2.0 from https://files.pythonhosted.org/packages/88/39/799be3f2f0f38cc727ee3b4f1445fe6d5e4133064ec2e4115069418a5bb6/cloudpickle-3.1.2-py3-none-any.whl.metadata
+#9 282.0   Downloading cloudpickle-3.1.2-py3-none-any.whl.metadata (7.1 kB)
+#9 282.0 Requirement already satisfied: typing-extensions>=4.12.0 in /opt/venv/lib/python3.12/site-packages (from gymnasium<2.0.0,>=1.1.1->lerobot==0.4.4->lerobot[smolvla]==0.4.4) (4.13.2)
+#9 282.1 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8546b110>: Failed to establish a new connection: [Errno -2] Name or service not known')': /farama-notifications/
+#9 282.7 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85469e50>: Failed to establish a new connection: [Errno -2] Name or service not known')': /farama-notifications/
+#9 283.7 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8546a480>: Failed to establish a new connection: [Errno -2] Name or service not known')': /farama-notifications/
+#9 285.8 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8546b380>: Failed to establish a new connection: [Errno -2] Name or service not known')': /farama-notifications/
+#9 289.8 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8546b560>: Failed to establish a new connection: [Errno -2] Name or service not known')': /farama-notifications/
+#9 290.1 Collecting farama-notifications>=0.0.1 (from gymnasium<2.0.0,>=1.1.1->lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 290.1   Obtaining dependency information for farama-notifications>=0.0.1 from https://files.pythonhosted.org/packages/7c/f0/21f81892e4ed10f4ec3ef2e7cf8635fb76e7c0907c55d0da66be50094760/farama_notifications-0.0.6-py3-none-any.whl.metadata
+#9 290.1   Downloading farama_notifications-0.0.6-py3-none-any.whl.metadata (729 bytes)
+#9 290.3 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8556ef30>: Failed to establish a new connection: [Errno -2] Name or service not known')': /hf-xet/
+#9 290.9 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8556c5c0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /hf-xet/
+#9 291.9 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff855fab70>: Failed to establish a new connection: [Errno -2] Name or service not known')': /hf-xet/
+#9 293.9 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff855faf00>: Failed to establish a new connection: [Errno -2] Name or service not known')': /hf-xet/
+#9 298.0 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff855fb1a0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /hf-xet/
+#9 298.1 Collecting hf-xet<2.0.0,>=1.1.3 (from huggingface-hub<0.36.0,>=0.34.2->huggingface-hub[cli,hf-transfer]<0.36.0,>=0.34.2->lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 298.1   Obtaining dependency information for hf-xet<2.0.0,>=1.1.3 from https://files.pythonhosted.org/packages/9a/69/1f0cbc2fb22ae6082d094f743d1b8945a3f36f6089cb95f42b7ee348cda7/hf_xet-1.6.0-cp38-abi3-manylinux_2_28_aarch64.whl.metadata
+#9 298.1   Downloading hf_xet-1.6.0-cp38-abi3-manylinux_2_28_aarch64.whl.metadata (4.9 kB)
+#9 298.2 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8562cf80>: Failed to establish a new connection: [Errno -2] Name or service not known')': /inquirerpy/
+#9 298.8 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8562da30>: Failed to establish a new connection: [Errno -2] Name or service not known')': /inquirerpy/
+#9 299.8 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8562db80>: Failed to establish a new connection: [Errno -2] Name or service not known')': /inquirerpy/
+#9 301.9 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8562ddf0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /inquirerpy/
+#9 305.9 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8562df70>: Failed to establish a new connection: [Errno -2] Name or service not known')': /inquirerpy/
+#9 306.2 Collecting InquirerPy==0.3.4 (from huggingface-hub[cli,hf-transfer]<0.36.0,>=0.34.2->lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 306.2   Obtaining dependency information for InquirerPy==0.3.4 from https://files.pythonhosted.org/packages/ce/ff/3b59672c47c6284e8005b42e84ceba13864aa0f39f067c973d1af02f5d91/InquirerPy-0.3.4-py3-none-any.whl.metadata
+#9 306.2   Downloading InquirerPy-0.3.4-py3-none-any.whl.metadata (8.1 kB)
+#9 306.4 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85434920>: Failed to establish a new connection: [Errno -2] Name or service not known')': /hf-transfer/
+#9 307.0 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff851ec470>: Failed to establish a new connection: [Errno -2] Name or service not known')': /hf-transfer/
+#9 308.0 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff851ef740>: Failed to establish a new connection: [Errno -2] Name or service not known')': /hf-transfer/
+#9 310.0 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff855d69c0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /hf-transfer/
+#9 314.1 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8571fb90>: Failed to establish a new connection: [Errno -2] Name or service not known')': /hf-transfer/
+#9 314.3 Collecting hf-transfer>=0.1.4 (from huggingface-hub[cli,hf-transfer]<0.36.0,>=0.34.2->lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 314.3   Obtaining dependency information for hf-transfer>=0.1.4 from https://files.pythonhosted.org/packages/8e/a2/cd7885bc9959421065a6fae0fe67b6c55becdeda4e69b873e52976f9a9f0/hf_transfer-0.1.9-cp38-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata
+#9 314.3   Downloading hf_transfer-0.1.9-cp38-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata (1.7 kB)
+#9 314.4 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff851ef740>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pfzy/
+#9 315.0 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff851ee9f0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pfzy/
+#9 316.0 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff854359d0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pfzy/
+#9 318.1 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85435b50>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pfzy/
+#9 322.2 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff85880f20>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pfzy/
+#9 322.3 Collecting pfzy<0.4.0,>=0.3.1 (from InquirerPy==0.3.4->huggingface-hub[cli,hf-transfer]<0.36.0,>=0.34.2->lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 322.3   Obtaining dependency information for pfzy<0.4.0,>=0.3.1 from https://files.pythonhosted.org/packages/8c/d7/8ff98376b1acc4503253b685ea09981697385ce344d4e3935c2af49e044d/pfzy-0.3.4-py3-none-any.whl.metadata
+#9 322.3   Downloading pfzy-0.3.4-py3-none-any.whl.metadata (4.9 kB)
+#9 322.3 Requirement already satisfied: prompt-toolkit<4.0.0,>=3.0.1 in /opt/venv/lib/python3.12/site-packages (from InquirerPy==0.3.4->huggingface-hub[cli,hf-transfer]<0.36.0,>=0.34.2->lerobot==0.4.4->lerobot[smolvla]==0.4.4) (3.0.51)
+#9 322.5 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff854ccec0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /imageio-ffmpeg/
+#9 323.0 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff854ccd10>: Failed to establish a new connection: [Errno -2] Name or service not known')': /imageio-ffmpeg/
+#9 324.1 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff854ce0f0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /imageio-ffmpeg/
+#9 326.2 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff854cd3a0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /imageio-ffmpeg/
+#9 330.2 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff855d69c0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /imageio-ffmpeg/
+#9 330.4 Collecting imageio-ffmpeg (from imageio[ffmpeg]<3.0.0,>=2.34.0->lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 330.4   Obtaining dependency information for imageio-ffmpeg from https://files.pythonhosted.org/packages/33/e7/1925bfbc563c39c1d2e82501d8372734a5c725e53ac3b31b4c2d081e895b/imageio_ffmpeg-0.6.0-py3-none-manylinux2014_aarch64.whl.metadata
+#9 330.4   Downloading imageio_ffmpeg-0.6.0-py3-none-manylinux2014_aarch64.whl.metadata (1.5 kB)
+#9 330.4 Requirement already satisfied: attrs>=19.2.0 in /opt/venv/lib/python3.12/site-packages (from jsonlines<5.0.0,>=4.0.0->lerobot==0.4.4->lerobot[smolvla]==0.4.4) (25.3.0)
+#9 330.4 Requirement already satisfied: docopt>=0.6.2 in /opt/venv/lib/python3.12/site-packages (from num2words<0.6.0,>=0.5.14->lerobot[smolvla]==0.4.4) (0.6.2)
+#9 330.4 Requirement already satisfied: six in /usr/lib/python3/dist-packages (from pynput<1.9.0,>=1.7.7->lerobot==0.4.4->lerobot[smolvla]==0.4.4) (1.16.0)
+#9 330.5 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8562db80>: Failed to establish a new connection: [Errno -2] Name or service not known')': /evdev/
+#9 331.1 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8562d1c0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /evdev/
+#9 332.2 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8562d520>: Failed to establish a new connection: [Errno -2] Name or service not known')': /evdev/
+#9 334.2 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff8562ff80>: Failed to establish a new connection: [Errno -2] Name or service not known')': /evdev/
+#9 338.3 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff840ac200>: Failed to establish a new connection: [Errno -2] Name or service not known')': /evdev/
+#9 338.4 INFO: pip is looking at multiple versions of pynput to determine which version is compatible with other requirements. This could take a while.
+#9 338.4 Collecting pynput<1.9.0,>=1.7.7 (from lerobot==0.4.4->lerobot[smolvla]==0.4.4)
+#9 338.4   Obtaining dependency information for pynput<1.9.0,>=1.7.7 from https://files.pythonhosted.org/packages/59/4f/ac3fa906ae8a375a536b12794128c5efacade9eaa917a35dfd27ce0c7400/pynput-1.8.1-py2.py3-none-any.whl.metadata
+#9 338.4   Downloading pynput-1.8.1-py2.py3-none-any.whl.metadata (32 kB)
+#9 338.5   Obtaining dependency information for pynput<1.9.0,>=1.7.7 from https://files.pythonhosted.org/packages/be/ff/19ecf48d2a950c649b1e433fa07236fede92bb5832b6e2b913c267ba41b2/pynput-1.8.0-py2.py3-none-any.whl.metadata
+#9 338.5   Downloading pynput-1.8.0-py2.py3-none-any.whl.metadata (31 kB)
+#9 338.6   Obtaining dependency information for pynput<1.9.0,>=1.7.7 from https://files.pythonhosted.org/packages/77/23/2eeda4a156da594411abdb606654b681091e18f5e62d92a9c0965c101598/pynput-1.7.8-py2.py3-none-any.whl.metadata
+#9 338.6   Downloading pynput-1.7.8-py2.py3-none-any.whl.metadata (31 kB)
+#9 338.7   Obtaining dependency information for pynput<1.9.0,>=1.7.7 from https://files.pythonhosted.org/packages/ef/1d/fdef3fdc9dc8dedc65898c8ad0e8922a914bb89c5308887e45f9aafaec36/pynput-1.7.7-py2.py3-none-any.whl.metadata
+#9 338.7   Downloading pynput-1.7.7-py2.py3-none-any.whl.metadata (31 kB)
+#9 338.8 ERROR: Cannot install lerobot because these package versions have conflicting dependencies.
+#9 338.8 
+#9 338.8 The conflict is caused by:
+#9 338.8     pynput 1.8.2 depends on evdev>=1.3; "linux" in sys_platform
+#9 338.8     pynput 1.8.1 depends on evdev>=1.3; "linux" in sys_platform
+#9 338.8     pynput 1.8.0 depends on evdev>=1.3; "linux" in sys_platform
+#9 338.8     pynput 1.7.8 depends on evdev>=1.3; "linux" in sys_platform
+#9 338.8     pynput 1.7.7 depends on evdev>=1.3; "linux" in sys_platform
+#9 338.8 
+#9 338.8 To fix this you could try to:
+#9 338.8 1. loosen the range of package versions you've specified
+#9 338.8 2. remove package versions to allow pip to attempt to solve the dependency conflict
+#9 338.8 
+#9 338.8 ERROR: ResolutionImpossible: for help visit https://pip.pypa.io/en/latest/topics/dependency-resolution/#dealing-with-dependency-conflicts
+#9 ERROR: process "/bin/bash -c python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all:       --index-url https://pypi.org/simple       'lerobot[smolvla]==0.4.4'  && (python3 -m pip check || echo \"pip check reported issues above -- informational; the import gate below is the real check.\")" did not complete successfully: exit code: 1
+------
+ > [6/8] RUN python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all:       --index-url https://pypi.org/simple       'lerobot[smolvla]==0.4.4'  && (python3 -m pip check || echo "pip check reported issues above -- informational; the import gate below is the real check."):
+338.8     pynput 1.8.1 depends on evdev>=1.3; "linux" in sys_platform
+338.8     pynput 1.8.0 depends on evdev>=1.3; "linux" in sys_platform
+338.8     pynput 1.7.8 depends on evdev>=1.3; "linux" in sys_platform
+338.8     pynput 1.7.7 depends on evdev>=1.3; "linux" in sys_platform
+338.8 
+338.8 To fix this you could try to:
+338.8 1. loosen the range of package versions you've specified
+338.8 2. remove package versions to allow pip to attempt to solve the dependency conflict
+338.8 
+338.8 ERROR: ResolutionImpossible: for help visit https://pip.pypa.io/en/latest/topics/dependency-resolution/#dealing-with-dependency-conflicts
+------
+Dockerfile.arm2-lerobot:46
+--------------------
+  45 |     RUN python3 -m pip install -c /opt/base_constraints.txt --index-url https://pypi.org/simple docopt==0.6.2
+  46 | >>> RUN python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all: \
+  47 | >>>       --index-url https://pypi.org/simple \
+  48 | >>>       'lerobot[smolvla]==0.4.4' \
+  49 | >>>  && (python3 -m pip check || echo "pip check reported issues above -- informational; the import gate below is the real check.")
+  50 |     
+--------------------
+ERROR: failed to build: failed to solve: process "/bin/bash -c python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all:       --index-url https://pypi.org/simple       'lerobot[smolvla]==0.4.4'  && (python3 -m pip check || echo \"pip check reported issues above -- informational; the import gate below is the real check.\")" did not complete successfully: exit code: 1

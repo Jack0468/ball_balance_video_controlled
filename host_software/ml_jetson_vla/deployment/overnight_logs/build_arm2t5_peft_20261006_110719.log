@@ -1,0 +1,552 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.arm2-transformers5
+#1 transferring dockerfile: 9.20kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/dustynv/pytorch:2.7-r36.4.0-cu128-24.04
+#2 DONE 1.7s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [internal] load build context
+#4 DONE 0.0s
+
+#5 [1/8] FROM docker.io/dustynv/pytorch:2.7-r36.4.0-cu128-24.04@sha256:4bb7f0a3852f86629ed271aaf6c4aa000305cc4e4673b8e9f334668ee1b22bc8
+#5 resolve docker.io/dustynv/pytorch:2.7-r36.4.0-cu128-24.04@sha256:4bb7f0a3852f86629ed271aaf6c4aa000305cc4e4673b8e9f334668ee1b22bc8 0.0s done
+#5 CACHED
+
+#4 [internal] load build context
+#4 transferring context: 3.19kB done
+#4 DONE 0.1s
+
+#6 [2/8] RUN apt-get update && apt-get install -y --no-install-recommends libsndfile1  && rm -rf /var/lib/apt/lists/*
+#6 1.095 Get:1 http://ports.ubuntu.com/ubuntu-ports noble InRelease [256 kB]
+#6 2.315 Get:2 http://ports.ubuntu.com/ubuntu-ports noble-updates InRelease [126 kB]
+#6 2.706 Get:3 http://ports.ubuntu.com/ubuntu-ports noble-backports InRelease [126 kB]
+#6 3.104 Get:4 http://ports.ubuntu.com/ubuntu-ports noble-security InRelease [126 kB]
+#6 3.500 Get:5 http://ports.ubuntu.com/ubuntu-ports noble/restricted arm64 Packages [113 kB]
+#6 3.679 Get:6 http://ports.ubuntu.com/ubuntu-ports noble/main arm64 Packages [1,776 kB]
+#6 6.279 Get:7 http://ports.ubuntu.com/ubuntu-ports noble/universe arm64 Packages [19.0 MB]
+#6 35.61 Get:8 http://ports.ubuntu.com/ubuntu-ports noble/multiverse arm64 Packages [274 kB]
+#6 36.01 Get:9 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 Packages [1,758 kB]
+#6 38.62 Get:10 http://ports.ubuntu.com/ubuntu-ports noble-updates/universe arm64 Packages [2,210 kB]
+#6 41.84 Get:11 http://ports.ubuntu.com/ubuntu-ports noble-updates/multiverse arm64 Packages [96.8 kB]
+#6 41.98 Get:12 http://ports.ubuntu.com/ubuntu-ports noble-updates/restricted arm64 Packages [3,132 kB]
+#6 46.97 Get:13 http://ports.ubuntu.com/ubuntu-ports noble-backports/multiverse arm64 Packages [671 B]
+#6 46.98 Get:14 http://ports.ubuntu.com/ubuntu-ports noble-backports/main arm64 Packages [49.0 kB]
+#6 47.05 Get:15 http://ports.ubuntu.com/ubuntu-ports noble-backports/universe arm64 Packages [36.3 kB]
+#6 47.10 Get:16 http://ports.ubuntu.com/ubuntu-ports noble-security/main arm64 Packages [1,390 kB]
+#6 49.17 Get:17 http://ports.ubuntu.com/ubuntu-ports noble-security/universe arm64 Packages [1,624 kB]
+#6 51.80 Get:18 http://ports.ubuntu.com/ubuntu-ports noble-security/multiverse arm64 Packages [89.7 kB]
+#6 51.80 Get:19 http://ports.ubuntu.com/ubuntu-ports noble-security/restricted arm64 Packages [2,886 kB]
+#6 56.56 Fetched 35.1 MB in 56s (625 kB/s)
+#6 56.56 Reading package lists...
+#6 57.92 Reading package lists...
+#6 59.23 Building dependency tree...
+#6 59.66 Reading state information...
+#6 60.35 The following additional packages will be installed:
+#6 60.35   libflac12t64 libmp3lame0 libmpg123-0t64 libogg0 libopus0 libvorbis0a
+#6 60.35   libvorbisenc2
+#6 60.36 Suggested packages:
+#6 60.36   opus-tools
+#6 60.41 The following NEW packages will be installed:
+#6 60.41   libflac12t64 libmp3lame0 libmpg123-0t64 libogg0 libopus0 libsndfile1
+#6 60.41   libvorbis0a libvorbisenc2
+#6 61.11 0 upgraded, 8 newly installed, 0 to remove and 186 not upgraded.
+#6 61.11 Need to get 1,085 kB of archives.
+#6 61.11 After this operation, 3,191 kB of additional disk space will be used.
+#6 61.11 Get:1 http://ports.ubuntu.com/ubuntu-ports noble/main arm64 libogg0 arm64 1.3.5-3build1 [22.6 kB]
+#6 61.61 Get:2 http://ports.ubuntu.com/ubuntu-ports noble/main arm64 libflac12t64 arm64 1.4.3+ds-2.1ubuntu2 [170 kB]
+#6 62.32 Get:3 http://ports.ubuntu.com/ubuntu-ports noble/main arm64 libmp3lame0 arm64 3.100-6build1 [141 kB]
+#6 62.54 Get:4 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 libmpg123-0t64 arm64 1.32.5-1ubuntu1.1 [172 kB]
+#6 62.79 Get:5 http://ports.ubuntu.com/ubuntu-ports noble/main arm64 libopus0 arm64 1.4-1build1 [198 kB]
+#6 63.08 Get:6 http://ports.ubuntu.com/ubuntu-ports noble/main arm64 libvorbis0a arm64 1.3.7-1build3 [94.0 kB]
+#6 63.22 Get:7 http://ports.ubuntu.com/ubuntu-ports noble/main arm64 libvorbisenc2 arm64 1.3.7-1build3 [80.0 kB]
+#6 63.33 Get:8 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 libsndfile1 arm64 1.2.2-1ubuntu5.24.04.1 [208 kB]
+#6 63.92 debconf: delaying package configuration, since apt-utils is not installed
+#6 64.02 Fetched 1,085 kB in 3s (341 kB/s)
+#6 64.07 Selecting previously unselected package libogg0:arm64.
+#6 64.07 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 29592 files and directories currently installed.)
+#6 64.14 Preparing to unpack .../0-libogg0_1.3.5-3build1_arm64.deb ...
+#6 64.15 Unpacking libogg0:arm64 (1.3.5-3build1) ...
+#6 64.22 Selecting previously unselected package libflac12t64:arm64.
+#6 64.22 Preparing to unpack .../1-libflac12t64_1.4.3+ds-2.1ubuntu2_arm64.deb ...
+#6 64.23 Unpacking libflac12t64:arm64 (1.4.3+ds-2.1ubuntu2) ...
+#6 64.30 Selecting previously unselected package libmp3lame0:arm64.
+#6 64.30 Preparing to unpack .../2-libmp3lame0_3.100-6build1_arm64.deb ...
+#6 64.31 Unpacking libmp3lame0:arm64 (3.100-6build1) ...
+#6 64.38 Selecting previously unselected package libmpg123-0t64:arm64.
+#6 64.39 Preparing to unpack .../3-libmpg123-0t64_1.32.5-1ubuntu1.1_arm64.deb ...
+#6 64.40 Unpacking libmpg123-0t64:arm64 (1.32.5-1ubuntu1.1) ...
+#6 64.46 Selecting previously unselected package libopus0:arm64.
+#6 64.47 Preparing to unpack .../4-libopus0_1.4-1build1_arm64.deb ...
+#6 64.48 Unpacking libopus0:arm64 (1.4-1build1) ...
+#6 64.54 Selecting previously unselected package libvorbis0a:arm64.
+#6 64.55 Preparing to unpack .../5-libvorbis0a_1.3.7-1build3_arm64.deb ...
+#6 64.55 Unpacking libvorbis0a:arm64 (1.3.7-1build3) ...
+#6 64.62 Selecting previously unselected package libvorbisenc2:arm64.
+#6 64.63 Preparing to unpack .../6-libvorbisenc2_1.3.7-1build3_arm64.deb ...
+#6 64.63 Unpacking libvorbisenc2:arm64 (1.3.7-1build3) ...
+#6 64.71 Selecting previously unselected package libsndfile1:arm64.
+#6 64.72 Preparing to unpack .../7-libsndfile1_1.2.2-1ubuntu5.24.04.1_arm64.deb ...
+#6 64.72 Unpacking libsndfile1:arm64 (1.2.2-1ubuntu5.24.04.1) ...
+#6 64.81 Setting up libogg0:arm64 (1.3.5-3build1) ...
+#6 64.83 Setting up libmpg123-0t64:arm64 (1.32.5-1ubuntu1.1) ...
+#6 64.85 Setting up libopus0:arm64 (1.4-1build1) ...
+#6 64.86 Setting up libvorbis0a:arm64 (1.3.7-1build3) ...
+#6 64.88 Setting up libflac12t64:arm64 (1.4.3+ds-2.1ubuntu2) ...
+#6 64.90 Setting up libmp3lame0:arm64 (3.100-6build1) ...
+#6 64.92 Setting up libvorbisenc2:arm64 (1.3.7-1build3) ...
+#6 64.94 Setting up libsndfile1:arm64 (1.2.2-1ubuntu5.24.04.1) ...
+#6 64.96 Processing triggers for libc-bin (2.39-0ubuntu8.4) ...
+#6 64.99 /sbin/ldconfig.real: File /lib/aarch64-linux-gnu/libv4lconvert.so.0.0.999999 is empty, not checked.
+#6 64.99 /sbin/ldconfig.real: File /lib/aarch64-linux-gnu/libv4lconvert.so.0 is empty, not checked.
+#6 64.99 /sbin/ldconfig.real: File /lib/aarch64-linux-gnu/libv4l2.so.0 is empty, not checked.
+#6 64.99 /sbin/ldconfig.real: File /lib/aarch64-linux-gnu/libnvsample_cudaprocess.so is empty, not checked.
+#6 64.99 /sbin/ldconfig.real: File /lib/aarch64-linux-gnu/libgstnvivameta.so is empty, not checked.
+#6 64.99 /sbin/ldconfig.real: File /lib/aarch64-linux-gnu/libgstnvegl-1.0.so.0 is empty, not checked.
+#6 64.99 /sbin/ldconfig.real: File /lib/aarch64-linux-gnu/libgstnvexifmeta.so is empty, not checked.
+#6 64.99 /sbin/ldconfig.real: File /lib/aarch64-linux-gnu/libcuda.so is empty, not checked.
+#6 64.99 /sbin/ldconfig.real: File /lib/aarch64-linux-gnu/libnvcudla.so is empty, not checked.
+#6 64.99 /sbin/ldconfig.real: File /lib/aarch64-linux-gnu/libnvcucompat.so is empty, not checked.
+#6 64.99 /sbin/ldconfig.real: File /lib/aarch64-linux-gnu/libv4l2.so.0.0.999999 is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstnvvideosinks.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstnveglstreamsrc.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstnvdrmvideosink.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstnvcompositor.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstnvunixfd.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstnvtee.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstnvv4l2camerasrc.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstnveglglessink.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstnvivafilter.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstnvjpeg.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstnvvidconv.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstnvarguscamerasrc.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstnvvideo4linux2.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstnvvideosink.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstnvipcpipeline.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstnvegltransform.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvjpeg.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvscistream.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvtvmr.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libwayland-client.so.0 is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libVkSCLayer_khronos_validation.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvdla_runtime.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvmedia_dla.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvimp.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvgov_spincircle.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvplayfair.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvidia-rtcore.so.540.4.0 is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvid_mapper.so.1.0.0 is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvscisync.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvmm_contentpipe.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvisp_utils.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libcuda.so.1.1 is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvscibuf.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvosd.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libv4lconvert.so.0 is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libv4l2_nvvideocodec.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libjetsonpower.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvpvaintf.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvidia-nvvm.so.4 is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libwayland-cursor.so.0.22.0 is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnveglstreamproducer.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvidia-ml.so.1 is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvbufsurface.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvisppg.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvgov_camera.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvcam_imageencoder.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libtegrawfd.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/ld.so.conf is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvidia-vksc-core.so.540.4.0 is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libsensors.l4t.no_fusion.nvs.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvddk_2d_v2.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvidia-glsi.so.540.4.0 is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvvideo.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvddk_vic.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvgov_force.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvdsbufferpool.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvpva_algorithms.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvidia-allocator.so.1 is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvrm_surface.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvmedia_ide_sci.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libv4l2.so.0 is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvscistream.so.1 is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvmmlite.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvidia-eglcore.so.540.4.0 is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvvic.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvmm_utils.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvpva.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvidia-vksc-core.so.1 is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvscicommon.so.1 is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvrm_sync.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvmmlite_video.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvidia-tls.so.540.4.0 is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvphsd.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvfnet.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvisp.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvbufsurface.so.1.0.0 is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libvulkansc.so.1.0.10 is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvmedia_ijpd_sci.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvgov_gpucompute.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvmm_parser.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libgstnvdsseimeta.so.1.0.0 is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libgstnvcustomhelper.so.1.0.0 is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvrm_stream.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvcuvidv4l2.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvtracebuf.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvcolorutil.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvidia-ptxjitcompiler.so.1 is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvidia-nvvm.so.540.4.0 is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libVkLayer_json_gen.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvos.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvidia-ptxjitcompiler.so.540.4.0 is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnveventlib.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvdecode2eglimage.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvrm_chip.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvsocsys.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvmedia_iofa_sci.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvcamlog.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvfnetstoredefog.so is empty, not checked.
+#6 65.00 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvmedia_2d.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvmmlite_image.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvmedia.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvgov_generic.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvv4lconvert.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvmedialdc.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libGLX_nvidia.so.0 is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libcuda.so.1 is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvdc.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvrm_mem.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libwayland-client.so.0.22.0 is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvbuf_fdmap.so.1.0.0 is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvomxilclient.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvgov_graphics.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libvulkansc.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libwayland-server.so.0.22.0 is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvcameratools.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvidia-kms.so.540.4.0 is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libGLX_indirect.so.0 is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvgov_ui.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libv4l2_nvargus.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvdsbufferpool.so.1.0.0 is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvdla_compiler.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvargus_socketclient.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvmedia2d.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvparser.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvtegrahv.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvidia-glvkspirv.so.540.4.0 is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvmedia_eglstream.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvoggopus.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvargus.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvmedia_iep_sci.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvbufsurftransform.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvidia-allocator.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvidia-kms.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libwayland-cursor.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvfusacap.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvgov_boot.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libcuda.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvargus_socketserver.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvidia-egl-gbm.so.1.1.0 is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvexif.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvcudla.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libwayland-egl.so.1 is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvcapture.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libwayland-server.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libwayland-egl.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvrm_host1x.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvscicommon.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvcamv4l2.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvvideoencode_ppe.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvidia-rmapi-tegra.so.540.4.0 is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvcucompat.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libv4l2_nvcuvidvideocodec.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvgov_tbc.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvidia-egl-gbm.so.1 is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libtegrav4l2.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvfusacapinterface.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvidia-vksc-core.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvphs.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvcamerautils.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvmmlite_utils.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvgov_il.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvidia-glcore.so.540.4.0 is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libsensors.hal-client.nvs.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvsciipc.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libsensors_hal.nvs.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvmedia_ide_parser.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvidia-egl-wayland.so.1.1.11 is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvodm_imager.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvscievent.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvmedia_ijpe_sci.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvpvaumd.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libwayland-server.so.0 is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvofsdk.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libgstnvcustomhelper.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvfnetstorehdfx.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvtvmr_2d.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvscf.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvscisync.so.1 is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvscibuf.so.1 is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvv4l2.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvidia-egl-wayland.so.1 is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvbufsurftransform.so.1.0.0 is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libwayland-cursor.so.0 is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libwayland-client.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libgstnvdsseimeta.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvidia-gpucomp.so.540.4.0 is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libwayland-egl.so.1.22.0 is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvomx.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvrm_gpu.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvmedia_isp_ext.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvid_mapper.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvmm.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libvulkansc.so.1 is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/libnvmedia_tensor.so is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/weston-13.0/libilmControl.so.2.3.2 is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/weston-13.0/libilmCommon.so.2.3.2 is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/weston-13.0/libweston-13.so.0 is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/weston-13.0/libilmInput.so.2.3.2 is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/nvidia/weston-13.0/libilmClient.so.2.3.2 is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/tegra-egl/ld.so.conf is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/tegra-egl/libGLESv1_CM_nvidia.so.1 is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/tegra-egl/libEGL_nvidia.so.0 is empty, not checked.
+#6 65.01 /sbin/ldconfig.real: File /usr/lib/aarch64-linux-gnu/tegra-egl/libGLESv2_nvidia.so.2 is empty, not checked.
+#6 DONE 65.2s
+
+#7 [3/8] RUN python3 -m pip freeze --exclude-editable > /opt/base_constraints.txt  && python3 -c "import numpy, torch; print('base numpy', numpy.__version__, 'torch', torch.__version__, 'cuda_available', torch.cuda.is_available())"  && python3 -c "assert tuple(map(int, __import__('torch').__version__.split('+')[0].split('.')[:2])) >= (2, 5), 'torch < 2.5 -- transformers>=5 will disable its PyTorch backend, this image is built wrong'; print('torch >= 2.5: OK')"  && (python3 -c "import torchvision; print('base torchvision', torchvision.__version__)"      || echo "torchvision MISSING from this base image -- dustynv/pytorch is torch-only, not l4t-pytorch.         Must install the dusty-nv-matched torchvision wheel for THIS exact torch/CUDA build, never a         generic 'pip install torchvision' (repeats this session's earlier CPU-wheel-substitution bug).         Build will fail at the next explicit check below if this isn't resolved.")
+#7 2.885 base numpy 2.2.4 torch 2.7.0 cuda_available False
+#7 5.394 torch >= 2.5: OK
+#7 9.434 base torchvision 0.22.0
+#7 DONE 10.5s
+
+#8 [4/8] RUN python3 -c "import cv2, cv2.aruco"  || python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all:       --index-url https://pypi.org/simple opencv-contrib-python-headless
+#8 0.357 Traceback (most recent call last):
+#8 0.357   File "<string>", line 1, in <module>
+#8 0.357 ModuleNotFoundError: No module named 'cv2'
+#8 0.817 Using pip 25.0.1 from /opt/venv/lib/python3.12/site-packages/pip (python 3.12)
+#8 1.109 Looking in indexes: https://pypi.org/simple, https://pypi.ngc.nvidia.com
+#8 1.532 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff9f16d850>: Failed to establish a new connection: [Errno -2] Name or service not known')': /opencv-contrib-python-headless/
+#8 2.071 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff9f16e4e0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /opencv-contrib-python-headless/
+#8 3.097 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff9f16e6c0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /opencv-contrib-python-headless/
+#8 5.122 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff9f16e8d0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /opencv-contrib-python-headless/
+#8 9.165 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff9f16eb10>: Failed to establish a new connection: [Errno -2] Name or service not known')': /opencv-contrib-python-headless/
+#8 9.211 Collecting opencv-contrib-python-headless
+#8 9.212   Obtaining dependency information for opencv-contrib-python-headless from https://files.pythonhosted.org/packages/51/78/11f0704e94ebf92f748c789cf5d430d4459ae3649263c712d81772cc4360/opencv_contrib_python_headless-5.0.0.93-cp37-abi3-manylinux_2_28_aarch64.whl.metadata
+#8 9.338   Downloading opencv_contrib_python_headless-5.0.0.93-cp37-abi3-manylinux_2_28_aarch64.whl.metadata (19 kB)
+#8 9.383 Requirement already satisfied: numpy>=2 in /opt/venv/lib/python3.12/site-packages (from opencv-contrib-python-headless) (2.2.4)
+#8 9.408 Downloading opencv_contrib_python_headless-5.0.0.93-cp37-abi3-manylinux_2_28_aarch64.whl (44.4 MB)
+#8 74.89    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 44.4/44.4 MB 678.1 kB/s eta 0:00:00
+#8 75.24 Installing collected packages: opencv-contrib-python-headless
+#8 75.93 Successfully installed opencv-contrib-python-headless-5.0.0.93
+#8 DONE 76.2s
+
+#9 [5/8] COPY requirements-jetson-arm2-common.txt requirements-jetson-arm2-fallback-transformers5.txt /opt/arm2reqs/
+#9 DONE 0.1s
+
+#10 [6/8] RUN python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all:       --index-url https://pypi.org/simple       -r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt  && (python3 -m pip check || echo "pip check reported issues above -- informational only, since it       checks the WHOLE environment including pre-existing base-image packages (e.g. pygobject/pycairo,       ninja) unrelated to this image's purpose. The real gate is the explicit class-import assert below.")
+#10 0.744 Using pip 25.0.1 from /opt/venv/lib/python3.12/site-packages/pip (python 3.12)
+#10 1.038 Looking in indexes: https://pypi.org/simple, https://pypi.ngc.nvidia.com
+#10 1.424 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f512a20>: Failed to establish a new connection: [Errno -2] Name or service not known')': /accelerate/
+#10 1.967 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f513170>: Failed to establish a new connection: [Errno -2] Name or service not known')': /accelerate/
+#10 2.990 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f5108f0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /accelerate/
+#10 5.014 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f510d40>: Failed to establish a new connection: [Errno -2] Name or service not known')': /accelerate/
+#10 9.058 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f511160>: Failed to establish a new connection: [Errno -2] Name or service not known')': /accelerate/
+#10 9.257 Collecting accelerate (from -r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 47))
+#10 9.257   Obtaining dependency information for accelerate from https://files.pythonhosted.org/packages/8a/4c/34f0450479d01195027260da68d8a3880683f1640c3ca5adf64acb3185f1/accelerate-1.15.0-py3-none-any.whl.metadata
+#10 9.379   Downloading accelerate-1.15.0-py3-none-any.whl.metadata (19 kB)
+#10 9.877 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f5b1970>: Failed to establish a new connection: [Errno -2] Name or service not known')': /qwen-vl-utils/
+#10 10.40 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f5b2060>: Failed to establish a new connection: [Errno -2] Name or service not known')': /qwen-vl-utils/
+#10 11.42 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f5b2300>: Failed to establish a new connection: [Errno -2] Name or service not known')': /qwen-vl-utils/
+#10 13.45 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f58f5c0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /qwen-vl-utils/
+#10 17.49 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f5b2540>: Failed to establish a new connection: [Errno -2] Name or service not known')': /qwen-vl-utils/
+#10 17.53 Collecting qwen-vl-utils (from -r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 48))
+#10 17.53   Obtaining dependency information for qwen-vl-utils from https://files.pythonhosted.org/packages/c4/43/80f67e0336cb2fc725f8e06f7fe35c1d0fe946f4d2b8b2175e797e07349e/qwen_vl_utils-0.0.14-py3-none-any.whl.metadata
+#10 17.54   Downloading qwen_vl_utils-0.0.14-py3-none-any.whl.metadata (9.0 kB)
+#10 17.85 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f394140>: Failed to establish a new connection: [Errno -2] Name or service not known')': /sentencepiece/
+#10 18.38 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f394380>: Failed to establish a new connection: [Errno -2] Name or service not known')': /sentencepiece/
+#10 19.41 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f3946b0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /sentencepiece/
+#10 21.43 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f394830>: Failed to establish a new connection: [Errno -2] Name or service not known')': /sentencepiece/
+#10 25.47 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f394b60>: Failed to establish a new connection: [Errno -2] Name or service not known')': /sentencepiece/
+#10 25.53 Collecting sentencepiece (from -r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 49))
+#10 25.53   Obtaining dependency information for sentencepiece from https://files.pythonhosted.org/packages/19/90/cd798935668cff71d309d8ff10385844ecf216b1fe454f1993ed8bf2cb91/sentencepiece-0.2.2-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl.metadata
+#10 25.55   Downloading sentencepiece-0.2.2-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl.metadata (33 kB)
+#10 25.97 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f5111c0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /av/
+#10 26.53 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f5b2090>: Failed to establish a new connection: [Errno -2] Name or service not known')': /av/
+#10 27.63 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f5b2030>: Failed to establish a new connection: [Errno -2] Name or service not known')': /av/
+#10 29.66 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f5b1100>: Failed to establish a new connection: [Errno -2] Name or service not known')': /av/
+#10 33.70 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f5b3260>: Failed to establish a new connection: [Errno -2] Name or service not known')': /av/
+#10 33.75 Collecting av (from -r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 50))
+#10 33.75   Obtaining dependency information for av from https://files.pythonhosted.org/packages/10/4b/61f138fcf21e7bb50655ed21dd7fdc7a296baf72ea3c7ad8e89cb00b69c1/av-19.0.1-cp312-abi3-manylinux_2_28_aarch64.whl.metadata
+#10 33.81   Downloading av-19.0.1-cp312-abi3-manylinux_2_28_aarch64.whl.metadata (5.0 kB)
+#10 34.43 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f5adee0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pandas/
+#10 34.96 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f396a80>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pandas/
+#10 35.98 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f394e60>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pandas/
+#10 38.00 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f395700>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pandas/
+#10 42.05 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f396270>: Failed to establish a new connection: [Errno -2] Name or service not known')': /pandas/
+#10 42.09 Collecting pandas (from -r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 51))
+#10 42.09   Obtaining dependency information for pandas from https://files.pythonhosted.org/packages/67/fa/613d867c3d9554a61bafdec6f79565c8a3e73235feb52cc4a72ad2e0fa6a/pandas-3.0.6-cp312-cp312-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl.metadata
+#10 42.10   Downloading pandas-3.0.6-cp312-cp312-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl.metadata (79 kB)
+#10 42.32 Requirement already satisfied: pillow in /opt/venv/lib/python3.12/site-packages (from -r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 52)) (11.2.1)
+#10 42.32 Requirement already satisfied: filelock in /opt/venv/lib/python3.12/site-packages (from -r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 58)) (3.18.0)
+#10 42.32 Requirement already satisfied: typing_extensions in /opt/venv/lib/python3.12/site-packages (from -r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 59)) (4.13.2)
+#10 42.32 Requirement already satisfied: sympy in /opt/venv/lib/python3.12/site-packages (from -r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 60)) (1.13.3)
+#10 42.32 Requirement already satisfied: networkx in /opt/venv/lib/python3.12/site-packages (from -r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 61)) (3.4.2)
+#10 42.32 Requirement already satisfied: jinja2 in /opt/venv/lib/python3.12/site-packages (from -r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 62)) (3.1.6)
+#10 42.32 Requirement already satisfied: fsspec in /opt/venv/lib/python3.12/site-packages (from -r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 63)) (2025.3.2)
+#10 42.53 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f2f15b0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /transformers/
+#10 43.07 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f2f1fa0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /transformers/
+#10 44.10 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f2f2690>: Failed to establish a new connection: [Errno -2] Name or service not known')': /transformers/
+#10 46.13 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f2f2d20>: Failed to establish a new connection: [Errno -2] Name or service not known')': /transformers/
+#10 50.17 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f2f3530>: Failed to establish a new connection: [Errno -2] Name or service not known')': /transformers/
+#10 50.23 Collecting transformers==5.17.0 (from -r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 30))
+#10 50.23   Obtaining dependency information for transformers==5.17.0 from https://files.pythonhosted.org/packages/e8/d0/c502b60d684adbd98a8dc7d5bb866842772b816ac4354e4608be240041ae/transformers-5.17.0-py3-none-any.whl.metadata
+#10 50.24   Downloading transformers-5.17.0-py3-none-any.whl.metadata (32 kB)
+#10 50.68 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7eae2300>: Failed to establish a new connection: [Errno -2] Name or service not known')': /huggingface-hub/
+#10 51.23 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7eae1820>: Failed to establish a new connection: [Errno -2] Name or service not known')': /huggingface-hub/
+#10 52.25 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7eae0b60>: Failed to establish a new connection: [Errno -2] Name or service not known')': /huggingface-hub/
+#10 54.27 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7eae3ef0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /huggingface-hub/
+#10 58.31 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f3d1f40>: Failed to establish a new connection: [Errno -2] Name or service not known')': /huggingface-hub/
+#10 58.38 Collecting huggingface_hub (from -r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 31))
+#10 58.39   Obtaining dependency information for huggingface_hub from https://files.pythonhosted.org/packages/33/23/885b3a3b510c305f1d84421913935e19b6a48b93d173a0541674c1e88c2a/huggingface_hub-2.1.1-py3-none-any.whl.metadata
+#10 58.40   Downloading huggingface_hub-2.1.1-py3-none-any.whl.metadata (16 kB)
+#10 58.76 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7ef906b0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /peft/
+#10 59.30 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7ef90e90>: Failed to establish a new connection: [Errno -2] Name or service not known')': /peft/
+#10 60.32 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7ef914c0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /peft/
+#10 62.34 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7ef91c10>: Failed to establish a new connection: [Errno -2] Name or service not known')': /peft/
+#10 66.39 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7ef91ee0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /peft/
+#10 66.47 Collecting peft==0.19.1 (from -r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 39))
+#10 66.47   Obtaining dependency information for peft==0.19.1 from https://files.pythonhosted.org/packages/e8/b6/f54d676ed93cc2dd2234c3b172ea9c8c3d7d29361e66b1b23dec57a67465/peft-0.19.1-py3-none-any.whl.metadata
+#10 66.48   Downloading peft-0.19.1-py3-none-any.whl.metadata (15 kB)
+#10 66.57 Collecting huggingface_hub (from -r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 31))
+#10 66.57   Obtaining dependency information for huggingface_hub from https://files.pythonhosted.org/packages/fc/16/963096d224b80909432dc16561a615fd33d2d13beef3ce4c63fa25e40867/huggingface_hub-1.33.0-py3-none-any.whl.metadata
+#10 66.58   Downloading huggingface_hub-1.33.0-py3-none-any.whl.metadata (16 kB)
+#10 66.62 Requirement already satisfied: numpy>=1.17 in /opt/venv/lib/python3.12/site-packages (from transformers==5.17.0->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 30)) (2.2.4)
+#10 66.62 Requirement already satisfied: packaging>=20.0 in /opt/venv/lib/python3.12/site-packages (from transformers==5.17.0->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 30)) (24.2)
+#10 66.62 Requirement already satisfied: pyyaml>=5.1 in /opt/venv/lib/python3.12/site-packages (from transformers==5.17.0->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 30)) (6.0.2)
+#10 68.41 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f393bf0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /regex/
+#10 68.94 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f008170>: Failed to establish a new connection: [Errno -2] Name or service not known')': /regex/
+#10 69.96 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f0082c0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /regex/
+#10 71.99 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f008560>: Failed to establish a new connection: [Errno -2] Name or service not known')': /regex/
+#10 76.03 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f008800>: Failed to establish a new connection: [Errno -2] Name or service not known')': /regex/
+#10 76.10 Collecting regex>=2025.10.22 (from transformers==5.17.0->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 30))
+#10 76.10   Obtaining dependency information for regex>=2025.10.22 from https://files.pythonhosted.org/packages/c9/72/67e7a8ce17f1aea49df215564048efb49cc8c2b31a0e0fc30f36838f8516/regex-2026.9.29-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl.metadata
+#10 76.20   Downloading regex-2026.9.29-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl.metadata (40 kB)
+#10 76.95 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7ef8b140>: Failed to establish a new connection: [Errno -2] Name or service not known')': /tokenizers/
+#10 77.48 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7de940b0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /tokenizers/
+#10 78.50 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7de94410>: Failed to establish a new connection: [Errno -2] Name or service not known')': /tokenizers/
+#10 80.52 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7de94500>: Failed to establish a new connection: [Errno -2] Name or service not known')': /tokenizers/
+#10 84.56 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7de94860>: Failed to establish a new connection: [Errno -2] Name or service not known')': /tokenizers/
+#10 84.61 Collecting tokenizers<0.24.0,>=0.23.1 (from transformers==5.17.0->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 30))
+#10 84.61   Obtaining dependency information for tokenizers<0.24.0,>=0.23.1 from https://files.pythonhosted.org/packages/2e/4d/8f569ed49372a3ed8e57099bd515055fd48d7c95912c4307cda6973c2168/tokenizers-0.23.2-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata
+#10 84.63   Downloading tokenizers-0.23.2-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata (9.8 kB)
+#10 84.76 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7d6de690>: Failed to establish a new connection: [Errno -2] Name or service not known')': /typer/
+#10 85.30 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7d6dc440>: Failed to establish a new connection: [Errno -2] Name or service not known')': /typer/
+#10 86.33 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7d6dc800>: Failed to establish a new connection: [Errno -2] Name or service not known')': /typer/
+#10 88.36 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7de942c0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /typer/
+#10 92.40 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7de94260>: Failed to establish a new connection: [Errno -2] Name or service not known')': /typer/
+#10 92.45 Collecting typer (from transformers==5.17.0->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 30))
+#10 92.45   Obtaining dependency information for typer from https://files.pythonhosted.org/packages/dc/bf/205d0004930ede8f542fb58f601526fccf4ae7626075ca1e6c4de5d3d652/typer-0.27.2-py3-none-any.whl.metadata
+#10 92.47   Downloading typer-0.27.2-py3-none-any.whl.metadata (16 kB)
+#10 93.05 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7d5b44a0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /safetensors/
+#10 93.57 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7d5b47d0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /safetensors/
+#10 94.60 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7d5b4a70>: Failed to establish a new connection: [Errno -2] Name or service not known')': /safetensors/
+#10 96.62 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7d5b4bf0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /safetensors/
+#10 100.7 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7d5b4ef0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /safetensors/
+#10 100.7 Collecting safetensors>=0.8.0 (from transformers==5.17.0->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 30))
+#10 100.7   Obtaining dependency information for safetensors>=0.8.0 from https://files.pythonhosted.org/packages/09/7d/65a7de0af421317bb36a067241e4235fff194eed60b961ed6d3f59a3fc60/safetensors-0.8.0-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata
+#10 100.8   Downloading safetensors-0.8.0-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata (4.2 kB)
+#10 100.8 Requirement already satisfied: tqdm>=4.60 in /opt/venv/lib/python3.12/site-packages (from transformers==5.17.0->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 30)) (4.67.1)
+#10 100.8 Requirement already satisfied: psutil in /opt/venv/lib/python3.12/site-packages (from peft==0.19.1->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 39)) (7.0.0)
+#10 100.8 Requirement already satisfied: torch>=1.13.0 in /opt/venv/lib/python3.12/site-packages (from peft==0.19.1->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 39)) (2.7.0)
+#10 100.9 Requirement already satisfied: requests in /opt/venv/lib/python3.12/site-packages (from qwen-vl-utils->-r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 48)) (2.32.3)
+#10 100.9 Requirement already satisfied: python-dateutil>=2.8.2 in /opt/venv/lib/python3.12/site-packages (from pandas->-r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 51)) (2.9.0.post0)
+#10 100.9 Requirement already satisfied: mpmath<1.4,>=1.1.0 in /opt/venv/lib/python3.12/site-packages (from sympy->-r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 60)) (1.3.0)
+#10 100.9 Requirement already satisfied: MarkupSafe>=2.0 in /opt/venv/lib/python3.12/site-packages (from jinja2->-r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 62)) (3.0.2)
+#10 101.0 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7dad1e80>: Failed to establish a new connection: [Errno -2] Name or service not known')': /click/
+#10 101.5 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7d6de5a0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /click/
+#10 102.5 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7d67e1b0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /click/
+#10 104.6 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7d67e4b0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /click/
+#10 108.6 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7d67c050>: Failed to establish a new connection: [Errno -2] Name or service not known')': /click/
+#10 108.7 Collecting click<9.0.0,>=8.4.2 (from huggingface_hub->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 31))
+#10 108.7   Obtaining dependency information for click<9.0.0,>=8.4.2 from https://files.pythonhosted.org/packages/58/50/6c0d534c5f134586a8e1ba4e330569e32f057e33372ae556463212fb4cd3/click-8.5.0-py3-none-any.whl.metadata
+#10 108.7   Downloading click-8.5.0-py3-none-any.whl.metadata (2.6 kB)
+#10 108.9 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7f417740>: Failed to establish a new connection: [Errno -2] Name or service not known')': /hf-xet/
+#10 109.5 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7d83d2e0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /hf-xet/
+#10 110.5 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7d67c320>: Failed to establish a new connection: [Errno -2] Name or service not known')': /hf-xet/
+#10 112.5 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7d67c290>: Failed to establish a new connection: [Errno -2] Name or service not known')': /hf-xet/
+#10 116.6 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7d67e3f0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /hf-xet/
+#10 116.6 Collecting hf-xet<2.0.0,>=1.6.0 (from huggingface_hub->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 31))
+#10 116.6   Obtaining dependency information for hf-xet<2.0.0,>=1.6.0 from https://files.pythonhosted.org/packages/9a/69/1f0cbc2fb22ae6082d094f743d1b8945a3f36f6089cb95f42b7ee348cda7/hf_xet-1.6.0-cp38-abi3-manylinux_2_28_aarch64.whl.metadata
+#10 116.6   Downloading hf_xet-1.6.0-cp38-abi3-manylinux_2_28_aarch64.whl.metadata (4.9 kB)
+#10 116.6 Requirement already satisfied: httpx<1,>=0.23.0 in /opt/venv/lib/python3.12/site-packages (from huggingface_hub->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 31)) (0.28.1)
+#10 116.7 Requirement already satisfied: anyio in /opt/venv/lib/python3.12/site-packages (from httpx<1,>=0.23.0->huggingface_hub->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 31)) (4.9.0)
+#10 116.7 Requirement already satisfied: certifi in /opt/venv/lib/python3.12/site-packages (from httpx<1,>=0.23.0->huggingface_hub->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 31)) (2025.1.31)
+#10 116.7 Requirement already satisfied: httpcore==1.* in /opt/venv/lib/python3.12/site-packages (from httpx<1,>=0.23.0->huggingface_hub->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 31)) (1.0.8)
+#10 116.7 Requirement already satisfied: idna in /opt/venv/lib/python3.12/site-packages (from httpx<1,>=0.23.0->huggingface_hub->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 31)) (3.10)
+#10 116.7 Requirement already satisfied: h11<0.15,>=0.13 in /opt/venv/lib/python3.12/site-packages (from httpcore==1.*->httpx<1,>=0.23.0->huggingface_hub->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 31)) (0.14.0)
+#10 116.7 Requirement already satisfied: six>=1.5 in /usr/lib/python3/dist-packages (from python-dateutil>=2.8.2->pandas->-r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 51)) (1.16.0)
+#10 116.7 Requirement already satisfied: setuptools in /opt/venv/lib/python3.12/site-packages (from torch>=1.13.0->peft==0.19.1->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 39)) (78.1.0)
+#10 116.8 Requirement already satisfied: charset-normalizer<4,>=2 in /opt/venv/lib/python3.12/site-packages (from requests->qwen-vl-utils->-r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 48)) (3.4.1)
+#10 116.8 Requirement already satisfied: urllib3<3,>=1.21.1 in /opt/venv/lib/python3.12/site-packages (from requests->qwen-vl-utils->-r /opt/arm2reqs/requirements-jetson-arm2-common.txt (line 48)) (2.4.0)
+#10 116.9 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7d870560>: Failed to establish a new connection: [Errno -2] Name or service not known')': /shellingham/
+#10 117.4 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7d870770>: Failed to establish a new connection: [Errno -2] Name or service not known')': /shellingham/
+#10 118.4 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7d8708f0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /shellingham/
+#10 120.5 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7d870c50>: Failed to establish a new connection: [Errno -2] Name or service not known')': /shellingham/
+#10 124.5 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7d870e90>: Failed to establish a new connection: [Errno -2] Name or service not known')': /shellingham/
+#10 124.7 Collecting shellingham>=1.3.0 (from typer->transformers==5.17.0->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 30))
+#10 124.7   Obtaining dependency information for shellingham>=1.3.0 from https://files.pythonhosted.org/packages/e0/f9/0595336914c5619e5f28a1fb793285925a8cd4b432c9da0a987836c7f822/shellingham-1.5.4-py2.py3-none-any.whl.metadata
+#10 124.7   Downloading shellingham-1.5.4-py2.py3-none-any.whl.metadata (3.5 kB)
+#10 124.7 Requirement already satisfied: rich>=13.8.0 in /opt/venv/lib/python3.12/site-packages (from typer->transformers==5.17.0->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 30)) (14.0.0)
+#10 124.8 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7d873320>: Failed to establish a new connection: [Errno -2] Name or service not known')': /annotated-doc/
+#10 125.4 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7d873dd0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /annotated-doc/
+#10 126.5 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7d873680>: Failed to establish a new connection: [Errno -2] Name or service not known')': /annotated-doc/
+#10 128.5 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7de97680>: Failed to establish a new connection: [Errno -2] Name or service not known')': /annotated-doc/
+#10 132.5 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffff7dad2870>: Failed to establish a new connection: [Errno -2] Name or service not known')': /annotated-doc/
+#10 132.6 Collecting annotated-doc>=0.0.2 (from typer->transformers==5.17.0->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 30))
+#10 132.6   Obtaining dependency information for annotated-doc>=0.0.2 from https://files.pythonhosted.org/packages/3e/30/e900b21425a860e195f32e37657aa1f7c7f2b1bfb26f03ca209b90933c06/annotated_doc-0.0.5-py3-none-any.whl.metadata
+#10 132.6   Downloading annotated_doc-0.0.5-py3-none-any.whl.metadata (6.5 kB)
+#10 132.7 Requirement already satisfied: markdown-it-py>=2.2.0 in /opt/venv/lib/python3.12/site-packages (from rich>=13.8.0->typer->transformers==5.17.0->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 30)) (3.0.0)
+#10 132.7 Requirement already satisfied: pygments<3.0.0,>=2.13.0 in /opt/venv/lib/python3.12/site-packages (from rich>=13.8.0->typer->transformers==5.17.0->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 30)) (2.19.1)
+#10 132.7 Requirement already satisfied: sniffio>=1.1 in /opt/venv/lib/python3.12/site-packages (from anyio->httpx<1,>=0.23.0->huggingface_hub->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 31)) (1.3.1)
+#10 132.7 Requirement already satisfied: mdurl~=0.1 in /opt/venv/lib/python3.12/site-packages (from markdown-it-py>=2.2.0->rich>=13.8.0->typer->transformers==5.17.0->-r /opt/arm2reqs/requirements-jetson-arm2-fallback-transformers5.txt (line 30)) (0.1.2)
+#10 132.8 Downloading transformers-5.17.0-py3-none-any.whl (12.3 MB)
+#10 150.9    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 12.3/12.3 MB 678.2 kB/s eta 0:00:00
+#10 150.9 Downloading peft-0.19.1-py3-none-any.whl (680 kB)
+#10 152.0    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 680.7/680.7 kB 653.3 kB/s eta 0:00:00
+#10 152.0 Downloading accelerate-1.15.0-py3-none-any.whl (394 kB)
+#10 152.6 Downloading qwen_vl_utils-0.0.14-py3-none-any.whl (8.1 kB)
+#10 152.6 Downloading sentencepiece-0.2.2-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl (1.3 MB)
+#10 154.7    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 640.7 kB/s eta 0:00:00
+#10 154.7 Downloading av-19.0.1-cp312-abi3-manylinux_2_28_aarch64.whl (32.7 MB)
+#10 202.7    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 32.7/32.7 MB 679.8 kB/s eta 0:00:00
+#10 202.7 Downloading pandas-3.0.6-cp312-cp312-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl (10.3 MB)
+#10 217.9    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 10.3/10.3 MB 679.7 kB/s eta 0:00:00
+#10 217.9 Downloading huggingface_hub-1.33.0-py3-none-any.whl (846 kB)
+#10 219.1    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 846.4/846.4 kB 658.1 kB/s eta 0:00:00
+#10 219.2 Downloading click-8.5.0-py3-none-any.whl (125 kB)
+#10 219.4 Downloading hf_xet-1.6.0-cp38-abi3-manylinux_2_28_aarch64.whl (4.3 MB)
+#10 225.7    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.3/4.3 MB 673.9 kB/s eta 0:00:00
+#10 225.7 Downloading regex-2026.9.29-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (805 kB)
+#10 226.9    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 805.9/805.9 kB 663.8 kB/s eta 0:00:00
+#10 227.0 Downloading safetensors-0.8.0-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (502 kB)
+#10 227.7 Downloading tokenizers-0.23.2-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (3.5 MB)
+#10 232.9    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.5/3.5 MB 681.6 kB/s eta 0:00:00
+#10 232.9 Downloading typer-0.27.2-py3-none-any.whl (123 kB)
+#10 233.1 Downloading annotated_doc-0.0.5-py3-none-any.whl (5.3 kB)
+#10 233.1 Downloading shellingham-1.5.4-py2.py3-none-any.whl (9.8 kB)
+#10 233.6 Installing collected packages: shellingham, sentencepiece, safetensors, regex, hf-xet, click, av, annotated-doc, qwen-vl-utils, pandas, typer, huggingface_hub, tokenizers, accelerate, transformers, peft
+#10 234.8   changing mode of /opt/venv/bin/pyav to 755
+#10 241.1   changing mode of /opt/venv/bin/typer to 755
+#10 241.8   changing mode of /opt/venv/bin/hf to 755
+#10 241.8   changing mode of /opt/venv/bin/huggingface-cli to 755
+#10 241.8   changing mode of /opt/venv/bin/tiny-agents to 755
+#10 242.2   changing mode of /opt/venv/bin/accelerate to 755
+#10 242.2   changing mode of /opt/venv/bin/accelerate-config to 755
+#10 242.2   changing mode of /opt/venv/bin/accelerate-estimate-memory to 755
+#10 242.2   changing mode of /opt/venv/bin/accelerate-launch to 755
+#10 242.2   changing mode of /opt/venv/bin/accelerate-merge-weights to 755
