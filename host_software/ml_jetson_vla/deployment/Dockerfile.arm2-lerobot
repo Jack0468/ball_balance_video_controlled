@@ -49,6 +49,10 @@ RUN python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all: \
       'lerobot[smolvla]==0.4.4' \
  && (python3 -m pip check || echo "pip check reported issues above -- informational; the import gate below is the real check.")
 
+# qwen-vl-utils: imported by qwen_vl_smoke_test.py, which the hybrid benchmark uses to load Qwen.
+RUN python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all: \
+      --index-url https://pypi.org/simple qwen-vl-utils
+
 # Gate: fail the build if versions drifted or either policy import is broken. Printed so the build log records what
 # resolved. cuda_available is printed, not asserted: `docker build` may run without the nvidia runtime.
 RUN python3 -m pip freeze --exclude-editable | grep -E '^(numpy|torch|torchvision)==' \
