@@ -236,6 +236,23 @@ def _build_features(image_h: int, image_w: int) -> dict:
             "shape": (1,),
             "names": ["touch_stale"],
         },
+        # 2026-10-07: transient touch-sensor glitch spike (jump to an extreme value then snap
+        # back within a few frames) -- see compute_touch_glitch's docstring. Distinct from
+        # touch_stale: touch_stale only catches an exact-repeat frame (the second-and-later
+        # frame of a glitch run, when the hardware repeats the glitched value verbatim), never
+        # the first, worst frame, which is what this flag is for.
+        "touch_glitch": {
+            "dtype": "int64",
+            "shape": (1,),
+            "names": ["touch_glitch"],
+        },
+        # 2026-10-07: the ACT_FAST experiment conditions on a target coordinate alongside
+        # observation.state -- same telemetry frame/units as touch_x/y, straight from REQUIRED_COLUMNS.
+        "target": {
+            "dtype": "float32",
+            "shape": (2,),
+            "names": ["target_x_mm", "target_y_mm"],
+        },
     }
 
 
@@ -248,6 +265,85 @@ def compute_touch_stale(df: pd.DataFrame) -> np.ndarray:
     if len(df) > 1:
         same = np.all(touch[1:] == touch[:-1], axis=1)
         flags[1:] = same.astype(np.int64)
+    return flags
+
+
+# 2026-10-07 (transient touch sensor glitch, distinct from touch_stale above): 1-4 consecutive
+# frames where touch_x/touch_y jump to an extreme value near the sensor's own observed max range
+# then snap back to the prior, physically coherent trajectory. Unlike touch_stale (an exact
+# repeat), the glitch VALUE itself is novel each time -- so touch_stale only ever catches the
+# second-and-later frame of a glitch run when the hardware happens to also repeat that extreme
+# value verbatim (observed in some but not all real runs), never the first, worst frame.
+#
+# Threshold justified from the real Track4 frame-to-frame jump distribution (10 sessions,
+# 40,703 consecutive-row diffs of max(|d touch_x|, |d touch_y|)): median 0.66, p90 3.01,
+# p99 10.69, p99.5 27.98, p99.9 95.07, max 130.81 -- a long, UNBROKEN tail with no gap/elbow
+# separating "fast legitimate ball motion" from "glitch" by magnitude alone (checked the 60
+# largest values and the gaps between them: never more than ~4.4 apart). GLITCH_JUMP_THRESHOLD_MM
+# = 30.0 sits at the ~99.52nd percentile of that real distribution -- comfortably below the
+# smallest entry/return jump seen in any of the 5 manually-confirmed glitch examples (91.55,
+# all five in the 91-98 range) so none of them are missed, and far above the p99 (10.69) bulk of
+# real motion so it isn't tripped by ordinary fast play. Because magnitude alone can't separate
+# the two populations, the real discriminating signal is the compound condition below (a big jump
+# OUT, matched by a big jump BACK within a short window) -- not the threshold in isolation.
+GLITCH_JUMP_THRESHOLD_MM = 30.0
+
+# Look-ahead window (frames) for the "snaps back" half of the detector. K=5 is used as the
+# converter's flag. Sensitivity checked at K=3/5/8 on the real 10-session corpus: K=3 MISSES one
+# of the 5 known examples (session_jetson_track4_20260915_164115, frame_index 2326 -- a genuine
+# 5-frame-long glitch run, longer than K=3's look-ahead), while K=5 and K=8 both catch all 5 and
+# produce identical totals on this corpus (no real run longer than 5 frames exists beyond that
+# one case) -- see reports/touch_glitch_analysis_2026_10_07.md for the full sweep.
+GLITCH_LOOKAHEAD_K = 5
+
+
+def compute_touch_glitch(df: pd.DataFrame) -> np.ndarray:
+    """Per-row 0/1 flag for a transient touch-sensor glitch spike: a short run of frames whose
+    (touch_x, touch_y) jumps away from the trajectory by more than GLITCH_JUMP_THRESHOLD_MM from
+    the immediately preceding row, AND jumps back by more than that same threshold at some frame
+    within the next GLITCH_LOOKAHEAD_K frames. All frames from the outbound jump up to (but not
+    including) the frame where it jumps back are flagged 1 -- that return frame itself is already
+    back on the real trajectory and is not flagged (matches the 5 manually-confirmed examples,
+    where the frame right after the glitch run is a normal, nearby value).
+
+    First row is always 0 (no previous row to jump from, same convention as compute_touch_stale).
+    A NaN touch never produces or absorbs a flagged jump (NaN comparisons are false), so rows
+    missing ground truth can't set or inherit the flag -- same NaN handling as touch_stale.
+
+    Boundary (end of session): if an outbound jump occurs within GLITCH_LOOKAHEAD_K frames of the
+    last row, the look-ahead window is truncated and may not contain a genuine return even if one
+    would have occurred with more data. Treated conservatively: no return found in the
+    (necessarily shorter) available window simply means not flagged, the same outcome as "jumped
+    but never came back" -- this never fabricates a return the data can't show, at the cost of
+    possibly under-flagging a glitch that started very close to the end of a session.
+    """
+    touch = df[["touch_x", "touch_y"]].to_numpy(dtype=np.float64)
+    n = len(touch)
+    flags = np.zeros(n, dtype=np.int64)
+    if n <= 1:
+        return flags
+
+    diffs = np.abs(touch[1:] - touch[:-1])  # diffs[i-1] = jump from row i-1 to row i
+    jump = np.zeros(n, dtype=np.float64)
+    # Plain np.max (not nanmax): if either axis' diff is NaN (row i-1 or row i missing ground
+    # truth), the whole jump is NaN. `NaN > threshold` is correctly False, so a frame adjacent to
+    # a missing-ground-truth row never becomes a candidate jump -- same "NaN never sets or
+    # absorbs the flag" rule compute_touch_stale documents for exact-repeat comparisons.
+    jump[1:] = np.max(diffs, axis=1)
+
+    i = 1
+    while i < n:
+        if jump[i] > GLITCH_JUMP_THRESHOLD_MM:
+            found_j: Optional[int] = None
+            for j in range(i + 1, min(i + 1 + GLITCH_LOOKAHEAD_K, n)):
+                if jump[j] > GLITCH_JUMP_THRESHOLD_MM:
+                    found_j = j
+                    break
+            if found_j is not None:
+                flags[i:found_j] = 1
+                i = found_j
+                continue
+        i += 1
     return flags
 
 
@@ -402,6 +498,7 @@ def convert(
             continue
 
         stale_flags = compute_touch_stale(df)
+        glitch_flags = compute_touch_glitch(df)
         cap = cv2.VideoCapture(video_path)
         session_start_ms: Optional[float] = None
         frames_this_episode = 0
@@ -467,9 +564,13 @@ def convert(
                         "action": np.array(
                             [row["theta_a"], row["theta_b"], row["theta_c"]], dtype=np.float32
                         ),
+                        "target": np.array(
+                            [row["target_x"], row["target_y"]], dtype=np.float32
+                        ),
                         "regime": regime,
                         "has_real_language_label": np.array([has_real_language_label], dtype=np.int64),
                         "touch_stale": np.array([stale_flags[pos]], dtype=np.int64),
+                        "touch_glitch": np.array([glitch_flags[pos]], dtype=np.int64),
                         "task": task,
                     }
                 )

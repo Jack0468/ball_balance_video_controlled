@@ -1,5 +1,149 @@
 # VRI 2026 Project Logbook
 
+## 07/10/2026 (ongoing)
+### Arm 2 action-head design work; a second, distinct touch-sensor data bug found by manual image review
+
+- **New data bug, found by the user manually reviewing `ball_over_marker` report images, not by any
+  automated check**: a transient touch-sensor glitch, distinct from the staleness flagged 2026-10-06.
+  Raw telemetry shows `touch_x`/`touch_y` jumping to a value near the sensor's own max range for 1-4
+  consecutive frames, then snapping straight back to the prior, physically coherent trajectory --
+  e.g. `session_jetson_track4_20260915_151627` around frame 1750: `-29.59/-4.68, -28.76/-4.68,
+  -26.47/-5.51, **72.36/63.15, 72.36/63.15**, -21.70/-9.36`. Confirmed independently on 5 separate
+  real frames across 5 sessions (the user's own visual spot-check: rendered "ball position" landed
+  near an empty platform corner while the photo shows the ball at centre). The existing `touch_stale`
+  flag (exact repeat of the previous row) only catches the *second* glitched frame onward -- the
+  worst, first-glitch frame in every case is currently unflagged and would silently corrupt
+  `observation.state`/`target`/the ball-over-marker analysis. **Quantified and fixed**: 0.31% of
+  Track 4 frames (128/40,713, 85 runs) and 0.16% of PID frames (174/110,993, 136 runs) are glitch
+  frames, detected by a >30mm per-axis jump (≈p99.5 of the real jump distribution) that reverts within
+  5 frames -- K=3 was tried first and found to MISS one of the 5 known examples (a genuine 5-frame-long
+  run), so K=5 was kept deliberately, not by default. Only 32% of Track4 and 13% of PID glitch runs
+  overlap with the existing `touch_stale` flag -- most, especially every 1-frame run, were previously
+  invisible. **Asymmetric and important**: `theta_a/b/c` stays clean through Track 4 glitches (0/85
+  runs) but spikes in lockstep on 60% of PID glitch runs (82/136, ~260x the baseline co-spike rate) --
+  for PID sessions the glitch corrupts `action` too, not just `observation.state`/`target`.
+  `touch_glitch` added to the converter (mirrors `touch_stale`'s pattern exactly, flags only, drops
+  nothing), verified against both of the user's own named examples (both flagged 1, `touch_stale` 0 at
+  the same rows, confirming they're genuinely new catches), 9/9 tests pass.
+  `host_software/ml_jetson_vla/reports/touch_glitch_analysis_2026_10_07.md`.
+- **Touch staleness characterised (separate, earlier issue)**: ~31% of Track 4 frames are
+  `touch_stale`-flagged. Stale RATE RISES with ball speed (24% near-still, 50% fast-moving) -- rules
+  out simple stillness as the explanation. Joint `theta` repeats on only ~6% of stale frames -- rules
+  out a single shared-snapshot read as the general mechanism (a rare long tail of 9 runs ≥24 frames,
+  mostly one session, does look like that). Net: looks like an async touch-channel update lapse most
+  of the time. **User decision: keep stale frames in training for now, revisit later** (not masked).
+  Full numbers: `host_software/ml_jetson_vla/reports/touch_staleness_analysis_2026_10_07.md`.
+- **Black-marker root cause, split by candidate**: Moondream2's `go_black` failures (0/13 hits, every
+  frame answered) are real ArUco-tag confusion -- 13/16 of its total misses land within 0.4-3mm of a
+  calibration-square centre, 99-124mm from the true marker. **Qwen's black weakness is a different,
+  unrelated mechanism** -- 0/8 of its black misses are near a tag; most are close misses (20-23mm).
+  `reports/black_marker_aruco_check_2026_10_07.md`.
+  **Occlusion follow-up, resolved**: real but not the sole cause. At realistic ball-radius assumptions
+  (10-15mm) the ball covers the black marker in 12/13 of Moondream's failure frames -- a genuine
+  contributor. But one clean counter-example (`session_jetson_track4_20260915_163702` frame 2287: ball
+  26.3mm from the true marker, 18.3mm edge gap, confirmed over a multi-hundred-frame trajectory, not a
+  brief transition) still gets answered on an ArUco tag -- so the tag-confusion tendency is real on its
+  own, just compounded by occlusion most of the time. `reports/black_marker_occlusion_2026_10_07.md`.
+  **Side finding, a bug in this project's OWN classical vision code, not the VLM candidates**:
+  `marker_tracker.py`'s `find_targets()` found zero black blobs on all 13 frames -- its hardcoded
+  `V<=60` black-brightness bound is stale; `marker_classifier.py` already recalibrated the real value
+  (~110-140) in a 2026-09-15 note that `marker_tracker.py` was never updated to match. A documented
+  fallback detector built to work around this itself locked onto an ArUco tag on 11/13 frames -- the
+  project's own classical pipeline reproduces a milder version of the exact confusion being diagnosed
+  in Moondream2. Not fixed this session; flagged for whoever owns the vision pipeline next.
+- **Action-head latency measured for real on the AGX Orin** (`arm2-lerobot:r36.4.0`, dummy inputs,
+  latency only): **ACT** (51.6M, ResNet18 backbone, random-init weights) 21ms/chunk regardless of
+  chunk length 10 or 100 -- chunk length is a free control choice, not a latency one. bf16 fails
+  outright (LeRobot's ACT inference path hardcodes a float32 latent sample). **SmolVLA**
+  (450M, real pretrained `lerobot/smolvla_base`) 924ms/chunk at its default length 50 (1.67s of
+  commands at 30Hz) -- fits only if inference runs asynchronously, and its native output is 6 values
+  where this platform needs 3. Full table: `docs/LARGE_VLA_RESEARCH_SPIKE.md`'s 2026-10-06 section.
+- **User decision, overturning the 2026-09-15 "no custom architecture, fine-tune only" directive**:
+  custom heads ARE allowed now, kept minimal, specifically to let real candidates be compared --
+  recorded in `.claude` memory (`feedback_action_head_constraint_2026_10_06.md`) so it persists.
+- **Two fast-layer options + two orchestrator options built** behind one interface, not run on
+  hardware yet (`host_software/ml_jetson_vla/experiments/`): ACT_FAST (target coordinate given as an
+  extra 2-dim state element, not as text) and SmolVLA_DIRECT; a hard-coded command->marker state
+  machine (reuses the existing `COLOR_COMMANDS` map, no duplication) and a stubbed language
+  orchestrator. Hard safety rule: the Python side REJECTS (never clamps) any output angle outside
+  firmware's own ±11.025° limit (`AngleStepControl.cpp`'s `MAX_MOTOR_ANGLE_DEG`) before it would ever
+  reach the serial line. A real scheduling bug was found and fixed while building this: replaying
+  against telemetry's irregular ~24Hz timestamps produced 21% false "stall" detections even at zero
+  inference cost; stepping the replay on a clean 30Hz grid instead dropped that to 1%.
+- **Confirmed (again, independently) that the LeRobot policy stack cannot run outside its own pinned
+  image**: `lerobot.policies` fails to import even in this project's own Windows conda environment --
+  same root cause as the Jetson's pre-fix failure (`transformers>=5` makes `PretrainedConfig` a
+  dataclass, which breaks a GR00T field-ordering assumption inside `lerobot`'s package `__init__`).
+- **Dependency decision**: the LeRobot policy extras stay OUT of the root `requirements.txt`/
+  `environment.yml` -- adding them would pull `transformers<5` into the same Windows environment that
+  runs the Qwen CPU reference on `transformers==5.17`. Documented as an exception, in-line, at the
+  `lerobot==0.4.4` line in `requirements.txt`, rather than silently diverging from the "every new dep
+  goes in both files" rule.
+- **Never-tested gaps closed off in scope this session, not yet run**: across every real Arm 2 sweep
+  to date, every candidate was scored on the 4 colour-marker commands ONLY -- zero frames of ball
+  position, zero of directional commands (hold/forward/left/right/backward/stop), zero of motor-angle
+  prediction, ever scored against ground truth. A Colab bundle + notebook
+  (`training/colab/qwen_grounding_colab.ipynb`) now exists to close this with Qwen specifically:
+  ball-xy across all 7 command types, and direct theta_a/b/c prediction, both scored against real
+  telemetry. Not run yet (needs the user's Colab GPU time).
+- **Extended-eval data inventory**: the iPhone-derived datasets (`02_silver_unified_pose`,
+  `03_gold/images_iphone`, iPhone `video1-5`) have ball/marker positions but no language labels at
+  all, and -- checked directly, not just "unverified" as earlier docs said -- their coordinate frame
+  does NOT match `ground_truth_manifest.json` under either convention tested (median 105mm off one
+  way, a ~40-unit offset the other). Not usable for grounding eval until that's resolved; the
+  session's own `03_gold/vla_dataset.json` catalogue entry calling it "orphaned" is itself stale --
+  the current file (regenerated 2026-09-23) is real and resolves. `reports/extended_data_inventory.csv`.
+- **LeRobot converter extended twice more today**: (1) `meta/session_episodes.json` sidecar --
+  records which session produced each episode, so training notebooks stop reconstructing the mapping
+  from job order (a real correctness risk the ACT notebook had). (2) a `target` feature (2-dim,
+  telemetry `target_x`/`target_y` mm, same frame as `observation.state`) -- ACT_FAST needs this to
+  condition on a target; it didn't exist in the schema until today. Both re-verified against a fresh
+  300-frame dry-run conversion before trusting them.
+- **Housekeeping**: `host_software/data/arm2_jetson_sweep_results{1,2,3,4}` and the mock dry-run
+  consolidated into one canonical `arm2_jetson_sweep_results/` (verified to hold all 6 candidates'
+  real rows, 840 checkpoint items) plus `arm2_archive/` for the superseded runs -- moved, not deleted.
+
+## 06/10/2026
+### Moondream2 fixed and scored for real; full 4-candidate Arm 2 baseline complete; Qwen confirmed as Arm 2 backbone
+
+- **Moondream2's `enable_gqa` block (blocking since 2026-09-24) fixed and verified on real hardware.**
+  Root cause was `peft`'s torchao version check rejecting the base image's bundled `torchao` 0.10.0
+  even though nothing uses it; fixed by removing `torchao` from the image (`arm2-t5`'s Dockerfile),
+  not by chasing a `peft` downgrade (tried first, failed: `peft==0.16.0` needs `transformers<5`'s
+  `HybridCache`, which doesn't exist under this project's `transformers==4.57.6`+`torch==2.7` pairing
+  either -- the two constraints don't have a compatible `peft` version, so removing the unused
+  `torchao` dependency was the real fix, not a version-pin hunt).
+  **Real Moondream2 numbers** (`arm2_jetson_sweep_results/scorer_format_moondream2_*`): `:point`
+  (native API) 35/60 hits (58.3%), median error 2.9mm when it hits -- beats Qwen's 14.3mm median --
+  but bimodal (31/51 parsed frames within 5mm, 13 beyond 80mm) and completely fails `go_black`
+  (0/13). `:query` (free text) is a total failure, 0/60, collapsing to corner answers.
+- **Full real-data standings across all 4 candidates, confirmed**: **Qwen2.5-VL-3B is the only
+  candidate that beats a no-vision constant-centre-guess baseline** (68.3% hit-rate vs. the
+  reference's 15%). InternVL2.5-4B and PaliGemma2-3b-mix both score worse than that same dumb
+  baseline. InternVL2.5 has a real, evidence-backed "more prompt context makes it worse" collapse
+  (baseline 26 distinct output points across 60 frames -> `oriented_aruco` only 12, clustered in a
+  suspiciously mm-scale numeric range rather than the asked-for pixel range) -- likely a unit/scale
+  confusion from the added mm-denominated prompt text, not pure noise. Full tables:
+  `host_software/ml_jetson_vla/docs/ARM2_MINIMAL_BASELINE_MULTI_CANDIDATE.md` §10-§13 and executive
+  summary.
+- **Arm 2 backbone decided: Qwen2.5-VL-3B-Instruct**, on these real numbers, over Moondream2 (faster
+  and smaller but lower hit-rate) -- recorded in `MULTI_HEAD_ARCHITECTURE_SPEC.md`'s new "Decisions
+  (2026-10-06)" section, which also settled LeRobot (not the flat-JSON Stage 0 artifact) as the
+  single training data format, after finding the project had briefly had two competing, unreconciled
+  "Stage 1" data-staging scripts targeting different schemas.
+- **Research spike (`LARGE_VLA_RESEARCH_SPIKE.md`) extended with real citations**: TensorRT-LLM's
+  PyTorch backend is the more plausible (not confirmed) path for deploying Qwen's new custom heads
+  alongside a quantized backbone; its `exclude_modules` quant-skip config exists but has an open,
+  unresolved upstream bug suggesting it doesn't reliably work for custom module names yet. MLC-LLM is
+  weaker on both the splicing and the quantization-exclusion questions. Genuinely novel engineering,
+  not a known-working recipe to follow.
+- **STM32 lag/staleness question investigated for the Jetson-specific pipeline**: `RLControl.cpp`'s
+  lag is real, intentional, and documented in its own comments (AccelStepper's live position
+  mid-acceleration-ramp). The Jetson's own risk is a different mechanism (async serial-uplink
+  polling, documented in `run_jetson_standalone.py`), evidenced by real multi-second stale runs in
+  the logs -- **`theta_a/b/c` should not be treated as clean BC ground truth** without the staleness
+  filtering added 07/10 above.
+
 ## 23-24/09/2026 (overnight)
 ### Steady-State Error Root Cause: Vision Calibration Bias, Not Integration — Per-Session Correction Designed and Offline-Validated, NOT Hardware-Tested
 

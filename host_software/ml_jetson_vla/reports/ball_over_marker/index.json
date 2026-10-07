@@ -1,0 +1,170 @@
+[
+  {
+    "file": "session_jetson_track4_20260915_160025_frame01924_marker5.png",
+    "session": "session_jetson_track4_20260915_160025",
+    "frame_index": 1924,
+    "marker_id": 5,
+    "ball_manifest_mm": [
+      160.51,
+      66.99
+    ],
+    "edge_dist_mm": 3.74,
+    "touch_stale": false,
+    "audio_command": "right",
+    "status": "ok"
+  },
+  {
+    "file": "session_jetson_track4_20260915_163702_frame02020_marker4.png",
+    "session": "session_jetson_track4_20260915_163702",
+    "frame_index": 2020,
+    "marker_id": 4,
+    "ball_manifest_mm": [
+      25.96,
+      51.95
+    ],
+    "edge_dist_mm": 8.26,
+    "touch_stale": false,
+    "audio_command": "left",
+    "status": "ok"
+  },
+  {
+    "file": "session_jetson_track4_20260915_160509_frame03939_marker1.png",
+    "session": "session_jetson_track4_20260915_160509",
+    "frame_index": 3939,
+    "marker_id": 1,
+    "ball_manifest_mm": [
+      173.17,
+      31.07
+    ],
+    "edge_dist_mm": 7.82,
+    "touch_stale": false,
+    "audio_command": "backward",
+    "status": "ok"
+  },
+  {
+    "file": "session_jetson_track4_20260915_164743_frame01990_marker3.png",
+    "session": "session_jetson_track4_20260915_164743",
+    "frame_index": 1990,
+    "marker_id": 3,
+    "ball_manifest_mm": [
+      5.81,
+      150.86
+    ],
+    "edge_dist_mm": 9.61,
+    "touch_stale": false,
+    "audio_command": "go_yellow",
+    "status": "ok"
+  },
+  {
+    "file": "session_jetson_track4_20260915_153247_frame00958_marker3.png",
+    "session": "session_jetson_track4_20260915_153247",
+    "frame_index": 958,
+    "marker_id": 3,
+    "ball_manifest_mm": [
+      21.18,
+      140.33
+    ],
+    "edge_dist_mm": 0.0,
+    "touch_stale": false,
+    "audio_command": "left",
+    "status": "ok"
+  },
+  {
+    "file": "session_jetson_track4_20260915_161712_frame04489_marker5.png",
+    "session": "session_jetson_track4_20260915_161712",
+    "frame_index": 4489,
+    "marker_id": 5,
+    "ball_manifest_mm": [
+      154.9,
+      69.5
+    ],
+    "edge_dist_mm": 9.35,
+    "touch_stale": false,
+    "audio_command": "go_yellow",
+    "status": "ok"
+  },
+  {
+    "file": "session_jetson_track4_20260915_153053_frame01711_marker5.png",
+    "session": "session_jetson_track4_20260915_153053",
+    "frame_index": 1711,
+    "marker_id": 5,
+    "ball_manifest_mm": [
+      166.11,
+      65.32
+    ],
+    "edge_dist_mm": 0.0,
+    "touch_stale": false,
+    "audio_command": "right",
+    "status": "ok"
+  },
+  {
+    "file": "session_jetson_track4_20260915_161239_frame04342_marker3.png",
+    "session": "session_jetson_track4_20260915_161239",
+    "frame_index": 4342,
+    "marker_id": 3,
+    "ball_manifest_mm": [
+      9.97,
+      149.18
+    ],
+    "edge_dist_mm": 7.93,
+    "touch_stale": false,
+    "audio_command": "go_black",
+    "status": "ok"
+  },
+  {
+    "file": "session_jetson_track4_20260915_151627_frame01750_marker3.png",
+    "session": "session_jetson_track4_20260915_151627",
+    "frame_index": 1750,
+    "marker_id": 3,
+    "ball_manifest_mm": [
+      21.39,
+      134.15
+    ],
+    "edge_dist_mm": 0.0,
+    "touch_stale": false,
+    "audio_command": "right",
+    "status": "ok"
+  },
+  {
+    "file": "session_jetson_track4_20260915_164115_frame02326_marker3.png",
+    "session": "session_jetson_track4_20260915_164115",
+    "frame_index": 2326,
+    "marker_id": 3,
+    "ball_manifest_mm": [
+      15.57,
+      140.16
+    ],
+    "edge_dist_mm": 0.0,
+    "touch_stale": false,
+    "audio_command": "backward",
+    "status": "ok"
+  },
+  {
+    "file": "session_jetson_track4_20260915_160025_frame02328_marker5.png",
+    "session": "session_jetson_track4_20260915_160025",
+    "frame_index": 2328,
+    "marker_id": 5,
+    "ball_manifest_mm": [
+      156.98,
+      63.15
+    ],
+    "edge_dist_mm": 7.27,
+    "touch_stale": false,
+    "audio_command": "right",
+    "status": "ok"
+  },
+  {
+    "file": "session_jetson_track4_20260915_163702_frame00814_marker4.png",
+    "session": "session_jetson_track4_20260915_163702",
+    "frame_index": 814,
+    "marker_id": 4,
+    "ball_manifest_mm": [
+      32.39,
+      73.0
+    ],
+    "edge_dist_mm": 9.14,
+    "touch_stale": false,
+    "audio_command": "hold",
+    "status": "ok"
+  }
+]

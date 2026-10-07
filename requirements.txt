@@ -26,6 +26,9 @@ onnx2torch
 openvino
 pillow-heif
 dvc[s3]
+# lerobot's policy modules (ACT, SmolVLA) need transformers<5, which this environment cannot carry: the Qwen
+# CPU reference runs on transformers 5.17. So the policy stack is pinned only where it runs: the
+# arm2-lerobot Jetson image (Dockerfile.arm2-lerobot) and the Colab notebook. This line is the dataset tools only.
 lerobot==0.4.4
 nemo_toolkit[asr]
 qwen-vl-utils

@@ -239,6 +239,90 @@ def test_t3_end_to_end_synthetic_session() -> None:
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+# --- (T4) touch_glitch -----------------------------------------------------------------------------
+# 2026-10-07: companion to T3's touch_stale -- see compute_touch_glitch's own docstring in
+# convert_to_lerobot.py for GLITCH_JUMP_THRESHOLD_MM/GLITCH_LOOKAHEAD_K justification
+# (reports/touch_glitch_analysis_2026_10_07.md has the full real-corpus analysis).
+
+def test_t4_compute_touch_glitch_pure() -> None:
+    conv = _converter()
+    # Realistic shape (mirrors the 5 manually-confirmed real examples): a slowly-drifting
+    # baseline, a 2-frame spike far outside the threshold, then a return close to where the
+    # baseline left off, followed by more small steps -- no second large jump within the
+    # look-ahead window, so only the spike itself (not the recovery) is flagged.
+    df = pd.DataFrame({
+        "touch_x": [-30.0, -29.0, -28.0, -26.0, 85.0, 85.0, -22.0, -21.0, -19.0, -17.0, -15.0, -13.0, -11.0],
+        "touch_y": [0.0] * 13,
+    })
+    flags = conv.compute_touch_glitch(df).tolist()
+    assert flags == [0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0], flags
+    # First row is always 0 (no previous row to jump from).
+    assert flags[0] == 0
+    # A single-frame spike (entry and return both present, no intervening repeat) is also caught.
+    df2 = pd.DataFrame({
+        "touch_x": [1.0, 1.0, 1.0, 72.0, 1.0, 1.0],
+        "touch_y": [2.0, 2.0, 2.0, 63.0, 2.0, 2.0],
+    })
+    assert conv.compute_touch_glitch(df2).tolist() == [0, 0, 0, 1, 0, 0]
+    # A big jump that never comes back within the look-ahead window is NOT flagged (no evidence
+    # of "snaps back" -- distinguishes a real large excursion from a glitch).
+    df3 = pd.DataFrame({
+        "touch_x": [1.0, 1.0, 1.0, 72.0, 73.0, 74.0, 75.0, 76.0, 77.0, 78.0],
+        "touch_y": [2.0, 2.0, 2.0, 63.0, 63.0, 63.0, 63.0, 63.0, 63.0, 63.0],
+    })
+    assert conv.compute_touch_glitch(df3).tolist() == [0] * 10
+
+
+def test_t4_compute_touch_glitch_nan_and_boundary() -> None:
+    conv = _converter()
+    # NaN never sets or absorbs the flag: the entry jump right after a NaN row, and the row
+    # that follows it, both read as NaN (not > threshold), so they can't be detected as a
+    # candidate -- same rule compute_touch_stale documents for exact-repeat comparisons.
+    df = pd.DataFrame({
+        "touch_x": [1.0, 1.0, 3.0, 3.0, 3.0, np.nan, 90.0, 90.0, -20.0, -19.0],
+        "touch_y": [2.0, 2.0, 4.0, 4.0, 4.0, np.nan, 65.0, 65.0, -15.0, -14.0],
+    })
+    flags = conv.compute_touch_glitch(df).tolist()
+    assert flags == [0] * 10, flags
+    # End-of-session boundary: a big jump with fewer than GLITCH_LOOKAHEAD_K frames remaining
+    # can't have its look-ahead window fully evaluated -- treated conservatively (not flagged),
+    # the same outcome as "jumped but never came back".
+    df2 = pd.DataFrame({
+        "touch_x": [-10.0, -9.0, -8.0, -7.0, 80.0],
+        "touch_y": [0.0, 0.0, 0.0, 0.0, 0.0],
+    })
+    assert conv.compute_touch_glitch(df2).tolist() == [0, 0, 0, 0, 0]
+
+
+def test_t4_end_to_end_synthetic_session() -> None:
+    conv = _converter()
+    tmp = tempfile.mkdtemp(prefix="lerobot_rt_t4_")
+    try:
+        bronze = os.path.join(tmp, "bronze")
+        name = "session_jetson_track4_20990101_000001"
+        touch = [
+            (-30.0, 0.0), (-29.0, 0.0), (-28.0, 0.0), (-26.0, 0.0), (85.0, 0.0), (85.0, 0.0),
+            (-22.0, 0.0), (-21.0, 0.0), (-19.0, 0.0), (-17.0, 0.0), (-15.0, 0.0), (-13.0, 0.0), (-11.0, 0.0),
+        ]
+        _write_synthetic_session(bronze, name, touch)
+        out_root = os.path.join(tmp, "ds")
+        conv.convert(
+            bronze_dir=bronze, out_root=out_root, repo_id="test/touch_glitch", fps=30,
+            session_pattern=name, include_track4_sessions=True, include_pid_sessions=False,
+        )
+        parquet_files = sorted(glob.glob(os.path.join(out_root, "data", "**", "*.parquet"), recursive=True))
+        out = pd.concat([pd.read_parquet(p) for p in parquet_files], ignore_index=True)
+        flags = [int(v[0]) if hasattr(v, "__len__") else int(v) for v in out["touch_glitch"].to_numpy()]
+        assert flags == [0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0], flags
+        assert "touch_glitch" in conv._build_features(480, 640)
+        # touch_stale must be unaffected by this addition -- still present, still correct (no
+        # exact repeats other than the glitch run's own duplicate value at indices 4/5).
+        stale = [int(v[0]) if hasattr(v, "__len__") else int(v) for v in out["touch_stale"].to_numpy()]
+        assert stale == [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0], stale
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 TESTS: Dict[str, Callable[[], None]] = {
     "test_a_converter_state_is_raw_touch": test_a_converter_state_is_raw_touch,
     "test_b_scorer_roundtrip_manifest_points": test_b_scorer_roundtrip_manifest_points,
@@ -246,6 +330,9 @@ TESTS: Dict[str, Callable[[], None]] = {
     "test_c_state_frame_matches_scorer_convention": test_c_state_frame_matches_scorer_convention,
     "test_t3_compute_touch_stale_pure": test_t3_compute_touch_stale_pure,
     "test_t3_end_to_end_synthetic_session": test_t3_end_to_end_synthetic_session,
+    "test_t4_compute_touch_glitch_pure": test_t4_compute_touch_glitch_pure,
+    "test_t4_compute_touch_glitch_nan_and_boundary": test_t4_compute_touch_glitch_nan_and_boundary,
+    "test_t4_end_to_end_synthetic_session": test_t4_end_to_end_synthetic_session,
 }
 
 
