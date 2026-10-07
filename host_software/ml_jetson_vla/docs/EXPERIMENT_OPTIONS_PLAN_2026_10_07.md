@@ -123,3 +123,24 @@ python3 host_software/ml_jetson_vla/experiments/run_experiment.py --option smolv
 - Converter: no target column yet.
 - Grounding in live: once per command, not periodic.
 - Live loop: written, not run. Tested only through its parts (serial format, uplink parse, scheduler).
+
+## 7. `Policy`-wrapped status (2026-10-07 follow-up)
+
+Everything above described the two options as benchmark/replay scripts against `FastLayer`
+directly. `core/hybrid_policy.py` now wraps both behind `core/policy_interface.py`'s real `Policy`
+protocol (`act(image, instruction, state) -> PolicyCommand`, `reset()`), the same shape
+`runtime/run_jetson_standalone.py`'s `JetsonExpertPolicy` already implements -- not new scripts,
+a real adapter over the pieces this doc already built. Tests:
+`tests/test_hybrid_policy_cpu.py`. Replay driver reusing this doc's session format:
+`experiments/run_policy_replay.py`.
+
+| Piece | Status now |
+|---|---|
+| `HybridQwenActPolicy` (`core/hybrid_policy.py`) | **Real `Policy` implementation.** Orchestrator resolve -> background `_Grounder` (Qwen via `MinimalVLMPolicy`, reused) on colour commands, fixed mm target on directional/hold/stop, background `_FastWorker` (`ChunkScheduler`-gated `ActFastLayer`/`StubFastLayer`). `act()` never blocks on either worker. Exercised only with `StubFastLayer` + no grounding backend (no torch/Jetson/weights here) -- see section 5's H-tests for the real-weights path, still not run. |
+| `SmolVLADirectPolicy` (`core/hybrid_policy.py`) | **Real `Policy` implementation.** Wraps `SmolVLAFastLayer`/`StubFastLayer` via the same `_FastWorker`; no grounding call. `target_x_mm/y_mm` always NaN at the `Policy` boundary (SmolVLA has no orchestrator-resolved mm target by design -- see module docstring). Exercised only with `StubFastLayer`. |
+| Safety gate at the `Policy` boundary | **Real, tested.** `PolicyCommand.angle_targets_deg` is `None` for any rejected/not-yet-landed chunk; `_FastWorker.current_angles()` re-validates through `serial_protocol.format_angle_line()` as a last gate. `test_hybrid_policy_cpu.py`'s `SafetyGateTests` drive both policies with an out-of-range `StubFastLayer` and assert the rejection. |
+| `PolicyCommand.angle_targets_deg` (`core/policy_interface.py`) | **New field, additive.** `(theta_a, theta_b, theta_c)` deg, the `AngleStepControl.cpp`/`serial_protocol.py` wire contract -- distinct from the pre-existing `step_targets` (RLControl.cpp step-space, Track 1). |
+| `LanguageOrchestrator` slot on both policies | **Accepted, not exercised.** Both constructors take an `orchestrator`/pass it a `TargetOrchestrator`-compatible object; an unconfigured `LanguageOrchestrator()`'s `NotImplementedError` is caught and surfaced in `debug["orchestrator_not_implemented"]` rather than crashing `act()`. Still no real language model anywhere. |
+| Replay against a real session, through the `Policy` | **Run, with `StubFastLayer`.** `experiments/run_policy_replay.py` drives both policies over `session_jetson_track4_20260915_151627` (read-only; `host_software/data/` was not written to). Unlike `run_experiment.py`'s inline-inference replay, the fast layer/grounding run on real background threads here, so timing numbers are a hybrid of session content and this machine's real thread scheduling -- not comparable to section 5's numbers, and not a hardware measurement either way. |
+| ACT/SmolVLA with real weights, through the `Policy` | **Not done.** Same blocker as section 4.7: `lerobot.policies` does not import on this Windows interpreter. Needs the Docker image, as before. |
+| `run_experiment.py` bug found while building this | **Not fixed (out of this task's scope).** `run_live()`'s `grounder()` queues `req.marker_label` (e.g. "green marker") as the instruction text handed to `MinimalVLMPolicy`, whose `build_prompt()` matches on `COLOR_COMMANDS`' raw keys (e.g. "go_green") -- as written, every colour command there falls through to the directional "ball" fallback. `core/hybrid_policy.py`'s own `_Grounder` queues `req.instruction` instead, which is what `build_prompt()` expects. |

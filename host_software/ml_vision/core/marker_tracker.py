@@ -1,20 +1,47 @@
+from typing import Any, Dict, List, Optional, Tuple
+
 import cv2
 import numpy as np
 import math
 
+# Share the one calibrated black HSV bin with marker_classifier.py instead of
+# duplicating a second, driftable copy of the same number (2026-10-07 fix).
+# marker_classifier.py's 2026-09-15 recalibration note measured the real
+# printed black marker at S~11-26, V~110-140 (a desaturated mid-grey under
+# this project's lighting) and set COLOR_BINS["black"] = S<=20, V<=150
+# accordingly. This file's own black bound (V<=60, S<=255) was never updated
+# to match and detected zero black blobs on real frames as a result (see
+# host_software/ml_jetson_vla/reports/black_marker_occlusion_2026_10_07.md).
+from .marker_classifier import COLOR_BINS as _CLASSIFIER_COLOR_BINS
+
+_BLACK_LOWER, _BLACK_UPPER = _CLASSIFIER_COLOR_BINS["black"][0]
+
 
 class MarkerTracker:
-    def __init__(self):
+    def __init__(self) -> None:
         # Default robust HSV thresholds for the 4 marker colors.
         # Format: [lower_bound, upper_bound]
-        self.hsv_ranges = {
+        #
+        # NOTE on check order (2026-10-07): "black" must be checked before
+        # "grey" in find_targets()'s per-blob loop below. The calibrated black
+        # bound's S<=20 window sits entirely inside grey's own S<=50 window,
+        # and black's V<=150 range mostly overlaps grey's V 30-180 range --
+        # with "grey" checked first (the original order), every real black
+        # marker blob would have matched "grey" before "black" was ever
+        # tested, silently swallowing the V-bound fix above. No real printed
+        # sheet in hardware/platform_templates/*_manifest.json defines a grey
+        # marker feature (checked: 01/02/03 only define black/blue/green/
+        # yellow/red/circle/square/triangle/hexagon), so this reorder has no
+        # known collateral cost against real data -- "grey" here is a
+        # vestigial 5th slot, not something any current sheet exercises.
+        self.hsv_ranges: Dict[str, List[np.ndarray]] = {
             "blue": [np.array([90, 50, 50]), np.array([150, 255, 255])],
+            "black": [_BLACK_LOWER.copy(), _BLACK_UPPER.copy()],
             "grey": [np.array([0, 0, 30]), np.array([180, 50, 180])],
-            "black": [np.array([0, 0, 0]), np.array([180, 255, 60])],
             "red_1": [np.array([0, 50, 50]), np.array([15, 255, 255])],
             "red_2": [np.array([165, 50, 50]), np.array([180, 255, 255])],
         }
-        self.color_keys = ["blue", "grey", "black", "red_1", "red_2"]
+        self.color_keys = ["blue", "black", "grey", "red_1", "red_2"]
         self.current_color_idx = 0
         self.window_name = "Target Marker Tuning"
         self.tuning_enabled = False
@@ -89,9 +116,18 @@ class MarkerTracker:
                 and (lower[2] <= v <= upper[2])
             )
 
-    def find_targets(self, warped_frame):
-        targets = {"blue": None, "grey": None, "black": None, "red": None}
-        masks = {}
+    def find_targets(
+        self, warped_frame: Optional[np.ndarray]
+    ) -> Tuple[Dict[str, Optional[Tuple[int, int]]], Dict[str, Any]]:
+        # Dict iteration order below IS the color check-priority order (see
+        # the __init__ note) -- "black" must stay before "grey".
+        targets: Dict[str, Optional[Tuple[int, int]]] = {
+            "blue": None,
+            "black": None,
+            "grey": None,
+            "red": None,
+        }
+        masks: Dict[str, Any] = {}
 
         if warped_frame is None or warped_frame.size == 0:
             return targets, masks

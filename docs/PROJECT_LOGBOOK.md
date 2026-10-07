@@ -103,6 +103,65 @@
   consolidated into one canonical `arm2_jetson_sweep_results/` (verified to hold all 6 candidates'
   real rows, 840 checkpoint items) plus `arm2_archive/` for the superseded runs -- moved, not deleted.
 
+### Integrity check: does either touch bug affect the actual Arm 2 sweep numbers?
+
+Ran `compute_touch_stale`/`compute_touch_glitch` against the exact 60 `(session, frame_index)` pairs
+the real sweep scored every candidate on (`scorer_format_qwen2_5_vl_3b_jetson_run1.json`'s own frame
+list). **`touch_glitch`: 0/60 -- the headline hit-rate numbers for all four candidates are not
+touched by today's new bug at all.** **`touch_stale`: 23/60 (38%)** -- a real, pre-existing caveat
+on the sweep's own ground truth (not new information, the staleness characterisation already covered
+this mechanism, but this is the first time it's been checked against the specific 60 frames the
+published hit-rates are based on). Not re-scored or corrected here; flagged so nobody treats the
+25.3mm/14.3mm Qwen numbers etc. as checked against perfectly fresh ground truth on every frame.
+
+### ACT training notebook reconciled with the 4-dim ACT_FAST state design
+
+`act_train_colab.ipynb` previously trained plain ACT against the dataset's 2-dim `observation.state`,
+inconsistent with `ActFastLayer`'s 4-dim (touch+target) design built later the same day. Fixed, and a
+real LeRobot gap found while doing it: `lerobot==0.4.4`'s `dataset_to_policy_features` silently drops
+any feature key that isn't image/video, `OBS_ENV_STATE`, or prefixed `observation.`/`action` -- the
+converter's `target` feature was being dropped with no error, confirmed by running the real installed
+function against the converter's actual schema. Since training runs through `lerobot_train.py` as an
+opaque subprocess, the fix needed three separate monkeypatch points (per-sample concat, the
+policy-feature builder, and the normalizer stats), not one change. Concatenation order
+(`touch_x, touch_y, target_x, target_y`) verified to match `ActFastLayer`'s own source exactly.
+Verified at the CPU/unit level only -- `lerobot.policies` still fails to import in this environment
+(the pre-existing GR00T dataclass issue), so the real `ACTConfig`/training run is still Colab-only.
+
+### `marker_tracker.py`'s black-marker detector: two real bugs fixed, but the 13 hard frames still fail for a different, deeper reason
+
+Two distinct bugs, not one: (1) a hardcoded, stale black-detection bound duplicated independently of
+`marker_classifier.py`'s 2026-09-15 recalibration (confirmed a true duplicate, not a shared constant
+that silently went stale). (2) a `grey` bin checked BEFORE `black` in `find_targets()`'s first-match
+loop, whose window entirely contains the correct calibrated black value -- fixing only the number
+would have been silently shadowed by grey matching first. Both fixed together; verified with a clean
+synthetic before/after (reverting either half alone reproduces the original failure). **Honest
+negative result on real data**: the 13 `go_black` frames from the occlusion investigation still score
+0/13 within 20mm -- NOT because the colour fix is wrong, but because a separate, pre-existing
+shape-extraction stage (contour/circularity/area filtering) fails to locate a correctly-positioned
+blob on 9/13 frames and matches an ArUco tag or the ball on the other 4, before colour classification
+ever runs. These are also the occlusion report's own hardest cases (ball-marker gap 5-26mm). Fixing
+the shape-extraction stage is real, separate, scoped-out work, not silently folded into "done" here.
+
+### `HybridQwenActPolicy`/`SmolVLADirectPolicy`: the experiment options are now real, pluggable `Policy` implementations
+
+Built `core/hybrid_policy.py`, wrapping today's orchestrator/fast-layer/scheduler pieces behind the
+exact `Policy` protocol `JetsonExpertPolicy` already implements (`act(image, instruction, state) ->
+PolicyCommand`, `reset()`) -- these could be dropped into the real control loop later with zero
+interface changes. Added `PolicyCommand.angle_targets_deg` (additive, doesn't touch Track 1's
+`step_targets`). Tests: 10/10 new + 25/25 existing (`test_experiments_cpu.py`, re-run to confirm a
+shared refactor didn't regress it) pass; import-isolation holds (no torch/lerobot loaded). Real
+replay against a real Track 4 session with `StubFastLayer` (timing only, not accuracy): hybrid policy
+emits angles on 137/750 ticks, stalls 22% of the time; SmolVLA-direct (no grounding wait) emits on
+702/750. **Real pre-existing bug found and documented, not fixed (out of scope)**: today's earlier
+`run_experiment.py` `run_live()` passes the marker LABEL ("green marker") as the grounding
+instruction, but the prompt builder matches on the raw command vocabulary ("go_green") -- every
+colour command there silently falls through to the "find the ball" fallback prompt instead of the
+intended marker. Flagged in both the new code's docstring and `EXPERIMENT_OPTIONS_PLAN_2026_10_07.md`
+so it isn't lost before whoever next touches live mode. `lerobot.policies` import still blocked in
+this environment (pre-existing), so the real `ActFastLayer`/`SmolVLAFastLayer`/`QwenVLBackend`
+construction paths are reviewed but not exercised -- only `StubFastLayer` has actually run.
+
 ## 06/10/2026
 ### Moondream2 fixed and scored for real; full 4-candidate Arm 2 baseline complete; Qwen confirmed as Arm 2 backbone
 

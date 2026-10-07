@@ -129,6 +129,29 @@ class VideoRowReader:
         self._cap.release()
 
 
+@dataclasses.dataclass(frozen=True)
+class SessionTelemetry:
+    """One logged Track 4 session's replay-relevant columns. Factored out of `run_replay()`
+    (2026-10-07) so `core/hybrid_policy.py`'s own replay driver
+    (`run_policy_replay.py`) can reuse the same loading instead of re-deriving it."""
+
+    t_s: np.ndarray
+    touch: np.ndarray  # kept as logged, stale repeats included
+    logged_target: np.ndarray
+    commands: np.ndarray
+
+
+def load_session_telemetry(session: str) -> SessionTelemetry:
+    import pandas as pd
+
+    df = pd.read_csv(os.path.join(session, "telemetry.csv"))
+    t_s = (df["host_timestamp_ms"].to_numpy(dtype=np.float64) - float(df["host_timestamp_ms"].iloc[0])) / 1000.0
+    touch = df[["touch_x", "touch_y"]].to_numpy(dtype=np.float64)
+    logged_target = df[["target_x", "target_y"]].to_numpy(dtype=np.float64)
+    commands = df["audio_command"].fillna("").astype(str).to_numpy()
+    return SessionTelemetry(t_s=t_s, touch=touch, logged_target=logged_target, commands=commands)
+
+
 @dataclasses.dataclass
 class _PendingReplan:
     plan: ChunkPlan
@@ -155,14 +178,9 @@ def _plan_detail(p: _PendingReplan, rec: ReplanRecord) -> dict[str, Any]:
 
 
 def run_replay(args: argparse.Namespace) -> dict[str, Any]:
-    import pandas as pd
-
     session = os.path.abspath(args.session)
-    df = pd.read_csv(os.path.join(session, "telemetry.csv"))
-    t_s = (df["host_timestamp_ms"].to_numpy(dtype=np.float64) - float(df["host_timestamp_ms"].iloc[0])) / 1000.0
-    touch = df[["touch_x", "touch_y"]].to_numpy(dtype=np.float64)  # kept as logged, stale repeats included
-    logged_target = df[["target_x", "target_y"]].to_numpy(dtype=np.float64)
-    commands = df["audio_command"].fillna("").astype(str).to_numpy()
+    tel = load_session_telemetry(session)
+    t_s, touch, logged_target, commands = tel.t_s, tel.touch, tel.logged_target, tel.commands
     # Replay steps on a CONTROL_HZ grid, not on telemetry rows (rows here arrive ~24 Hz, and a
     # row-stepped check would itself create stalls wider than the margin).
     tick_times = np.arange(0.0, args.max_sim_seconds, 1.0 / CONTROL_HZ)

@@ -31,6 +31,14 @@ class PolicyCommand:
     target_x_mm: float
     target_y_mm: float
     step_targets: Optional[tuple] = None  # (stepA, stepB, stepC), Phase B only
+    # (theta_a, theta_b, theta_c) degrees, firmware/stm32_jetson_vla_angle_control's
+    # AngleStepControl.cpp wire contract (`experiments/serial_protocol.py`'s "A,a,b,c" line,
+    # +/-11.025 deg, reject-whole-chunk-never-clamp) -- added 2026-10-07 for Arm 2's
+    # chunk-scheduled fast-layer policies (`core/hybrid_policy.py`), which target a DIFFERENT
+    # firmware/wire-protocol (degrees) than Track 1's step-space RLControl.cpp contract
+    # `step_targets` documents above. None means "no accepted chunk is currently playing for
+    # this frame" (stall, rejection, or no target yet) -- never a stale or fabricated value.
+    angle_targets_deg: Optional[tuple] = None
     debug: Optional[dict] = None
 
 

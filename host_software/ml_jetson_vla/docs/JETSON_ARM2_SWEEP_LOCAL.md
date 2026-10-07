@@ -418,3 +418,33 @@ inside a container; whether the base image's actual numpy version resolves clean
 audit in `requirements-jetson-arm2-common.txt`, but not run); real combined disk usage against the
 image-size estimate in section 2; whether `--runtime nvidia` is actually needed or already the
 daemon default on this device.
+
+## 8. Next-session checklist (2026-10-07, no Jetson access for ~2 days -- this is everything queued)
+
+Everything below is pushed to `origin/vla_testing` and waiting for the Jetson. In order:
+
+1. **`git pull --rebase`** first, on a clean working tree. Set a GitHub login on the Jetson before
+   this if not already done (its own commits have been local-only all session).
+2. **Rebuild `arm2-lerobot`** (`Dockerfile.arm2-lerobot`) -- picks up the `qwen-vl-utils` fix. Confirm
+   the final gate still prints `import lerobot.policies.smolvla: OK` / `...act: OK` and that
+   `transformers` resolves below 5.
+3. **Re-run the hybrid Qwen+ACT benchmark** (`bench_hybrid_qwen_act.py`) -- the first attempt failed,
+   likely on the missing `qwen-vl-utils` import now fixed in step 2. If it still fails, read the
+   traceback before assuming the same cause.
+4. **Run the Qwen-transformers-4.57.6 parity harness** (`qwen_transformers_parity.py`, CPU-tested,
+   never run against a real model) -- decides whether Qwen and SmolVLA can share one transformers
+   version going forward, or need the two-image split to stay permanent.
+5. **SmolVLA in bf16** (`bench_action_models.py --policy smolvla --precision bf16`) -- not yet tried;
+   ACT's bf16 failure (hardcoded float32 latent) may or may not apply to SmolVLA too.
+6. **If the vision agent's `marker_tracker.py` fix landed** (check `git log` for it): re-verify its
+   5-frame real-data check still holds after a pull, no Jetson-side action needed, CPU-only.
+7. **Colab, independent of the above**: upload `colab_bundle_sample/` (202 frames, ~12MB) first, run
+   `qwen_grounding_colab.ipynb` end to end (~15-20 min). Only upload the full 26,454-frame
+   `colab_bundle/` if the sample run's numbers look trustworthy and a longer run is actually wanted.
+8. **Colab, ACT training**: dataset conversion now runs on the dev machine instead (2026-10-07,
+   superseding the "on hold" note) -- once it finishes, upload per `act_train_colab.ipynb`'s cell (a)
+   placeholders; confirm it now builds the 4-dim (touch+target) state if the ACT_FAST reconciliation
+   task landed (check `git log`).
+9. **`HybridQwenActPolicy`/`SmolVLADirectPolicy` hardware tests** (new, see
+   `docs/EXPERIMENT_OPTIONS_PLAN_2026_10_07.md` §5 and the `Policy`-protocol wrappers built 2026-10-07)
+   -- not started, blocked on steps 2-5 above plus a trained checkpoint from step 8.
