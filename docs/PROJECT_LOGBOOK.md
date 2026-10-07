@@ -162,6 +162,18 @@ so it isn't lost before whoever next touches live mode. `lerobot.policies` impor
 this environment (pre-existing), so the real `ActFastLayer`/`SmolVLAFastLayer`/`QwenVLBackend`
 construction paths are reviewed but not exercised -- only `StubFastLayer` has actually run.
 
+### Full LeRobot dataset conversion complete, verified, zipped for Colab
+
+Ran on the dev machine (2026-10-07 into 2026-10-08), no Jetson needed. **151,706 frames, 15 episodes
+(10 Track 4 + 5 PID), zero errors.** Matches the Stage 0 flat-JSON regeneration's exact counts from
+2026-09-23 (110,993 pid_webcam + 40,713 jetson_track4_rl) -- a real cross-check, not a coincidence.
+`verify_and_package_dataset.py` confirms the schema (including `touch_glitch`/`target`, both added
+2026-10-07) and the real per-regime rates: Track4 stale 30.6% / glitch 0.31%, PID stale 16.0% / glitch
+0.16% -- matching the earlier dedicated staleness/glitch analyses almost exactly, a second independent
+consistency check. Zipped to `host_software/data/colab_bundle/lerobot_full_2026_10_07.zip` (2.06GB,
+sha256 `48b73a20c411636b5b7f1bbfc509136f1a362f46fac8f8ffba5a516753be9f02`), ready to upload for
+`act_train_colab.ipynb`. First real, verified, trainable dataset this project has had.
+
 ### Code review of today's hybrid-policy work found 3 real concurrency bugs; all fixed and proven, not just patched
 
 `code-review` (medium effort) against `hybrid_policy.py`/`experiments/`/the converter/the new verify

@@ -441,10 +441,13 @@ Everything below is pushed to `origin/vla_testing` and waiting for the Jetson. I
 7. **Colab, independent of the above**: upload `colab_bundle_sample/` (202 frames, ~12MB) first, run
    `qwen_grounding_colab.ipynb` end to end (~15-20 min). Only upload the full 26,454-frame
    `colab_bundle/` if the sample run's numbers look trustworthy and a longer run is actually wanted.
-8. **Colab, ACT training**: dataset conversion now runs on the dev machine instead (2026-10-07,
-   superseding the "on hold" note) -- once it finishes, upload per `act_train_colab.ipynb`'s cell (a)
-   placeholders; confirm it now builds the 4-dim (touch+target) state if the ACT_FAST reconciliation
-   task landed (check `git log`).
+8. **Colab, ACT training**: dataset conversion finished on the dev machine 2026-10-08 -- 151,706
+   frames, 15 episodes, verified (`verify_and_package_dataset.py`) and zipped to
+   `host_software/data/colab_bundle/lerobot_full_2026_10_07.zip` (2.06GB, sha256
+   `48b73a20c411636b5b7f1bbfc509136f1a362f46fac8f8ffba5a516753be9f02`). Upload this zip to Drive per
+   `act_train_colab.ipynb`'s cell (a) placeholders (`DATASET_ZIP`), plus `session_split.json` and
+   `session_manifest.json` alongside it. The notebook now builds the 4-dim (touch+target) ACT_FAST
+   state (reconciliation landed 2026-10-07).
 9. **`HybridQwenActPolicy`/`SmolVLADirectPolicy` hardware tests** (new, see
    `docs/EXPERIMENT_OPTIONS_PLAN_2026_10_07.md` §5 and the `Policy`-protocol wrappers built 2026-10-07)
    -- not started, blocked on steps 2-5 above plus a trained checkpoint from step 8.
