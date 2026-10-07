@@ -130,7 +130,7 @@ class _FastWorker:
         self.scheduler: ChunkScheduler = ChunkScheduler(control_hz, margin_ms)
         self._control_hz: float = control_hz
         self._in_q: "queue.Queue[tuple[Any, ...]]" = queue.Queue(maxsize=1)
-        self._out_q: "queue.Queue[tuple[Any, Optional[float], bool]]" = queue.Queue()
+        self._out_q: "queue.Queue[tuple[Any, Optional[float], bool, Optional[float]]]" = queue.Queue()
         self._stop = threading.Event()
         self._errors: list[str] = []
         self.active_actions: Optional[np.ndarray] = None
@@ -148,7 +148,9 @@ class _FastWorker:
     def _run(self) -> None:
         while not self._stop.is_set():
             try:
-                frame, target_mm, state_mm, instruction, age, new_arrived = self._in_q.get(timeout=_QUEUE_POLL_S)
+                frame, target_mm, state_mm, instruction, age, new_arrived, target_done_s = self._in_q.get(
+                    timeout=_QUEUE_POLL_S
+                )
             except queue.Empty:
                 continue
             try:
@@ -156,7 +158,7 @@ class _FastWorker:
             except Exception as exc:  # a dead fast worker must be visible, never silently stall forever
                 self._errors.append(f"{type(exc).__name__}: {exc}")
                 return
-            self._out_q.put((plan, age, new_arrived))
+            self._out_q.put((plan, age, new_arrived, target_done_s))
 
     def submit_if_due(
         self,
@@ -167,23 +169,35 @@ class _FastWorker:
         instruction: Optional[str],
         age: Optional[float],
         new_arrived: bool,
+        target_done_s: Optional[float] = None,
     ) -> bool:
+        """`target_done_s` is the target timestamp actually being fed to `fast_layer.plan()` for
+        THIS submission -- captured here, at submission time, and carried through the queues so
+        that `poll_landed()` can report back exactly what was used for a given chunk rather than
+        whatever the store's `latest()` happens to be when that chunk lands later (finding 2:
+        using the landing-time value let a brand-new target be mistaken for already-used)."""
         if self.replan_pending or not self.scheduler.should_replan(now):
             return False
         self.scheduler.begin_inference(now)
         self.replan_pending = True
         try:
-            self._in_q.put_nowait((frame, target_mm, state_mm, instruction, age, new_arrived))
+            # Copy the frame before handing it to the background thread (same reason
+            # `_Grounder.request()` and `run_experiment.py`'s fast/ground queues already do this):
+            # the caller may reuse a preallocated capture buffer on the very next tick.
+            self._in_q.put_nowait((frame.copy(), target_mm, state_mm, instruction, age, new_arrived, target_done_s))
             return True
         except queue.Full:
             # should not happen (replan_pending gates this), but never block act() on it
             return True
 
-    def poll_landed(self, now: float) -> list[ReplanRecord]:
-        landed: list[ReplanRecord] = []
+    def poll_landed(self, now: float) -> list[tuple[ReplanRecord, Optional[float]]]:
+        """Returns `(record, target_done_s)` pairs, where `target_done_s` is the submission-time
+        value passed through `submit_if_due()` for that specific chunk (see its docstring) --
+        not a re-read of the store's current state at landing time."""
+        landed: list[tuple[ReplanRecord, Optional[float]]] = []
         while True:
             try:
-                plan, age, new_arrived = self._out_q.get_nowait()
+                plan, age, new_arrived, target_done_s = self._out_q.get_nowait()
             except queue.Empty:
                 break
             self.replan_pending = False
@@ -196,7 +210,7 @@ class _FastWorker:
                 self.n_rejected += 1
                 self.n_consecutive_rejects += 1
                 self.last_rejection_reason = plan.safety.reason
-            landed.append(record)
+            landed.append((record, target_done_s))
         return landed
 
     def current_angles(self, now: float) -> Optional[tuple]:
@@ -376,18 +390,29 @@ class HybridQwenActPolicy(Policy):
             target_xy, target_done_s = (latest.x_mm, latest.y_mm), latest.done_monotonic_s
         has_target = target_xy is not None
 
-        for record in self._fast.poll_landed(now):
-            if record.accepted and record.new_target_arrived and target_done_s is not None:
-                self._used_done_s = max(self._used_done_s, target_done_s)
+        for record, submitted_target_done_s in self._fast.poll_landed(now):
+            # Use the target timestamp actually fed to THIS chunk's plan() call at submission
+            # time (finding 2), not `target_done_s` re-read above -- a newer target can have
+            # arrived in the store between this chunk's submission and its landing, and that
+            # newer target must still be free to trigger its own replan later.
+            if record.accepted and record.new_target_arrived and submitted_target_done_s is not None:
+                self._used_done_s = max(self._used_done_s, submitted_target_done_s)
 
         touch_finite = touch_mm is not None and bool(np.all(np.isfinite(touch_mm)))
         if has_target and touch_finite:
             assert target_done_s is not None
-            age = target_age_ms(target_done_s, now)
+            # Re-sample monotonic time right at the point of use and clamp `used_s` to be no
+            # earlier than `target_done_s` (finding 1): the grounder thread stamps
+            # `done_monotonic_s` with its OWN later `time.monotonic()` call, independently of the
+            # `now` captured at the top of this method, so `target_done_s` can legitimately be
+            # later than a stale `now` even though no real logic error occurred -- that's a small,
+            # harmless positive skew from the cross-thread race, not the same-thread misuse
+            # `target_age_ms()`'s own raise exists to catch.
+            age = target_age_ms(target_done_s, max(time.monotonic(), target_done_s))
             new_arrived = target_done_s > self._used_done_s
             submitted = self._fast.submit_if_due(
                 now, image, target_xy, (float(touch_mm[0]), float(touch_mm[1])),
-                self._instruction_text, age, new_arrived,
+                self._instruction_text, age, new_arrived, target_done_s,
             )
             debug["replan_submitted"] = submitted
 
@@ -466,7 +491,7 @@ class SmolVLADirectPolicy(Policy):
             # docstring) -- same convention run_experiment.py's run_live() uses for this option.
             submitted = self._fast.submit_if_due(
                 now, image, (0.0, 0.0), (float(touch_mm[0]), float(touch_mm[1])),
-                self._instruction_text, None, False,
+                self._instruction_text, None, False, None,
             )
             debug["replan_submitted"] = submitted
 

@@ -49,7 +49,9 @@ def verify_dataset(root: str) -> dict[str, Any]:
 
     # Check schema on the first file before computing any rate -- a missing column must abort
     # immediately, not surface as a confusing KeyError mid-aggregation on some later file.
-    first_cols = pq.read_table(parquet_files[0]).to_pandas().columns
+    # Schema-only read (no row data) -- the first file is still read in full inside the
+    # aggregation loop below, so this must not materialize its rows just to look at `.columns`.
+    first_cols = pq.read_schema(parquet_files[0]).names
     missing_features = EXPECTED_FEATURES - set(first_cols) - {"observation.image"}  # video, not a parquet column
     assert not missing_features, (
         f"missing expected features in parquet data: {missing_features} -- "

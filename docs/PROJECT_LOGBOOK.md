@@ -162,6 +162,25 @@ so it isn't lost before whoever next touches live mode. `lerobot.policies` impor
 this environment (pre-existing), so the real `ActFastLayer`/`SmolVLAFastLayer`/`QwenVLBackend`
 construction paths are reviewed but not exercised -- only `StubFastLayer` has actually run.
 
+### Code review of today's hybrid-policy work found 3 real concurrency bugs; all fixed and proven, not just patched
+
+`code-review` (medium effort) against `hybrid_policy.py`/`experiments/`/the converter/the new verify
+script found 4 real issues, all fixed with deterministic reproduction, not just inspection:
+(1) a cross-thread clock race where the grounder thread's own later `time.monotonic()` stamp could
+exceed `act()`'s already-captured `now`, crashing `target_age_ms()` -- fixed by re-sampling/clamping
+at the point of use, the underlying raise in `schedule.py` left untouched so a real same-thread misuse
+still catches. (2) `_used_done_s` was updated from the target timestamp current at chunk-LANDING time
+instead of the one actually fed into that chunk at SUBMISSION time -- a genuinely new target arriving
+mid-flight could be wrongly marked already-used and silently starve the fast layer of a replan; fixed
+by threading the submission-time timestamp through the queue instead of re-reading the store at
+landing. (3) frames were queued to the fast-layer worker by reference instead of copied, unlike the
+grounder's own already-correct pattern in the same file -- a reused camera buffer could feed stale
+pixels into a queued inference call. (4) the dataset verify script read its first parquet shard twice.
+**Verification discipline worth noting**: for the two race conditions, the agent `git stash`-ed only
+the fix, reproduced each exact failure mode with a deterministic mocked-clock test (the pre-fix code
+raised the real `ValueError` / showed the real wrong-timestamp bug), then restored the fix and
+confirmed all 13 tests pass -- not "should be fixed by inspection," genuinely shown broken-then-fixed.
+
 ## 06/10/2026
 ### Moondream2 fixed and scored for real; full 4-candidate Arm 2 baseline complete; Qwen confirmed as Arm 2 backbone
 

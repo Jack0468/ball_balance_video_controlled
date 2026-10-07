@@ -22,6 +22,7 @@ import sys
 import time
 import unittest
 from typing import Any, Optional
+from unittest import mock
 
 import numpy as np
 
@@ -31,8 +32,13 @@ _HOST_SOFTWARE_DIR: str = os.path.abspath(os.path.join(_ML_JETSON_VLA_DIR, "..")
 if _HOST_SOFTWARE_DIR not in sys.path:
     sys.path.append(_HOST_SOFTWARE_DIR)
 
-from ml_jetson_vla.core.hybrid_policy import HybridQwenActPolicy, SmolVLADirectPolicy  # noqa: E402
+from ml_jetson_vla.core.hybrid_policy import (  # noqa: E402
+    HybridQwenActPolicy,
+    SmolVLADirectPolicy,
+    _FastWorker,
+)
 from ml_jetson_vla.core.policy_interface import Policy, PolicyCommand  # noqa: E402
+from ml_jetson_vla.deployment.bench_hybrid_qwen_act import TargetUpdate  # noqa: E402
 from ml_jetson_vla.experiments.fast_layers import StubFastLayer  # noqa: E402
 from ml_jetson_vla.experiments.run_experiment import VideoRowReader, load_session_telemetry  # noqa: E402
 from ml_jetson_vla.experiments.schedule import CONTROL_HZ  # noqa: E402
@@ -66,6 +72,48 @@ def _wait_for(predicate: Any, timeout_s: float = 2.0, interval_s: float = 0.02) 
             return True
         time.sleep(interval_s)
     return predicate()
+
+
+def _wait_for_landed(
+    worker: _FastWorker, timeout_s: float = 2.0, interval_s: float = 0.02
+) -> list[Any]:
+    """Polls `poll_landed()` until it returns a non-empty list or the timeout elapses."""
+    deadline = time.monotonic() + timeout_s
+    while time.monotonic() < deadline:
+        landed = worker.poll_landed(time.monotonic())
+        if landed:
+            return landed
+        time.sleep(interval_s)
+    return worker.poll_landed(time.monotonic())
+
+
+class _FakeStore:
+    """Duck-typed stand-in for `_Grounder.store` (a real `TargetStore`) -- lets tests control
+    exactly what `latest()` returns on each call without running a real grounding thread."""
+
+    def __init__(self, update: TargetUpdate) -> None:
+        self._update = update
+        self.slow_calls: int = 1
+        self.parse_failures: int = 0
+
+    def latest(self) -> TargetUpdate:
+        return self._update
+
+
+class _FakeGrounder:
+    """Duck-typed stand-in for `_Grounder` -- same shape `HybridQwenActPolicy.act()` reads
+    (`.store.latest()`, `.store.slow_calls`, `.store.parse_failures`, `.request()`, `.close()`),
+    with no real background thread, so tests can deterministically control the "slow loop"
+    target a policy sees without racing real wall-clock time."""
+
+    def __init__(self, done_monotonic_s: float, x_mm: float = 10.0, y_mm: float = 20.0) -> None:
+        self.store: _FakeStore = _FakeStore(TargetUpdate(1, x_mm, y_mm, done_monotonic_s, "go_red", 0.01))
+
+    def request(self, frame: np.ndarray, instruction: str) -> bool:
+        return True
+
+    def close(self) -> None:
+        pass
 
 
 class ConstructionAndProtocolTests(unittest.TestCase):
@@ -227,6 +275,105 @@ class RealSessionReplayTests(unittest.TestCase):
         self.assertGreater(n_with_target, 0)
         self.assertGreater(n_with_angles, 0)
         self.assertGreater(len(policy.replan_records), 0)
+
+
+class CrossThreadRaceAndStaleTargetTests(unittest.TestCase):
+    """Deterministic reproductions for findings 1 and 2 (2026-10-07 review) -- both are real
+    concurrency bugs, so each is driven via controlled, explicit timestamps / a fake grounder
+    store rather than relying on real thread-timing to hit the race window."""
+
+    def test_finding1_act_does_not_raise_when_target_done_s_is_after_a_stale_now(self) -> None:
+        """Finding 1: the grounder's background thread stamps `done_monotonic_s` with its OWN
+        later `time.monotonic()` call, independent of the `now` `act()` already captured at the
+        top of the method -- so `target_done_s` can legitimately be later than that `now`.
+        Reproduced directly: inject a target whose `done_monotonic_s` is set ahead of a `now`
+        `act()`'s first `time.monotonic()` call is forced to return (mocked), while leaving the
+        second, later-in-the-method call (the fix's re-sample point) real."""
+        policy = HybridQwenActPolicy(StubFastLayer(value_deg=0.5, chunk_len=5))
+        try:
+            real_now = time.monotonic()
+            future_done_s = real_now + 5.0  # "later" than the stale `now` captured below
+            policy._grounder = _FakeGrounder(future_done_s)  # type: ignore[assignment]
+            stale_now = real_now  # the `now` act() would have captured "before" the race
+
+            call_count = {"n": 0}
+            real_monotonic = time.monotonic
+
+            def fake_monotonic() -> float:
+                call_count["n"] += 1
+                # 1st call = act()'s `now = time.monotonic()`; every later call (the finding-1
+                # fix's re-sample at the point of use) gets the real, unmocked clock.
+                return stale_now if call_count["n"] == 1 else real_monotonic()
+
+            with mock.patch("ml_jetson_vla.core.hybrid_policy.time.monotonic", side_effect=fake_monotonic):
+                try:
+                    cmd = policy.act(_FRAME, None, {"touch_mm": (0.0, 0.0)})
+                except ValueError as exc:
+                    self.fail(f"act() raised on a cross-thread skew it must tolerate: {exc}")
+            self.assertIsInstance(cmd, PolicyCommand)
+            self.assertTrue(policy.last_debug["has_target"])
+        finally:
+            policy.close()
+
+    def test_finding2_fast_worker_reports_the_target_captured_at_submission_not_at_landing(self) -> None:
+        """Finding 2, mechanism-level: `_FastWorker.poll_landed()` must return the `target_done_s`
+        that was actually passed to `submit_if_due()` for that specific chunk, carried through the
+        in/out queues -- not something read fresh at landing time (there is nothing else it could
+        be contaminated by here, since this test drives the worker directly with one fixed value)."""
+        worker = _FastWorker(StubFastLayer(value_deg=0.5, chunk_len=3))
+        try:
+            submitted_target_done_s = 111.0
+            submitted = worker.submit_if_due(
+                now=0.0,
+                frame=_FRAME,
+                target_mm=(1.0, 2.0),
+                state_mm=(0.0, 0.0),
+                instruction="hold",
+                age=0.0,
+                new_arrived=True,
+                target_done_s=submitted_target_done_s,
+            )
+            self.assertTrue(submitted)
+            landed = _wait_for_landed(worker)
+            self.assertEqual(len(landed), 1)
+            record, reported_target_done_s = landed[0]
+            self.assertTrue(record.accepted)
+            self.assertEqual(reported_target_done_s, submitted_target_done_s)
+        finally:
+            worker.close()
+
+    def test_finding2_used_done_s_does_not_jump_to_a_newer_unused_target(self) -> None:
+        """Finding 2, policy-level: a newer grounder target (t2) lands in the store between a
+        chunk's submission (against t1) and that chunk being polled as landed. Before the fix,
+        `_used_done_s` was set from the store's CURRENT target at landing time (t2), wrongly
+        marking t2 as already used even though no inference ever ran against it."""
+        policy = HybridQwenActPolicy(StubFastLayer(value_deg=0.5, chunk_len=5))
+        try:
+            base = time.monotonic()
+            t1 = base - 2.0  # the target actually submitted with the first chunk
+            t2 = base - 1.0  # newer than t1, arrives in the store before that chunk lands
+            touch = (0.0, 0.0)
+
+            policy._grounder = _FakeGrounder(t1)  # type: ignore[assignment]
+            cmd1 = policy.act(_FRAME, None, {"touch_mm": touch})
+            self.assertTrue(policy.last_debug["replan_submitted"])  # first call always submits
+
+            # Give the real background worker thread time to finish the (near-instant) stub
+            # inference and queue its result -- without yet draining it via another act() call.
+            self.assertTrue(_wait_for(lambda: policy._fast._out_q.qsize() > 0, timeout_s=2.0))
+
+            # Simulate the race: a newer grounding result (t2) now supersedes t1 in the store,
+            # before the policy has polled the chunk that was submitted against t1.
+            policy._grounder = _FakeGrounder(t2)  # type: ignore[assignment]
+
+            cmd2 = policy.act(_FRAME, None, {"touch_mm": touch})  # drains the t1 chunk; sees t2 as current
+
+            self.assertEqual(policy._used_done_s, t1)  # the chunk actually used t1, not t2
+            self.assertGreater(t2, policy._used_done_s)  # t2 is still free to be treated as new
+            self.assertIsInstance(cmd1, PolicyCommand)
+            self.assertIsInstance(cmd2, PolicyCommand)
+        finally:
+            policy.close()
 
 
 class ImportIsolationTests(unittest.TestCase):
