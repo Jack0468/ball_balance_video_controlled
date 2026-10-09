@@ -428,9 +428,11 @@ Everything below is pushed to `origin/vla_testing` and waiting for the Jetson. I
 2. **Rebuild `arm2-lerobot`** (`Dockerfile.arm2-lerobot`) -- picks up the `qwen-vl-utils` fix. Confirm
    the final gate still prints `import lerobot.policies.smolvla: OK` / `...act: OK` and that
    `transformers` resolves below 5.
-3. **Re-run the hybrid Qwen+ACT benchmark** (`bench_hybrid_qwen_act.py`) -- the first attempt failed,
-   likely on the missing `qwen-vl-utils` import now fixed in step 2. If it still fails, read the
-   traceback before assuming the same cause.
+3. ~~Re-run the hybrid Qwen+ACT benchmark~~ **DONE 2026-10-09.** Failed first on the known ACT
+   fp32-latent/bf16 bug (script defaults `--precision bf16`); `--precision fp32` fixed it. Real
+   result: 100% of 40 replans fit inside their chunk, 39/40 had a target, only 1/40 exceeded the 2s
+   staleness threshold. See the logbook's 09/10/2026 entry for full detail. One reporting bug found,
+   not yet fixed: `qwen.slow_call_latency` in the output JSON is mislabelled ms but is really seconds.
 4. **Run the Qwen-transformers-4.57.6 parity harness** (`qwen_transformers_parity.py`, CPU-tested,
    never run against a real model) -- decides whether Qwen and SmolVLA can share one transformers
    version going forward, or need the two-image split to stay permanent.

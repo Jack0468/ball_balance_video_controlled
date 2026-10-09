@@ -162,6 +162,35 @@ so it isn't lost before whoever next touches live mode. `lerobot.policies` impor
 this environment (pre-existing), so the real `ActFastLayer`/`SmolVLAFastLayer`/`QwenVLBackend`
 construction paths are reviewed but not exercised -- only `StubFastLayer` has actually run.
 
+## 09/10/2026
+### Real hybrid Qwen+ACT pipeline run on the Jetson: no stalls, GPU sharing works, the two-rate design holds up
+
+After reconnecting to the Jetson: Steps 2-7 of `JETSON_ARM2_SWEEP_LOCAL.md` re-verified end to end
+(all six candidates `nothing_to_do`, matching the existing real checkpoint exactly -- confirms the
+device, images, and data survived the multi-day gap intact). `arm2-lerobot` rebuilt with the
+`qwen-vl-utils` fix, gates passed. The hybrid benchmark (`bench_hybrid_qwen_act.py`) then ran for
+real -- the first attempt failed on the same ACT float32-latent/bf16 bug already found 2026-10-07
+(the script defaults `--precision bf16`); re-run with `--precision fp32` (Qwen's own dtype is
+independent, unaffected) succeeded.
+
+**Real result, answering the open "does the two-rate design actually avoid stalling" question:**
+40 replans over ~130s of real logged Track 4 frames, Qwen (71 real grounding calls, 0 parse
+failures) and ACT (51.6M, random-init, fp32) sharing one GPU. **100% of replans fit inside their
+3.33s chunk budget** (fast-loop wall time mean 35ms -- about 1% of the budget, even under real GPU
+contention with Qwen). **39/40 replans had a target; only 1/40 (2.5%) exceeded the 2s staleness
+threshold** (median target age 823ms) -- Qwen's ~1.7-2s grounding latency against a 3.33s chunk means
+the pipeline naturally refreshes its target roughly once per chunk, which is adequate for targets
+that don't move mid-trial. This is a real, substantive answer, not a stub-replay estimate: the
+earlier stub-based replay (2026-10-07) showed 22% stalls because the stub's instant "inference" was
+scheduled against telemetry's own irregular ~24Hz timestamps rather than the real 30Hz grid the live
+pipeline actually runs on -- today's run uses the real clock and the real Qwen latency end to end.
+**A real reporting bug found while sanity-checking the numbers**: the JSON's
+`qwen.slow_call_latency` fields are labelled `_ms` but are actually in seconds (mean "1.85ms" is
+really 1.85s) -- confirmed by matching the known real Qwen latency on this device (1.7-2.0s) exactly.
+Everything else in the file (the schedule timing, target ages) is correctly scaled; this is an
+isolated missing x1000 in the script's own Qwen-latency reporting, not a scheduling bug. Not fixed
+yet (Windows-side, queued).
+
 ### Full LeRobot dataset conversion complete, verified, zipped for Colab
 
 Ran on the dev machine (2026-10-07 into 2026-10-08), no Jetson needed. **151,706 frames, 15 episodes
