@@ -1,0 +1,1236 @@
+{
+  "format": "qwen_transformers_parity_v1",
+  "complete": true,
+  "config": {
+    "model": "Qwen/Qwen2.5-VL-3B-Instruct",
+    "revision": "66285546d2b821cf421d4f5eb2576359d3770cd3",
+    "dtype": "bf16",
+    "max_new_tokens": 24,
+    "min_pixels": 50176,
+    "max_pixels": 200704,
+    "prompt_variant": "baseline",
+    "reference_file": "scorer_format_qwen2_5_vl_3b_jetson_run1.json"
+  },
+  "reference_file": "/workspace/VRI_2026/host_software/data/arm2_jetson_sweep_results/scorer_format_qwen2_5_vl_3b_jetson_run1.json",
+  "environment": {
+    "transformers": "4.57.6",
+    "torch": "2.7.0",
+    "cuda_available": true,
+    "dtype_resolved": "bf16"
+  },
+  "pixel_abs_diff_definition": "Euclidean distance (model-input px) between target_point_px_new and target_point_px_reference",
+  "summary": {
+    "n_reference_frames": 60,
+    "n_compared": 60,
+    "n_exact_match": 22,
+    "n_parse_ok_new": 59,
+    "n_parse_ok_reference": 60,
+    "parse_rate_new": 0.9833333333333333,
+    "n_within_tolerance": 32,
+    "mean_pixel_abs_diff": 24.548579717531673,
+    "max_pixel_abs_diff": 255.8378392654222
+  },
+  "verdict": "DIVERGENT",
+  "n_divergent": 28,
+  "skipped": [],
+  "updated_utc": "2026-10-09T03:11:08.731230+00:00",
+  "frames": [
+    {
+      "session": "session_jetson_track4_20260915_151627",
+      "frame_index": 1,
+      "instruction": "go_green",
+      "raw_text": "{\"target_point_xy\": [125, 79]}",
+      "raw_text_reference": "{\"target_point_xy\": [201, 75]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        125.0,
+        79.0
+      ],
+      "target_point_px_reference": [
+        201.0,
+        75.0
+      ],
+      "pixel_abs_diff": 76.10519036176179,
+      "generate_latency_s": 2.9901599884033203
+    },
+    {
+      "session": "session_jetson_track4_20260915_151627",
+      "frame_index": 162,
+      "instruction": "go_green",
+      "raw_text": "{\"target_point_xy\": [297, 115], \"label\": \"green marker\"}",
+      "raw_text_reference": "{\"target_point_xy\": [297, 115], \"label\": \"green marker\"}",
+      "exact_match": true,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        297.0,
+        115.0
+      ],
+      "target_point_px_reference": [
+        297.0,
+        115.0
+      ],
+      "pixel_abs_diff": 0.0,
+      "generate_latency_s": 2.4065866470336914
+    },
+    {
+      "session": "session_jetson_track4_20260915_151627",
+      "frame_index": 323,
+      "instruction": "go_yellow",
+      "raw_text": "{\"target_point_xy\": [265, 150], \"label\": \"yellow marker\"}",
+      "raw_text_reference": "{\"target_point_xy\": [259, 150], \"label\": \"yellow marker\"}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        265.0,
+        150.0
+      ],
+      "target_point_px_reference": [
+        259.0,
+        150.0
+      ],
+      "pixel_abs_diff": 6.0,
+      "generate_latency_s": 2.423123598098755
+    },
+    {
+      "session": "session_jetson_track4_20260915_151627",
+      "frame_index": 485,
+      "instruction": "go_yellow",
+      "raw_text": "{\"target_point_xy\": [295, 117]}",
+      "raw_text_reference": "{\"target_point_xy\": [295, 117]}",
+      "exact_match": true,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        295.0,
+        117.0
+      ],
+      "target_point_px_reference": [
+        295.0,
+        117.0
+      ],
+      "pixel_abs_diff": 0.0,
+      "generate_latency_s": 1.7676489353179932
+    },
+    {
+      "session": "session_jetson_track4_20260915_151627",
+      "frame_index": 1128,
+      "instruction": "go_red",
+      "raw_text": "{\"target_point_xy\": [295, 157]}",
+      "raw_text_reference": "{\"target_point_xy\": [295, 157]}",
+      "exact_match": true,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        295.0,
+        157.0
+      ],
+      "target_point_px_reference": [
+        295.0,
+        157.0
+      ],
+      "pixel_abs_diff": 0.0,
+      "generate_latency_s": 1.7649784088134766
+    },
+    {
+      "session": "session_jetson_track4_20260915_151627",
+      "frame_index": 1531,
+      "instruction": "go_black",
+      "raw_text": "{\"target_point_xy\": [257, 12, 279, 36]}",
+      "raw_text_reference": "{\"target_point_xy\": [257, 12], \"label\": \"black marker\"}",
+      "exact_match": false,
+      "parse_ok_new": false,
+      "parse_ok_reference": true,
+      "target_point_px_new": null,
+      "target_point_px_reference": [
+        257.0,
+        12.0
+      ],
+      "pixel_abs_diff": null,
+      "generate_latency_s": 2.4993789196014404
+    },
+    {
+      "session": "session_jetson_track4_20260915_153053",
+      "frame_index": 1,
+      "instruction": "go_green",
+      "raw_text": "{\"target_point_xy\": [125, 79]}",
+      "raw_text_reference": "{\"target_point_xy\": [125, 79]}",
+      "exact_match": true,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        125.0,
+        79.0
+      ],
+      "target_point_px_reference": [
+        125.0,
+        79.0
+      ],
+      "pixel_abs_diff": 0.0,
+      "generate_latency_s": 1.6592206954956055
+    },
+    {
+      "session": "session_jetson_track4_20260915_153053",
+      "frame_index": 162,
+      "instruction": "go_green",
+      "raw_text": "{\"target_point_xy\": [259, 147]}",
+      "raw_text_reference": "{\"target_point_xy\": [259, 117]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        259.0,
+        147.0
+      ],
+      "target_point_px_reference": [
+        259.0,
+        117.0
+      ],
+      "pixel_abs_diff": 30.0,
+      "generate_latency_s": 1.7527754306793213
+    },
+    {
+      "session": "session_jetson_track4_20260915_153053",
+      "frame_index": 323,
+      "instruction": "go_yellow",
+      "raw_text": "{\"target_point_xy\": [265, 197]}",
+      "raw_text_reference": "{\"target_point_xy\": [215, 179]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        265.0,
+        197.0
+      ],
+      "target_point_px_reference": [
+        215.0,
+        179.0
+      ],
+      "pixel_abs_diff": 53.14132102234569,
+      "generate_latency_s": 1.7580993175506592
+    },
+    {
+      "session": "session_jetson_track4_20260915_153053",
+      "frame_index": 970,
+      "instruction": "go_red",
+      "raw_text": "{\"target_point_xy\": [307, 156]}",
+      "raw_text_reference": "{\"target_point_xy\": [307, 156]}",
+      "exact_match": true,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        307.0,
+        156.0
+      ],
+      "target_point_px_reference": [
+        307.0,
+        156.0
+      ],
+      "pixel_abs_diff": 0.0,
+      "generate_latency_s": 1.7547447681427002
+    },
+    {
+      "session": "session_jetson_track4_20260915_153053",
+      "frame_index": 1131,
+      "instruction": "go_red",
+      "raw_text": "{\"target_point_xy\": [291, 157]}",
+      "raw_text_reference": "{\"target_point_xy\": [312, 153]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        291.0,
+        157.0
+      ],
+      "target_point_px_reference": [
+        312.0,
+        153.0
+      ],
+      "pixel_abs_diff": 21.37755832643195,
+      "generate_latency_s": 1.7567834854125977
+    },
+    {
+      "session": "session_jetson_track4_20260915_153053",
+      "frame_index": 1533,
+      "instruction": "go_black",
+      "raw_text": "{\"target_point_xy\": [241, 150]}",
+      "raw_text_reference": "{\"target_point_xy\": [241, 150]}",
+      "exact_match": true,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        241.0,
+        150.0
+      ],
+      "target_point_px_reference": [
+        241.0,
+        150.0
+      ],
+      "pixel_abs_diff": 0.0,
+      "generate_latency_s": 1.7543177604675293
+    },
+    {
+      "session": "session_jetson_track4_20260915_153247",
+      "frame_index": 1,
+      "instruction": "go_green",
+      "raw_text": "{\"target_point_xy\": [125, 79]}",
+      "raw_text_reference": "{\"target_point_xy\": [125, 79]}",
+      "exact_match": true,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        125.0,
+        79.0
+      ],
+      "target_point_px_reference": [
+        125.0,
+        79.0
+      ],
+      "pixel_abs_diff": 0.0,
+      "generate_latency_s": 1.6727585792541504
+    },
+    {
+      "session": "session_jetson_track4_20260915_153247",
+      "frame_index": 162,
+      "instruction": "go_green",
+      "raw_text": "{\"target_point_xy\": [265, 119]}",
+      "raw_text_reference": "{\"target_point_xy\": [265, 119]}",
+      "exact_match": true,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        265.0,
+        119.0
+      ],
+      "target_point_px_reference": [
+        265.0,
+        119.0
+      ],
+      "pixel_abs_diff": 0.0,
+      "generate_latency_s": 1.7519605159759521
+    },
+    {
+      "session": "session_jetson_track4_20260915_153247",
+      "frame_index": 324,
+      "instruction": "go_yellow",
+      "raw_text": "{\"target_point_xy\": [225, 152]}",
+      "raw_text_reference": "{\"target_point_xy\": [225, 152]}",
+      "exact_match": true,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        225.0,
+        152.0
+      ],
+      "target_point_px_reference": [
+        225.0,
+        152.0
+      ],
+      "pixel_abs_diff": 0.0,
+      "generate_latency_s": 1.7517037391662598
+    },
+    {
+      "session": "session_jetson_track4_20260915_153247",
+      "frame_index": 485,
+      "instruction": "go_yellow",
+      "raw_text": "{\"target_point_xy\": [219, 147], \"label\": \"yellow marker\"}",
+      "raw_text_reference": "{\"target_point_xy\": [219, 147], \"label\": \"yellow marker\"}",
+      "exact_match": true,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        219.0,
+        147.0
+      ],
+      "target_point_px_reference": [
+        219.0,
+        147.0
+      ],
+      "pixel_abs_diff": 0.0,
+      "generate_latency_s": 2.405390977859497
+    },
+    {
+      "session": "session_jetson_track4_20260915_153247",
+      "frame_index": 1131,
+      "instruction": "go_red",
+      "raw_text": "{\"target_point_xy\": [297, 150]}",
+      "raw_text_reference": "{\"target_point_xy\": [297, 151]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        297.0,
+        150.0
+      ],
+      "target_point_px_reference": [
+        297.0,
+        151.0
+      ],
+      "pixel_abs_diff": 1.0,
+      "generate_latency_s": 1.755627155303955
+    },
+    {
+      "session": "session_jetson_track4_20260915_153247",
+      "frame_index": 1534,
+      "instruction": "go_black",
+      "raw_text": "{\"target_point_xy\": [251, 157]}",
+      "raw_text_reference": "{\"target_point_xy\": [251, 179]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        251.0,
+        157.0
+      ],
+      "target_point_px_reference": [
+        251.0,
+        179.0
+      ],
+      "pixel_abs_diff": 22.0,
+      "generate_latency_s": 1.7520084381103516
+    },
+    {
+      "session": "session_jetson_track4_20260915_160025",
+      "frame_index": 1454,
+      "instruction": "go_yellow",
+      "raw_text": "{\"target_point_xy\": [219, 151]}",
+      "raw_text_reference": "{\"target_point_xy\": [219, 151]}",
+      "exact_match": true,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        219.0,
+        151.0
+      ],
+      "target_point_px_reference": [
+        219.0,
+        151.0
+      ],
+      "pixel_abs_diff": 0.0,
+      "generate_latency_s": 1.7523257732391357
+    },
+    {
+      "session": "session_jetson_track4_20260915_160025",
+      "frame_index": 1695,
+      "instruction": "go_yellow",
+      "raw_text": "{\"target_point_xy\": [225, 151]}",
+      "raw_text_reference": "{\"target_point_xy\": [225, 151]}",
+      "exact_match": true,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        225.0,
+        151.0
+      ],
+      "target_point_px_reference": [
+        225.0,
+        151.0
+      ],
+      "pixel_abs_diff": 0.0,
+      "generate_latency_s": 1.7493300437927246
+    },
+    {
+      "session": "session_jetson_track4_20260915_160025",
+      "frame_index": 2179,
+      "instruction": "go_yellow",
+      "raw_text": "{\"target_point_xy\": [215, 153]}",
+      "raw_text_reference": "{\"target_point_xy\": [215, 153]}",
+      "exact_match": true,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        215.0,
+        153.0
+      ],
+      "target_point_px_reference": [
+        215.0,
+        153.0
+      ],
+      "pixel_abs_diff": 0.0,
+      "generate_latency_s": 1.7509880065917969
+    },
+    {
+      "session": "session_jetson_track4_20260915_160025",
+      "frame_index": 2662,
+      "instruction": "go_red",
+      "raw_text": "{\"target_point_xy\": [291, 152]}",
+      "raw_text_reference": "{\"target_point_xy\": [291, 151]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        291.0,
+        152.0
+      ],
+      "target_point_px_reference": [
+        291.0,
+        151.0
+      ],
+      "pixel_abs_diff": 1.0,
+      "generate_latency_s": 1.7545678615570068
+    },
+    {
+      "session": "session_jetson_track4_20260915_160025",
+      "frame_index": 3631,
+      "instruction": "go_green",
+      "raw_text": "{\"target_point_xy\": [265, 117]}",
+      "raw_text_reference": "{\"target_point_xy\": [265, 117]}",
+      "exact_match": true,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        265.0,
+        117.0
+      ],
+      "target_point_px_reference": [
+        265.0,
+        117.0
+      ],
+      "pixel_abs_diff": 0.0,
+      "generate_latency_s": 1.7533996105194092
+    },
+    {
+      "session": "session_jetson_track4_20260915_160025",
+      "frame_index": 4356,
+      "instruction": "go_yellow",
+      "raw_text": "{\"target_point_xy\": [195, 270]}",
+      "raw_text_reference": "{\"target_point_xy\": [192, 157]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        195.0,
+        270.0
+      ],
+      "target_point_px_reference": [
+        192.0,
+        157.0
+      ],
+      "pixel_abs_diff": 113.03981599418853,
+      "generate_latency_s": 1.7575554847717285
+    },
+    {
+      "session": "session_jetson_track4_20260915_160509",
+      "frame_index": 1,
+      "instruction": "go_red",
+      "raw_text": "{\"target_point_xy\": [312, 157]}",
+      "raw_text_reference": "{\"target_point_xy\": [312, 157]}",
+      "exact_match": true,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        312.0,
+        157.0
+      ],
+      "target_point_px_reference": [
+        312.0,
+        157.0
+      ],
+      "pixel_abs_diff": 0.0,
+      "generate_latency_s": 1.7524423599243164
+    },
+    {
+      "session": "session_jetson_track4_20260915_160509",
+      "frame_index": 243,
+      "instruction": "go_red",
+      "raw_text": "{\"target_point_xy\": [305, 152]}",
+      "raw_text_reference": "{\"target_point_xy\": [291, 157]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        305.0,
+        152.0
+      ],
+      "target_point_px_reference": [
+        291.0,
+        157.0
+      ],
+      "pixel_abs_diff": 14.866068747318506,
+      "generate_latency_s": 1.7567589282989502
+    },
+    {
+      "session": "session_jetson_track4_20260915_160509",
+      "frame_index": 727,
+      "instruction": "go_green",
+      "raw_text": "{\"target_point_xy\": [265, 117]}",
+      "raw_text_reference": "{\"target_point_xy\": [265, 115]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        265.0,
+        117.0
+      ],
+      "target_point_px_reference": [
+        265.0,
+        115.0
+      ],
+      "pixel_abs_diff": 2.0,
+      "generate_latency_s": 1.7614102363586426
+    },
+    {
+      "session": "session_jetson_track4_20260915_160509",
+      "frame_index": 1695,
+      "instruction": "go_black",
+      "raw_text": "{\"target_point_xy\": [245, 151]}",
+      "raw_text_reference": "{\"target_point_xy\": [245, 179]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        245.0,
+        151.0
+      ],
+      "target_point_px_reference": [
+        245.0,
+        179.0
+      ],
+      "pixel_abs_diff": 28.0,
+      "generate_latency_s": 1.7571053504943848
+    },
+    {
+      "session": "session_jetson_track4_20260915_160509",
+      "frame_index": 2905,
+      "instruction": "go_yellow",
+      "raw_text": "{\"target_point_xy\": [215, 150]}",
+      "raw_text_reference": "{\"target_point_xy\": [215, 150]}",
+      "exact_match": true,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        215.0,
+        150.0
+      ],
+      "target_point_px_reference": [
+        215.0,
+        150.0
+      ],
+      "pixel_abs_diff": 0.0,
+      "generate_latency_s": 1.7580699920654297
+    },
+    {
+      "session": "session_jetson_track4_20260915_160509",
+      "frame_index": 4356,
+      "instruction": "go_red",
+      "raw_text": "{\"target_point_xy\": [297, 150]}",
+      "raw_text_reference": "{\"target_point_xy\": [297, 150]}",
+      "exact_match": true,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        297.0,
+        150.0
+      ],
+      "target_point_px_reference": [
+        297.0,
+        150.0
+      ],
+      "pixel_abs_diff": 0.0,
+      "generate_latency_s": 1.7585530281066895
+    },
+    {
+      "session": "session_jetson_track4_20260915_161239",
+      "frame_index": 1515,
+      "instruction": "go_green",
+      "raw_text": "{\"target_point_xy\": [265, 117]}",
+      "raw_text_reference": "{\"target_point_xy\": [265, 117]}",
+      "exact_match": true,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        265.0,
+        117.0
+      ],
+      "target_point_px_reference": [
+        265.0,
+        117.0
+      ],
+      "pixel_abs_diff": 0.0,
+      "generate_latency_s": 1.7537336349487305
+    },
+    {
+      "session": "session_jetson_track4_20260915_161239",
+      "frame_index": 1860,
+      "instruction": "go_green",
+      "raw_text": "{\"target_point_xy\": [152, 179]}",
+      "raw_text_reference": "{\"target_point_xy\": [192, 157]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        152.0,
+        179.0
+      ],
+      "target_point_px_reference": [
+        192.0,
+        157.0
+      ],
+      "pixel_abs_diff": 45.65084884205331,
+      "generate_latency_s": 1.7591724395751953
+    },
+    {
+      "session": "session_jetson_track4_20260915_161239",
+      "frame_index": 2206,
+      "instruction": "go_red",
+      "raw_text": "{\"target_point_xy\": [217, 152]}",
+      "raw_text_reference": "{\"target_point_xy\": [291, 153]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        217.0,
+        152.0
+      ],
+      "target_point_px_reference": [
+        291.0,
+        153.0
+      ],
+      "pixel_abs_diff": 74.00675644831355,
+      "generate_latency_s": 1.755533218383789
+    },
+    {
+      "session": "session_jetson_track4_20260915_161239",
+      "frame_index": 3365,
+      "instruction": "go_black",
+      "raw_text": "{\"target_point_xy\": [245, 149]}",
+      "raw_text_reference": "{\"target_point_xy\": [245, 150]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        245.0,
+        149.0
+      ],
+      "target_point_px_reference": [
+        245.0,
+        150.0
+      ],
+      "pixel_abs_diff": 1.0,
+      "generate_latency_s": 1.7575457096099854
+    },
+    {
+      "session": "session_jetson_track4_20260915_161239",
+      "frame_index": 4263,
+      "instruction": "go_black",
+      "raw_text": "{\"target_point_xy\": [251, 170]}",
+      "raw_text_reference": "{\"target_point_xy\": [251, 179]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        251.0,
+        170.0
+      ],
+      "target_point_px_reference": [
+        251.0,
+        179.0
+      ],
+      "pixel_abs_diff": 9.0,
+      "generate_latency_s": 1.7560222148895264
+    },
+    {
+      "session": "session_jetson_track4_20260915_161239",
+      "frame_index": 4847,
+      "instruction": "go_green",
+      "raw_text": "{\"target_point_xy\": [261, 117]}",
+      "raw_text_reference": "{\"target_point_xy\": [259, 117]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        261.0,
+        117.0
+      ],
+      "target_point_px_reference": [
+        259.0,
+        117.0
+      ],
+      "pixel_abs_diff": 2.0,
+      "generate_latency_s": 1.7570691108703613
+    },
+    {
+      "session": "session_jetson_track4_20260915_161712",
+      "frame_index": 1,
+      "instruction": "go_red",
+      "raw_text": "{\"target_point_xy\": [307, 159]}",
+      "raw_text_reference": "{\"target_point_xy\": [312, 157]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        307.0,
+        159.0
+      ],
+      "target_point_px_reference": [
+        312.0,
+        157.0
+      ],
+      "pixel_abs_diff": 5.385164807134504,
+      "generate_latency_s": 1.7587947845458984
+    },
+    {
+      "session": "session_jetson_track4_20260915_161712",
+      "frame_index": 441,
+      "instruction": "go_green",
+      "raw_text": "{\"target_point_xy\": [267, 115]}",
+      "raw_text_reference": "{\"target_point_xy\": [271, 115]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        267.0,
+        115.0
+      ],
+      "target_point_px_reference": [
+        271.0,
+        115.0
+      ],
+      "pixel_abs_diff": 4.0,
+      "generate_latency_s": 1.7592716217041016
+    },
+    {
+      "session": "session_jetson_track4_20260915_161712",
+      "frame_index": 1096,
+      "instruction": "go_green",
+      "raw_text": "{\"target_point_xy\": [219, 157]}",
+      "raw_text_reference": "{\"target_point_xy\": [267, 115]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        219.0,
+        157.0
+      ],
+      "target_point_px_reference": [
+        267.0,
+        115.0
+      ],
+      "pixel_abs_diff": 63.7808748764079,
+      "generate_latency_s": 1.7559800148010254
+    },
+    {
+      "session": "session_jetson_track4_20260915_161712",
+      "frame_index": 2028,
+      "instruction": "go_green",
+      "raw_text": "{\"target_point_xy\": [251, 179]}",
+      "raw_text_reference": "{\"target_point_xy\": [257, 139]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        251.0,
+        179.0
+      ],
+      "target_point_px_reference": [
+        257.0,
+        139.0
+      ],
+      "pixel_abs_diff": 40.44749683231337,
+      "generate_latency_s": 1.7654781341552734
+    },
+    {
+      "session": "session_jetson_track4_20260915_161712",
+      "frame_index": 2392,
+      "instruction": "go_green",
+      "raw_text": "{\"target_point_xy\": [257, 197]}",
+      "raw_text_reference": "{\"target_point_xy\": [261, 117]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        257.0,
+        197.0
+      ],
+      "target_point_px_reference": [
+        261.0,
+        117.0
+      ],
+      "pixel_abs_diff": 80.09993757800315,
+      "generate_latency_s": 1.7655911445617676
+    },
+    {
+      "session": "session_jetson_track4_20260915_161712",
+      "frame_index": 4401,
+      "instruction": "go_red",
+      "raw_text": "{\"target_point_xy\": [312, 157]}",
+      "raw_text_reference": "{\"target_point_xy\": [307, 159]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        312.0,
+        157.0
+      ],
+      "target_point_px_reference": [
+        307.0,
+        159.0
+      ],
+      "pixel_abs_diff": 5.385164807134504,
+      "generate_latency_s": 1.7687726020812988
+    },
+    {
+      "session": "session_jetson_track4_20260915_163702",
+      "frame_index": 1086,
+      "instruction": "go_yellow",
+      "raw_text": "{\"target_point_xy\": [305, 157]}",
+      "raw_text_reference": "{\"target_point_xy\": [305, 157]}",
+      "exact_match": true,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        305.0,
+        157.0
+      ],
+      "target_point_px_reference": [
+        305.0,
+        157.0
+      ],
+      "pixel_abs_diff": 0.0,
+      "generate_latency_s": 1.7691171169281006
+    },
+    {
+      "session": "session_jetson_track4_20260915_163702",
+      "frame_index": 1294,
+      "instruction": "go_yellow",
+      "raw_text": "{\"target_point_xy\": [305, 162]}",
+      "raw_text_reference": "{\"target_point_xy\": [327, 150]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        305.0,
+        162.0
+      ],
+      "target_point_px_reference": [
+        327.0,
+        150.0
+      ],
+      "pixel_abs_diff": 25.059928172283335,
+      "generate_latency_s": 1.762706995010376
+    },
+    {
+      "session": "session_jetson_track4_20260915_163702",
+      "frame_index": 1502,
+      "instruction": "go_yellow",
+      "raw_text": "{\"target_point_xy\": [305, 157]}",
+      "raw_text_reference": "{\"target_point_xy\": [312, 157]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        305.0,
+        157.0
+      ],
+      "target_point_px_reference": [
+        312.0,
+        157.0
+      ],
+      "pixel_abs_diff": 7.0,
+      "generate_latency_s": 1.7669000625610352
+    },
+    {
+      "session": "session_jetson_track4_20260915_163702",
+      "frame_index": 1711,
+      "instruction": "go_black",
+      "raw_text": "{\"target_point_xy\": [279, 185], \"label\": \"black marker\"}",
+      "raw_text_reference": "{\"target_point_xy\": [192, 257]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        279.0,
+        185.0
+      ],
+      "target_point_px_reference": [
+        192.0,
+        257.0
+      ],
+      "pixel_abs_diff": 112.92918134831227,
+      "generate_latency_s": 2.422532796859741
+    },
+    {
+      "session": "session_jetson_track4_20260915_163702",
+      "frame_index": 2287,
+      "instruction": "go_black",
+      "raw_text": "{\"target_point_xy\": [297, 185]}",
+      "raw_text_reference": "{\"target_point_xy\": [297, 185]}",
+      "exact_match": true,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        297.0,
+        185.0
+      ],
+      "target_point_px_reference": [
+        297.0,
+        185.0
+      ],
+      "pixel_abs_diff": 0.0,
+      "generate_latency_s": 1.766685962677002
+    },
+    {
+      "session": "session_jetson_track4_20260915_163702",
+      "frame_index": 2801,
+      "instruction": "go_red",
+      "raw_text": "{\"target_point_xy\": [227, 175]}",
+      "raw_text_reference": "{\"target_point_xy\": [227, 169]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        227.0,
+        175.0
+      ],
+      "target_point_px_reference": [
+        227.0,
+        169.0
+      ],
+      "pixel_abs_diff": 6.0,
+      "generate_latency_s": 1.7683956623077393
+    },
+    {
+      "session": "session_jetson_track4_20260915_164115",
+      "frame_index": 2898,
+      "instruction": "go_black",
+      "raw_text": "{\"target_point_xy\": [251, 170], \"label\": \"black marker\"}",
+      "raw_text_reference": "{\"target_point_xy\": [245, 179]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        251.0,
+        170.0
+      ],
+      "target_point_px_reference": [
+        245.0,
+        179.0
+      ],
+      "pixel_abs_diff": 10.816653826391969,
+      "generate_latency_s": 2.421703577041626
+    },
+    {
+      "session": "session_jetson_track4_20260915_164115",
+      "frame_index": 3198,
+      "instruction": "go_black",
+      "raw_text": "{\"target_point_xy\": [305, 12], \"label\": \"black marker\"}",
+      "raw_text_reference": "{\"target_point_xy\": [247, 195]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        305.0,
+        12.0
+      ],
+      "target_point_px_reference": [
+        247.0,
+        195.0
+      ],
+      "pixel_abs_diff": 191.9713520294109,
+      "generate_latency_s": 2.31787109375
+    },
+    {
+      "session": "session_jetson_track4_20260915_164115",
+      "frame_index": 3308,
+      "instruction": "go_black",
+      "raw_text": "{\"target_point_xy\": [251, 187]}",
+      "raw_text_reference": "{\"target_point_xy\": [251, 197]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        251.0,
+        187.0
+      ],
+      "target_point_px_reference": [
+        251.0,
+        197.0
+      ],
+      "pixel_abs_diff": 10.0,
+      "generate_latency_s": 1.7575879096984863
+    },
+    {
+      "session": "session_jetson_track4_20260915_164115",
+      "frame_index": 3418,
+      "instruction": "go_black",
+      "raw_text": "{\"target_point_xy\": [257, 120]}",
+      "raw_text_reference": "{\"target_point_xy\": [297, 15], \"label\": \"black marker\"}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        257.0,
+        120.0
+      ],
+      "target_point_px_reference": [
+        297.0,
+        15.0
+      ],
+      "pixel_abs_diff": 112.36102527122117,
+      "generate_latency_s": 1.7584242820739746
+    },
+    {
+      "session": "session_jetson_track4_20260915_164115",
+      "frame_index": 3528,
+      "instruction": "go_black",
+      "raw_text": "{\"target_point_xy\": [12, 159]}",
+      "raw_text_reference": "{\"target_point_xy\": [265, 197]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        12.0,
+        159.0
+      ],
+      "target_point_px_reference": [
+        265.0,
+        197.0
+      ],
+      "pixel_abs_diff": 255.8378392654222,
+      "generate_latency_s": 1.6636505126953125
+    },
+    {
+      "session": "session_jetson_track4_20260915_164115",
+      "frame_index": 3748,
+      "instruction": "go_red",
+      "raw_text": "{\"target_point_xy\": [219, 154]}",
+      "raw_text_reference": "{\"target_point_xy\": [217, 154]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        219.0,
+        154.0
+      ],
+      "target_point_px_reference": [
+        217.0,
+        154.0
+      ],
+      "pixel_abs_diff": 2.0,
+      "generate_latency_s": 1.7595109939575195
+    },
+    {
+      "session": "session_jetson_track4_20260915_164743",
+      "frame_index": 1,
+      "instruction": "go_red",
+      "raw_text": "{\"target_point_xy\": [127, 159]}",
+      "raw_text_reference": "{\"target_point_xy\": [125, 157]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        127.0,
+        159.0
+      ],
+      "target_point_px_reference": [
+        125.0,
+        157.0
+      ],
+      "pixel_abs_diff": 2.8284271247461903,
+      "generate_latency_s": 1.758342981338501
+    },
+    {
+      "session": "session_jetson_track4_20260915_164743",
+      "frame_index": 897,
+      "instruction": "go_green",
+      "raw_text": "{\"target_point_xy\": [265, 117]}",
+      "raw_text_reference": "{\"target_point_xy\": [265, 117]}",
+      "exact_match": true,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        265.0,
+        117.0
+      ],
+      "target_point_px_reference": [
+        265.0,
+        117.0
+      ],
+      "pixel_abs_diff": 0.0,
+      "generate_latency_s": 1.7558116912841797
+    },
+    {
+      "session": "session_jetson_track4_20260915_164743",
+      "frame_index": 1892,
+      "instruction": "go_green",
+      "raw_text": "{\"target_point_xy\": [297, 156]}",
+      "raw_text_reference": "{\"target_point_xy\": [297, 156]}",
+      "exact_match": true,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        297.0,
+        156.0
+      ],
+      "target_point_px_reference": [
+        297.0,
+        156.0
+      ],
+      "pixel_abs_diff": 0.0,
+      "generate_latency_s": 1.7651464939117432
+    },
+    {
+      "session": "session_jetson_track4_20260915_164743",
+      "frame_index": 2353,
+      "instruction": "go_red",
+      "raw_text": "{\"target_point_xy\": [215, 157]}",
+      "raw_text_reference": "{\"target_point_xy\": [219, 151]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        215.0,
+        157.0
+      ],
+      "target_point_px_reference": [
+        219.0,
+        151.0
+      ],
+      "pixel_abs_diff": 7.211102550927978,
+      "generate_latency_s": 1.7515485286712646
+    },
+    {
+      "session": "session_jetson_track4_20260915_164743",
+      "frame_index": 4036,
+      "instruction": "go_green",
+      "raw_text": "{\"target_point_xy\": [265, 117]}",
+      "raw_text_reference": "{\"target_point_xy\": [267, 115]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        265.0,
+        117.0
+      ],
+      "target_point_px_reference": [
+        267.0,
+        115.0
+      ],
+      "pixel_abs_diff": 2.8284271247461903,
+      "generate_latency_s": 1.7660505771636963
+    },
+    {
+      "session": "session_jetson_track4_20260915_164743",
+      "frame_index": 4497,
+      "instruction": "go_red",
+      "raw_text": "{\"target_point_xy\": [217, 150], \"label\": \"red marker\"}",
+      "raw_text_reference": "{\"target_point_xy\": [215, 149]}",
+      "exact_match": false,
+      "parse_ok_new": true,
+      "parse_ok_reference": true,
+      "target_point_px_new": [
+        217.0,
+        150.0
+      ],
+      "target_point_px_reference": [
+        215.0,
+        149.0
+      ],
+      "pixel_abs_diff": 2.23606797749979,
+      "generate_latency_s": 2.422318696975708
+    }
+  ]
+}

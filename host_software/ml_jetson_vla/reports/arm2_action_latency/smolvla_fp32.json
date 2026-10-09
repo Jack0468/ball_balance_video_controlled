@@ -1,0 +1,52 @@
+{
+  "bench": "bench_action_models",
+  "created_utc": "2026-10-06T03:05:52.526858+00:00",
+  "python": "3.12.3",
+  "platform": "Linux-5.15.199-tegra-aarch64-with-glibc2.39",
+  "argv": [
+    "host_software/ml_jetson_vla/deployment/bench_action_models.py",
+    "--policy",
+    "smolvla",
+    "--precision",
+    "fp32",
+    "--out",
+    "host_software/ml_jetson_vla/reports/arm2_action_latency/smolvla_fp32.json"
+  ],
+  "policy": "smolvla",
+  "precision": "fp32",
+  "dtype": "float32",
+  "chunk_len": 50,
+  "chunk_len_source": "default",
+  "control_hz": 30.0,
+  "chunk_duration_s": 1.6666666666666667,
+  "device_name": "Orin",
+  "param_count": 450046176,
+  "latency_ms_per_chunk": {
+    "n": 100.0,
+    "p50_ms": 924.1581665119156,
+    "p90_ms": 928.8530212594196,
+    "p99_ms": 937.8461473528296,
+    "mean_ms": 924.1669985372573
+  },
+  "implied_replan_hz": 1.0820555176529445,
+  "inference_fits_chunk": true,
+  "peak_gpu_mem_gb": 1.760127067565918,
+  "output_shape": [
+    1,
+    50,
+    6
+  ],
+  "output_all_finite": true,
+  "warmup": 5,
+  "iters": 100,
+  "lerobot_version": "0.4.4",
+  "torch_version": "2.7.0",
+  "transformers_version": "4.57.6",
+  "hf_repo_id": "lerobot/smolvla_base",
+  "hf_commit": "d9f33c94a60fb382c90dea2164c96845bd955e28",
+  "vlm_model_name": "HuggingFaceTB/SmolVLM2-500M-Video-Instruct",
+  "random_init": false,
+  "num_steps": 10,
+  "pad_language_to": "max_length",
+  "status": "ok"
+}

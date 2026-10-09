@@ -1,0 +1,20 @@
+{
+  "bench": "bench_action_models",
+  "created_utc": "2026-10-06T02:35:09.791085+00:00",
+  "python": "3.12.3",
+  "platform": "Linux-5.15.199-tegra-aarch64-with-glibc2.39",
+  "argv": [
+    "host_software/ml_jetson_vla/deployment/bench_action_models.py",
+    "--policy",
+    "act",
+    "--precision",
+    "bf16",
+    "--out",
+    "host_software/ml_jetson_vla/reports/arm2_action_latency/act_bf16.json"
+  ],
+  "policy": "act",
+  "precision": "bf16",
+  "status": "failed",
+  "error": "RuntimeError: mat1 and mat2 must have the same dtype, but got Float and BFloat16",
+  "traceback": "Traceback (most recent call last):\n  File \"/workspace/VRI_2026/host_software/ml_jetson_vla/deployment/bench_action_models.py\", line 336, in main\n    result.update(run_policy_benchmark(args))\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/VRI_2026/host_software/ml_jetson_vla/deployment/bench_action_models.py\", line 258, in run_policy_benchmark\n    out = run_once()\n          ^^^^^^^^^^\n  File \"/workspace/VRI_2026/host_software/ml_jetson_vla/deployment/bench_action_models.py\", line 252, in run_once\n    return policy.predict_action_chunk(batch)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/venv/lib/python3.12/site-packages/torch/utils/_contextlib.py\", line 116, in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/venv/lib/python3.12/site-packages/lerobot/policies/act/modeling_act.py\", line 133, in predict_action_chunk\n    actions = self.model(batch)[0]\n              ^^^^^^^^^^^^^^^^^\n  File \"/opt/venv/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1751, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/venv/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1762, in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/venv/lib/python3.12/site-packages/lerobot/policies/act/modeling_act.py\", line 459, in forward\n    encoder_in_tokens = [self.encoder_latent_input_proj(latent_sample)]\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/venv/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1751, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/venv/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1762, in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/venv/lib/python3.12/site-packages/torch/nn/modules/linear.py\", line 125, in forward\n    return F.linear(input, self.weight, self.bias)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: mat1 and mat2 must have the same dtype, but got Float and BFloat16\n"
+}

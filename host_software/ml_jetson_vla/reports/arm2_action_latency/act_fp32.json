@@ -1,0 +1,56 @@
+{
+  "bench": "bench_action_models",
+  "created_utc": "2026-10-06T02:37:43.566190+00:00",
+  "python": "3.12.3",
+  "platform": "Linux-5.15.199-tegra-aarch64-with-glibc2.39",
+  "argv": [
+    "host_software/ml_jetson_vla/deployment/bench_action_models.py",
+    "--policy",
+    "act",
+    "--precision",
+    "fp32",
+    "--out",
+    "host_software/ml_jetson_vla/reports/arm2_action_latency/act_fp32.json"
+  ],
+  "policy": "act",
+  "precision": "fp32",
+  "dtype": "float32",
+  "chunk_len": 100,
+  "chunk_len_source": "default",
+  "control_hz": 30.0,
+  "chunk_duration_s": 3.3333333333333335,
+  "device_name": "Orin",
+  "param_count": 51590019,
+  "latency_ms_per_chunk": {
+    "n": 100.0,
+    "p50_ms": 21.340077510103583,
+    "p90_ms": 22.709198610391468,
+    "p99_ms": 29.438958110986277,
+    "mean_ms": 21.837839653017
+  },
+  "implied_replan_hz": 45.79207540164557,
+  "inference_fits_chunk": true,
+  "peak_gpu_mem_gb": 0.25984954833984375,
+  "output_shape": [
+    1,
+    100,
+    3
+  ],
+  "output_all_finite": true,
+  "warmup": 5,
+  "iters": 100,
+  "lerobot_version": "0.4.4",
+  "torch_version": "2.7.0",
+  "transformers_version": "4.57.6",
+  "random_init": true,
+  "accuracy_meaningful": false,
+  "normalizer_applied": false,
+  "act_input_image_hw": [
+    480,
+    640
+  ],
+  "act_state_dim": 2,
+  "act_use_vae": true,
+  "pretrained_backbone_weights": null,
+  "status": "ok"
+}

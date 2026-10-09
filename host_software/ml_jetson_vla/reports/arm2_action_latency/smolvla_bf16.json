@@ -1,0 +1,21 @@
+{
+  "bench": "bench_action_models",
+  "created_utc": "2026-10-09T03:34:31.815708+00:00",
+  "python": "3.12.3",
+  "platform": "Linux-5.15.199-tegra-aarch64-with-glibc2.39",
+  "argv": [
+    "ml_jetson_vla/deployment/bench_action_models.py",
+    "--policy",
+    "smolvla",
+    "--precision",
+    "bf16",
+    "--force",
+    "--out",
+    "ml_jetson_vla/reports/arm2_action_latency/smolvla_bf16.json"
+  ],
+  "policy": "smolvla",
+  "precision": "bf16",
+  "status": "failed",
+  "error": "RuntimeError: mat1 and mat2 must have the same dtype, but got Float and BFloat16",
+  "traceback": "Traceback (most recent call last):\n  File \"/workspace/VRI_2026/host_software/ml_jetson_vla/deployment/bench_action_models.py\", line 336, in main\n    result.update(run_policy_benchmark(args))\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/VRI_2026/host_software/ml_jetson_vla/deployment/bench_action_models.py\", line 258, in run_policy_benchmark\n    out = run_once()\n          ^^^^^^^^^^\n  File \"/workspace/VRI_2026/host_software/ml_jetson_vla/deployment/bench_action_models.py\", line 240, in run_once\n    return policy.predict_action_chunk(batch, noise=noise)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/venv/lib/python3.12/site-packages/torch/utils/_contextlib.py\", line 116, in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/venv/lib/python3.12/site-packages/lerobot/policies/smolvla/modeling_smolvla.py\", line 319, in predict_action_chunk\n    actions = self._get_action_chunk(batch, noise, **kwargs)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/venv/lib/python3.12/site-packages/lerobot/policies/smolvla/modeling_smolvla.py\", line 291, in _get_action_chunk\n    actions = self.model.sample_actions(\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/venv/lib/python3.12/site-packages/lerobot/policies/smolvla/modeling_smolvla.py\", line 862, in sample_actions\n    v_t = denoise_step_partial_call(x_t)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/venv/lib/python3.12/site-packages/lerobot/policies/smolvla/modeling_smolvla.py\", line 841, in denoise_step_partial_call\n    return self.denoise_step(\n           ^^^^^^^^^^^^^^^^^^\n  File \"/opt/venv/lib/python3.12/site-packages/lerobot/policies/smolvla/modeling_smolvla.py\", line 903, in denoise_step\n    v_t = self.action_out_proj(suffix_out)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/venv/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1751, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/venv/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1762, in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/venv/lib/python3.12/site-packages/torch/nn/modules/linear.py\", line 125, in forward\n    return F.linear(input, self.weight, self.bias)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: mat1 and mat2 must have the same dtype, but got Float and BFloat16\n"
+}
