@@ -1,0 +1,77 @@
+  session_jetson_track4_20260915_151627: 6/6 frames ready
+  session_jetson_track4_20260915_153053: 6/6 frames ready
+  session_jetson_track4_20260915_153247: 6/6 frames ready
+  session_jetson_track4_20260915_160025: 6/6 frames ready
+  session_jetson_track4_20260915_160509: 6/6 frames ready
+  session_jetson_track4_20260915_161239: 6/6 frames ready
+  session_jetson_track4_20260915_161712: 6/6 frames ready
+  session_jetson_track4_20260915_163702: 6/6 frames ready
+  session_jetson_track4_20260915_164115: 6/6 frames ready
+  session_jetson_track4_20260915_164743: 6/6 frames ready
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|█████     | 1/2 [00:00<00:00,  1.04it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:01<00:00,  1.15it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:01<00:00,  1.13it/s]
+The image processor of type `Qwen2VLImageProcessor` is now loaded as a fast processor by default, even if the model checkpoint was saved with a slow processor. This is a breaking change and may produce slightly different outputs. To continue using the slow processor, instantiate this class with `use_fast=False`. Note that this behavior will be extended to all models in a future release.
+The following generation flags are not valid and may be ignored: ['temperature']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+  [1/60] 20260915_151627 f1     exact=N diff=76.11px raw='{"target_point_xy": [125, 79]}'
+  [2/60] 20260915_151627 f162   exact=Y diff=0.00px raw='{"target_point_xy": [297, 115], "label": "green marker"}'
+  [3/60] 20260915_151627 f323   exact=N diff=6.00px raw='{"target_point_xy": [265, 150], "label": "yellow marker"}'
+  [4/60] 20260915_151627 f485   exact=Y diff=0.00px raw='{"target_point_xy": [295, 117]}'
+  [5/60] 20260915_151627 f1128  exact=Y diff=0.00px raw='{"target_point_xy": [295, 157]}'
+  [6/60] 20260915_151627 f1531  exact=N diff=  -   raw='{"target_point_xy": [257, 12, 279, 36]}'
+  [7/60] 20260915_153053 f1     exact=Y diff=0.00px raw='{"target_point_xy": [125, 79]}'
+  [8/60] 20260915_153053 f162   exact=N diff=30.00px raw='{"target_point_xy": [259, 147]}'
+  [9/60] 20260915_153053 f323   exact=N diff=53.14px raw='{"target_point_xy": [265, 197]}'
+  [10/60] 20260915_153053 f970   exact=Y diff=0.00px raw='{"target_point_xy": [307, 156]}'
+  [11/60] 20260915_153053 f1131  exact=N diff=21.38px raw='{"target_point_xy": [291, 157]}'
+  [12/60] 20260915_153053 f1533  exact=Y diff=0.00px raw='{"target_point_xy": [241, 150]}'
+  [13/60] 20260915_153247 f1     exact=Y diff=0.00px raw='{"target_point_xy": [125, 79]}'
+  [14/60] 20260915_153247 f162   exact=Y diff=0.00px raw='{"target_point_xy": [265, 119]}'
+  [15/60] 20260915_153247 f324   exact=Y diff=0.00px raw='{"target_point_xy": [225, 152]}'
+  [16/60] 20260915_153247 f485   exact=Y diff=0.00px raw='{"target_point_xy": [219, 147], "label": "yellow marker"}'
+  [17/60] 20260915_153247 f1131  exact=N diff=1.00px raw='{"target_point_xy": [297, 150]}'
+  [18/60] 20260915_153247 f1534  exact=N diff=22.00px raw='{"target_point_xy": [251, 157]}'
+  [19/60] 20260915_160025 f1454  exact=Y diff=0.00px raw='{"target_point_xy": [219, 151]}'
+  [20/60] 20260915_160025 f1695  exact=Y diff=0.00px raw='{"target_point_xy": [225, 151]}'
+  [21/60] 20260915_160025 f2179  exact=Y diff=0.00px raw='{"target_point_xy": [215, 153]}'
+  [22/60] 20260915_160025 f2662  exact=N diff=1.00px raw='{"target_point_xy": [291, 152]}'
+  [23/60] 20260915_160025 f3631  exact=Y diff=0.00px raw='{"target_point_xy": [265, 117]}'
+  [24/60] 20260915_160025 f4356  exact=N diff=113.04px raw='{"target_point_xy": [195, 270]}'
+  [25/60] 20260915_160509 f1     exact=Y diff=0.00px raw='{"target_point_xy": [312, 157]}'
+  [26/60] 20260915_160509 f243   exact=N diff=14.87px raw='{"target_point_xy": [305, 152]}'
+  [27/60] 20260915_160509 f727   exact=N diff=2.00px raw='{"target_point_xy": [265, 117]}'
+  [28/60] 20260915_160509 f1695  exact=N diff=28.00px raw='{"target_point_xy": [245, 151]}'
+  [29/60] 20260915_160509 f2905  exact=Y diff=0.00px raw='{"target_point_xy": [215, 150]}'
+  [30/60] 20260915_160509 f4356  exact=Y diff=0.00px raw='{"target_point_xy": [297, 150]}'
+  [31/60] 20260915_161239 f1515  exact=Y diff=0.00px raw='{"target_point_xy": [265, 117]}'
+  [32/60] 20260915_161239 f1860  exact=N diff=45.65px raw='{"target_point_xy": [152, 179]}'
+  [33/60] 20260915_161239 f2206  exact=N diff=74.01px raw='{"target_point_xy": [217, 152]}'
+  [34/60] 20260915_161239 f3365  exact=N diff=1.00px raw='{"target_point_xy": [245, 149]}'
+  [35/60] 20260915_161239 f4263  exact=N diff=9.00px raw='{"target_point_xy": [251, 170]}'
+  [36/60] 20260915_161239 f4847  exact=N diff=2.00px raw='{"target_point_xy": [261, 117]}'
+  [37/60] 20260915_161712 f1     exact=N diff=5.39px raw='{"target_point_xy": [307, 159]}'
+  [38/60] 20260915_161712 f441   exact=N diff=4.00px raw='{"target_point_xy": [267, 115]}'
+  [39/60] 20260915_161712 f1096  exact=N diff=63.78px raw='{"target_point_xy": [219, 157]}'
+  [40/60] 20260915_161712 f2028  exact=N diff=40.45px raw='{"target_point_xy": [251, 179]}'
+  [41/60] 20260915_161712 f2392  exact=N diff=80.10px raw='{"target_point_xy": [257, 197]}'
+  [42/60] 20260915_161712 f4401  exact=N diff=5.39px raw='{"target_point_xy": [312, 157]}'
+  [43/60] 20260915_163702 f1086  exact=Y diff=0.00px raw='{"target_point_xy": [305, 157]}'
+  [44/60] 20260915_163702 f1294  exact=N diff=25.06px raw='{"target_point_xy": [305, 162]}'
+  [45/60] 20260915_163702 f1502  exact=N diff=7.00px raw='{"target_point_xy": [305, 157]}'
+  [46/60] 20260915_163702 f1711  exact=N diff=112.93px raw='{"target_point_xy": [279, 185], "label": "black marker"}'
+  [47/60] 20260915_163702 f2287  exact=Y diff=0.00px raw='{"target_point_xy": [297, 185]}'
+  [48/60] 20260915_163702 f2801  exact=N diff=6.00px raw='{"target_point_xy": [227, 175]}'
+  [49/60] 20260915_164115 f2898  exact=N diff=10.82px raw='{"target_point_xy": [251, 170], "label": "black marker"}'
+  [50/60] 20260915_164115 f3198  exact=N diff=191.97px raw='{"target_point_xy": [305, 12], "label": "black marker"}'
+  [51/60] 20260915_164115 f3308  exact=N diff=10.00px raw='{"target_point_xy": [251, 187]}'
+  [52/60] 20260915_164115 f3418  exact=N diff=112.36px raw='{"target_point_xy": [257, 120]}'
+  [53/60] 20260915_164115 f3528  exact=N diff=255.84px raw='{"target_point_xy": [12, 159]}'
+  [54/60] 20260915_164115 f3748  exact=N diff=2.00px raw='{"target_point_xy": [219, 154]}'
+  [55/60] 20260915_164743 f1     exact=N diff=2.83px raw='{"target_point_xy": [127, 159]}'
+  [56/60] 20260915_164743 f897   exact=Y diff=0.00px raw='{"target_point_xy": [265, 117]}'
+  [57/60] 20260915_164743 f1892  exact=Y diff=0.00px raw='{"target_point_xy": [297, 156]}'
+  [58/60] 20260915_164743 f2353  exact=N diff=7.21px raw='{"target_point_xy": [215, 157]}'
+  [59/60] 20260915_164743 f4036  exact=N diff=2.83px raw='{"target_point_xy": [265, 117]}'
+  [60/60] 20260915_164743 f4497  exact=N diff=2.24px raw='{"target_point_xy": [217, 150], "label": "red marker"}'
+compared 60/60 frames | exact text 22 | parse 59/60 | within 4px 32 | mean px diff 24.549 | max px diff 255.838
+VERDICT: DIVERGENT (28 of 60 frames not within 4 px, unparsed, or not run)
+wrote /workspace/VRI_2026/host_software/ml_jetson_vla/reports/qwen_parity/qwen_transformers_parity.json

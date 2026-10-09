@@ -1,0 +1,84 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.arm2-lerobot
+#1 transferring dockerfile: 5.30kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/dustynv/pytorch:2.7-r36.4.0-cu128-24.04
+#2 DONE 4.7s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [1/9] FROM docker.io/dustynv/pytorch:2.7-r36.4.0-cu128-24.04@sha256:4bb7f0a3852f86629ed271aaf6c4aa000305cc4e4673b8e9f334668ee1b22bc8
+#4 resolve docker.io/dustynv/pytorch:2.7-r36.4.0-cu128-24.04@sha256:4bb7f0a3852f86629ed271aaf6c4aa000305cc4e4673b8e9f334668ee1b22bc8 0.0s done
+#4 DONE 0.0s
+
+#5 [4/9] RUN python3 -c "import cv2, cv2.aruco"  || python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all:       --index-url https://pypi.org/simple opencv-contrib-python-headless
+#5 CACHED
+
+#6 [5/9] RUN python3 -m pip install -c /opt/base_constraints.txt --index-url https://pypi.org/simple docopt==0.6.2 evdev
+#6 CACHED
+
+#7 [2/9] RUN apt-get update && apt-get install -y --no-install-recommends libsndfile1  && rm -rf /var/lib/apt/lists/*
+#7 CACHED
+
+#8 [3/9] RUN python3 -m pip freeze --exclude-editable > /opt/base_constraints.txt  && python3 -c "import numpy, torch; print('base numpy', numpy.__version__, 'torch', torch.__version__, 'cuda_available', torch.cuda.is_available())"  && python3 -c "assert tuple(map(int, __import__('torch').__version__.split('+')[0].split('.')[:2])) >= (2, 5), 'torch < 2.5 -- built wrong'; print('torch >= 2.5: OK')"  && (python3 -c "import torchvision; print('base torchvision', torchvision.__version__)"      || echo "torchvision MISSING from base image -- install the dusty-nv-matched wheel, never generic pip torchvision. Build fails at the gate below.")
+#8 CACHED
+
+#9 [6/9] RUN python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all:       --index-url https://pypi.org/simple       'lerobot[smolvla]==0.4.4'  && (python3 -m pip check || echo "pip check reported issues above -- informational; the import gate below is the real check.")
+#9 CACHED
+
+#10 [7/9] RUN python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all:       --index-url https://pypi.org/simple qwen-vl-utils
+#10 0.688 Using pip 25.0.1 from /opt/venv/lib/python3.12/site-packages/pip (python 3.12)
+#10 1.073 Looking in indexes: https://pypi.org/simple, https://pypi.ngc.nvidia.com
+#10 1.388 WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffa9fc1dc0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /qwen-vl-utils/
+#10 1.920 WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffa9fc1f70>: Failed to establish a new connection: [Errno -2] Name or service not known')': /qwen-vl-utils/
+#10 2.957 WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffa9fc2360>: Failed to establish a new connection: [Errno -2] Name or service not known')': /qwen-vl-utils/
+#10 4.976 WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffa9fc25a0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /qwen-vl-utils/
+#10 9.021 WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0xffffa9fc27e0>: Failed to establish a new connection: [Errno -2] Name or service not known')': /qwen-vl-utils/
+#10 9.057 Collecting qwen-vl-utils
+#10 9.057   Obtaining dependency information for qwen-vl-utils from https://files.pythonhosted.org/packages/c4/43/80f67e0336cb2fc725f8e06f7fe35c1d0fe946f4d2b8b2175e797e07349e/qwen_vl_utils-0.0.14-py3-none-any.whl.metadata
+#10 9.190   Downloading qwen_vl_utils-0.0.14-py3-none-any.whl.metadata (9.0 kB)
+#10 9.194 Requirement already satisfied: av in /opt/venv/lib/python3.12/site-packages (from qwen-vl-utils) (15.1.0)
+#10 9.195 Requirement already satisfied: packaging in /opt/venv/lib/python3.12/site-packages (from qwen-vl-utils) (24.2)
+#10 9.196 Requirement already satisfied: pillow in /opt/venv/lib/python3.12/site-packages (from qwen-vl-utils) (11.2.1)
+#10 9.196 Requirement already satisfied: requests in /opt/venv/lib/python3.12/site-packages (from qwen-vl-utils) (2.32.3)
+#10 9.204 Requirement already satisfied: charset-normalizer<4,>=2 in /opt/venv/lib/python3.12/site-packages (from requests->qwen-vl-utils) (3.4.1)
+#10 9.205 Requirement already satisfied: idna<4,>=2.5 in /opt/venv/lib/python3.12/site-packages (from requests->qwen-vl-utils) (3.10)
+#10 9.206 Requirement already satisfied: urllib3<3,>=1.21.1 in /opt/venv/lib/python3.12/site-packages (from requests->qwen-vl-utils) (2.4.0)
+#10 9.206 Requirement already satisfied: certifi>=2017.4.17 in /opt/venv/lib/python3.12/site-packages (from requests->qwen-vl-utils) (2025.1.31)
+#10 9.220 Downloading qwen_vl_utils-0.0.14-py3-none-any.whl (8.1 kB)
+#10 9.737 Installing collected packages: qwen-vl-utils
+#10 9.777 Successfully installed qwen-vl-utils-0.0.14
+#10 DONE 10.0s
+
+#11 [8/9] RUN python3 -m pip freeze --exclude-editable | grep -E '^(numpy|torch|torchvision)=='  && python3 -c "import importlib.metadata as md; import torch, torchvision, transformers, cv2; print('torch', torch.__version__, 'torchvision', torchvision.__version__, 'cuda_available', torch.cuda.is_available()); print('lerobot', md.version('lerobot')); print('transformers', transformers.__version__); print('cv2', cv2.__version__, 'aruco', hasattr(cv2, 'aruco')); assert int(transformers.__version__.split('.')[0]) < 5, 'transformers >= 5 resolved -- lerobot 0.4.4 policies cannot import; this image is built wrong'"  && python3 -c "import lerobot.policies.smolvla; print('import lerobot.policies.smolvla: OK')"  && python3 -c "import lerobot.policies.act; print('import lerobot.policies.act: OK')"
+#11 0.926 numpy==2.2.4
+#11 0.926 torch==2.7.0
+#11 0.926 torchvision==0.22.0
+#11 6.254 torch 2.7.0 torchvision 0.22.0 cuda_available False
+#11 6.256 lerobot 0.4.4
+#11 6.256 transformers 4.57.6
+#11 6.256 cv2 4.12.0 aruco True
+#11 13.99 WARNING:torchao.kernel.intmm:Warning: Detected no triton, on systems without Triton certain kernels will not work
+#11 16.05 import lerobot.policies.smolvla: OK
+#11 23.75 WARNING:torchao.kernel.intmm:Warning: Detected no triton, on systems without Triton certain kernels will not work
+#11 25.41 import lerobot.policies.act: OK
+#11 DONE 27.1s
+
+#12 [9/9] WORKDIR /workspace/VRI_2026
+#12 DONE 0.1s
+
+#13 exporting to image
+#13 exporting layers
+#13 exporting layers 0.4s done
+#13 exporting manifest sha256:989cca9f2292a9f3445ae3b1b858167aeec8028c83050c449327e2e1a03dfc5b 0.0s done
+#13 exporting config sha256:4b84711406830a0d16e5030bb435939d4b2b5dcf5ef566272f206f97d05c086d 0.0s done
+#13 exporting attestation manifest sha256:05e632f638bb4315981c47e7fa87823b9bf81d3274ce862de07315e4370ac3dd 0.0s done
+#13 exporting manifest list sha256:415c19565b40ccd06898bdc1958ad58acf7ef819d90ef949a69bd1e8a2d9a215
+#13 exporting manifest list sha256:415c19565b40ccd06898bdc1958ad58acf7ef819d90ef949a69bd1e8a2d9a215 0.0s done
+#13 naming to docker.io/library/arm2-lerobot:r36.4.0 done
+#13 unpacking to docker.io/library/arm2-lerobot:r36.4.0 0.1s done
+#13 DONE 0.7s

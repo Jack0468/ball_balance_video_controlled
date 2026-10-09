@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/workspace/VRI_2026/host_software/ml_jetson_vla/deployment/qwen_transformers_parity.py", line 369, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/workspace/VRI_2026/host_software/ml_jetson_vla/deployment/qwen_transformers_parity.py", line 356, in main
+    doc = run_parity(args.reference, args.bronze_dir, args.output, force=args.force)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/VRI_2026/host_software/ml_jetson_vla/deployment/qwen_transformers_parity.py", line 258, in run_parity
+    ref_config, ref_frames = load_reference_frames(reference_path)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/VRI_2026/host_software/ml_jetson_vla/deployment/qwen_transformers_parity.py", line 71, in load_reference_frames
+    with open(reference_path, encoding="utf-8") as fh:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/workspace/VRI_2026/host_software/data/arm2_jetson_sweep_results4/scorer_format_qwen2_5_vl_3b_jetson_run1.json'
