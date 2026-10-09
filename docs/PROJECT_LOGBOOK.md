@@ -376,6 +376,35 @@ still does not import on this Windows interpreter. Full suite re-run clean: `tes
 Jetson, same as every other real-weights run this session, but have **not yet been run for real** --
 `EXPERIMENT_OPTIONS_PLAN_2026_10_07.md` section 7 updated to say exactly that, no result fabricated.
 
+### First real run of `HybridQwenActPolicy` with real (random-init) ACT weights, through `run_policy_replay.py --fast-layer act`
+
+Ran for real on the Jetson, inside `arm2-lerobot:r36.4.0`, 60s replay of `session_jetson_track4_20260915_151627`,
+`--device cuda`, no sends. **First time any `Policy` class has been exercised with a real fast-layer model
+(not `StubFastLayer`) through its actual background-threaded `_FastWorker`/`_Grounder` machinery.**
+
+Checked against `EXPERIMENT_OPTIONS_PLAN_2026_10_07.md` section 3's proposed pass criteria:
+- **Out-of-range chunks**: 0/32 rejected -- the hard safety gate needed no intervention (random-init
+  ACT outputs stayed in range here; not evidence the gate itself was exercised under a genuine
+  out-of-range condition -- H2 is still the real test for that).
+- **Stall fraction (excluding first chunk)**: 1/32 stalls, and `first_chunk_was_stall: true` -- excluding
+  it (as the criterion specifies), 0/31 = 0% <= the proposed 2%. **Passes.**
+- **Inference latency**: p50 21.0ms / p90 21.5ms (one 366ms outlier, almost certainly first-call CUDA
+  kernel/cuDNN warmup, not sustained) -- matches `bench_action_models.py`'s independently-measured ACT
+  fp32 number (21.3ms p50 at chunk 100) almost exactly, a real cross-check between two different
+  harnesses (raw single-call bench vs. the full async scheduled replay) agreeing with each other.
+- **Target age p90**: 4245ms vs. the proposed <=2000ms. **Fails the proposed threshold, but this is not
+  new information** -- it is the first real confirmation, through this specific Policy/driver pairing, of
+  the already-documented "Known limit #2" (`EXPERIMENT_OPTIONS_PLAN_2026_10_07.md` section 4.2): targets
+  are grounded/fixed once per command and never periodically refreshed, so staleness grows for the
+  duration of any long-held single command. `n_changes: 6` across 1800 ticks confirms the session has
+  long command-hold stretches, which is exactly the condition that makes this known gap visible. Not a
+  new bug; periodic re-grounding remains the real, still-unimplemented fix, same as before this run.
+
+**Weights are random-init (`RANDOM_INIT: no trained ACT checkpoint; actions are not meaningful`)** --
+this run validates scheduling/timing/safety-gate behavior only, not task accuracy. Checklist item 9
+(live hardware test, `--i-understand-this-drives-motors`) is still blocked on a trained checkpoint and
+the physical rig; this replay is a new, real intermediate step toward it, not a substitute for it.
+
 ## 06/10/2026
 ### Moondream2 fixed and scored for real; full 4-candidate Arm 2 baseline complete; Qwen confirmed as Arm 2 backbone
 
