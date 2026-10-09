@@ -423,11 +423,9 @@ daemon default on this device.
 
 Everything below is pushed to `origin/vla_testing` and waiting for the Jetson. In order:
 
-1. **`git pull --rebase`** first, on a clean working tree. Set a GitHub login on the Jetson before
-   this if not already done (its own commits have been local-only all session).
-2. **Rebuild `arm2-lerobot`** (`Dockerfile.arm2-lerobot`) -- picks up the `qwen-vl-utils` fix. Confirm
-   the final gate still prints `import lerobot.policies.smolvla: OK` / `...act: OK` and that
-   `transformers` resolves below 5.
+1. ~~`git pull --rebase` first~~ **DONE.** Done repeatedly throughout the 2026-10-09 session.
+2. ~~Rebuild `arm2-lerobot`~~ **DONE 2026-10-09.** Rebuild succeeded, all gates passed
+   (`import lerobot.policies.smolvla: OK` / `...act: OK`, `transformers` below 5).
 3. ~~Re-run the hybrid Qwen+ACT benchmark~~ **DONE 2026-10-09.** Failed first on the known ACT
    fp32-latent/bf16 bug (script defaults `--precision bf16`); `--precision fp32` fixed it. Real
    result: 100% of 40 replans fit inside their chunk, 39/40 had a target, only 1/40 exceeded the 2s
