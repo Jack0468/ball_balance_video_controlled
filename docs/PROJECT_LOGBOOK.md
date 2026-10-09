@@ -294,6 +294,34 @@ both of this project's two action-model candidates have the same bf16 limitation
 fp32` is the confirmed-working setting for both, same workaround already used for the real hybrid
 Qwen+ACT benchmark.** Not a project bug -- third-party LeRobot code, out of scope to patch.
 
+### Hybrid benchmark can now measure its own real Qwen grounding accuracy -- instrumentation only, no number yet
+
+Closes the open follow-up flagged two entries up ("score the hybrid run's own logged Qwen outputs
+against ground truth the same way the sweep does"). `bench_hybrid_qwen_act.py`'s `slow_loop()` already
+had everything needed to score itself -- each `FrameItem` carries real ground truth
+(`true_x_tel`/`true_y_tel`, a per-frame `homography`) that was being read only far enough to convert the
+parsed point into a fast-loop target, then discarded. Wired in the project's own existing scorer
+(`score_minimal_baseline_offline.score_prediction()`, not re-implemented) on every `parse_ok` slow-loop
+call: each call now also gets scored against its frame's real ground truth and appended to a new
+`TargetStore.scored` list (parallel to `slow_latencies_s`); parse failures are deliberately NOT appended
+there, so they stay visible only via the existing `parse_failures` counter rather than silently becoming
+0%-hit entries. `run_hybrid()`'s output JSON gains `qwen.grounding_accuracy` (`n_scored`, `hit_rate_20mm`,
+`mean_error_mm`, `median_error_mm`, `tolerance_mm`), `None` when nothing was scorable. Reuses
+`qwen_transformers_parity.py`'s existing `TOLERANCE_MM` (20mm) and `bench_action_models.py`'s existing
+`PLATFORM_W_MM`/`PLATFORM_H_MM` constants rather than second copies.
+
+**This is instrumentation, not a result.** No real accuracy number exists yet for the hybrid pipeline's
+Qwen grounding: the 09/10/2026 hybrid run's own output JSON was never saved with per-call enough detail
+and was never committed to the repo, so there is nothing to retroactively rescore. What this closes is
+the *capability* gap -- the *next* real hybrid run on the Jetson (under `arm2-lerobot`'s transformers
+4.57.6, the same environment just shown divergent from the 5.17.0-validated sweep) will report its own
+genuine `hit_rate_20mm`/`mean_error_mm`, rather than leaving the reader to assume the validated 68.3%
+hit@20mm figure from a different environment carries over. Verified on CPU only (`test_bench_action_models_cpu.py`,
+new `GroundingAccuracyScoringTests`: a fake policy/`FrameItem` with an identity homography and a
+hand-computed 10.0mm error/hit case, plus a parse-failure case and the `None`-on-empty case) --
+94 passed, 1 pre-existing unrelated skip, no regressions. No GPU/Jetson available from here to produce
+a real number.
+
 ## 06/10/2026
 ### Moondream2 fixed and scored for real; full 4-candidate Arm 2 baseline complete; Qwen confirmed as Arm 2 backbone
 

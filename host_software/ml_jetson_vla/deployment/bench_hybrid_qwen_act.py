@@ -41,10 +41,15 @@ for _p in (_HOST_SOFTWARE_DIR, _REPO_ROOT_DIR):
         sys.path.append(_p)
 
 from ml_jetson_vla.deployment.bench_action_models import (  # noqa: E402
-    ACT_IMAGE_HW, DTYPE_NAMES, IMAGE_KEY, STATE_KEY, TARGET_NAMES, STATE_NAMES,
+    ACT_IMAGE_HW, DTYPE_NAMES, IMAGE_KEY, PLATFORM_H_MM, PLATFORM_W_MM, STATE_KEY, TARGET_NAMES, STATE_NAMES,
     build_act_policy, chunk_duration_s, implied_replan_hz, inference_fits_chunk, pixel_to_telemetry_mm,
     refuse_overwrite, summarize_latencies_ms, write_json_atomic,
 )
+# TOLERANCE_MM: the project's standard 20mm grounding-accuracy tolerance (EVALUATION_STRATEGY.md's
+# settling-time radius), already defined once in qwen_transformers_parity.py -- reused here rather
+# than a second literal. That module's own docstring guarantees this import pulls in no heavy deps
+# (stdlib only at module scope; model/CUDA imports are deferred into its run_parity()).
+from ml_jetson_vla.deployment.qwen_transformers_parity import TOLERANCE_MM  # noqa: E402
 
 DEFAULT_BRONZE_DIR: str = os.path.join(_HOST_SOFTWARE_DIR, "data", "01_bronze")
 STALE_TARGET_S: float = 2.0
@@ -72,6 +77,11 @@ class TargetStore:
         self.parse_failures = 0
         self.slow_latencies_s: list[float] = []
         self.errors: list[str] = []
+        # Per-scorable-call real grounding-accuracy records (score_minimal_baseline_offline.score_prediction()
+        # output dicts), one per slow-loop call that reached a parse_ok target -- parallel to slow_latencies_s.
+        # Parse failures are NOT appended here (they stay counted only via parse_failures) so an empty/short
+        # list here is never silently read as a 0% hit rate.
+        self.scored: list[dict[str, Any]] = []
 
     def put(self, x_mm: float, y_mm: float, frame_ident: str, slow_latency_s: float) -> None:
         with self._lock:
@@ -86,6 +96,10 @@ class TargetStore:
             self.slow_latencies_s.append(slow_latency_s)
             self.parse_failures += 1
 
+    def record_score(self, score: dict[str, Any]) -> None:
+        with self._lock:
+            self.scored.append(score)
+
     def record_error(self, message: str) -> None:
         with self._lock:
             self.errors.append(message)
@@ -96,6 +110,10 @@ class TargetStore:
 
 
 def slow_loop(stop: threading.Event, frames: Sequence[Any], policy: Any, store: TargetStore) -> None:
+    # Deferred import, same convention as bam.pixel_to_telemetry_mm's own internal import of this module:
+    # score_minimal_baseline_offline pulls in av/cv2/pandas, which this file's module scope otherwise avoids.
+    from ml_jetson_vla.deployment.score_minimal_baseline_offline import score_prediction
+
     idx = 0
     while not stop.is_set():
         item = frames[idx % len(frames)]
@@ -109,14 +127,44 @@ def slow_loop(stop: threading.Event, frames: Sequence[Any], policy: Any, store: 
                 store.record_parse_failure(latency)
                 continue
             px, py = debug["target_point_px"]
+            raw_hw = tuple(item.frame_bgr.shape[:2])
             x_mm, y_mm = pixel_to_telemetry_mm(
-                item.homography, px, py, debug["coord_space"], debug.get("model_input_hw"),
-                tuple(item.frame_bgr.shape[:2]),
+                item.homography, px, py, debug["coord_space"], debug.get("model_input_hw"), raw_hw,
             )
             store.put(x_mm, y_mm, item.ident, latency)
+            # Real per-call grounding accuracy against this frame's own ground truth (item.true_x_tel/
+            # true_y_tel, item.homography) -- reuses the project's one scorer implementation rather than
+            # re-deriving the px->mm->error_mm chain a second time. Only parse_ok calls reach here, so
+            # store.scored is never diluted by parse failures (those stay counted only in parse_failures).
+            score = score_prediction(
+                item.homography, px, py, item.true_x_tel, item.true_y_tel, TOLERANCE_MM,
+                platform_w_mm=PLATFORM_W_MM, platform_h_mm=PLATFORM_H_MM,
+                coord_space=debug["coord_space"], model_input_hw=debug.get("model_input_hw"), raw_hw=raw_hw,
+            )
+            store.record_score({
+                "frame_ident": item.ident, "error_mm": score["error_mm"], "hit": score["hit"],
+            })
         except Exception as exc:  # a dead slow loop must fail the run, not leave stale targets in place
             store.record_error(f"{type(exc).__name__}: {exc}")
             return
+
+
+def summarize_grounding_accuracy(scored: Sequence[dict[str, Any]]) -> Optional[dict[str, Any]]:
+    """Aggregate store.scored (one score_prediction() summary per parse_ok slow-loop call) into a single
+    real-accuracy report, or None if nothing was scorable yet (e.g. every slow-loop call failed to parse,
+    or the slow loop never ran). Conditioned on parse_ok -- parse failures are not folded in here as a
+    0% hit; they stay visible separately via qwen.parse_failures."""
+    if not scored:
+        return None
+    errors_mm = [float(s["error_mm"]) for s in scored]
+    hits = [bool(s["hit"]) for s in scored]
+    return {
+        "n_scored": len(scored),
+        "hit_rate_20mm": sum(hits) / len(hits),
+        "mean_error_mm": float(np.mean(errors_mm)),
+        "median_error_mm": float(np.median(errors_mm)),
+        "tolerance_mm": TOLERANCE_MM,
+    }
 
 
 def load_touch_state(bronze_dir: str, session: str, frame_index: int) -> tuple[float, float]:
@@ -303,6 +351,11 @@ def run_hybrid(args: argparse.Namespace) -> dict[str, Any]:
             "slow_call_latency": (summarize_latencies_ms([s * 1000.0 for s in store.slow_latencies_s])
                                   if store.slow_latencies_s else None),
             "slow_thread_still_alive_after_join": slow_alive,
+            # Real per-call Qwen grounding accuracy under THIS run's actual environment (e.g. arm2-lerobot's
+            # transformers 4.57.6) -- not the validated 68.3% hit@20mm figure from the arm2-t5 sweep, which
+            # must not be assumed to carry over (see qwen_transformers_parity.py's real divergence finding).
+            # None here means nothing was scorable in this particular run (e.g. all parse failures).
+            "grounding_accuracy": summarize_grounding_accuracy(store.scored),
         },
         "frames": {
             "sessions": sorted({f.session for f in usable}),

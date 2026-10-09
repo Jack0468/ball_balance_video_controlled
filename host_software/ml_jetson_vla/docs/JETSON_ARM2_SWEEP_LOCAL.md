@@ -441,6 +441,15 @@ Everything below is pushed to `origin/vla_testing` and waiting for the Jetson. I
    must stay permanent**. Flags a real open risk: the hybrid Qwen+ACT benchmark already runs
    Qwen inside arm2-lerobot (4.57.6), so its grounding accuracy has not actually been verified
    against the 5.17.0-validated sweep numbers. See the logbook's 09/10/2026 entry.
+   **Instrumentation to close this landed 2026-10-09** (CPU-only, no Jetson needed): `slow_loop()`
+   now scores every `parse_ok` call against its frame's real ground truth via the existing
+   `score_minimal_baseline_offline.score_prediction()`, and `run_hybrid()`'s output JSON gains
+   `qwen.grounding_accuracy` (`n_scored`/`hit_rate_20mm`/`mean_error_mm`/`median_error_mm`). **No
+   real number exists yet** -- the 2026-10-09 hybrid run's JSON was never saved with per-call
+   detail and was never committed, so nothing can be rescored retroactively. The *next* real hybrid
+   run on the Jetson will report genuine grounding accuracy under arm2-lerobot's transformers
+   4.57.6, closing this risk for real rather than just by capability. See the logbook's
+   09/10/2026 entry ("Hybrid benchmark can now measure its own real Qwen grounding accuracy").
 5. ~~SmolVLA in bf16~~ **DONE 2026-10-09.** Fails with the same error shape as ACT's bf16 failure
    (`mat1 and mat2 must have the same dtype, but got Float and BFloat16`, inside LeRobot's own
    flow-matching denoise loop). Both action-model candidates confirmed bf16-broken (third-party

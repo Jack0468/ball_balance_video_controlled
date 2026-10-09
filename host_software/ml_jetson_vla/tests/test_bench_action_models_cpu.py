@@ -16,7 +16,9 @@ import json
 import os
 import sys
 import tempfile
+import threading
 import unittest
+from types import SimpleNamespace
 from typing import Any
 
 import numpy as np
@@ -203,6 +205,96 @@ class HybridScheduleTests(unittest.TestCase):
         self.assertEqual((latest.x_mm, latest.y_mm), (3.0, 4.0))
         self.assertEqual(store.slow_calls, 3)
         self.assertEqual(store.parse_failures, 1)
+        self.assertEqual(store.scored, [])  # neither call above went through slow_loop's scoring path
+
+
+class _FakeGroundingPolicy:
+    """Duck-typed stand-in for MinimalVLMPolicy: slow_loop() only ever calls `.act(...)` and reads
+    `.last_debug`, so a real backend/model is not needed to exercise the real scoring wiring."""
+
+    def __init__(self, debug: dict[str, Any], stop: threading.Event) -> None:
+        self._debug = debug
+        self._stop = stop  # set after one call, so slow_loop's `while not stop.is_set()` runs exactly once
+        self.last_debug: dict[str, Any] = {}
+        self.n_calls = 0
+
+    def act(self, frame_bgr: np.ndarray, instruction: Any, state: dict[str, Any]) -> None:
+        self.n_calls += 1
+        self.last_debug = self._debug
+        self._stop.set()
+
+
+class GroundingAccuracyScoringTests(unittest.TestCase):
+    """Real per-call grounding-accuracy scoring added to slow_loop()/TargetStore (2026-10-09): on every
+    parse_ok slow-loop call, score_minimal_baseline_offline.score_prediction() is now also run against
+    the frame's real ground truth and recorded on `store.scored`, separately from the existing
+    parse_failures counter. Hand-computed expectation, chosen for clean arithmetic:
+      - homography = identity 3x3 (mm->px is a no-op), so raw_px_to_mm(px, py) == (px, py) exactly.
+      - coord_space="raw_image" -> to_raw_px() is also a no-op, so the parsed point IS the raw pixel.
+      - predicted point (93.75, 81.0) is the manifest-mm point (93.75, 81.0) under the identity
+        homography (PLATFORM_W_MM/2, PLATFORM_H_MM/2 + 10.0).
+      - true_x_tel=true_y_tel=0.0 (center-origin telemetry) -> true manifest mm = (PLATFORM_W_MM/2,
+        PLATFORM_H_MM/2) = (93.75, 71.0) via touch_frame_to_manifest_mm.
+      - error_mm = hypot(93.75-93.75, 81.0-71.0) = hypot(0, 10) = 10.0mm exactly -> hit (<=20mm tolerance).
+    """
+
+    def setUp(self) -> None:
+        try:
+            importlib.import_module("ml_jetson_vla.deployment.score_minimal_baseline_offline")
+        except ImportError as exc:
+            self.skipTest(f"scorer not importable here: {exc}")
+
+    def _run_one_call(self, debug: dict[str, Any]) -> bhq.TargetStore:
+        stop = threading.Event()
+        policy = _FakeGroundingPolicy(debug, stop)
+        frame_item = SimpleNamespace(
+            frame_bgr=np.zeros((480, 640, 3), dtype=np.uint8),
+            instruction="go red",
+            homography=np.eye(3, dtype=np.float64),
+            true_x_tel=0.0,
+            true_y_tel=0.0,
+            ident="test_session|0",
+        )
+        store = bhq.TargetStore()
+        bhq.slow_loop(stop, [frame_item], policy, store)
+        self.assertEqual(policy.n_calls, 1)  # confirms the loop ran exactly once, not zero/many
+        return store
+
+    def test_parse_ok_call_is_scored_with_hand_computed_error_and_hit(self) -> None:
+        store = self._run_one_call({
+            "parse_ok": True, "target_point_px": (93.75, 81.0),
+            "coord_space": "raw_image", "model_input_hw": None,
+        })
+        self.assertEqual(len(store.scored), 1)
+        self.assertAlmostEqual(store.scored[0]["error_mm"], 10.0, places=6)
+        self.assertTrue(store.scored[0]["hit"])
+        self.assertEqual(store.scored[0]["frame_ident"], "test_session|0")
+        self.assertEqual(store.parse_failures, 0)  # parse succeeded, must not also count as a failure
+        self.assertEqual(store.slow_calls, 1)
+        latest = store.latest()
+        self.assertIsNotNone(latest)  # the existing put()-based target path still runs too
+
+    def test_parse_failure_is_not_scored_and_not_folded_into_a_0pct_hit(self) -> None:
+        store = self._run_one_call({"parse_ok": False})
+        self.assertEqual(store.scored, [])  # never silently counted as a miss
+        self.assertEqual(store.parse_failures, 1)
+        self.assertIsNone(store.latest())
+
+    def test_summarize_grounding_accuracy_matches_hand_computed_values(self) -> None:
+        store = self._run_one_call({
+            "parse_ok": True, "target_point_px": (93.75, 81.0),
+            "coord_space": "raw_image", "model_input_hw": None,
+        })
+        summary = bhq.summarize_grounding_accuracy(store.scored)
+        assert summary is not None
+        self.assertEqual(summary["n_scored"], 1)
+        self.assertAlmostEqual(summary["hit_rate_20mm"], 1.0, places=6)
+        self.assertAlmostEqual(summary["mean_error_mm"], 10.0, places=6)
+        self.assertAlmostEqual(summary["median_error_mm"], 10.0, places=6)
+        self.assertAlmostEqual(summary["tolerance_mm"], bhq.TOLERANCE_MM, places=6)
+
+    def test_summarize_grounding_accuracy_is_none_when_nothing_scored(self) -> None:
+        self.assertIsNone(bhq.summarize_grounding_accuracy([]))
 
 
 if __name__ == "__main__":
