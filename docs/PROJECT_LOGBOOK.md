@@ -191,7 +191,7 @@ Everything else in the file (the schedule timing, target ages) is correctly scal
 isolated missing x1000 in the script's own Qwen-latency reporting, not a scheduling bug. Not fixed
 yet (Windows-side, queued).
 
-### Qwen transformers 4.57.6 vs 5.17.0 parity: real result is DIVERGENT, likely root cause identified
+### Qwen transformers 4.57.6 vs 5.17.0 parity: real result is DIVERGENT; the fast-processor hypothesis was tested and REFUTED
 
 Ran for real on the Jetson (first blocked by a stale default `--reference` path pointing at a
 Windows-only folder name, `arm2_jetson_sweep_results4` -- that consolidation never touched the
@@ -199,16 +199,39 @@ Jetson's own `arm2_jetson_sweep_results`; fixed in the script). **Real verdict: 
 frames: 22 exact text match, 32 within the 4px equivalence tolerance, mean pixel difference 24.5px,
 max 256px (one frame effectively points at a different target entirely), and one frame fails to
 parse at all under 4.57.6 (answers a 4-element bbox-shaped array instead of the expected 2-element
-point). **Likely cause, flagged by the load log itself, not guessed**: transformers prints "The
+point). **Candidate cause, flagged by the load log itself, not guessed**: transformers prints "The
 image processor of type `Qwen2VLImageProcessor` is now loaded as a fast processor by default, even
 if the model checkpoint was saved with a slow processor" -- a real version-dependent default change
 in image preprocessing, not explicitly pinned anywhere in this project's Qwen loader
 (`qwen_vl_smoke_test.py`/`QwenVLBackend` never set `use_fast`). Added an opt-in `use_fast` parameter
 threaded through both (default `None`, so every existing caller -- the real sweep, the hybrid
 benchmark, the LoRA smoke test -- is completely unaffected) and a `--use-fast-processor
-{default,true,false}` flag on the parity script, so the hypothesis can be tested directly rather than
-assumed. Not yet run with `--use-fast-processor false`; that's the next concrete step before
-deciding whether the two-transformers-image split needs to stay permanent.
+{default,true,false}` flag on the parity script, so the hypothesis could be tested directly rather
+than assumed.
+
+**Tested for real with `--use-fast-processor false` (forcing the slow image processor under
+4.57.6): the hypothesis is REFUTED.** Numbers are essentially unchanged -- 22/60 exact text match
+(same), 32/60 within 4px (same), mean pixel diff 22.1px (vs 24.5px default; noise, not a fix),
+max 256.1px (same single frame, same magnitude), parse failures still present (59/60 parsed).
+Forcing the slow processor did not close the gap at all, so the fast/slow image-processor default
+is not the cause of this divergence -- it's some other, still-unidentified version-to-version
+change between transformers 4.57.6 and 5.17.0 (attention implementation, generation defaults, or
+rope/positional-encoding code are the remaining plausible candidates, not yet investigated). Not
+chasing this further right now: the practical conclusion is that **the two-transformers-image
+split (arm2-t5 for Qwen/PaliGemma2 real sweeps, arm2-lerobot for ACT/SmolVLA) must stay permanent**
+-- there is no confirmed safe way to run Qwen grounding under 4.57.6 and get the same accuracy as
+the real-sweep numbers.
+
+**This is already load-bearing, not hypothetical**: the 09/10/2026 hybrid Qwen+ACT pipeline result
+(100% replans fit their chunk, 2.5% stale-target rate -- see above) ran Qwen's grounding calls
+*inside the arm2-lerobot container* (needed to co-locate Qwen+ACT on one GPU process), i.e. under
+transformers 4.57.6 -- the same environment just shown to diverge from the 5.17.0-validated sweep
+gate (68.3% hit@20mm). The hybrid benchmark's timing/stall-rate numbers are real and unaffected
+(they don't depend on grounding accuracy), but its Qwen grounding accuracy has not been
+independently verified against the 5.17.0 baseline and should not be assumed to match it. Open
+follow-up, not yet done: score the hybrid run's own logged Qwen outputs against ground truth the
+same way the sweep does, to learn whether 4.57.6's divergence makes the hybrid pipeline's real
+accuracy meaningfully worse.
 
 ### Full LeRobot dataset conversion complete, verified, zipped for Colab
 

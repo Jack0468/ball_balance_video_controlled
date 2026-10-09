@@ -433,9 +433,14 @@ Everything below is pushed to `origin/vla_testing` and waiting for the Jetson. I
    result: 100% of 40 replans fit inside their chunk, 39/40 had a target, only 1/40 exceeded the 2s
    staleness threshold. See the logbook's 09/10/2026 entry for full detail. One reporting bug found,
    not yet fixed: `qwen.slow_call_latency` in the output JSON is mislabelled ms but is really seconds.
-4. **Run the Qwen-transformers-4.57.6 parity harness** (`qwen_transformers_parity.py`, CPU-tested,
-   never run against a real model) -- decides whether Qwen and SmolVLA can share one transformers
-   version going forward, or need the two-image split to stay permanent.
+4. ~~Run the Qwen-transformers-4.57.6 parity harness~~ **DONE 2026-10-09.** Real verdict: DIVERGENT
+   (22/60 exact, 32/60 within 4px, mean 24.5px, max 256px, 1 parse failure). Forced
+   `--use-fast-processor false` to test the leading hypothesis (fast vs. slow image processor
+   default) -- **refuted**: near-identical numbers (22/60 exact, 32/60 within 4px, mean 22.1px,
+   max 256.1px). Root cause still unidentified; **the two-image split (arm2-t5 / arm2-lerobot)
+   must stay permanent**. Flags a real open risk: the hybrid Qwen+ACT benchmark already runs
+   Qwen inside arm2-lerobot (4.57.6), so its grounding accuracy has not actually been verified
+   against the 5.17.0-validated sweep numbers. See the logbook's 09/10/2026 entry.
 5. **SmolVLA in bf16** (`bench_action_models.py --policy smolvla --precision bf16`) -- not yet tried;
    ACT's bf16 failure (hardcoded float32 latent) may or may not apply to SmolVLA too.
 6. **If the vision agent's `marker_tracker.py` fix landed** (check `git log` for it): re-verify its
