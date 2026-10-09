@@ -443,8 +443,8 @@ Everything below is pushed to `origin/vla_testing` and waiting for the Jetson. I
    against the 5.17.0-validated sweep numbers. See the logbook's 09/10/2026 entry.
 5. **SmolVLA in bf16** (`bench_action_models.py --policy smolvla --precision bf16`) -- not yet tried;
    ACT's bf16 failure (hardcoded float32 latent) may or may not apply to SmolVLA too.
-6. **If the vision agent's `marker_tracker.py` fix landed** (check `git log` for it): re-verify its
-   5-frame real-data check still holds after a pull, no Jetson-side action needed, CPU-only.
+6. ~~If the vision agent's `marker_tracker.py` fix landed~~ **DONE (confirmed earlier 2026-10-09
+   session).** Fix landed and independently re-verified against real data after a pull; held.
 7. **Colab, independent of the above**: upload `colab_bundle_sample/` (202 frames, ~12MB) first, run
    `qwen_grounding_colab.ipynb` end to end (~15-20 min). Only upload the full 26,454-frame
    `colab_bundle/` if the sample run's numbers look trustworthy and a longer run is actually wanted.
