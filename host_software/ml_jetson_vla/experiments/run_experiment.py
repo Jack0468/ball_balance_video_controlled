@@ -440,7 +440,10 @@ def run_live(args: argparse.Namespace) -> dict[str, Any]:
                 if req.marker_label is not None:
                     grounding_requested = True
                     try:
-                        ground_q.put_nowait((last_frame.copy(), req.marker_label))
+                        # MinimalVLMPolicy.build_prompt() matches on the raw instruction vocabulary
+                        # ("go_red"), not the grounding label ("red marker") -- queue req.instruction,
+                        # matching core/hybrid_policy.py's _Grounder, which already does this correctly.
+                        ground_q.put_nowait((last_frame.copy(), req.instruction))
                     except queue.Full:
                         pass
                 else:
