@@ -342,6 +342,40 @@ in `qwen_grounding_colab.ipynb` (intro markdown, `DRIVE_BUNDLE_DIR`, `DRIVE_RESU
 `2026_VRI_WINTER` so a fresh copy of the notebook matches the real folder and the ACT notebook. The
 live run was left untouched and allowed to keep writing to its own already-correct (for it) path.
 
+### `run_policy_replay.py`'s `build_policy()` was hardcoded to `StubFastLayer` -- real capability gap, now closed
+
+`experiments/run_policy_replay.py` is the only harness that exercises `HybridQwenActPolicy`/
+`SmolVLADirectPolicy`'s real background-threaded `_FastWorker`/`_Grounder` machinery end to end, but
+`build_policy()` always constructed a `StubFastLayer`, with no flag to override it -- so neither
+policy had ever been replayed with real inference, only ever against a constant-output stub.
+`EXPERIMENT_OPTIONS_PLAN_2026_10_07.md` section 7's status table said this was "not done... needs the
+Docker image, as before," which understated it: the actual blocker was this missing code path,
+independent of which environment it runs in.
+
+Fixed: new `--fast-layer {stub,act,smolvla}` flag (default `stub`, every existing call's behaviour
+unchanged), plus `--device` (matching `run_experiment.py`'s own `--device` flag) and `--act-checkpoint`
+(matching its `--checkpoint`). `build_policy()` now branches on `--fast-layer` -- `act` builds
+`fast_layers.ActFastLayer` (random weights unless `--act-checkpoint` is given, this project's
+established random-init-is-legitimate convention); `smolvla` builds `fast_layers.SmolVLAFastLayer`
+(always the real pretrained `lerobot/smolvla_base` at its pinned revision, using its own internal
+chunk length rather than `--chunk-len`, the same mismatch `run_experiment.py`'s `build_fast_layer()`
+already handles the same way). The module docstring and `base_result()`/output JSON's prior "no real
+model weights are loaded in this task" / "`--policy` is always driven with a `StubFastLayer`" claims
+were updated to describe the new flag honestly -- the output JSON's existing
+`fast_layer_weights_status`/`trained_for_task` fields (`Policy.weights_status`/`trained_for_task`)
+already report whichever `FastLayer` was actually built, so no new field was needed there.
+
+New test file `tests/test_run_policy_replay_cpu.py` (9 tests, CPU-only): confirms the default/omitted
+`--fast-layer` still produces a `StubFastLayer`-backed policy identical to the old behaviour, and that
+`act`/`smolvla` reach the right `build_policy()` branch with the right constructor arguments --
+verified by monkeypatching `ActFastLayer`/`SmolVLAFastLayer` at the module's import site (same
+duck-typed-stand-in style `test_hybrid_policy_cpu.py` already uses for `_Grounder`), since `lerobot`
+still does not import on this Windows interpreter. Full suite re-run clean: `test_experiments_cpu.py`,
+`test_hybrid_policy_cpu.py`, `test_run_policy_replay_cpu.py` -- 47 passed, 0 failed, 0 regressions. The
+`act`/`smolvla` paths are ready to actually run inside the `arm2-lerobot:r36.4.0` Docker image on the
+Jetson, same as every other real-weights run this session, but have **not yet been run for real** --
+`EXPERIMENT_OPTIONS_PLAN_2026_10_07.md` section 7 updated to say exactly that, no result fabricated.
+
 ## 06/10/2026
 ### Moondream2 fixed and scored for real; full 4-candidate Arm 2 baseline complete; Qwen confirmed as Arm 2 backbone
 
