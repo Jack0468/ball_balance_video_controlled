@@ -35,6 +35,7 @@ def load_qwen_vl_model(
     max_pixels: Optional[int] = None,
     dtype: Optional["torch.dtype"] = None,
     revision: Optional[str] = None,
+    use_fast: Optional[bool] = None,
 ):
     """Loads the Qwen2.5-VL-3B-Instruct checkpoint + processor. Returns (model, processor, device).
 
@@ -77,6 +78,11 @@ def load_qwen_vl_model(
         processor_kwargs["min_pixels"] = min_pixels
     if max_pixels is not None:
         processor_kwargs["max_pixels"] = max_pixels
+    # use_fast left unset (default) preserves whatever this transformers version's own default is --
+    # the 2026-10-09 parity check found 4.57.6 defaults to the fast image processor while the
+    # historical reference ran under 5.17.0's default; pass True/False explicitly to pin one.
+    if use_fast is not None:
+        processor_kwargs["use_fast"] = use_fast
     processor = AutoProcessor.from_pretrained(model_path, **processor_kwargs)
     return model, processor, device
 

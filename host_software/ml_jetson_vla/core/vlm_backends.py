@@ -193,6 +193,7 @@ class QwenVLBackend:
         max_pixels: int = 256 * 28 * 28,
         dtype: Optional[str] = "auto",
         revision: Optional[str] = None,
+        use_fast: Optional[bool] = None,
     ) -> None:
         # Smaller default min/max_pixels than qwen_vl_smoke_test.py's CLI default
         # (1280*28*28) -- deliberate, see the 2026-09-18 note in the multi-candidate doc.
@@ -203,6 +204,10 @@ class QwenVLBackend:
         self.max_pixels = max_pixels
         self.dtype = dtype
         self.revision = revision
+        # None preserves the installed transformers version's own default (unchanged behavior for
+        # every existing caller); set explicitly only to test a specific processor behavior, as the
+        # 2026-10-09 transformers-version parity check does.
+        self.use_fast = use_fast
         self.dtype_name: Optional[str] = None
         self._model = None
         self._processor = None
@@ -230,7 +235,7 @@ class QwenVLBackend:
         t0 = time.time()
         self._model, self._processor, self._resolved_device = load_qwen_vl_model(
             model_dir, device=device, min_pixels=self.min_pixels, max_pixels=self.max_pixels,
-            dtype=torch_dtype, revision=self.revision,
+            dtype=torch_dtype, revision=self.revision, use_fast=self.use_fast,
         )
         self.load_time_s = time.time() - t0
 

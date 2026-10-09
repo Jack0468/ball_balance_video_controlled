@@ -191,6 +191,25 @@ Everything else in the file (the schedule timing, target ages) is correctly scal
 isolated missing x1000 in the script's own Qwen-latency reporting, not a scheduling bug. Not fixed
 yet (Windows-side, queued).
 
+### Qwen transformers 4.57.6 vs 5.17.0 parity: real result is DIVERGENT, likely root cause identified
+
+Ran for real on the Jetson (first blocked by a stale default `--reference` path pointing at a
+Windows-only folder name, `arm2_jetson_sweep_results4` -- that consolidation never touched the
+Jetson's own `arm2_jetson_sweep_results`; fixed in the script). **Real verdict: DIVERGENT.** Of 60
+frames: 22 exact text match, 32 within the 4px equivalence tolerance, mean pixel difference 24.5px,
+max 256px (one frame effectively points at a different target entirely), and one frame fails to
+parse at all under 4.57.6 (answers a 4-element bbox-shaped array instead of the expected 2-element
+point). **Likely cause, flagged by the load log itself, not guessed**: transformers prints "The
+image processor of type `Qwen2VLImageProcessor` is now loaded as a fast processor by default, even
+if the model checkpoint was saved with a slow processor" -- a real version-dependent default change
+in image preprocessing, not explicitly pinned anywhere in this project's Qwen loader
+(`qwen_vl_smoke_test.py`/`QwenVLBackend` never set `use_fast`). Added an opt-in `use_fast` parameter
+threaded through both (default `None`, so every existing caller -- the real sweep, the hybrid
+benchmark, the LoRA smoke test -- is completely unaffected) and a `--use-fast-processor
+{default,true,false}` flag on the parity script, so the hypothesis can be tested directly rather than
+assumed. Not yet run with `--use-fast-processor false`; that's the next concrete step before
+deciding whether the two-transformers-image split needs to stay permanent.
+
 ### Full LeRobot dataset conversion complete, verified, zipped for Colab
 
 Ran on the dev machine (2026-10-07 into 2026-10-08), no Jetson needed. **151,706 frames, 15 episodes

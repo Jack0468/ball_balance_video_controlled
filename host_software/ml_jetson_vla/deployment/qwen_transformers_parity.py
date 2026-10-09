@@ -253,6 +253,7 @@ def run_parity(
     output_path: str,
     force: bool = False,
     verbose: bool = True,
+    use_fast_processor: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """Runs (or resumes) the parity check and returns the final checkpoint document."""
     ref_config, ref_frames = load_reference_frames(reference_path)
@@ -299,11 +300,17 @@ def run_parity(
             raise ValueError("sweep candidate spec disagrees with the pinned run config: " + "; ".join(spec_mismatch))
 
         backend = build_backend(spec, MAX_NEW_TOKENS)
+        # None leaves the backend's own default (preserves prior parity-run behavior); set only when
+        # the CLI asks us to pin a specific processor path, e.g. to test whether forcing the historical
+        # "slow" processor closes the 2026-10-09 DIVERGENT gap against transformers>=5's default.
+        if use_fast_processor is not None:
+            backend.use_fast = use_fast_processor
         policy = MinimalVLMPolicy(backend=backend, pixel_to_mm=None, prompt_variant=PROMPT_VARIANT)
         n_ref = len(ref_frames)
         try:
             backend.load()
             environment["dtype_resolved"] = getattr(backend, "dtype_name", None)
+            environment["use_fast_processor"] = getattr(backend, "use_fast", None)
             for ref in pending:
                 fr = by_key.get(frame_key(ref["session"], ref["frame_index"]))
                 if fr is None:
@@ -351,9 +358,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     parser.add_argument("--bronze-dir", default=DEFAULT_BRONZE_DIR, help="directory holding session_jetson_track4_*")
     parser.add_argument("--output", default=DEFAULT_OUTPUT, help="output JSON (refused if it exists, unless --force)")
     parser.add_argument("--force", action="store_true", help="overwrite an existing output file")
+    parser.add_argument("--use-fast-processor", default="default", choices=["default", "true", "false"],
+                         help="pin AutoProcessor's use_fast instead of this transformers version's own "
+                              "default; 'default' preserves prior behavior exactly")
     args = parser.parse_args(argv)
+    use_fast_processor = {"default": None, "true": True, "false": False}[args.use_fast_processor]
 
-    doc = run_parity(args.reference, args.bronze_dir, args.output, force=args.force)
+    doc = run_parity(args.reference, args.bronze_dir, args.output, force=args.force,
+                      use_fast_processor=use_fast_processor)
     s = doc["summary"]
     print(f"compared {s['n_compared']}/{s['n_reference_frames']} frames | exact text {s['n_exact_match']} | "
           f"parse {s['n_parse_ok_new']}/{s['n_compared']} | within {EQUIVALENT_PX:g}px {s['n_within_tolerance']} | "
