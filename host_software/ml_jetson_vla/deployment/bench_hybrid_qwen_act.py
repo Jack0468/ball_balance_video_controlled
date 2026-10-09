@@ -300,7 +300,7 @@ def run_hybrid(args: argparse.Namespace) -> dict[str, Any]:
             "max_new_tokens": args.max_new_tokens, "dtype": backend.dtype_name,
             "load_time_s": qwen_load_s, "prompt_variant": "baseline",
             "slow_calls": store.slow_calls, "parse_failures": store.parse_failures,
-            "slow_call_latency": (summarize_latencies_ms(store.slow_latencies_s)
+            "slow_call_latency": (summarize_latencies_ms([s * 1000.0 for s in store.slow_latencies_s])
                                   if store.slow_latencies_s else None),
             "slow_thread_still_alive_after_join": slow_alive,
         },

@@ -191,6 +191,24 @@ Everything else in the file (the schedule timing, target ages) is correctly scal
 isolated missing x1000 in the script's own Qwen-latency reporting, not a scheduling bug. Not fixed
 yet (Windows-side, queued).
 
+### `qwen.slow_call_latency` ms-mislabelled-as-seconds bug: fixed
+
+The reporting bug above is now fixed, Windows-side. `run_hybrid()`'s return dict
+(`bench_hybrid_qwen_act.py`) was handing `store.slow_latencies_s` -- seconds, as its own `_s` name
+says -- straight to `summarize_latencies_ms()` with no conversion, so the output JSON's
+`qwen.slow_call_latency.mean_ms` etc. were seconds mislabelled as milliseconds (the real ~1.85s
+Qwen call showed as `mean_ms: 1.85`). Fix: convert at the call site, `summarize_latencies_ms([s *
+1000.0 for s in store.slow_latencies_s])`, matching the explicit `(end - start) * 1000.0` pattern
+`fast_wall_ms` already used a few lines above it. `TargetStore` itself is untouched --
+`slow_latencies_s` stays in seconds internally, consistent with `TargetUpdate.slow_latency_s` and
+`TargetUpdate.done_monotonic_s` elsewhere in the same file. There is no in-repo JSON artifact from
+the 09/10/2026 real run to retroactively correct -- that output file was never committed from the
+Jetson, it only exists in the chat transcript that reported it -- so there's nothing to regenerate;
+any *future* run of this script will report genuinely correct millisecond values. Read the
+09/10/2026 entry above's "mean 1.85ms" the way it was actually measured: 1.85 *seconds*, not
+milliseconds. `test_hybrid_policy_cpu.py` and `test_bench_action_models_cpu.py` (31 passed, 1
+pre-existing unrelated skip) re-run clean after the fix.
+
 ### Qwen transformers 4.57.6 vs 5.17.0 parity: real result is DIVERGENT; the fast-processor hypothesis was tested and REFUTED
 
 Ran for real on the Jetson (first blocked by a stale default `--reference` path pointing at a

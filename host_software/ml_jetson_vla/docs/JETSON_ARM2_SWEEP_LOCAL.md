@@ -430,7 +430,9 @@ Everything below is pushed to `origin/vla_testing` and waiting for the Jetson. I
    fp32-latent/bf16 bug (script defaults `--precision bf16`); `--precision fp32` fixed it. Real
    result: 100% of 40 replans fit inside their chunk, 39/40 had a target, only 1/40 exceeded the 2s
    staleness threshold. See the logbook's 09/10/2026 entry for full detail. One reporting bug found,
-   not yet fixed: `qwen.slow_call_latency` in the output JSON is mislabelled ms but is really seconds.
+   **fixed 2026-10-09**: `qwen.slow_call_latency` in the output JSON was mislabelled ms but was
+   really seconds; `bench_hybrid_qwen_act.py` now multiplies `store.slow_latencies_s` by 1000 before
+   handing it to `summarize_latencies_ms`, so future runs report genuine milliseconds.
 4. ~~Run the Qwen-transformers-4.57.6 parity harness~~ **DONE 2026-10-09.** Real verdict: DIVERGENT
    (22/60 exact, 32/60 within 4px, mean 24.5px, max 256px, 1 parse failure). Forced
    `--use-fast-processor false` to test the leading hypothesis (fast vs. slow image processor
