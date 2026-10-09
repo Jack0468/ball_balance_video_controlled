@@ -50,7 +50,7 @@ EQUIVALENT_PX: float = 4.0
 REFERENCE_CONFIG_KEYS: Tuple[str, ...] = ("model", "revision", "dtype", "max_new_tokens", "min_pixels", "max_pixels")
 
 DEFAULT_REFERENCE: str = os.path.join(
-    _REPO_ROOT_DIR, "host_software", "data", "arm2_jetson_sweep_results4",
+    _REPO_ROOT_DIR, "host_software", "data", "arm2_jetson_sweep_results",
     "scorer_format_qwen2_5_vl_3b_jetson_run1.json")
 DEFAULT_BRONZE_DIR: str = os.path.join(_REPO_ROOT_DIR, "host_software", "data", "01_bronze")
 DEFAULT_OUTPUT: str = os.path.join(_ML_JETSON_VLA_DIR, "reports", "qwen_parity", "qwen_transformers_parity.json")
