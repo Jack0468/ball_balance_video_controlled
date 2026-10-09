@@ -405,6 +405,39 @@ this run validates scheduling/timing/safety-gate behavior only, not task accurac
 (live hardware test, `--i-understand-this-drives-motors`) is still blocked on a trained checkpoint and
 the physical rig; this replay is a new, real intermediate step toward it, not a substitute for it.
 
+### Three more real replay-mode runs (H0, H5, SmolVLA through the threaded `Policy`): the same "stalls only on chunk 1, zero rejections" pattern holds across every configuration tried today
+
+All on the Jetson, `arm2-lerobot:r36.4.0`, same 60s session (`session_jetson_track4_20260915_151627`),
+MAXN power mode confirmed. Four independent real runs today (the `HybridQwenActPolicy`+ACT one above,
+plus these three) **all show exactly one stall (the first chunk) and zero rejected chunks** -- a
+reproducible pattern, not a fluke:
+
+- **H0** (`run_experiment.py --option act_fast_statemachine --mode replay`, session-clock harness,
+  real ACT random-init weights): 179 replans, 1 stall (chunk 1), 0/178 excluding it. Inference p50
+  21.5ms / p90 21.6ms -- a *third* independent measurement landing within 0.5ms of
+  `bench_action_models.py`'s original 21.3ms figure. Target age p50 4933ms / p90 8933ms / max 11600ms --
+  matches `EXPERIMENT_OPTIONS_PLAN_2026_10_07.md`'s already-documented zero-stub number (~4.9s/~8.9s)
+  almost exactly, confirming staleness is a pure function of session command-hold duration, not of
+  which model is driving the fast layer.
+- **H5** (`run_experiment.py --option smolvla_direct --mode replay`, real pretrained
+  `lerobot/smolvla_base`, not fine-tuned): 36 replans, 1 stall (chunk 1), 0/35 excluding it. Inference
+  p50 846ms / p90 847ms -- somewhat below `bench_action_models.py`'s 924ms p50 (run-to-run GPU
+  variance or a chunk-length difference, not investigated further); still comfortably inside the
+  ~1667ms chunk-50 budget. No target-age data (`smolvla_direct` has no orchestrator-resolved mm
+  target by design, matching the architecture doc).
+- **SmolVLA through the real threaded `Policy`** (`run_policy_replay.py --policy smolvla_direct
+  --fast-layer smolvla`): 10 replans (SmolVLA's longer chunk means far fewer replans over 60s), 1
+  stall (chunk 1), 0/9 excluding it, 0 rejected. `fast_layer_weights_status` confirms real pretrained
+  weights, the 6->3 output-reduction placeholder, and the 2->6-dim zero-padded state, all as designed.
+
+**Net read on today's whole replay-mode batch**: scheduling and the safety gate behave correctly and
+consistently across both models, both harnesses, and both random-init and real-pretrained weights.
+The only consistently "failing" number against the proposed criteria is target-age p90 for ACT
+runs, which is the already-known, already-scoped "no periodic re-grounding" gap, not a new finding.
+Nothing here required flashing the new angle-control firmware or touching real motors -- H1/H2 (the
+only tests that actually need that) were explicitly deferred today (no reason to flash the firmware
+without another use for it yet).
+
 ## 06/10/2026
 ### Moondream2 fixed and scored for real; full 4-candidate Arm 2 baseline complete; Qwen confirmed as Arm 2 backbone
 
