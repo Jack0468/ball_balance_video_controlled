@@ -322,6 +322,26 @@ hand-computed 10.0mm error/hit case, plus a parse-failure case and the `None`-on
 94 passed, 1 pre-existing unrelated skip, no regressions. No GPU/Jetson available from here to produce
 a real number.
 
+### `qwen_grounding_colab.ipynb`'s Drive folder name was wrong in git; live Colab run unaffected, fixed for next time
+
+While the real Colab grounding run (26,454-frame full bundle, not the 202-frame sample) was live,
+its checkpoint file was nowhere to be found at the path the committed notebook specifies
+(`MyDrive/VRI_2026_WINTER/qwen_grounding_results/`, set 2026-10-08 in commit `cd8e66c`). The run
+itself was healthy throughout (1100+ successful checkpointed calls, no exceptions, ~2.6s/call) --
+`find /content/drive/MyDrive -iname checkpoint.jsonl` on the live Colab VM located it at
+`MyDrive/2026_VRI_WINTER/qwen_grounding_results/checkpoint.jsonl` (year-first, not `VRI_2026_WINTER`).
+**Root cause**: the live Colab tab was running a copy of cell (b) from before `cd8e66c`'s rename --
+editing a notebook's source in git does not retroactively change variables already bound in an
+already-executed cell of a running kernel. `2026_VRI_WINTER` also matches `act_train_colab.ipynb`'s
+own Drive folder convention (`DRIVE_BOOTSTRAP_DIR`/`DRIVE_RUN_DIR`, never changed to the `VRI_2026_WINTER`
+spelling), so `cd8e66c`'s rename made the *committed* Qwen notebook inconsistent with both the real
+Drive structure and the other notebook, not the other way around. **No data was lost or at risk** --
+the running kernel's own writes were real and consistent, this was purely a mismatch between git's
+copy of the notebook and what the user's browser tab had already executed. Fixed the three occurrences
+in `qwen_grounding_colab.ipynb` (intro markdown, `DRIVE_BUNDLE_DIR`, `DRIVE_RESULTS_DIR`) back to
+`2026_VRI_WINTER` so a fresh copy of the notebook matches the real folder and the ACT notebook. The
+live run was left untouched and allowed to keep writing to its own already-correct (for it) path.
+
 ## 06/10/2026
 ### Moondream2 fixed and scored for real; full 4-candidate Arm 2 baseline complete; Qwen confirmed as Arm 2 backbone
 
