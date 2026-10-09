@@ -264,6 +264,18 @@ the fix, reproduced each exact failure mode with a deterministic mocked-clock te
 raised the real `ValueError` / showed the real wrong-timestamp bug), then restored the fix and
 confirmed all 13 tests pass -- not "should be fixed by inspection," genuinely shown broken-then-fixed.
 
+### SmolVLA bf16 fails with the same hardcoded-float32 bug class as ACT
+
+Ran for real on the Jetson (`bench_action_models.py --policy smolvla --precision bf16`, inside
+`arm2-lerobot:r36.4.0`). **Fails**, same error shape as ACT's earlier bf16 failure: `RuntimeError:
+mat1 and mat2 must have the same dtype, but got Float and BFloat16`, inside LeRobot's own
+`modeling_smolvla.py` flow-matching denoising loop (`sample_actions` -> `denoise_step` ->
+`action_out_proj`) -- the noise/intermediate state `x_t`/`v_t` is created in float32 regardless of
+model dtype, same underlying pattern as ACT's hardcoded-float32 latent. **Checklist item 5 closes:
+both of this project's two action-model candidates have the same bf16 limitation; `--precision
+fp32` is the confirmed-working setting for both, same workaround already used for the real hybrid
+Qwen+ACT benchmark.** Not a project bug -- third-party LeRobot code, out of scope to patch.
+
 ## 06/10/2026
 ### Moondream2 fixed and scored for real; full 4-candidate Arm 2 baseline complete; Qwen confirmed as Arm 2 backbone
 

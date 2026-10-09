@@ -441,8 +441,11 @@ Everything below is pushed to `origin/vla_testing` and waiting for the Jetson. I
    must stay permanent**. Flags a real open risk: the hybrid Qwen+ACT benchmark already runs
    Qwen inside arm2-lerobot (4.57.6), so its grounding accuracy has not actually been verified
    against the 5.17.0-validated sweep numbers. See the logbook's 09/10/2026 entry.
-5. **SmolVLA in bf16** (`bench_action_models.py --policy smolvla --precision bf16`) -- not yet tried;
-   ACT's bf16 failure (hardcoded float32 latent) may or may not apply to SmolVLA too.
+5. ~~SmolVLA in bf16~~ **DONE 2026-10-09.** Fails with the same error shape as ACT's bf16 failure
+   (`mat1 and mat2 must have the same dtype, but got Float and BFloat16`, inside LeRobot's own
+   flow-matching denoise loop). Both action-model candidates confirmed bf16-broken (third-party
+   LeRobot code); `--precision fp32` is the standing workaround for both. See the logbook's
+   09/10/2026 entry.
 6. ~~If the vision agent's `marker_tracker.py` fix landed~~ **DONE (confirmed earlier 2026-10-09
    session).** Fix landed and independently re-verified against real data after a pull; held.
 7. **Colab, independent of the above**: upload `colab_bundle_sample/` (202 frames, ~12MB) first, run
