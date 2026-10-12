@@ -1,5 +1,51 @@
 # VRI 2026 Project Logbook
 
+## 13/10/2026
+
+### ACT Colab training run interrupted at step 601, before its first checkpoint (save_freq=2000)
+
+Real training was healthy up to the interrupt: loss started at 92.2 (step 1), the first 5 steps show
+`grdn:nan`/`inf` (expected VAE KL-term warmup artifact, not a bug -- resolves on its own), then settles
+to a steady ~2-3.5 loss band by step ~400-600 with finite, bounded gradient norms throughout. Stopped by
+a `KeyboardInterrupt` at step 601 (~2.5 min of real wall time at the observed ~3-5 steps/s), landing
+inside `ACTPolicy.forward()`'s `cam_pos_embed` iteration -- that location is just where the interrupt
+signal happened to land on the call stack, not itself meaningful. **No checkpoint was ever written**:
+`SAVE_FREQ=2000` and training stopped at step 601, so `act_train_colab.ipynb`'s own resume check
+(`OUTPUT_DIR/checkpoints/last/pretrained_model/train_config.json`) will find nothing and any rerun
+restarts from step 0 -- a real but trivial loss (~2.5 min of compute, not the whole run). Not yet
+confirmed whether the interrupt was deliberate (user-initiated stop) or an unplanned Colab
+disconnect/timeout; if disconnects turn out to be a recurring risk for this environment, lowering
+`SAVE_FREQ` below 2000 would reduce future lost-compute for free, no other change needed.
+
+### Real interim Qwen2.5-VL-3B grounding results: ball-xy-direct and motor-angle prediction, scored for the first time (5/10 sessions, in progress)
+
+**The first real numbers for two capabilities never before tested**: `qwen_grounding_colab.ipynb`'s
+live checkpoint (`checkpoint.jsonl`, 16,629 calls across 5 of the bundle's 10 Track 4 sessions, still
+running) scored locally by reusing the notebook's own scoring functions verbatim (not re-derived)
+against `host_software/data/colab_bundle/bundle/manifest.csv`'s real ground truth.
+
+- **BALL (direct ball-xy grounding, no marker/colour involved)**: **hit@20mm 93.3% (7673/8221), mean
+  error 15.4mm, median 12.7mm, parse rate 99.8%** (94.3%/14.5mm excluding touch-suspect frames, a
+  small, expected improvement matching the project's already-known touch-glitch pattern). This is
+  dramatically higher accuracy than colour-marker grounding has ever produced -- asking Qwen for the
+  ball's own position looks substantially easier/more reliable than asking it to name and locate a
+  colour marker.
+- **MOTOR (joint-angle estimation from the image, theta_a/b/c in degrees)**: **MAE 9.3 / 21.2 / 18.3
+  deg per joint, only 10.6% of frames within 2deg on all three joints, despite 100% parse rate.**
+  These errors exceed the firmware's own +/-11.025deg range for two of three joints -- a clean, real
+  negative result: Qwen cannot usefully estimate motor angle from this top-down image zero-shot, not
+  a parsing or prompt-format problem (parse rate is perfect).
+- **MARKER (colour-command grounding, same run/environment as the above)**: hit@20mm 59.9% (91/152),
+  mean error 25.4mm, parse rate 100%. **Lower than the already-validated 68.3% hit@20mm sweep figure**
+  -- open discrepancy, not yet explained. Candidates: a larger/different frame sample (152 vs. the
+  original 60) or only 5/10 sessions represented so far; NOT the transformers-version divergence found
+  2026-10-09 (this notebook pins `transformers==5.17.0`, the validated version). Re-check once the
+  full 10-session run finishes before treating this as a real regression.
+
+**Interim, not final** -- 5 of 10 sessions scored so far; re-score when the run completes. No model
+weights were trained or changed here; this is zero-shot evaluation of the same pinned Qwen checkpoint
+already used throughout Arm 2.
+
 ## 07/10/2026 (ongoing)
 ### Arm 2 action-head design work; a second, distinct touch-sensor data bug found by manual image review
 
