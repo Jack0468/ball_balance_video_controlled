@@ -41,8 +41,10 @@
 
 // mapf() lived in Screen.h/SerialCoords.cpp in the original firmware; that
 // module isn't compiled into this one (see TouchProbe.h), so it's inlined
-// here -- same one-line implementation, no behaviour change.
-static double mapf(double x, double in_min, double in_max, double out_min, double out_max) {
+// here -- same one-line implementation, no behaviour change. Not `static`:
+// Screen.h (pulled in via MotorControl.h) still declares it with external
+// linkage, and a static definition after that declaration does not compile.
+double mapf(double x, double in_min, double in_max, double out_min, double out_max) {
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
