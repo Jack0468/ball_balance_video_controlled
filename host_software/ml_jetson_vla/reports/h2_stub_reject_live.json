@@ -1,0 +1,148 @@
+{
+  "bench": "run_experiment",
+  "option": "act_fast_statemachine",
+  "created_utc": "2026-10-12T22:22:30.000650+00:00",
+  "argv": [
+    "host_software/ml_jetson_vla/experiments/run_experiment.py",
+    "--option",
+    "act_fast_statemachine",
+    "--mode",
+    "live",
+    "--i-understand-this-drives-motors",
+    "--stub-value",
+    "12",
+    "--serial-port",
+    "/dev/ttyACM0",
+    "--baud",
+    "2000000",
+    "--homography-npy",
+    "results/live_homography.npy",
+    "--instruction",
+    "hold",
+    "--max-run-s",
+    "5",
+    "--out",
+    "host_software/ml_jetson_vla/reports/h2_stub_reject_live.json"
+  ],
+  "mode": "live",
+  "sent": true,
+  "status": "ok",
+  "instruction": "hold",
+  "fast_layer": {
+    "name": "stub",
+    "weights_status": "STUB (no model), constant 12.0 deg",
+    "device": "cpu",
+    "chunk_len": 10,
+    "margin_ms": 40.0
+  },
+  "stop_reason": "consecutive_rejects",
+  "lines_sent": 0,
+  "n_rejected_chunks": 3,
+  "rejected_chunks": [
+    {
+      "record": {
+        "index": 0,
+        "trigger_s": 5601.826451081,
+        "land_s": 5602.242663229,
+        "inference_ms": 0.05667000004905276,
+        "target_age_ms": 0.0,
+        "new_target_arrived": true,
+        "accepted": false,
+        "stall": true,
+        "stall_gap_ms": 0.0,
+        "remaining_ms_at_trigger": 0.0
+      },
+      "reason": "30 value(s) outside +/-11.025 deg or non-finite; whole chunk rejected, nothing sent"
+    },
+    {
+      "record": {
+        "index": 1,
+        "trigger_s": 5602.203340572,
+        "land_s": 5602.283007674,
+        "inference_ms": 0.03183900025760522,
+        "target_age_ms": 0.0,
+        "new_target_arrived": true,
+        "accepted": false,
+        "stall": true,
+        "stall_gap_ms": 40.344445000300766,
+        "remaining_ms_at_trigger": 39.322656999502215
+      },
+      "reason": "30 value(s) outside +/-11.025 deg or non-finite; whole chunk rejected, nothing sent"
+    },
+    {
+      "record": {
+        "index": 2,
+        "trigger_s": 5602.243890321,
+        "land_s": 5602.322222367,
+        "inference_ms": 0.03798299985646736,
+        "target_age_ms": 0.0,
+        "new_target_arrived": true,
+        "accepted": false,
+        "stall": true,
+        "stall_gap_ms": 39.21469299984892,
+        "remaining_ms_at_trigger": 39.11735299971042
+      },
+      "reason": "30 value(s) outside +/-11.025 deg or non-finite; whole chunk rejected, nothing sent"
+    }
+  ],
+  "touch_uplink": {
+    "samples": 20,
+    "valid_samples": 20
+  },
+  "telemetry_csv": "/home/jetson-orin/Documents/2026_robotics_vla_demo/ball_balance_video_controlled/host_software/ml_jetson_vla/reports/h2_stub_reject_live.json.telemetry.csv",
+  "telemetry_rows": 3,
+  "summary": {
+    "n_replans": 3,
+    "n_stalls": 3,
+    "stall_fraction": 1.0,
+    "first_chunk_was_stall": true,
+    "stall_gap_ms_total": 79.55913800014969,
+    "n_rejected_chunks": 3,
+    "n_new_target_arrivals": 3,
+    "inference_ms_p50": 0.03798299985646736,
+    "inference_ms_p90": 0.05293260001053568,
+    "inference_ms_max": 0.05667000004905276,
+    "n_with_target": 3,
+    "target_age_ms_p50": 0.0,
+    "target_age_ms_p90": 0.0,
+    "target_age_ms_max": 0.0
+  },
+  "replans": [
+    {
+      "index": 0,
+      "trigger_s": 5601.826451081,
+      "land_s": 5602.242663229,
+      "inference_ms": 0.05667000004905276,
+      "target_age_ms": 0.0,
+      "new_target_arrived": true,
+      "accepted": false,
+      "stall": true,
+      "stall_gap_ms": 0.0,
+      "remaining_ms_at_trigger": 0.0
+    },
+    {
+      "index": 1,
+      "trigger_s": 5602.203340572,
+      "land_s": 5602.283007674,
+      "inference_ms": 0.03183900025760522,
+      "target_age_ms": 0.0,
+      "new_target_arrived": true,
+      "accepted": false,
+      "stall": true,
+      "stall_gap_ms": 40.344445000300766,
+      "remaining_ms_at_trigger": 39.322656999502215
+    },
+    {
+      "index": 2,
+      "trigger_s": 5602.243890321,
+      "land_s": 5602.322222367,
+      "inference_ms": 0.03798299985646736,
+      "target_age_ms": 0.0,
+      "new_target_arrived": true,
+      "accepted": false,
+      "stall": true,
+      "stall_gap_ms": 39.21469299984892,
+      "remaining_ms_at_trigger": 39.11735299971042
+    }
+  ]
+}
