@@ -58,6 +58,7 @@ import os
 import sys
 from typing import Optional
 
+import cv2
 import numpy as np
 import onnxruntime as ort
 
@@ -80,16 +81,32 @@ from host_software.ml_vision.data_processing.auto_label_shared_vision import (  
     warp_to_platform,
 )
 
-# Reused as-is from the laptop/Jetson entry points -- preprocessing/warp/gating math with no
-# platform dependency, imported (not duplicated) so this grounder cannot silently drift from
-# JetsonExpertPolicy's own real production pipeline.
-from main_onnx_shared_vision_audio import (  # noqa: E402
-    GROUND_TRUTH_MANIFEST,
-    INPUT_SIZE,
-    PAPER_MARGIN_MM,
-    preprocess_warped,
-    sigmoid,
-)
+# NOT imported from main_onnx_shared_vision_audio.py, despite that being the authoritative
+# production source for these 5 names: that module's own top level also does
+# `from src.audio_receiver_onnx import AudioCommandReceiverONNX`, which needs `sounddevice` --
+# a system audio library with no relevance to vision grounding and not installed in the
+# arm2-lerobot Docker image (confirmed by a real `ModuleNotFoundError` on the Jetson, 2026-10-13).
+# Python import semantics mean `from X import a, b` still runs ALL of X's top-level code, so
+# there is no way to pull in just these 5 names without the audio import chain. Copied verbatim
+# instead (not re-derived) -- same values/logic as main_onnx_shared_vision_audio.py, checked
+# directly against that file, not assumed.
+INPUT_SIZE = (128, 128)  # (H, W), must match training
+GROUND_TRUTH_MANIFEST = os.path.join(_REPO_ROOT_DIR, "hardware", "platform_templates", "ground_truth_manifest.json")
+PAPER_MARGIN_MM = 6.0
+
+
+def preprocess_warped(warped_bgr: np.ndarray) -> np.ndarray:
+    """Matches build_eval_transform() + SharedVisionDataset.__getitem__ exactly:
+    RGB, [0,1] float, CHW, batch dim. No ImageNet mean/std normalization --
+    that was the OLD model's convention, not this one's."""
+    rgb = cv2.cvtColor(warped_bgr, cv2.COLOR_BGR2RGB)
+    img_f = rgb.astype(np.float32) / 255.0
+    chw = np.transpose(img_f, (2, 0, 1))
+    return np.expand_dims(chw, axis=0)
+
+
+def sigmoid(x: np.ndarray) -> np.ndarray:
+    return 1.0 / (1.0 + np.exp(-x))
 
 _DEFAULT_CNN_RELPATH = os.path.join(
     "ml_vision", "models", "shared_vision_backbone_v2", "shared_vision_backbone_best.onnx"
