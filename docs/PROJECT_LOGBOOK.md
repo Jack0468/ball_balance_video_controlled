@@ -230,6 +230,43 @@ physical hardware. Remaining hardware work (checklist item 9: `HybridQwenActPoli
 `SmolVLADirectPolicy` live with a real trained checkpoint) stays blocked on ACT training actually
 converging (`run_002`, `STEPS=25_000`, in progress).
 
+### Two real environment bugs fixed to get `hybrid_small_cnn_act` running on the Jetson, then a clean first real result
+
+Getting `small_cnn_grounder.py` to actually run inside `arm2-lerobot:r36.4.0` took two real,
+sequential fixes, neither of which were anticipated when it was built:
+1. `onnxruntime` was never installed in that image at all (only ever needed for the lerobot/Qwen
+   latency bench before today) -- added, pinned to `1.18.0` to match Track 1's own confirmed-on-
+   hardware version. That pin itself then failed: this image's base ships `numpy==2.2.4` (vs. Track
+   1's pinned `numpy==1.26.4`), and `onnxruntime==1.18.0` predates NumPy 2.x wheel support entirely
+   (added in `1.19.0`) -- `AttributeError: _ARRAY_API not found`. Re-pinned to `1.31.0` (current
+   latest); the Jetson ARM-CPU bug that originally justified an old pin
+   (`microsoft/onnxruntime#28301`) was fixed upstream in mid-August 2026, before this version --
+   not yet verified under real inference load on this exact AGX Orin unit, since that bug was
+   described as only intermittent there.
+2. `small_cnn_grounder.py` imported `GROUND_TRUTH_MANIFEST`/`INPUT_SIZE`/`PAPER_MARGIN_MM`/
+   `preprocess_warped`/`sigmoid` from `main_onnx_shared_vision_audio.py` to avoid re-deriving them
+   -- but Python import semantics run that module's ENTIRE top level regardless of which names are
+   requested, and that module's own top level imports `AudioCommandReceiverONNX`, which needs
+   `sounddevice` (not installed, irrelevant to vision). Fixed by copying those 5 names verbatim
+   (checked directly against the source) into `small_cnn_grounder.py` instead of importing them.
+
+**First real result, `run_policy_replay.py --policy hybrid_small_cnn_act --fast-layer act` (random-
+init ACT, 60s replay, same session as the earlier Qwen+ACT run)**: 0 rejected chunks, 0% stall
+fraction excluding the first chunk -- same clean pattern as every other real run this session.
+**Real comparison against the earlier Qwen+ACT run on the identical session**:
+- `n_frames_with_target`: **1792/1800 (99.6%) vs. Qwen's 1197/1800 (66.5%)** -- the small-CNN
+  grounder's actual design win: far fewer ticks with no target at all (likely Qwen's slow first-call
+  latency and imperfect parse rate leaving real gaps).
+- `target_age_ms` p50/p90 (1724/4230ms) is about the same as Qwen's (1895/4245ms) -- staleness is
+  dominated by the architecture (grounding happens once per command, never refreshed mid-hold), not
+  by which grounder is faster. A faster grounder fills gaps sooner; it does not fix the already-
+  documented "no periodic re-grounding" limitation.
+- **Unexplained, flagged not chased**: ACT's own `inference_ms_p50` is 63ms here vs. ~21ms in the
+  Qwen version, despite identical ACT config/device. Best guess, not confirmed: the small-CNN
+  grounder's CPU-bound ONNX inference on a background thread may add Python-GIL contention that a
+  mostly-GPU-bound Qwen grounding thread didn't. Still safely inside the 333ms chunk budget at
+  chunk_len=10 (hence 0 rejects, ~0% stalls) -- a real curiosity, not a problem.
+
 ## 07/10/2026 (ongoing)
 ### Arm 2 action-head design work; a second, distinct touch-sensor data bug found by manual image review
 
