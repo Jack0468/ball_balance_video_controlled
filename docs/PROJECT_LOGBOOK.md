@@ -216,6 +216,20 @@ Three real runs, same command, different ball placement:
   valid readings. Not yet tested whether this is specific to that one corner/marker-3 position or
   common to all four corners -- a real, separate follow-up, not chased further today.
 
+### H2 (live, stub-value 12, ball in the middle): hard safety gate confirmed real on hardware
+
+Same new firmware, same session. **Passed exactly as designed**: `stop_reason: consecutive_rejects`,
+`lines_sent: 0` -- zero out-of-range commands ever reached the motors. All 3 chunks rejected with
+`"30 value(s) outside +/-11.025 deg or non-finite; whole chunk rejected, nothing sent"`, confirming
+the whole-chunk-reject-never-clamp design holds on real hardware, not just in `test_experiments_cpu.py`.
+The run correctly stopped itself after `max_consecutive_rejects=3` rather than retrying forever.
+`touch_uplink: 20/20 valid` confirms the ball was genuinely in the middle this time (a real test, not
+the earlier no-ball trivial pass). **H1 and H2 both now done and passed for real** -- this project's
+first end-to-end validation of the serial downlink/uplink and the hard safety gate together on
+physical hardware. Remaining hardware work (checklist item 9: `HybridQwenActPolicy`/
+`SmolVLADirectPolicy` live with a real trained checkpoint) stays blocked on ACT training actually
+converging (`run_002`, `STEPS=25_000`, in progress).
+
 ## 07/10/2026 (ongoing)
 ### Arm 2 action-head design work; a second, distinct touch-sensor data bug found by manual image review
 
