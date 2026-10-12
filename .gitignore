@@ -72,6 +72,11 @@ host_software/ml_vision/models/archive
 
 runs/
 *.zip
+
+# Local scratch for hardware-test artifacts (e.g. captured ArUco homography .npy files) --
+# not meant to be committed. Real hardware-test RESULTS go under
+# host_software/ml_jetson_vla/reports/ instead, which stays tracked on purpose.
+/results/
 fpga/camera_i2c/old_images/
 host_software/data/02_silver_unified_pose.zip
 dataset_playback.mp4
