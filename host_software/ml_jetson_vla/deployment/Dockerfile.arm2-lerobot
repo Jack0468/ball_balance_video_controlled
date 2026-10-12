@@ -53,16 +53,28 @@ RUN python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all: \
 RUN python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all: \
       --index-url https://pypi.org/simple qwen-vl-utils
 
+# onnxruntime: needed by core/small_cnn_grounder.py (the non-Qwen grounder, 2026-10-13) to run the
+# shared_vision_backbone_v2 ONNX CNN. PINNED to plain CPU onnxruntime==1.18.0, NOT the latest PyPI
+# release and NOT onnxruntime-gpu -- both are confirmed-on-hardware crashes on this exact Jetson
+# (JETSON_ENV_SETUP.md, Track 1's bare-metal setup, 2026-09-15): latest onnxruntime hits a filed
+# upstream ARM-CPU bug (microsoft/onnxruntime#28301, a std::vector out-of-bounds abort or
+# malloc(): invalid size depending on version); onnxruntime-gpu crashes differently because this
+# Jetson's offline flash has no full CUDA Toolkit/cuDNN/TensorRT. Track 1 runs this exact CPU
+# version with no crash -- same package, same pin, reused here rather than re-deriving.
+RUN python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all: \
+      --index-url https://pypi.org/simple onnxruntime==1.18.0
+
 # Gate: fail the build if versions drifted or either policy import is broken. Printed so the build log records what
 # resolved. cuda_available is printed, not asserted: `docker build` may run without the nvidia runtime.
 RUN python3 -m pip freeze --exclude-editable | grep -E '^(numpy|torch|torchvision)==' \
  && python3 -c "\
 import importlib.metadata as md; \
-import torch, torchvision, transformers, cv2; \
+import torch, torchvision, transformers, cv2, onnxruntime as ort; \
 print('torch', torch.__version__, 'torchvision', torchvision.__version__, 'cuda_available', torch.cuda.is_available()); \
 print('lerobot', md.version('lerobot')); \
 print('transformers', transformers.__version__); \
 print('cv2', cv2.__version__, 'aruco', hasattr(cv2, 'aruco')); \
+print('onnxruntime', ort.__version__, 'providers', ort.get_available_providers()); \
 assert int(transformers.__version__.split('.')[0]) < 5, 'transformers >= 5 resolved -- lerobot 0.4.4 policies cannot import; this image is built wrong'" \
  && python3 -c "import lerobot.policies.smolvla; print('import lerobot.policies.smolvla: OK')" \
  && python3 -c "import lerobot.policies.act; print('import lerobot.policies.act: OK')"
