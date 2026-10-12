@@ -191,6 +191,31 @@ a clean pass rules out gross file corruption but is not a `torchcodec`-safety gu
 frame count; a truncated/corrupt file is caught with the file named in the error; a frame-count
 mismatch against `info.json` is caught even when the video itself decodes cleanly), all passing.
 
+### H1 (live, stub-value 0, new `stm32_jetson_vla_angle_control` firmware): serial downlink/uplink confirmed real on hardware; a new touch-sensor dead zone found
+
+First real serial test of the new angle-control firmware (`AngleStepControl.cpp`), after fixing a
+compile bug found and fixed by the user directly (`TouchProbe.cpp`'s `mapf()` was `static` after
+`Screen.h` declares it with external linkage -- does not compile; fixed, no behaviour change).
+Three real runs, same command, different ball placement:
+
+- **Ball in the middle (2 runs)**: `lines_sent` 101/114 and 99/112, `touch_uplink` valid 136/136 and
+  134/136 (the 2 invalid in the second run match the project's already-known rare `touch_stale`
+  pattern, not a new concern), **0 rejected chunks** in both. This is H1's actual pass: the serial
+  downlink (`A,0.0000,0.0000,0.0000` at 30Hz) and uplink are both proven working for real, for the
+  first time, on real hardware.
+- **Ball in the corner, overlapping ArUco marker 3**: `lines_sent: 0`, `touch_uplink` valid **0/136 --
+  not degraded, literally zero for the entire 5s run.** Not a bug in the test: `run_experiment.py`'s
+  control loop only ever resolves a target or attempts a replan when the touch reading is valid
+  (confirmed by reading the code, not assumed), so zero lines sent in this case is the system
+  correctly refusing to act without a known ball position, not a failure.
+- **Real new finding**: touch validity here comes from the physical sensor over the serial uplink,
+  **independent of the camera/ArUco vision pipeline** -- confirmed this is NOT the already-known
+  `ball_over_marker` vision-occlusion issue (checked `reports/ball_over_marker/`; that's a camera/CNN
+  finding, unrelated code path). This looks like a genuine **touch-sensor dead zone in at least one
+  corner**, with a hard cutoff (never once valid across the whole run) rather than noisy-but-sometimes-
+  valid readings. Not yet tested whether this is specific to that one corner/marker-3 position or
+  common to all four corners -- a real, separate follow-up, not chased further today.
+
 ## 07/10/2026 (ongoing)
 ### Arm 2 action-head design work; a second, distinct touch-sensor data bug found by manual image review
 
