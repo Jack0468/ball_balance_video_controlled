@@ -1,9 +1,23 @@
 """Replay driver for the real `Policy` wrappers in `core/hybrid_policy.py`
-(`HybridQwenActPolicy`, `SmolVLADirectPolicy`) -- as opposed to `run_experiment.py`'s replay,
-which drives a raw `FastLayer` directly. Reuses `run_experiment.py`'s session telemetry/video
-loading (`load_session_telemetry`, `VideoRowReader`) rather than re-deriving it, and
-`experiments.schedule.summarize_replans` for the same stats the existing replay already reports
--- no new metric invented.
+(`HybridQwenActPolicy`, `SmolVLADirectPolicy`, `HybridSmallCnnActPolicy`) -- as opposed to
+`run_experiment.py`'s replay, which drives a raw `FastLayer` directly. Reuses `run_experiment.py`'s
+session telemetry/video loading (`load_session_telemetry`, `VideoRowReader`) rather than
+re-deriving it, and `experiments.schedule.summarize_replans` for the same stats the existing
+replay already reports -- no new metric invented.
+
+`--policy hybrid_small_cnn_act` (2026-10-13): a debugging/staging configuration, NOT a new
+official Arm 1 vs Arm 2 comparison arm (see `core/hybrid_policy.py`'s `HybridSmallCnnActPolicy`
+docstring) -- grounds colour commands with Track 1's already-validated small-class CNN + ArUco +
+`MarkerClassifier` pipeline (`core/small_cnn_grounder.py`) instead of Qwen, so ACT's own control
+behaviour can be tested/trained against fast, reliable targets rather than Qwen's comparatively
+noisy/slow grounding. Unlike `hybrid_qwen_act` above (which never configures a grounding backend
+here), this policy constructs a REAL `SmallCnnGroundingPolicy` by default (`--small-cnn-grounding`,
+on by default) -- its CNN/ArUco/MarkerClassifier pipeline needs only `onnxruntime`+`cv2` (already
+importable on this Windows interpreter, confirmed by `runtime/run_jetson_standalone.py` using them
+directly), not torch/lerobot, so colour commands actually produce real targets even without the
+`arm2-lerobot` Docker image -- only `--fast-layer act` still needs that image for the ACT side.
+Pass `--no-small-cnn-grounding` to disable grounding entirely (matching `hybrid_qwen_act`'s
+no-grounding-backend behaviour) for a fast smoke test with no ONNX model file required.
 
 Each session tick calls `policy.act(frame, instruction, {"touch_mm": (touch_x, touch_y)})` --
 `core/hybrid_policy.py`'s own documented `state["touch_mm"]` contract. The replan request/landing
@@ -21,10 +35,13 @@ Sends nothing. `--fast-layer` (default `stub`, unchanged behaviour) picks what b
 pretrained `lerobot/smolvla_base` at its pinned revision, never random). `act`/`smolvla` need
 torch + lerobot importable, which this Windows interpreter cannot do (see
 `docs/EXPERIMENT_OPTIONS_PLAN_2026_10_07.md` section 4.7) -- those variants are meant to run inside
-the `arm2-lerobot:r36.4.0` Docker image on the Jetson. Regardless of `--fast-layer`, no grounding
-backend is ever configured here (`HybridQwenActPolicy`'s `grounding_backend=None`), so colour
-commands in the session still correctly produce `has_target=False` throughout -- that is
-independent of this flag, not a bug in this driver. Each run's actual fast-layer weights state is
+the `arm2-lerobot:r36.4.0` Docker image on the Jetson. Regardless of `--fast-layer`, for
+`--policy hybrid_qwen_act`/`smolvla_direct` no grounding backend is ever configured here
+(`HybridQwenActPolicy`'s `grounding_backend=None`), so colour commands in the session still
+correctly produce `has_target=False` throughout for those two policies -- that is independent of
+`--fast-layer`, not a bug in this driver. `--policy hybrid_small_cnn_act` is the one exception (see
+above): it constructs a real grounder by default, so colour commands DO produce real targets for
+it unless `--no-small-cnn-grounding` is passed. Each run's actual fast-layer weights state is
 recorded honestly in the output JSON's `fast_layer_weights_status`/`trained_for_task` fields
 (`Policy.weights_status`/`trained_for_task`, verbatim from whichever `FastLayer` was built).
 """
@@ -50,7 +67,12 @@ for _p in (_HOST_SOFTWARE_DIR, _REPO_ROOT_DIR):
     if _p not in sys.path:
         sys.path.append(_p)
 
-from ml_jetson_vla.core.hybrid_policy import HybridQwenActPolicy, SmolVLADirectPolicy  # noqa: E402
+from ml_jetson_vla.core.hybrid_policy import (  # noqa: E402
+    HybridQwenActPolicy,
+    HybridSmallCnnActPolicy,
+    SmolVLADirectPolicy,
+)
+from ml_jetson_vla.core.small_cnn_grounder import SmallCnnGroundingPolicy  # noqa: E402
 from ml_jetson_vla.deployment.bench_action_models import refuse_overwrite, write_json_atomic  # noqa: E402
 from ml_jetson_vla.experiments.fast_layers import (  # noqa: E402
     ACT_DEFAULT_CHUNK_LEN,
@@ -69,7 +91,7 @@ from ml_jetson_vla.experiments.schedule import (  # noqa: E402
 )
 
 LOG: logging.Logger = logging.getLogger("run_policy_replay")
-POLICIES: tuple[str, ...] = ("hybrid_qwen_act", "smolvla_direct")
+POLICIES: tuple[str, ...] = ("hybrid_qwen_act", "smolvla_direct", "hybrid_small_cnn_act")
 FAST_LAYERS: tuple[str, ...] = ("stub", "act", "smolvla")
 # How long to let the background worker threads catch up after the session's last tick, so a
 # chunk already in flight gets a chance to land before stats are read -- not a hardware number.
@@ -83,6 +105,8 @@ def build_policy(
     fast_layer: str = "stub",
     device: str = "cpu",
     act_checkpoint: Optional[str] = None,
+    small_cnn_grounding: bool = True,
+    small_cnn_mask_threshold: float = 0.5,
 ) -> Any:
     if fast_layer == "act":
         layer: Any = ActFastLayer(chunk_len, device=device, checkpoint_dir=act_checkpoint)
@@ -95,6 +119,14 @@ def build_policy(
         layer = StubFastLayer(value_deg=0.0, chunk_len=chunk_len)  # no real weights, default
     if name == "hybrid_qwen_act":
         return HybridQwenActPolicy(layer, margin_ms=margin_ms)  # grounding_backend=None: stub-only
+    if name == "hybrid_small_cnn_act":
+        # Unlike hybrid_qwen_act above, grounding is ON by default here -- the whole point of this
+        # debugging/staging policy (see module docstring) is to give ACT a real, cheap grounding
+        # signal. --no-small-cnn-grounding disables it (e.g. no ONNX model file on this machine).
+        grounding_policy = (
+            SmallCnnGroundingPolicy(mask_threshold=small_cnn_mask_threshold) if small_cnn_grounding else None
+        )
+        return HybridSmallCnnActPolicy(layer, grounding_policy=grounding_policy, margin_ms=margin_ms)
     return SmolVLADirectPolicy(layer, margin_ms=margin_ms)
 
 
@@ -107,7 +139,8 @@ def run_replay(args: argparse.Namespace) -> dict[str, Any]:
         raise ValueError("max-sim-seconds covers fewer than 2 telemetry rows")
 
     policy = build_policy(
-        args.policy, args.chunk_len, args.margin_ms, args.fast_layer, args.device, args.act_checkpoint
+        args.policy, args.chunk_len, args.margin_ms, args.fast_layer, args.device, args.act_checkpoint,
+        args.small_cnn_grounding, args.small_cnn_mask_threshold,
     )
     reader = VideoRowReader(os.path.join(session, "rgb_video.mp4"))
 
@@ -204,6 +237,17 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     )
     p.add_argument("--device", default="cpu", help="cpu (default) or cuda")
     p.add_argument("--act-checkpoint", default=None, help="ACT trained checkpoint dir; default = random init")
+    p.add_argument(
+        "--no-small-cnn-grounding", dest="small_cnn_grounding", action="store_false",
+        help="--policy hybrid_small_cnn_act only: disable the real small-CNN grounder (e.g. no ONNX "
+             "model file on this machine) -- has_target stays False for colour commands, matching "
+             "hybrid_qwen_act's own no-grounding-backend default. On by default otherwise.",
+    )
+    p.add_argument(
+        "--small-cnn-mask-threshold", type=float, default=0.5,
+        help="--policy hybrid_small_cnn_act only: MarkerClassifier mask threshold (default 0.5, "
+             "matches JetsonExpertPolicy's own default).",
+    )
     args = p.parse_args(argv)
     if args.max_sim_seconds <= 0 or args.chunk_len < 1 or args.speedup <= 0:
         p.error("--max-sim-seconds > 0, --chunk-len >= 1, --speedup > 0")

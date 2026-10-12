@@ -73,6 +73,29 @@ Found while building this (not fixed here, out of this module's scope): `run_exp
 `COLOR_COMMANDS`' KEYS (e.g. "go_green") -- as written, every colour command there falls through
 to the directional "ball" fallback. `_Grounder` below queues `req.instruction` (the original
 command) instead, which is what `build_prompt()` expects.
+
+`HybridSmallCnnActPolicy` (2026-10-13): a third `Policy`, sibling to the two above, built as a
+**debugging/staging configuration -- NOT a new official Arm 1 vs Arm 2 comparison arm** (see
+`docs/ARCHITECTURE.md`'s 3-arm framing; this combination is not one of those three). ACT
+(`ActFastLayer`) isn't trained yet, and testing/training its own control behaviour against Qwen's
+comparatively noisy (~60-93% hit@20mm, measured this session) and slow (~1.7-2s/call, GPU-shared
+with ACT) grounding confounds two unvalidated things at once. This policy instead grounds colour
+commands with `core.small_cnn_grounder.SmallCnnGroundingPolicy` -- Track 1's already-validated,
+sub-10ms small-class CNN + ArUco + `MarkerClassifier` pipeline (`JetsonExpertPolicy`'s own
+production pipeline, reused) -- giving ACT a fast, reliable grounding signal to be tested/trained
+against in isolation. Made possible by generalising `_Grounder` below to wrap ANY `Policy`-shaped
+grounding implementation (duck-typed: `.act()` returning a `PolicyCommand` plus a `.last_debug`
+dict with a `parse_ok` key), not just `MinimalVLMPolicy` specifically -- `SmallCnnGroundingPolicy`
+satisfies that same shape (see its own module docstring), so `_Grounder`'s existing
+threading/queue/`TargetStore` machinery, and `_FastWorker`/`ChunkScheduler` on the fast-layer side,
+are reused completely unchanged. `HybridSmallCnnActPolicy` itself subclasses `HybridQwenActPolicy`
+and overrides only `__init__` (via the shared `_init_common()` helper both now use) to swap which
+`Policy` backs the `_Grounder` -- `act()`/`reset()`/`close()`/`replan_records` never reference
+anything Qwen/`VLMBackend`-specific, only `self._grounder` (a plain `_Grounder`), so no other code
+needed to change. This module itself still does NOT import `small_cnn_grounder.py` (which pulls in
+`onnxruntime`/`cv2`) -- callers construct the `SmallCnnGroundingPolicy` and pass it in, keeping
+this module's own import surface unchanged (see `ImportIsolationTests`, which only ever checked
+torch/lerobot and still only needs to).
 """
 
 from __future__ import annotations
@@ -232,15 +255,22 @@ class _FastWorker:
 
 
 class _Grounder:
-    """Background grounding worker: one `MinimalVLMPolicy` (wrapping a `VLMBackend`, e.g.
-    `QwenVLBackend`) on its own slow cadence, writing results into a `TargetStore` -- the exact
-    `TargetStore`/slow-loop split `deployment/bench_hybrid_qwen_act.py` already defines, imported
-    here rather than re-derived. `request()` is non-blocking and drops a request rather than
-    blocking `act()` if the previous one is still in flight (matches `run_experiment.py`'s
-    `run_live()` `ground_q.put_nowait()` behaviour)."""
+    """Background grounding worker: one `Policy`-shaped grounding implementation (originally
+    always a `MinimalVLMPolicy` wrapping a `VLMBackend`, e.g. `QwenVLBackend`; generalised
+    2026-10-13 to accept any such implementation -- see `core.small_cnn_grounder
+    .SmallCnnGroundingPolicy` for the second one, built so ACT can be tested against fast, reliable
+    grounding instead of Qwen's -- module docstring has the full rationale) on its own slow
+    cadence, writing results into a `TargetStore` -- the exact `TargetStore`/slow-loop split
+    `deployment/bench_hybrid_qwen_act.py` already defines, imported here rather than re-derived.
+    `request()` is non-blocking and drops a request rather than blocking `act()` if the previous
+    one is still in flight (matches `run_experiment.py`'s `run_live()` `ground_q.put_nowait()`
+    behaviour). The only contract required of `grounding_policy`: `.act(frame, instruction, state)
+    -> PolicyCommand` (the `Policy` protocol), plus a `.last_debug` dict carrying a `parse_ok` key
+    afterwards (both `MinimalVLMPolicy` and `SmallCnnGroundingPolicy` already follow this
+    convention, duck-typed, same as `JetsonExpertPolicy`'s own `last_debug` attribute)."""
 
-    def __init__(self, grounding_policy: MinimalVLMPolicy) -> None:
-        self.policy: MinimalVLMPolicy = grounding_policy
+    def __init__(self, grounding_policy: Policy) -> None:
+        self.policy: Policy = grounding_policy
         self.store: TargetStore = TargetStore()
         self._q: "queue.Queue[tuple[np.ndarray, str]]" = queue.Queue(maxsize=1)
         self._stop = threading.Event()
@@ -299,7 +329,11 @@ def _resolve_target_request(
 
 class HybridQwenActPolicy(Policy):
     """ACT_FAST (fast layer) + option-S/L orchestrator + Qwen grounding, behind `Policy`. See
-    module docstring for the full contract."""
+    module docstring for the full contract. `__init__` only builds the `_Grounder` (Qwen-specific,
+    via `MinimalVLMPolicy`); everything else is shared with `HybridSmallCnnActPolicy` through
+    `_init_common()` below, since `act()`/`reset()`/`close()` never reference anything
+    Qwen/`VLMBackend`-specific -- only `self._grounder` (a plain, grounder-policy-agnostic
+    `_Grounder`)."""
 
     def __init__(
         self,
@@ -311,16 +345,30 @@ class HybridQwenActPolicy(Policy):
         control_hz: float = CONTROL_HZ,
         margin_ms: float = DEFAULT_MARGIN_MS,
     ) -> None:
-        self._orchestrator: Union[StateMachineOrchestrator, LanguageOrchestrator] = (
-            orchestrator if orchestrator is not None else StateMachineOrchestrator()
-        )
-        self._fast: _FastWorker = _FastWorker(fast_layer, control_hz, margin_ms)
-        self._grounder: Optional[_Grounder] = None
+        grounder: Optional[_Grounder] = None
         if grounding_backend is not None:
             grounding_policy = MinimalVLMPolicy(
                 grounding_backend, pixel_to_mm=pixel_to_mm, prompt_variant=grounding_prompt_variant
             )
-            self._grounder = _Grounder(grounding_policy)
+            grounder = _Grounder(grounding_policy)
+        self._init_common(fast_layer, orchestrator, grounder, control_hz, margin_ms)
+
+    def _init_common(
+        self,
+        fast_layer: FastLayer,
+        orchestrator: Optional[Union[StateMachineOrchestrator, LanguageOrchestrator]],
+        grounder: Optional[_Grounder],
+        control_hz: float,
+        margin_ms: float,
+    ) -> None:
+        """Shared construction tail for `HybridQwenActPolicy` and `HybridSmallCnnActPolicy` --
+        everything downstream of "what `Policy` backs the `_Grounder`, if any". Not part of either
+        class's public surface."""
+        self._orchestrator: Union[StateMachineOrchestrator, LanguageOrchestrator] = (
+            orchestrator if orchestrator is not None else StateMachineOrchestrator()
+        )
+        self._fast: _FastWorker = _FastWorker(fast_layer, control_hz, margin_ms)
+        self._grounder: Optional[_Grounder] = grounder
         self.weights_status: str = fast_layer.weights_status
         self.trained_for_task: bool = _is_trained_for_task(fast_layer.weights_status)
         self._fixed_target_mm: Optional[tuple] = None
@@ -373,7 +421,7 @@ class HybridQwenActPolicy(Policy):
                 if req.marker_label is not None:
                     debug["grounding_requested"] = True
                     if self._grounder is None:
-                        debug["grounding_unavailable"] = "no grounding_backend configured"
+                        debug["grounding_unavailable"] = "no grounding_policy configured"
                     elif not self._grounder.request(image, req.instruction):
                         debug["grounding_queue_full"] = True
                 else:
@@ -426,6 +474,41 @@ class HybridQwenActPolicy(Policy):
 
         tx, ty = (float(target_xy[0]), float(target_xy[1])) if has_target else (float("nan"), float("nan"))
         return PolicyCommand(target_x_mm=tx, target_y_mm=ty, angle_targets_deg=angles, debug=debug)
+
+
+class HybridSmallCnnActPolicy(HybridQwenActPolicy):
+    """ACT_FAST (fast layer) + option-S/L orchestrator + the small-class Shared Backbone CNN +
+    `MarkerClassifier` pipeline for grounding (`core.small_cnn_grounder.SmallCnnGroundingPolicy`),
+    instead of Qwen. See the module docstring's "HybridSmallCnnActPolicy (2026-10-13)" section for
+    the full rationale.
+
+    **Debugging/staging configuration for validating ACT in isolation -- NOT a new official Arm 1
+    vs Arm 2 comparison arm.** Arm 1 is the small-class expert pipeline running standalone (its own
+    audio/state-machine/control-net chain, no ACT involved); Arm 2 is the Qwen-driven policy
+    (`HybridQwenActPolicy`/`SmolVLADirectPolicy`). This class is a third, informal combination --
+    the small-class vision pipeline wired up only as a cheap, reliable grounding source for ACT's
+    own benefit -- and must not be reported as either arm later.
+
+    Subclasses `HybridQwenActPolicy` purely to reuse its `act()`/`reset()`/`close()`/
+    `replan_records` unchanged: none of them reference anything Qwen/`VLMBackend`-specific, only
+    `self._grounder` (a plain, grounder-policy-agnostic `_Grounder` after this module's 2026-10-13
+    refactor). Overriding `__init__` to build the `_Grounder` around a `SmallCnnGroundingPolicy`
+    instead of a `MinimalVLMPolicy`, then delegating to the shared `_init_common()` helper, is the
+    entire change needed. `grounding_policy=None` (e.g. for a CPU smoke test with no ONNX model on
+    disk) matches `HybridQwenActPolicy(grounding_backend=None)`'s own convention: colour commands
+    then correctly produce `has_target=False` (`debug["grounding_unavailable"] = "no
+    grounding_policy configured"`), never a fabricated target."""
+
+    def __init__(
+        self,
+        fast_layer: FastLayer,
+        orchestrator: Optional[Union[StateMachineOrchestrator, LanguageOrchestrator]] = None,
+        grounding_policy: Optional[Policy] = None,
+        control_hz: float = CONTROL_HZ,
+        margin_ms: float = DEFAULT_MARGIN_MS,
+    ) -> None:
+        grounder: Optional[_Grounder] = _Grounder(grounding_policy) if grounding_policy is not None else None
+        self._init_common(fast_layer, orchestrator, grounder, control_hz, margin_ms)
 
 
 class SmolVLADirectPolicy(Policy):

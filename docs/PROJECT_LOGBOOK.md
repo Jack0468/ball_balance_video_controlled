@@ -2,6 +2,61 @@
 
 ## 13/10/2026
 
+### Non-Qwen grounder built so ACT can be tested/trained in isolation from Qwen's grounding noise/latency
+
+ACT (`experiments/fast_layers.py`'s `ActFastLayer`) still isn't trained. Testing/training its own
+control behaviour against `HybridQwenActPolicy`'s real grounding confounds two unvalidated things
+at once: Qwen's colour-marker grounding is comparatively noisy (~60-93% hit@20mm depending on
+task, measured this session) and slow (~1.7-2s/call, GPU-shared with ACT). Track 1's small-class
+Shared Backbone CNN + `MarkerClassifier` pipeline is already validated, sub-10ms, and already does
+exactly this job in production (`ml_jetson_vla/runtime/run_jetson_standalone.py`'s
+`JetsonExpertPolicy`) -- swapped in as a second, non-Qwen grounding source to give ACT a fast,
+reliable target to be tested/trained against instead.
+
+**Explicitly a debugging/staging configuration, NOT a new official comparison arm** -- it must not
+be confused with the real Arm 1 (small-class expert pipeline, standalone) vs Arm 2 (Qwen-driven)
+comparison later; every new docstring/doc entry says so.
+
+Built: `core/small_cnn_grounder.py`'s `SmallCnnGroundingPolicy` -- mirrors
+`JetsonExpertPolicy.act()`'s real integration exactly (ArUco homography -> warp ->
+`shared_vision_backbone_v2` CNN -> `MarkerClassifier.classify()` -> largest-area-per-colour pick),
+satisfying `core.policy_interface.Policy` so it can be wrapped unchanged by `core/hybrid_policy.py`'s
+`_Grounder`. `_Grounder` itself was generalised (it previously type-hinted and was only ever used
+with `MinimalVLMPolicy`) to accept any `Policy`-shaped grounding implementation -- a small,
+justified refactor (its real contract was always just `.act()` + `.last_debug["parse_ok"]`, never
+anything Qwen-specific), reusing its existing threading/queue/`TargetStore` machinery rather than
+writing a second one. `core/hybrid_policy.py` itself still does not import `small_cnn_grounder.py`
+(which pulls in `onnxruntime`/`cv2`) -- callers construct the `SmallCnnGroundingPolicy` and pass it
+in, so `ImportIsolationTests`' torch/lerobot guarantee for that module is untouched.
+
+New `HybridSmallCnnActPolicy` (`core/hybrid_policy.py`) subclasses `HybridQwenActPolicy`, overriding
+only `__init__` (via a new shared `_init_common()` helper both classes now use) to swap which
+`Policy` backs the `_Grounder` -- `act()`/`reset()`/`close()`/`replan_records` never referenced
+anything Qwen/`VLMBackend`-specific to begin with, only `self._grounder`, so no other code needed to
+change. Wired into `experiments/run_policy_replay.py` as `--policy hybrid_small_cnn_act`: unlike
+`hybrid_qwen_act` (which never configures a grounding backend in this driver), grounding is ON by
+default here, since `SmallCnnGroundingPolicy` needs only `onnxruntime`+`cv2` (already importable on
+this Windows interpreter, confirmed by `run_jetson_standalone.py` using them directly) -- so colour
+commands produce real targets even without the `arm2-lerobot` Docker image; only `--fast-layer act`
+still needs that image for ACT itself. `--no-small-cnn-grounding` disables it for a fast smoke test.
+
+Tests: 3 new CPU-only files/additions, 21 new tests, all passing -- `tests/test_small_cnn_grounder_cpu.py`
+(9 tests, mocks the ONNX session/`load_manifest_full`/`MarkerClassifier` at construction time and
+`estimate_homography_from_aruco`/`warp_to_platform` at `act()`-call time, same style
+`test_capture_homography_cpu.py` established); `test_hybrid_policy_cpu.py`'s new
+`HybridSmallCnnActPolicyTests` (7 tests: construction/protocol, no-grounding-policy degrades
+gracefully, a colour command triggers exactly one real grounding call through the REAL `_Grounder`
+background thread, a directional command triggers none, a slow grounding call never blocks `act()`
+(elapsed < 0.3s against a 0.5s artificial delay), and `has_target` stays `False` until the first
+real detection actually lands); `test_run_policy_replay_cpu.py`'s new
+`BuildPolicyHybridSmallCnnActTests` (6 tests, `SmallCnnGroundingPolicy` monkeypatched at the
+`run_policy_replay` module's import site, same style already used for `ActFastLayer`/
+`SmolVLAFastLayer`). Full existing suite re-run clean alongside these:
+`test_experiments_cpu.py`/`test_hybrid_policy_cpu.py`/`test_run_policy_replay_cpu.py`/
+`test_capture_homography_cpu.py`/`test_bench_action_models_cpu.py`/`test_qwen_transformers_parity_cpu.py`
+-- 122 passed, 0 failed, 1 skipped (pre-existing, unrelated: `lerobot.policies` import failure on
+this interpreter), 0 regressions.
+
 ### ACT Colab training run interrupted at step 601, before its first checkpoint (save_freq=2000)
 
 Real training was healthy up to the interrupt: loss started at 92.2 (step 1), the first 5 steps show

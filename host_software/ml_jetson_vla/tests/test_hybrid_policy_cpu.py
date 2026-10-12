@@ -34,6 +34,7 @@ if _HOST_SOFTWARE_DIR not in sys.path:
 
 from ml_jetson_vla.core.hybrid_policy import (  # noqa: E402
     HybridQwenActPolicy,
+    HybridSmallCnnActPolicy,
     SmolVLADirectPolicy,
     _FastWorker,
 )
@@ -114,6 +115,29 @@ class _FakeGrounder:
 
     def close(self) -> None:
         pass
+
+
+class _FakeSmallCnnGroundingPolicy:
+    """Duck-typed stand-in for `core.small_cnn_grounder.SmallCnnGroundingPolicy` -- a trivial,
+    near-instant `Policy`-shaped grounding implementation (same contract `_Grounder` requires:
+    `.act(frame, instruction, state) -> PolicyCommand` plus a `.last_debug` dict carrying
+    `parse_ok`), so `HybridSmallCnnActPolicyTests` below exercise the REAL `_Grounder`/
+    `_FastWorker` background threads end to end without needing onnxruntime/cv2/a real ONNX
+    model file. Counts calls so tests can assert whether grounding was actually requested."""
+
+    def __init__(self, x_mm: float = 10.0, y_mm: float = 20.0) -> None:
+        self.n_calls: int = 0
+        self.last_debug: dict = {}
+        self._x_mm = x_mm
+        self._y_mm = y_mm
+
+    def act(self, image: np.ndarray, instruction: Optional[str], state: dict) -> PolicyCommand:
+        self.n_calls += 1
+        self.last_debug = {"parse_ok": True, "instruction": instruction}
+        return PolicyCommand(target_x_mm=self._x_mm, target_y_mm=self._y_mm)
+
+    def reset(self) -> None:
+        self.last_debug = {}
 
 
 class ConstructionAndProtocolTests(unittest.TestCase):
@@ -214,6 +238,94 @@ class SafetyGateTests(unittest.TestCase):
             self.assertEqual(policy.last_debug["n_rejected_chunks"], 0)
         finally:
             policy.close()
+
+
+class HybridSmallCnnActPolicyTests(unittest.TestCase):
+    """`HybridSmallCnnActPolicy` (2026-10-13, debugging/staging config -- see its docstring):
+    grounds colour commands with a small-CNN pipeline instead of Qwen. These tests drive it with
+    `_FakeSmallCnnGroundingPolicy` (a trivial, near-instant stand-in -- no onnxruntime/cv2/real
+    ONNX model needed) through the REAL `_Grounder`/`_FastWorker` background threads, the same
+    style `ConstructionAndProtocolTests`/`SafetyGateTests` above already use for
+    `HybridQwenActPolicy`."""
+
+    def setUp(self) -> None:
+        self._opened: list[Any] = []
+
+    def tearDown(self) -> None:
+        for p in self._opened:
+            p.close()
+
+    def _policy(self, grounding_policy: Any = None, **kwargs: Any) -> HybridSmallCnnActPolicy:
+        p = HybridSmallCnnActPolicy(
+            StubFastLayer(value_deg=0.0, chunk_len=5), grounding_policy=grounding_policy, **kwargs
+        )
+        self._opened.append(p)
+        return p
+
+    def test_constructs_and_satisfies_policy_protocol(self) -> None:
+        p = self._policy()
+        _assert_satisfies_policy_protocol(self, p)
+        self.assertFalse(p.trained_for_task)
+        self.assertIn("STUB", p.weights_status)
+
+    def test_no_grounding_policy_configured_produces_no_target_for_colour_command(self) -> None:
+        """Matches `HybridQwenActPolicy(grounding_backend=None)`'s own convention: omitting the
+        grounding policy entirely must degrade gracefully, never crash or fabricate a target."""
+        p = self._policy()
+        cmd = p.act(_FRAME, "go_red", {"touch_mm": (0.0, 0.0)})
+        self.assertEqual(p.last_debug.get("grounding_unavailable"), "no grounding_policy configured")
+        self.assertTrue(np.isnan(cmd.target_x_mm))
+
+    def test_colour_command_triggers_a_grounding_call(self) -> None:
+        fake = _FakeSmallCnnGroundingPolicy()
+        p = self._policy(grounding_policy=fake)
+        cmd = p.act(_FRAME, "go_red", {"touch_mm": (0.0, 0.0)})
+        self.assertTrue(p.last_debug.get("grounding_requested"))
+        self.assertTrue(_wait_for(lambda: fake.n_calls > 0))
+        self.assertEqual(fake.n_calls, 1)
+        self.assertIsInstance(cmd, PolicyCommand)
+
+    def test_directional_command_does_not_trigger_a_grounding_call(self) -> None:
+        fake = _FakeSmallCnnGroundingPolicy()
+        p = self._policy(grounding_policy=fake)
+        for _ in range(5):
+            p.act(_FRAME, "hold", {"touch_mm": (0.0, 0.0)})
+            time.sleep(0.03)
+        self.assertEqual(fake.n_calls, 0)
+        self.assertNotIn("grounding_requested", p.last_debug)
+
+    def test_grounding_call_does_not_block_act(self) -> None:
+        """`_Grounder.request()`/`store.latest()` are both non-blocking by design -- a slow
+        grounding implementation must never make `act()` itself block waiting on it."""
+
+        class _SlowGroundingPolicy(_FakeSmallCnnGroundingPolicy):
+            def act(self, image: np.ndarray, instruction: Optional[str], state: dict) -> PolicyCommand:
+                time.sleep(0.5)
+                return super().act(image, instruction, state)
+
+        fake = _SlowGroundingPolicy()
+        p = self._policy(grounding_policy=fake)
+        t0 = time.monotonic()
+        cmd = p.act(_FRAME, "go_red", {"touch_mm": (0.0, 0.0)})
+        elapsed = time.monotonic() - t0
+        self.assertLess(elapsed, 0.3)  # returns long before the fake's 0.5s "inference" finishes
+        self.assertTrue(np.isnan(cmd.target_x_mm))  # nothing has landed yet -- degrades gracefully
+
+    def test_degrades_gracefully_before_first_real_detection_lands(self) -> None:
+        fake = _FakeSmallCnnGroundingPolicy(x_mm=10.0, y_mm=20.0)
+        p = self._policy(grounding_policy=fake)
+
+        cmd = p.act(_FRAME, "go_red", {"touch_mm": (0.0, 0.0)})
+        self.assertFalse(p.last_debug["has_target"])  # grounding just requested, nothing landed yet
+        self.assertTrue(np.isnan(cmd.target_x_mm))
+        self.assertTrue(np.isnan(cmd.target_y_mm))
+
+        self.assertTrue(_wait_for(lambda: fake.n_calls > 0))
+        time.sleep(0.1)  # give _Grounder's background thread time to store.put() the result
+        cmd2 = p.act(_FRAME, None, {"touch_mm": (0.0, 0.0)})
+        self.assertTrue(p.last_debug["has_target"])
+        self.assertEqual(cmd2.target_x_mm, 10.0)
+        self.assertEqual(cmd2.target_y_mm, 20.0)
 
 
 @unittest.skipUnless(os.path.exists(_SESSION), f"real Track 4 session not found: {_SESSION}")

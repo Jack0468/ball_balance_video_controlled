@@ -36,7 +36,11 @@ _HOST_SOFTWARE_DIR: str = os.path.abspath(os.path.join(_ML_JETSON_VLA_DIR, "..")
 if _HOST_SOFTWARE_DIR not in sys.path:
     sys.path.append(_HOST_SOFTWARE_DIR)
 
-from ml_jetson_vla.core.hybrid_policy import HybridQwenActPolicy, SmolVLADirectPolicy  # noqa: E402
+from ml_jetson_vla.core.hybrid_policy import (  # noqa: E402
+    HybridQwenActPolicy,
+    HybridSmallCnnActPolicy,
+    SmolVLADirectPolicy,
+)
 from ml_jetson_vla.experiments import run_policy_replay as rpr  # noqa: E402
 from ml_jetson_vla.experiments.fast_layers import StubFastLayer  # noqa: E402
 
@@ -70,6 +74,21 @@ class _FakeSmolVLAFastLayer:
     def __init__(self, device: str = "cpu") -> None:
         self.device = device
         self.weights_status = "PRETRAINED lerobot/smolvla_base@pinned; NOT fine-tuned"
+
+
+class _FakeSmallCnnGroundingPolicyCtor:
+    """Duck-typed stand-in for `core.small_cnn_grounder.SmallCnnGroundingPolicy`'s constructor --
+    records the `mask_threshold` it was built with, no onnxruntime/cv2/real ONNX model needed."""
+
+    def __init__(self, mask_threshold: float = 0.5) -> None:
+        self.mask_threshold = mask_threshold
+        self.last_debug: dict = {}
+
+    def act(self, image: Any, instruction: Optional[str], state: dict) -> Any:
+        raise AssertionError("act() should not be called by these construction-only tests")
+
+    def reset(self) -> None:
+        self.last_debug = {}
 
 
 class BuildPolicyDefaultIsStubTests(unittest.TestCase):
@@ -181,6 +200,72 @@ class BuildPolicyActAndSmolVLABranchesTests(unittest.TestCase):
             self.assertEqual(layer.device, "cuda")
             self.assertFalse(hasattr(layer, "chunk_len"))
             self.assertIn("PRETRAINED", policy.weights_status)
+        finally:
+            policy.close()
+
+
+class BuildPolicyHybridSmallCnnActTests(unittest.TestCase):
+    """`--policy hybrid_small_cnn_act` (2026-10-13, debugging/staging config -- see
+    `core.hybrid_policy.HybridSmallCnnActPolicy`'s docstring): unlike `hybrid_qwen_act`, grounding
+    is ON by default here, so `build_policy()` must actually construct a `SmallCnnGroundingPolicy`
+    unless `--no-small-cnn-grounding` was passed. `SmallCnnGroundingPolicy` is monkeypatched at
+    `rpr`'s own import site (same style as `ActFastLayer`/`SmolVLAFastLayer` above) so this runs
+    without onnxruntime/cv2/a real ONNX model file."""
+
+    def test_parse_args_small_cnn_grounding_defaults_to_true(self) -> None:
+        args = rpr.parse_args(
+            ["--policy", "hybrid_small_cnn_act", "--session", "unused", "--out", "unused.json"]
+        )
+        self.assertTrue(args.small_cnn_grounding)
+        self.assertEqual(args.small_cnn_mask_threshold, 0.5)
+
+    def test_parse_args_no_small_cnn_grounding_flag(self) -> None:
+        args = rpr.parse_args(
+            [
+                "--policy", "hybrid_small_cnn_act", "--session", "unused", "--out", "unused.json",
+                "--no-small-cnn-grounding", "--small-cnn-mask-threshold", "0.7",
+            ]
+        )
+        self.assertFalse(args.small_cnn_grounding)
+        self.assertEqual(args.small_cnn_mask_threshold, 0.7)
+
+    def test_build_policy_default_constructs_a_real_grounding_policy(self) -> None:
+        with mock.patch.object(rpr, "SmallCnnGroundingPolicy", _FakeSmallCnnGroundingPolicyCtor):
+            policy = rpr.build_policy("hybrid_small_cnn_act", chunk_len=5, margin_ms=40.0)
+        try:
+            self.assertIsInstance(policy, HybridSmallCnnActPolicy)
+            self.assertIsNotNone(policy._grounder)
+            self.assertIsInstance(policy._grounder.policy, _FakeSmallCnnGroundingPolicyCtor)
+            self.assertEqual(policy._grounder.policy.mask_threshold, 0.5)
+        finally:
+            policy.close()
+
+    def test_build_policy_forwards_custom_mask_threshold(self) -> None:
+        with mock.patch.object(rpr, "SmallCnnGroundingPolicy", _FakeSmallCnnGroundingPolicyCtor):
+            policy = rpr.build_policy(
+                "hybrid_small_cnn_act", chunk_len=5, margin_ms=40.0, small_cnn_mask_threshold=0.9
+            )
+        try:
+            self.assertEqual(policy._grounder.policy.mask_threshold, 0.9)
+        finally:
+            policy.close()
+
+    def test_build_policy_no_grounding_when_disabled(self) -> None:
+        with mock.patch.object(rpr, "SmallCnnGroundingPolicy", _FakeSmallCnnGroundingPolicyCtor):
+            policy = rpr.build_policy(
+                "hybrid_small_cnn_act", chunk_len=5, margin_ms=40.0, small_cnn_grounding=False
+            )
+        try:
+            self.assertIsInstance(policy, HybridSmallCnnActPolicy)
+            self.assertIsNone(policy._grounder)
+        finally:
+            policy.close()
+
+    def test_build_policy_uses_stub_fast_layer_by_default(self) -> None:
+        with mock.patch.object(rpr, "SmallCnnGroundingPolicy", _FakeSmallCnnGroundingPolicyCtor):
+            policy = rpr.build_policy("hybrid_small_cnn_act", chunk_len=5, margin_ms=40.0)
+        try:
+            self.assertIsInstance(policy._fast.fast_layer, StubFastLayer)
         finally:
             policy.close()
 
