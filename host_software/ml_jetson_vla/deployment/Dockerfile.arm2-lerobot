@@ -54,15 +54,25 @@ RUN python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all: \
       --index-url https://pypi.org/simple qwen-vl-utils
 
 # onnxruntime: needed by core/small_cnn_grounder.py (the non-Qwen grounder, 2026-10-13) to run the
-# shared_vision_backbone_v2 ONNX CNN. PINNED to plain CPU onnxruntime==1.18.0, NOT the latest PyPI
-# release and NOT onnxruntime-gpu -- both are confirmed-on-hardware crashes on this exact Jetson
-# (JETSON_ENV_SETUP.md, Track 1's bare-metal setup, 2026-09-15): latest onnxruntime hits a filed
-# upstream ARM-CPU bug (microsoft/onnxruntime#28301, a std::vector out-of-bounds abort or
-# malloc(): invalid size depending on version); onnxruntime-gpu crashes differently because this
-# Jetson's offline flash has no full CUDA Toolkit/cuDNN/TensorRT. Track 1 runs this exact CPU
-# version with no crash -- same package, same pin, reused here rather than re-deriving.
+# shared_vision_backbone_v2 ONNX CNN.
+#
+# Track 1's bare-metal setup pins plain CPU onnxruntime==1.18.0 (JETSON_ENV_SETUP.md, 2026-09-15) to
+# dodge two confirmed hardware crashes: onnxruntime-gpu (no full CUDA Toolkit/cuDNN/TensorRT on this
+# Jetson's offline flash) and a filed upstream ARM-CPU bug in newer onnxruntime
+# (microsoft/onnxruntime#28301 -- CPUIDInfo mishandles an unrecognized ARM vendor, "100% on Jetson
+# Orin NX, intermittently on AGX Orin"). That pin does NOT carry over to this image as-is: this
+# base image ships numpy==2.2.4 (vs. Track 1's pinned numpy==1.26.4), and onnxruntime==1.18.0's
+# compiled extension predates NumPy 2.x wheel support entirely (added in onnxruntime 1.19.0) --
+# confirmed by a real build failure here (`AttributeError: _ARRAY_API not found` /
+# `onnxruntime.capi._pybind_state` ImportError), not assumed. Still CPU-only (`onnxruntime`, not
+# `-gpu`, for the same CUDA Toolkit reason as Track 1). PINNED to 1.31.0 (latest stable as of
+# 2026-10-13): the #28301 ARM-CPU fix landed upstream in mid-August 2026 (PR #28344, cpuinfo
+# out-of-bounds read on sparse/unexpected CPU topology), well before this version. NOT yet verified
+# under real inference load on this exact AGX Orin unit -- the original bug was "intermittent" there,
+# so a clean import/build here is evidence, not proof; if a crash resembling the old bug report
+# shows up at runtime, that's the first thing to revisit.
 RUN python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all: \
-      --index-url https://pypi.org/simple onnxruntime==1.18.0
+      --index-url https://pypi.org/simple onnxruntime==1.31.0
 
 # Gate: fail the build if versions drifted or either policy import is broken. Printed so the build log records what
 # resolved. cuda_available is printed, not asserted: `docker build` may run without the nvidia runtime.
