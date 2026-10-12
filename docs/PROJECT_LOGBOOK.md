@@ -125,6 +125,72 @@ but does not fail the run. The original fix attempt (an early-steps-only exempti
 on the wrong hypothesis (assumed purely a startup phenomenon) and was replaced, not kept alongside
 this one, once the real step range disproved it.
 
+### Eval-only torchcodec video-decode crash: diagnosed as NOT source-data corruption; real gap found in `verify_and_package_dataset.py`
+
+A live Colab run of `act_train_colab.ipynb` cell (h) (eval) crashed iterating the eval `DataLoader`:
+`RuntimeError: Could not push packet to decoder: Invalid data found when processing input`, raised
+from `torchcodec`'s `get_frames_at()` inside `lerobot`'s `decode_video_frames_torchcodec`. Cell (d)'s
+decode preflight never catches this class of bug -- it only probes `TRAIN_EPISODES[0]`, never any
+eval episode.
+
+**Investigated locally (Windows, read-only, no Colab/Jetson/hardware), full chain**:
+- `host_software/data/colab_bundle/lerobot_full_2026_10_07.zip` sha256 `48b73a20c411636b5b7f1bbfc509136f1a362f46fac8f8ffba5a516753be9f02`
+  -- matches the hash the Colab run's own cell (c) printed for the same file. Confirmed same artefact,
+  not a different/newer zip.
+- Reproduced `EVAL_EPISODES` by mirroring cell (d)'s real logic (`session_split.json` + the dataset's
+  own `meta/session_episodes.json` sidecar, not re-derived): episodes `[0, 4, 9, 14]`
+  (`session_jetson_track4_20260915_151627`, `_160509`, `_164743`, `session_20260810_114330`).
+- This dataset is LeRobot **v3.0**, which packs multiple episodes per video file (not one file per
+  episode -- `meta/episodes/chunk-000/file-000.parquet` gives the real mapping). The 4 eval episodes
+  land in 4 different files: `videos/observation.image/chunk-000/file-000.mp4` (ep 0, offset 0.0),
+  `file-001.mp4` (ep 4, offset 0.0), `file-003.mp4` (ep 9, offset 0.0), `file-007.mp4` (ep 14, the
+  entire file). All four eval segments start at `from_timestamp == 0.0` in their file -- none require
+  a mid-file seek.
+- Extracted exactly those 4 files (824 MB) from the zip; on-disk size after extraction matched the
+  zip's recorded `file_size` exactly for all four (zip uses `ZIP_STORED`, confirming no
+  recompression/transcoding step could have introduced corruption).
+- Decoded **all 4 files fully, start to finish**, with PyAV (`av` 15.1.0, resolves to the `libdav1d`
+  AV1 decoder on this machine) -- demuxed every packet and decoded every frame. **All 4 decoded clean,
+  zero exceptions, zero libav/dav1d warnings even with verbose logging enabled**, decoded frame counts
+  matching each stream's declared frame count exactly (12317, 9940, 13032, 26759 frames respectively).
+  `torchcodec` is not installed in this project's pinned Windows env (`ball_balance_env`) and was not
+  installed to chase this further, to avoid adding an untracked dependency for a one-off repro.
+
+**Conclusion: this is not file truncation/corruption.** The bytes of all 4 eval-relevant video files
+are valid, complete AV1 per an independent, strict software decoder. The most likely real cause is a
+**decoder-backend difference**: PyAV here resolved software `libdav1d`, while `torchcodec`'s pinned
+Colab build (`torchcodec==0.4.*` against `torch==2.7.0`) uses its own bundled FFmpeg AV1 path, which
+may differ from `libdav1d` and/or may select hardware-accelerated (NVDEC) AV1 decode on the Colab GPU
+-- hardware AV1 decoders are typically far less tolerant of borderline-conformant bitstream content
+than software `libdav1d`. This was not verified directly against `torchcodec` itself (would need
+Colab access, out of scope here); it is the best-evidenced hypothesis, not a confirmed root cause.
+**Recommended next diagnostic step** (for whoever next has Colab access): add a per-sample
+`print(dataset.hf_dataset[idx]["episode_index"])` right before the crash to name the exact episode,
+then try forcing `torchcodec`'s decoder to CPU/software-only on that same file to see if the crash
+disappears -- that would confirm the hardware-decode hypothesis without needing a fix yet.
+
+**Remediation path, once root cause is pinned down**: because this is not simple byte corruption,
+"re-encode this episode from the original raw frames" is not obviously warranted yet -- if it is a
+decoder-backend issue, the `convert_to_lerobot.py` output doesn't need regenerating at all, and the
+fix belongs in the Colab notebook's torchcodec backend selection instead. Do not re-run
+`convert_to_lerobot.py` against raw session frames until the hardware-decode hypothesis above is
+checked, since that would be wasted effort if the dataset itself is fine.
+
+**`verify_and_package_dataset.py` gap, confirmed real**: its existing `verify_dataset()` (used for the
+2026-10-07/08 verify+zip of this exact dataset, see that entry above) checks schema completeness,
+`session_episodes.json` episode count, and per-regime `touch_stale`/`touch_glitch` rates -- it never
+opens a single `.mp4`. This would not have caught a real video-level problem before the dataset went
+to Colab. **Added `verify_video_decode()` + a new opt-in `--check-video-decode` CLI flag** (same file)
+that decodes every referenced video file start-to-finish with PyAV and cross-checks the total decoded
+frame count against `info.json`'s `total_frames`; raises `AssertionError` naming the exact file and how
+many good frames decoded before failure. Deliberately opt-in, not the new default: it is a full
+CPU software decode of every video file (slow on a multi-GB dataset) and, per the investigation above,
+uses a different decoder than the one that actually crashed (PyAV/`libdav1d`, not `torchcodec`) --
+a clean pass rules out gross file corruption but is not a `torchcodec`-safety guarantee. Tests:
+`ml_jetson_vla/tests/test_verify_video_decode_cpu.py` (3 tests -- clean file decodes with the right
+frame count; a truncated/corrupt file is caught with the file named in the error; a frame-count
+mismatch against `info.json` is caught even when the video itself decodes cleanly), all passing.
+
 ## 07/10/2026 (ongoing)
 ### Arm 2 action-head design work; a second, distinct touch-sensor data bug found by manual image review
 
