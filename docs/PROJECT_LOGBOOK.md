@@ -46,6 +46,30 @@ against `host_software/data/colab_bundle/bundle/manifest.csv`'s real ground trut
 weights were trained or changed here; this is zero-shot evaluation of the same pinned Qwen checkpoint
 already used throughout Arm 2.
 
+### ACT training: recurring `grad_norm == inf` spikes diagnosed as safe, not a sign of instability
+
+Resumed training (after the `SAVE_FREQ=500` fix) hit `act_train_colab.ipynb`'s cell (g) health-check
+assertion again, this time with 30 non-finite rows instead of the original run's ~5 -- initially
+assumed to be a longer version of the known early-VAE-warmup artifact, but the data ruled that out:
+the 30 bad steps are **non-contiguous, spanning step 6001 to step 67515** (scattered through most of
+the run, not clustered at the start). Real diagnosis, from the actual per-step data, not assumed:
+
+- **All 30 are `grad_norm == inf`, never `nan`.** This distinction matters: `nan` would propagate
+  into Adam's running moment estimates and corrupt every subsequent step permanently; `inf` combined
+  with the run's `grad_clip_norm=10.0` gets safely zeroed/bounded by clipping instead of applied raw.
+- **Loss stayed finite at every single bad step** (e.g. `0.288` at the first occurrence, step 6001) --
+  only the backward pass produced `inf`, not the forward pass. Not model/data corruption in the usual
+  sense; most consistent with an isolated numerically-extreme batch (plausibly the dataset's own
+  already-known `touch_stale`/`touch_glitch` issue surfacing rarely in 112K frames).
+- **Recovery was clean and immediate every time, 30/30**: `grad_norm` back to a normal 3-7 range and
+  loss back to its healthy ~0.16-0.29 band on the very next logged step, with zero exceptions.
+
+**Fix**: cell (g)'s finite-check was narrowed from "any non-finite value anywhere" to "non-finite
+LOSS, or NaN grad_norm" -- isolated `inf` grad_norm with finite loss is now logged (count printed)
+but does not fail the run. The original fix attempt (an early-steps-only exemption window) was based
+on the wrong hypothesis (assumed purely a startup phenomenon) and was replaced, not kept alongside
+this one, once the real step range disproved it.
+
 ## 07/10/2026 (ongoing)
 ### Arm 2 action-head design work; a second, distinct touch-sensor data bug found by manual image review
 
