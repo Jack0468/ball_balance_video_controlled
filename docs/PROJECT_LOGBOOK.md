@@ -57,6 +57,70 @@ real detection actually lands); `test_run_policy_replay_cpu.py`'s new
 -- 122 passed, 0 failed, 1 skipped (pre-existing, unrelated: `lerobot.policies` import failure on
 this interpreter), 0 regressions.
 
+### Live (real-serial-sends) driver built for the `Policy` abstraction -- closes the "only Qwen has a live path" gap
+
+Before today's change, `experiments/run_experiment.py`'s `run_live()` was the ONLY live (real
+serial sends) driver anywhere in Arm 2, and it is Qwen-specific: it bypasses `core/policy_interface
+.py`'s `Policy` abstraction entirely, inline-constructing its own `ActFastLayer`/`SmolVLAFastLayer`
+and a `MinimalVLMPolicy`+Qwen grounder, and re-implementing chunk scheduling/the safety gate/the
+serial-send loop itself. That left `HybridQwenActPolicy`/`HybridSmallCnnActPolicy`/
+`SmolVLADirectPolicy` (`core/hybrid_policy.py`) -- all three already real `Policy` implementations,
+already replayable via `experiments/run_policy_replay.py` -- with no way to be driven on real
+hardware at all. With the user prioritising Jetson lab time today, this was the actual blocker to
+testing `HybridSmallCnnActPolicy`/`SmolVLADirectPolicy` on the robot, not a missing capability in
+either policy itself.
+
+Built `experiments/run_policy_live.py`, a new sibling script to `run_policy_replay.py` (not a new
+`--mode` on that module: its docstring and every test assert "sends nothing," and splitting that
+invariant to add live sends would have meant restructuring it anyway for no benefit). It reuses
+`run_policy_replay.build_policy()` for construction (`--fast-layer`, `--act-checkpoint`,
+`--small-cnn-mask-threshold`, `--no-small-cnn-grounding`, `--device`, `--chunk-len`, `--margin-ms`
+-- unchanged, not re-derived) and `run_experiment.py`'s `MOTOR_GATE_FLAG`/`EXIT_*` codes/
+`serial_protocol.py`'s `LEVEL_LINE`/`format_angle_line`/`parse_uplink_line` for every piece of real
+hardware plumbing. Needed almost no new safety logic: `core/hybrid_policy.py`'s three `Policy`
+classes already run their own background grounder/`_FastWorker` threads and already never surface
+a rejected or not-yet-landed chunk as `angle_targets_deg` (see `test_hybrid_policy_cpu.py`'s
+`SafetyGateTests`) -- so each control tick here is just "read camera frame, read current touch
+state, call `policy.act(...)`, send the line if `angle_targets_deg is not None`, otherwise send
+nothing," and `LEVEL_LINE` on exit (clean or exception, via `finally`).
+
+Real bug caught and fixed while building this (not yet an issue anywhere else, since no other live
+driver exercises the `Policy` boundary): an early draft passed `--instruction` to `policy.act()`
+exactly once, then `None` on every later tick. `HybridQwenActPolicy`/`HybridSmallCnnActPolicy` only
+resolve a new instruction into a target when `instruction != self._last_instruction AND touch_mm is
+not None` in that SAME call -- since the touch uplink sample arrives asynchronously and may not be
+available on the very first tick, that one attempt could silently fail with no touch yet and then
+never retry, losing the command for the entire run. Fixed by passing `--instruction` on every tick
+unconditionally (cheap -- a string compare) and letting the policy's own `_last_instruction` dedup
+fire exactly once, on whichever tick first has touch available.
+
+`hybrid_qwen_act`/`smolvla_direct` configure no grounding backend through this driver either (same
+as `build_policy()`'s existing, already-documented replay behaviour) -- colour commands produce no
+target for those two. `hybrid_small_cnn_act` is the one exception: `build_policy()` constructs a
+real `SmallCnnGroundingPolicy` by default, so colour commands DO produce real live targets for it.
+`--homography-npy` is accepted and shape-validated for CLI parity with `run_experiment.py --mode
+live` (same required-flag list) but is not yet wired into any grounding path here, since none of
+the three `Policy` classes' construction via `build_policy()` takes it -- documented honestly in
+the module docstring rather than silently ignored.
+
+Tests: new `tests/test_run_policy_live_cpu.py` (11 tests, CPU-only -- `cv2.VideoCapture`/
+`serial.Serial` monkeypatched at their own module attribute, `build_policy()` monkeypatched at
+`run_policy_live`'s import site, a trivial `_FakePolicy` standing in for a real `Policy`). Covers:
+the motor-consent gate refuses without `--i-understand-this-drives-motors` and writes no output
+file; a tick with `angle_targets_deg is None` sends nothing; a tick with a real value sends the
+exact `format_angle_line()`-formatted line; `LEVEL_LINE` is sent on both clean exit and an
+exception raised mid-loop; the telemetry CSV has every column `evaluate_system_control
+.REQUIRED_COLUMNS` needs; camera-open failure and a malformed homography file are both recorded as
+a real `"failed"` status, never silently swallowed. Full existing suite re-run clean alongside
+these: `test_hybrid_policy_cpu.py` (19), `test_run_policy_replay_cpu.py` (15),
+`test_experiments_cpu.py` (25), `test_small_cnn_grounder_cpu.py` (9) -- 68 passed, 0 failed, 0
+regressions.
+
+**Not run on real hardware.** No Jetson/serial/camera access from this environment -- every claim
+above is from CPU-only mocked verification, same documented constraint as the rest of this task.
+Ready-to-paste Jetson commands are in `host_software/ml_jetson_vla/docs
+/EXPERIMENT_OPTIONS_PLAN_2026_10_07.md` section 7's updated status table.
+
 ### ACT Colab training run interrupted at step 601, before its first checkpoint (save_freq=2000)
 
 Real training was healthy up to the interrupt: loss started at 92.2 (step 1), the first 5 steps show
@@ -211,10 +275,17 @@ Three real runs, same command, different ball placement:
 - **Real new finding**: touch validity here comes from the physical sensor over the serial uplink,
   **independent of the camera/ArUco vision pipeline** -- confirmed this is NOT the already-known
   `ball_over_marker` vision-occlusion issue (checked `reports/ball_over_marker/`; that's a camera/CNN
-  finding, unrelated code path). This looks like a genuine **touch-sensor dead zone in at least one
-  corner**, with a hard cutoff (never once valid across the whole run) rather than noisy-but-sometimes-
-  valid readings. Not yet tested whether this is specific to that one corner/marker-3 position or
-  common to all four corners -- a real, separate follow-up, not chased further today.
+  finding, unrelated code path). Initially framed as a possible "touch-sensor dead zone in at least
+  one corner."
+
+**Follow-up (same day), corrected**: all four corners were tested for real (`h1_corner0..3.json`,
+same command, ball placed near each corner in turn) and **all four show high touch validity**
+(131-136 out of ~135 samples each, 0 rejected chunks, ~99-101 lines sent -- fully healthy). This
+rules out a general corner dead zone: the platform's touch coverage is solid everywhere tested.
+The original `0/136` result was specific to that one exact placement (ball physically overlapping
+the ArUco marker itself, not just "near a corner") -- still unexplained, but now known to be a
+narrow, localized anomaly rather than a systemic coverage gap. Not chased further; worth a repeat
+of that exact overlapping-marker placement specifically if it recurs.
 
 ### H2 (live, stub-value 12, ball in the middle): hard safety gate confirmed real on hardware
 
