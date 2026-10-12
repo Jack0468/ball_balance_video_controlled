@@ -1,0 +1,51 @@
+{
+  "bench": "run_experiment",
+  "option": "act_fast_statemachine",
+  "created_utc": "2026-10-12T22:13:17.133005+00:00",
+  "argv": [
+    "host_software/ml_jetson_vla/experiments/run_experiment.py",
+    "--option",
+    "act_fast_statemachine",
+    "--mode",
+    "live",
+    "--i-understand-this-drives-motors",
+    "--stub-value",
+    "0",
+    "--serial-port",
+    "/dev/ttyACM0",
+    "--baud",
+    "2000000",
+    "--homography-npy",
+    "results/live_homography.npy",
+    "--instruction",
+    "hold",
+    "--max-run-s",
+    "5",
+    "--out",
+    "host_software/ml_jetson_vla/reports/h1_stub_zero_live.json",
+    "--force"
+  ],
+  "mode": "live",
+  "sent": true,
+  "status": "ok",
+  "instruction": "hold",
+  "fast_layer": {
+    "name": "stub",
+    "weights_status": "STUB (no model), constant 0.0 deg",
+    "device": "cpu",
+    "chunk_len": 10,
+    "margin_ms": 40.0
+  },
+  "stop_reason": "max_run_s",
+  "lines_sent": 0,
+  "n_rejected_chunks": 0,
+  "rejected_chunks": [],
+  "touch_uplink": {
+    "samples": 136,
+    "valid_samples": 0
+  },
+  "telemetry_csv": "/home/jetson-orin/Documents/2026_robotics_vla_demo/ball_balance_video_controlled/host_software/ml_jetson_vla/reports/h1_stub_zero_live.json.telemetry.csv",
+  "telemetry_rows": 114,
+  "summary": null,
+  "replans": []
+}
