@@ -385,6 +385,24 @@ class HybridQwenActPolicy(Policy):
         `run_experiment.py`'s replay already reports, no new metric invented."""
         return self._fast.scheduler.records
 
+    @property
+    def worker_errors(self) -> list[str]:
+        """Combined errors from the background `_FastWorker` and `_Grounder` threads (either
+        catches an exception by appending here and then exiting -- see their `_run()` docstrings/
+        comments -- "a dead fast worker must be visible, never silently stall forever"). That
+        promise was not actually kept by any caller until this property existed: a real incident
+        (2026-10-13) had `_FastWorker` die on its first real chunk (a chunk-size mismatch between
+        a trained checkpoint and the caller's `--chunk-len`) and no driver noticed -- three live-
+        hardware runs (60s/30s/30s) looked like an indefinite hang with zero chunks ever landing,
+        when the worker had actually crashed and exited on tick 1. Callers (`run_policy_live.py`,
+        `run_policy_replay.py`) should check this every tick/at the end and treat non-empty as a
+        real failure, matching the existing `bench_hybrid_qwen_act.py` convention
+        (`if store.errors: raise RuntimeError(...)`)."""
+        errors = list(self._fast.errors)
+        if self._grounder is not None:
+            errors.extend(self._grounder.errors)
+        return errors
+
     def reset(self) -> None:
         if hasattr(self._orchestrator, "reset"):
             self._orchestrator.reset()  # type: ignore[union-attr]
@@ -536,6 +554,11 @@ class SmolVLADirectPolicy(Policy):
     @property
     def replan_records(self) -> list[ReplanRecord]:
         return self._fast.scheduler.records
+
+    @property
+    def worker_errors(self) -> list[str]:
+        """See `HybridQwenActPolicy.worker_errors` -- same contract, no grounder here."""
+        return list(self._fast.errors)
 
     def reset(self) -> None:
         if self._orchestrator is not None and hasattr(self._orchestrator, "reset"):

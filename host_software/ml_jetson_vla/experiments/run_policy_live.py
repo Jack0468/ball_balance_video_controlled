@@ -182,6 +182,18 @@ def run_live(args: argparse.Namespace) -> dict[str, Any]:
             if worker_errors:
                 stop_reason = f"worker_error: {worker_errors[0]}"
                 break
+            # getattr, not a direct attribute access: `worker_errors` is not part of the formal
+            # Policy protocol (core/policy_interface.py) -- only the hybrid_policy.py classes
+            # define it. A minimal/mock Policy (e.g. tests' _FakePolicy) has none, and should not
+            # be forced to grow one just to be driven by this script.
+            policy_worker_errors = getattr(policy, "worker_errors", [])
+            if policy_worker_errors:
+                # Real incident, 2026-10-13: a dead _FastWorker (chunk-size mismatch between a
+                # trained checkpoint and --chunk-len) went completely unnoticed here for three
+                # full live-hardware runs (60s/30s/30s, zero chunks ever landing) because nothing
+                # checked this before. See HybridQwenActPolicy.worker_errors's docstring.
+                stop_reason = f"policy_worker_error: {policy_worker_errors[0]}"
+                break
 
             ok, frame = cam.read()
             if ok:

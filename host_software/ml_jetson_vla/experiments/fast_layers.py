@@ -119,6 +119,27 @@ class ActFastLayer:
                 )
             policy = ACTPolicy.from_pretrained(resolved_checkpoint_dir)
             self.weights_status = f"TRAINED checkpoint {checkpoint_dir}; normaliser stats not verified"
+            # The checkpoint's own config.chunk_size is the real output shape of
+            # predict_action_chunk() -- it is NOT the caller's to set. Using the caller's
+            # chunk_len (e.g. the CLI's ACT_DEFAULT_CHUNK_LEN=10, sized for the random-weights
+            # bench path) against a checkpoint trained with a different chunk_size (e.g. 100)
+            # made _chunk_to_array()'s shape assertion raise on the very first real chunk --
+            # silently killing the background _FastWorker thread with no run_policy_live.py/
+            # run_policy_replay.py caller ever surfacing it (real incident, 2026-10-13: three
+            # live-hardware runs looked like an indefinite hang -- 60s/30s/30s with zero chunks
+            # ever landing -- when it was actually an immediate, swallowed crash on tick 1).
+            # Overriding here, not just asserting, makes the mismatch impossible by construction
+            # rather than relying on every caller to pass the right --chunk-len for every checkpoint.
+            checkpoint_chunk_size = int(policy.config.chunk_size)
+            if checkpoint_chunk_size != chunk_len:
+                import warnings
+
+                warnings.warn(
+                    f"ACT checkpoint {checkpoint_dir!r} has chunk_size={checkpoint_chunk_size}, "
+                    f"overriding the requested chunk_len={chunk_len} to match it.",
+                    stacklevel=2,
+                )
+            self._chunk_len = checkpoint_chunk_size
         self._policy: Any = policy.to(device=device, dtype=self._dtype).eval()
 
     def plan(

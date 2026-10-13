@@ -41,10 +41,11 @@ just delete it, logbook already has the history) once genuinely done.
   interim). Re-score once all 10 sessions finish; the marker-grounding discrepancy vs. the
   validated 68.3% sweep figure is unexplained and needs the full run to resolve. Source:
   `docs/PROJECT_LOGBOOK.md` 13/10/2026, "Real interim Qwen2.5-VL-3B grounding results."
-- [ ] **Live hardware test of a real trained ACT checkpoint (checklist item 9)** (flagged
-  2026-10-13, in progress) — first real trained checkpoint just finished training; getting it
-  onto the Jetson and run live (via `run_policy_live.py --fast-layer act --act-checkpoint`) is
-  the last piece of the original hardware-validation checklist. Source: this session, ongoing.
+- [x] **Live hardware test of a real trained ACT checkpoint (checklist item 9)** (flagged
+  2026-10-13, resolved same day) — confirmed live: 205 lines sent, 3/3 chunks accepted, real
+  touch+grounding. Root cause of 3 earlier failed attempts (looked like a hang, was actually a
+  silently-swallowed chunk-size-mismatch crash) fixed in `fast_layers.py`/`core/hybrid_policy.py`.
+  Source: `docs/PROJECT_LOGBOOK.md` 13/10/2026, "Checklist item 9... root-caused a 3-run hang."
 - [ ] **Touch-sensor single-position anomaly, unexplained** (flagged 2026-10-13) — one specific
   ball placement (overlapping an ArUco marker directly) produced 0/136 valid touch samples,
   while all four platform corners tested normal read fine. Localized, not systemic, not chased

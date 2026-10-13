@@ -149,10 +149,21 @@ def run_replay(args: argparse.Namespace) -> dict[str, Any]:
     n_cmd_changes = 0
     n_frames_with_angles = 0
     n_frames_with_target = 0
+    policy_worker_error: Optional[str] = None
     try:
         for tick_now, row_i in zip(tick_times, tick_rows):
             if row_i < 0:
                 continue
+            # getattr: worker_errors is not part of the formal Policy protocol -- see
+            # run_policy_live.py's identical comment.
+            policy_worker_errors = getattr(policy, "worker_errors", [])
+            if policy_worker_errors:
+                # See HybridQwenActPolicy.worker_errors's docstring: a dead _FastWorker/_Grounder
+                # thread must be visible, not just silently produce zero results for the rest of
+                # the run (real incident, 2026-10-13, found via the live driver -- same gap existed
+                # here, unexercised until then).
+                policy_worker_error = policy_worker_errors[0]
+                break
             row = int(row_i)
             n_ticks += 1
             cmd = tel.commands[row]
@@ -173,7 +184,7 @@ def run_replay(args: argparse.Namespace) -> dict[str, Any]:
             # background worker a moment to actually run between ticks (real threads, not a
             # simulated clock like run_experiment.py's run_replay()).
             time.sleep(1.0 / CONTROL_HZ / args.speedup)
-        if n_ticks > 0:
+        if n_ticks > 0 and policy_worker_error is None:
             time.sleep(DRAIN_S)
             final_command = policy.act(frame, None, {"touch_mm": touch_mm})
             if final_command.angle_targets_deg is not None:
@@ -199,6 +210,7 @@ def run_replay(args: argparse.Namespace) -> dict[str, Any]:
             "hybrid of session content and this machine's real thread scheduling, NOT a hardware "
             "measurement, and not comparable to run_experiment.py's inline-inference replay numbers."
         ),
+        "policy_worker_error": policy_worker_error,
         "commands": {"n_changes": n_cmd_changes},
         "n_ticks": n_ticks,
         "n_frames_with_target": n_frames_with_target,

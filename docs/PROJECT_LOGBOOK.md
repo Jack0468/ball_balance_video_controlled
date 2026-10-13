@@ -542,6 +542,83 @@ if they still fail on `_03`, lighting/exposure is implicated directly and a fres
 (same discipline as 2026-09-15/today, against live Jetson photos rather than the historical webcam
 session) is the real fix, not a further bin nudge.
 
+### Checklist item 9 (live hardware test of the first real trained ACT checkpoint): root-caused a 3-run "hang" that was actually an immediate, silently-swallowed crash
+
+First real ACT checkpoint (`models/ACT/run_2/025000/pretrained_model`, confirmed-complete, `steps:
+25000`, `observation.state: [4]`, `action: [3]`) transferred to the Jetson and run live via
+`run_policy_live.py --policy hybrid_small_cnn_act --fast-layer act --act-checkpoint ...`. Three
+consecutive live runs (60s CUDA, 30s CPU, 30s CUDA-with-a-new-diagnostic-counter) all showed the
+*same* pattern: abundant valid grounding (`n_ticks_with_target` ~99% of ticks) and valid touch
+(~99%), but `lines_sent: 0`, `n_rejected_chunks_total: 0`, `replans: []` -- not one chunk ever
+landed, accepted or rejected, for the entire run. Initially looked like an indefinite hang inside
+the model's forward pass (ruled out cold-start first: 60s is far beyond any plausible warm-up cost;
+ruled out CUDA/threading second: the exact same symptom reproduced on `--device cpu`).
+
+**Real root cause, found by isolating the model from the live-hardware loop entirely**: built
+`experiments/diagnose_act_checkpoint_forward.py` (no camera/serial/motors -- a dummy tensor + one
+timed `predict_action_chunk()` call) and ran it on the Jetson inside `arm2-lerobot`.
+**`predict_action_chunk()` returned in 0.34s** with output shape `(1, 100, 3)` -- the model itself
+was never the problem. The real bug: `fast_layers.py`'s `ActFastLayer` defaulted `chunk_len` to
+`ACT_DEFAULT_CHUNK_LEN=10` (sized for the random-weights bench path), but this checkpoint's own
+`config.chunk_size` is 100 (confirmed by the same diagnostic). `_chunk_to_array()`'s shape assertion
+(`fast_layers.py:246`) raised `RuntimeError: unexpected chunk shape (1, 100, 3), expected (1, 10,
+3)` on the very first real submission. That exception is caught inside `_FastWorker._run()`
+(`core/hybrid_policy.py`), which correctly kills the background thread per its own "a dead fast
+worker must be visible" comment -- except **nothing in `run_policy_live.py` or
+`run_policy_replay.py` ever actually checked for that death**; only the separate uplink-thread
+error list was checked. So the worker silently died on tick 1, every subsequent tick's
+`submit_if_due()` correctly refused (the one stuck `replan_pending=True` never cleared), and the
+run just ticked along for the full duration reporting "fine, zero results" with zero visible sign
+of the crash. Confirmed the submission really did fire exactly once via a new
+`n_replan_submitted` counter added to `run_policy_live.py`'s output JSON before the real cause was
+found (`n_replan_submitted: 1` on the run that had it, consistent with the single swallowed crash).
+
+**Fixed, two separate things**:
+1. `ActFastLayer.__init__` (`fast_layers.py`) now reads the loaded checkpoint's own
+   `policy.config.chunk_size` and overrides `self._chunk_len` to match it (with a `warnings.warn`
+   if the caller's `--chunk-len` disagreed), instead of trusting the caller to know/pass the right
+   value per checkpoint. Makes this exact mismatch impossible by construction for any future
+   checkpoint, not just this one.
+2. `HybridQwenActPolicy`/`HybridSmallCnnActPolicy`/`SmolVLADirectPolicy` (`core/hybrid_policy.py`)
+   gained a `worker_errors` property (combining `_FastWorker.errors` + `_Grounder.errors` where
+   present). `run_policy_live.py` and `run_policy_replay.py` now check it every tick (via
+   `getattr(policy, "worker_errors", [])`, since this isn't part of the formal `Policy` protocol --
+   a plain/mock `Policy` has none) and stop immediately with a clear `policy_worker_error`/
+   `stop_reason` instead of a misleadingly clean "ok" result. Matches the existing
+   `bench_hybrid_qwen_act.py` convention (`if store.errors: raise RuntimeError(...)`) that this
+   pair of drivers had never actually adopted.
+
+Also fixed in passing, same session: `fast_layers.py`'s trained-checkpoint path now resolves
+`checkpoint_dir` to an absolute path and raises a clear `FileNotFoundError` if missing (previously
+a relative path that didn't resolve against the container's cwd fell through to
+`huggingface_hub`'s repo-id validation, surfacing a confusing `HFValidationError` instead -- hit
+once this session on a path/mount mismatch before the real checkpoint was actually in place).
+`Dockerfile.arm2-lerobot` now pre-bakes the ResNet18 ImageNet weights `ACTPolicy.from_pretrained()`
+needs for this checkpoint's vision backbone (unrelated to the project's own Shared Backbone CNN --
+this is ACT's own, separate, standard image encoder) at build time, since `docker run --rm` was
+re-downloading it on every single container run.
+
+Verified: full `host_software/ml_jetson_vla/tests/` suite re-run after all changes above -- 144
+passed, 1 skipped (pre-existing, unrelated), 0 regressions. Could NOT add a new automated unit test
+for the `chunk_len`-override fix itself: `ActFastLayer`'s trained-checkpoint path does
+`from lerobot.policies.act.modeling_act import ACTPolicy`, and importing anything under
+`lerobot.policies` on this Windows dev interpreter fails at `lerobot.policies.__init__` with the
+pre-existing, already-documented transformers>=5 `backbone_cfg` `TypeError`
+(`Dockerfile.arm2-lerobot`'s own header, 2026-10-06) -- not fixed here (downgrading transformers in
+this shared conda env would break the Qwen-side work that needs 5.x). Real verification instead
+relies on the Jetson's own `arm2-lerobot` image (correct transformers pin) plus the live hardware
+re-test with `--chunk-len 100` queued immediately after this fix.
+
+**Confirmed working**: re-ran live with `--chunk-len 100` explicitly (manual CLI override, ahead of
+pulling the auto-derivation fix to the Jetson) -- `go_yellow`, 10s, real ball+touch. Result: `lines_sent:
+205`, 3/3 chunks accepted (0 rejected), touch 262/262 valid, `n_ticks_with_target: 231/233`.
+`inference_ms`: chunk 1 = 443ms (one-time CUDA warm-up, consistent with the isolated diagnostic's
+0.34s dummy-tensor figure plus real camera preprocessing), chunks 2-3 = 63-64ms each -- the expected
+warm/steady-state pattern. **This is the first-ever confirmed live motor output from a trained ACT
+checkpoint on real hardware**, closing checklist item 9. Qualitative check (did the platform visibly
+tilt sensibly toward the yellow marker, not just "motors received a well-formed command") still
+pending direct observation from the user.
+
 ## 07/10/2026 (ongoing)
 ### Arm 2 action-head design work; a second, distinct touch-sensor data bug found by manual image review
 
