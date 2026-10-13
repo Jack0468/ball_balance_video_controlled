@@ -204,15 +204,36 @@ just delete it, logbook already has the history) once genuinely done.
   Closing this needs an upstream drop-detection signal (e.g. from vision), not a change to the
   evaluator itself. Source: `docs/EVALUATION_STRATEGY.md` "Evaluation Pipeline" section;
   `host_software/evaluations/evaluate_system_control.py`.
-- [ ] **Two standard RL-control metrics never implemented: ball-trajectory jerk/smoothness and
-  disturbance-rejection/robustness under injected perturbation** (flagged 2026-09-18, owner:
-  ml-multimodal/orchestration) — confirmed still absent from `evaluate_system_control.py` (no
-  jerk/disturbance/robustness computation found). Both came up in a 2026-09-18 metrics audit as
-  standard for RL-controlled systems but need new instrumentation or a dedicated perturbation
-  test protocol, not just a new formula over existing telemetry — flagged twice
-  (2026-09-18, 2026-09-24) and still not built either time. Source: `docs/EVALUATION_STRATEGY.md`
-  "Extended Metrics" section; `docs/PROJECT_LOGBOOK.md` 18/09/2026 "Telemetry Field-History Audit"
-  entry.
+- [x] **Ball-trajectory jerk/smoothness metric** (flagged 2026-09-18/2026-09-24, implemented
+  2026-10-13, owner: ml-multimodal) — **the old blanket "needs new instrumentation" framing did
+  not actually hold for this metric once checked concretely; it was correct only for its sibling
+  below.** `touch_x`/`touch_y` + a per-frame timestamp are already in every telemetry schema
+  `evaluate_system_control.py` accepts, which is all a 3rd-time-derivative-of-position metric
+  needs. Implemented as a standalone module, `host_software/ml_multimodal/evaluations/
+  trajectory_smoothness.py` (`jerk_metrics_for_segments()`), NOT inside `evaluate_system_control.py`
+  itself — that file is outside `ml-multimodal`'s write boundary
+  (`host_software/evaluations/` is read-only for this agent). 10 new tests
+  (`ml_multimodal/tests/test_trajectory_smoothness.py`, all passing), including an analytic
+  cubic-trajectory check against a known constant jerk, degrade-gracefully cases (too-short
+  segment, non-monotonic timestamps), and a **real verification against
+  `data/01_bronze/session_jetson_track4_20260915_151627/telemetry.csv`** (11 trial segments, 0
+  excluded): `Average_Jerk_Mean_mm_s3 ≈ 16361`, `Average_Jerk_RMS_mm_s3 ≈ 45838` unfiltered,
+  dropping to `≈10622`/`≈14002` with `--filter-touch-outliers` (confirms real sensitivity to the
+  known touch-plate glitch pattern — always report alongside whether filtering was applied).
+  **Still needed, outside this fix's scope**: the `evaluate_system_control.py` owner wiring
+  `**jerk_metrics_for_segments(times, touch_x, touch_y, segments)` into `compute_metrics()`'s
+  return dict — a one-line addition, no further design work. Source: `docs/EVALUATION_STRATEGY.md`
+  "Extended Metrics" section (updated in place); `docs/PROJECT_LOGBOOK.md` 18/09/2026 "Telemetry
+  Field-History Audit" entry; 13/10/2026 "Ball-trajectory jerk/smoothness" entry.
+- [ ] **Disturbance-rejection/robustness metric under injected perturbation never implemented**
+  (flagged 2026-09-18, re-confirmed still open and genuinely instrumentation-blocked 2026-10-13,
+  owner: ml-multimodal/orchestration) — confirmed still absent from `evaluate_system_control.py`.
+  Unlike jerk/smoothness (above, now implemented), this one genuinely needs a dedicated hardware
+  perturbation test protocol (injecting a real disturbance and measuring recovery), not a new
+  formula over existing telemetry — flagged twice (2026-09-18, 2026-09-24) and still not built
+  either time, deliberately left alone this session per that same scoping. Source:
+  `docs/EVALUATION_STRATEGY.md` "Extended Metrics" section; `docs/PROJECT_LOGBOOK.md` 18/09/2026
+  "Telemetry Field-History Audit" entry.
 - [ ] **Track 2 and Track 3 (Phase 6 workstreams) have never been named or scoped**  (flagged
   2026-08-14, owner: orchestration) — `CLAUDE.md`'s own Terminology section states this
   plainly: only Track 1 (small-class expert pipeline) and Track 4 (in-house large-VLA research

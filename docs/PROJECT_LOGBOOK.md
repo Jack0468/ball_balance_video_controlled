@@ -2,6 +2,59 @@
 
 ## 13/10/2026
 
+### Ball-trajectory jerk/smoothness: the 2026-09-18 "needs new instrumentation" framing was checked and does NOT hold for this metric -- implemented
+
+The 18/09/2026 "Telemetry Field-History Audit" entry bundled two metrics under one blanket
+statement: "both need new instrumentation or a dedicated test protocol, not just a new formula
+over existing telemetry." Checked each independently rather than taking that at face value.
+**Disturbance-rejection/robustness genuinely does** -- it requires physically injecting a real
+perturbation and measuring recovery, which no amount of telemetry re-analysis can substitute for;
+left alone, per the task's own explicit scope. **Jerk/smoothness does not** -- it is the 3rd
+time-derivative of ball position, and every telemetry schema `evaluate_system_control.py` already
+accepts carries exactly the two raw signals that needs: `touch_x`/`touch_y` (already in
+`REQUIRED_COLUMNS`) and a per-frame timestamp (already normalized to `timestamp_ms` by
+`load_telemetry()`). No firmware change, no higher sampling rate, no new column.
+
+**Implemented as a standalone module, not inside `evaluate_system_control.py` itself**:
+`host_software/ml_multimodal/evaluations/trajectory_smoothness.py`. This agent's write boundary is
+`host_software/ml_multimodal/` and `host_software/ml_jetson_vla/` only --
+`host_software/evaluations/` is explicitly read-only ("for reference/integration"), so the actual
+file the task description named was never edited. Instead, `jerk_metrics_for_segments()` is built
+to be a drop-in addition: it takes exactly the arrays `compute_metrics()` already has in scope
+(`times`, `touch_x`, `touch_y`, and the `(start, end)` segment list `segment_by_target()` already
+returns) and returns a dict in that function's own naming convention
+(`Average_Jerk_Mean_mm_s3`/`Average_Jerk_RMS_mm_s3`/`Jerk_Trials_Excluded`/`Jerk_Caveat`) --
+whoever owns that file can wire it in with one line,
+`**jerk_metrics_for_segments(times, touch_x, touch_y, segments)`, inside the existing per-segment
+loop and return dict. `docs/EVALUATION_STRATEGY.md`'s "Extended Metrics" section was updated in
+place to describe this (new bullet + a narrowed "flagged for later" line that now only names
+disturbance-rejection), since that doc lives outside the read-only boundary too.
+
+**Numerical method**: three successive `np.gradient(..., edge_order=2)` passes (velocity, then
+acceleration, then jerk) against each segment's REAL, non-uniform sample timestamps -- the same
+"use the actual irregular dt" principle `_integral_error_indices()` already uses for trapezoidal
+integration. `edge_order=2` was a real, checked finding, not an assumption: a quick numerical test
+during development (`x(t)=t^3` on a 60-sample uniform grid, analytic jerk exactly 6.0 mm/s^3)
+showed numpy's DEFAULT `edge_order=1` compounds three one-sided first-order differences at a
+segment's boundaries into jerk values up to 85 (over 14x the true value) at the very edges, while
+`edge_order=2` keeps the same test's edge values within the exact 2.25-6.0 range and its mean/RMS
+within ~5% of 6.0 even at this short a length -- real trial segments run hundreds of samples, which
+dilutes any remaining edge contamination much further.
+
+**Tests** (`host_software/ml_multimodal/tests/test_trajectory_smoothness.py`, 10, all passing):
+the analytic cubic-trajectory check above; a constant-position (perfectly still ball) case giving
+~0 jerk; a noisy-vs-smooth ordering sanity check; degrade-gracefully cases (segment shorter than
+`MIN_SAMPLES_FOR_JERK=6`, non-monotonic/duplicate timestamps, an empty segment -- all return `None`
+rather than crashing or fabricating a number); `jerk_metrics_for_segments()`'s exclusion-counting;
+and a **real verification against actually-logged telemetry**, not a placeholder:
+`data/01_bronze/session_jetson_track4_20260915_151627/telemetry.csv`, loaded/segmented through
+`evaluate_system_control.py`'s own `load_telemetry()`/`segment_by_target()` (imported read-only,
+not duplicated) -- 11 trial segments, 0 excluded, `Average_Jerk_Mean_mm_s3 = 16360.98`,
+`Average_Jerk_RMS_mm_s3 = 45838.09` unfiltered. Re-ran with `--filter-touch-outliers`: 30 frames
+despiked, jerk drops to `mean=10621.56`/`rms=14002.26` -- roughly a 3x RMS reduction, confirming the
+metric's own documented caveat (highly sensitive to the known touch-plate glitch pattern) is real,
+not theoretical, and that reporting should always note whether outlier filtering was applied.
+
 ### Checked for a saved, scorable `hybrid_qwen_act` run before trying to produce one -- confirmed none exists, blocker re-documented rather than faked
 
 Before concluding this is still open, searched `host_software/ml_jetson_vla/reports/` (and the
