@@ -155,6 +155,11 @@ def run_live(args: argparse.Namespace) -> dict[str, Any]:
     n_ticks = 0
     n_sent = 0
     n_ticks_with_target = 0
+    n_replan_submitted = 0  # diagnostic (2026-10-13): whether submit_if_due() ever actually fired is
+    # otherwise invisible in the output JSON -- real ACT checkpoints showed 0 landed chunks over 60s
+    # live with abundant valid target+touch ticks, and a standalone forward-pass timing test proved
+    # the model itself returns in 0.34s, so the open question is specifically whether submission into
+    # _FastWorker ever happened at all (0 here) vs. happened but never landed (>0 here).
     stop_reason = "max_run_s"
     last_frame: Optional[np.ndarray] = None
     last_angles = np.zeros(3)
@@ -193,6 +198,8 @@ def run_live(args: argparse.Namespace) -> dict[str, Any]:
                 )
                 if bool(policy.last_debug.get("has_target", False)):
                     n_ticks_with_target += 1
+                if bool(policy.last_debug.get("replan_submitted", False)):
+                    n_replan_submitted += 1
                 tx_mm, ty_mm = command.target_x_mm, command.target_y_mm
                 if command.angle_targets_deg is not None:
                     line = format_angle_line(*command.angle_targets_deg)
@@ -244,6 +251,7 @@ def run_live(args: argparse.Namespace) -> dict[str, Any]:
         "lines_sent": n_sent,
         "n_ticks": n_ticks,
         "n_ticks_with_target": n_ticks_with_target,
+        "n_replan_submitted": n_replan_submitted,
         "n_rejected_chunks_total": int(policy.last_debug.get("n_rejected_chunks", 0) or 0),
         "last_rejection_reason": policy.last_debug.get("last_rejection_reason"),
         "touch_uplink": touch_info,
