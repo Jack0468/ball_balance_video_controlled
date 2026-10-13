@@ -2,6 +2,49 @@
 
 ## 13/10/2026
 
+### Checked for a saved, scorable `hybrid_qwen_act` run before trying to produce one -- confirmed none exists, blocker re-documented rather than faked
+
+Before concluding this is still open, searched `host_software/ml_jetson_vla/reports/` (and the
+`bench_hybrid_qwen_act.py`/`run_policy_replay.py` source tree) for any existing output that could
+be scored against ground truth right now, without live Jetson/Docker access.
+
+**Found exactly two saved outputs that are `hybrid_qwen_act`-shaped, neither scorable**:
+- `reports/arm2_action_latency/hybrid_qwen_act.json` (`bench_hybrid_qwen_act.py`'s own output,
+  `created_utc: 2026-10-09T02:55:53`): its `qwen` block has `slow_calls: 71`, `parse_failures: 0`,
+  `slow_call_latency` -- but no `grounding_accuracy` key at all (`python -c "import json; ...
+  sorted(d['qwen'].keys())"` confirms: `dtype, load_time_s, max_new_tokens, parse_failures,
+  prompt_variant, repo_id, revision, slow_call_latency, slow_calls,
+  slow_thread_still_alive_after_join` -- no `grounding_accuracy`). This run predates the
+  `qwen.grounding_accuracy` instrumentation added later the same day (09/10/2026, see the
+  "Hybrid benchmark can now measure its own real Qwen grounding accuracy" entry below) --
+  confirmed by reading the current `bench_hybrid_qwen_act.py` source directly: its output-dict
+  construction (line ~358) DOES include `"grounding_accuracy":
+  summarize_grounding_accuracy(store.scored)` today, so a fresh run of this exact script would
+  produce a scorable field -- the saved file is just stale, from before that code existed.
+- `reports/policy_replay_hybrid_act_real.json` (`run_policy_replay.py`'s output,
+  `created_utc: 2026-10-09T04:56:23`, policy `hybrid_qwen_act`): a different driver entirely
+  (`core/hybrid_policy.py`'s `_Grounder`/`_FastWorker`, not `bench_hybrid_qwen_act.py`'s
+  `slow_loop()`) -- it was never wired to `score_minimal_baseline_offline.score_prediction()` and
+  has no `grounding_accuracy`/`qwen` block of any kind, only schedule/staleness summary stats
+  (`target_age_ms_p90: 4244.9`, etc. -- itself the data point behind the staleness fix above).
+- `grep -r grounding_accuracy host_software/ml_jetson_vla` (excluding `__pycache__`) returns
+  exactly 3 hits: `bench_hybrid_qwen_act.py` (the implementation), `tests/test_bench_action_models_cpu.py`
+  (the CPU-only unit tests for it, offline fake data), and `docs/JETSON_ARM2_SWEEP_LOCAL.md`
+  (a reference to the sweep's own, different, already-validated 68.3% hit@20mm figure under a
+  DIFFERENT environment, `transformers` 5.17.0 -- explicitly not interchangeable with a hybrid-
+  pipeline run under `arm2-lerobot`'s 4.57.6, per the 09/10/2026 parity finding). No saved report
+  anywhere under the repo contains the string at all.
+
+**Conclusion: genuinely nothing to retroactively rescore, confirmed by direct inspection rather
+than assumed from the earlier entry's wording.** No fabricated number, no live Jetson/Docker run
+attempted from here (not available). This TODO item stays open with the exact same, already
+well-specified requirement as before: run `bench_hybrid_qwen_act.py` for real inside
+`arm2-lerobot:r36.4.0` on the Jetson and save its output JSON (which will now include
+`qwen.grounding_accuracy` automatically, no further code change needed) to
+`host_software/ml_jetson_vla/reports/` and commit it. Source: `docs/TODO.md` Multimodal/VLA
+section; `docs/PROJECT_LOGBOOK.md` 09/10/2026 "Qwen transformers 4.57.6 vs 5.17.0 parity" and
+"Hybrid benchmark can now measure its own real Qwen grounding accuracy" entries.
+
 ### `act_train_colab.ipynb` cell (h) patched to force torchcodec onto CPU decode -- structural fix pending a real Colab run, not confirmed working
 
 Closes the "next step" identified by the earlier torchcodec investigation entry below (same date):

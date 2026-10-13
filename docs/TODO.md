@@ -142,16 +142,28 @@ just delete it, logbook already has the history) once genuinely done.
   `host_software/ml_jetson_vla/docs/EXPERIMENT_OPTIONS_PLAN_2026_10_07.md` section 2 and
   section 6.
 - [ ] **Hybrid Qwen+ACT pipeline's real grounding accuracy under `arm2-lerobot`'s transformers
-  4.57.6 has never been scored against ground truth** (flagged 2026-10-09, owner: ml-multimodal)
-  — `bench_hybrid_qwen_act.py` gained the scoring instrumentation (`qwen.grounding_accuracy`)
-  2026-10-09, but no real hybrid run's output has ever been saved/scored with it. This matters
+  4.57.6 has never been scored against ground truth** (flagged 2026-10-09, re-confirmed still
+  open 2026-10-13, owner: ml-multimodal) — `bench_hybrid_qwen_act.py` gained the scoring
+  instrumentation (`qwen.grounding_accuracy`) 2026-10-09, but no real hybrid run's output has
+  ever been saved/scored with it. **2026-10-13: checked both existing saved outputs that could
+  plausibly have this** (`reports/arm2_action_latency/hybrid_qwen_act.json`,
+  `reports/policy_replay_hybrid_act_real.json`) **and a repo-wide grep for `grounding_accuracy`
+  — confirmed neither has it and nothing else does either.** The saved `hybrid_qwen_act.json` run
+  predates the instrumentation (created 02:55 UTC 09/10, instrumentation added later that day);
+  `policy_replay_hybrid_act_real.json` comes from a different driver (`run_policy_replay.py` /
+  `core/hybrid_policy.py`) that was never wired to the scorer at all. **No number was fabricated
+  and no Jetson/Docker run was attempted (not available from this session).** This matters
   because transformers 4.57.6 (the `arm2-lerobot` image's pin, needed to co-locate Qwen+ACT on
   one GPU) was separately confirmed DIVERGENT from transformers 5.17.0 (the sweep's validated
   environment, 68.3% hit@20mm): 22/60 exact match, mean pixel diff 24.5px, one frame off by
   256px, one unparseable. Any hybrid-pipeline run's grounding accuracy should not be assumed to
-  match the validated 68.3% figure until actually scored. Source: `docs/PROJECT_LOGBOOK.md`
-  09/10/2026 "Qwen transformers 4.57.6 vs 5.17.0 parity" and "Hybrid benchmark can now measure
-  its own real Qwen grounding accuracy" entries.
+  match the validated 68.3% figure until actually scored. **Exact next step to close this**: run
+  `bench_hybrid_qwen_act.py` for real inside `arm2-lerobot:r36.4.0` on the Jetson and commit its
+  output JSON to `host_software/ml_jetson_vla/reports/` — no further code change is needed, the
+  current script already populates `qwen.grounding_accuracy` on every run. Source:
+  `docs/PROJECT_LOGBOOK.md` 09/10/2026 "Qwen transformers 4.57.6 vs 5.17.0 parity" and "Hybrid
+  benchmark can now measure its own real Qwen grounding accuracy" entries; 13/10/2026 "Checked
+  for a saved, scorable `hybrid_qwen_act` run before trying to produce one" entry.
 - [ ] **Task Success Rate can't distinguish a dropped ball from a trial that never settled**
   (flagged 2026-09-18, owner: ml-multimodal/orchestration) — confirmed still true in
   `evaluate_system_control.py` (its own comment: "no ball-drop signal exists in current
