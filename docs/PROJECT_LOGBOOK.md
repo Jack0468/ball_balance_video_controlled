@@ -2,6 +2,80 @@
 
 ## 13/10/2026
 
+### Manifest-position fix for the 3 remaining call sites: patches drafted, write-boundary conflict found and not overridden
+
+Deliberately-deferred follow-up to "Manifest-position colour-ID fix wired into the live ACT
+grounding path" (below): wire `MarkerClassifier(manifest_path=...)` into the 3 still-bare call
+sites (`run_jetson_standalone.py`, `main_onnx_shared_vision_audio.py`,
+`main_onnx_shared_vision_nemo_audio.py`).
+
+**Manifest content re-verified directly before writing anything** (not trusted from memory, per
+the task's own instruction): read all 4 `hardware/platform_templates/*_manifest.json` files this
+session. `aruco_markers_01_manifest.json` has 5 real `features` entries (blue/black/red/green/
+yellow circles at known `center_mm`) — this is the correct file. `ground_truth_manifest.json`'s
+own `"sheet"` field reads `"aruco_markers_00"` and its `"features"` list is `[]` — confirmed empty,
+exactly as the prior entry found; there is no separate `aruco_markers_00_manifest.json` file on
+disk, `ground_truth_manifest.json` IS that blank sheet's manifest under a different name. `_02`
+and `_03` each have their own real, distinct feature lists (4 and 5 entries respectively, matching
+their sheet's shape/color layout).
+
+**Real finding, not assumed**: none of the 3 target call sites live under
+`host_software/ml_vision/`. Checked with `Glob`/`find` against the actual tree, since the task
+description (and `docs/TODO.md`'s own wording) reads as if they do:
+- `run_jetson_standalone.py` is at `host_software/ml_jetson_vla/runtime/run_jetson_standalone.py`
+  — `ml_jetson_vla/`, not `ml_vision/`. Per `CLAUDE.md`'s sub-agent list, that directory is
+  `ml-multimodal`'s lane.
+- `main_onnx_shared_vision_audio.py` and `main_onnx_shared_vision_nemo_audio.py` are both directly
+  at `host_software/` (top level), not under any per-domain subdirectory at all.
+
+This agent's own "Boundaries" section is explicit: writes stay inside `host_software/ml_vision/`.
+Since all 3 remaining call sites sit outside that boundary, writing to them directly without an
+explicit exception would be exactly the kind of cross-lane edit the boundary exists to prevent —
+not a case where "the caller's task description" can substitute for that permission (no agent
+message authorizes changing a configured boundary). Chose to draft the exact patches rather than
+either silently skip the task or silently cross the boundary.
+
+**Patches drafted (not applied), mirroring `small_cnn_grounder.py`'s already-shipped pattern
+exactly** (`marker_manifest_path`/`--marker-manifest` override, default resolves to
+`aruco_markers_01_manifest.json` via `os.path.dirname(GROUND_TRUTH_MANIFEST)`, raise/print-and-
+return on a missing file matching each file's own existing convention):
+- `main_onnx_shared_vision_audio.py`: new `--marker-manifest` CLI arg next to `--mask-threshold`;
+  resolve + existence-check next to the existing `--mlp` checkpoint-resolution block; pass
+  `manifest_path=` into the existing `MarkerClassifier(...)` construction (~line 396).
+- `main_onnx_shared_vision_nemo_audio.py`: identical shape (this file already imports
+  `GROUND_TRUTH_MANIFEST` from the audio-ONNX file above, so the same resolution line works
+  unchanged); same CLI arg, same construction-site change (~line 212).
+- `run_jetson_standalone.py`: `JetsonExpertPolicy.__init__` gains a `marker_manifest_path:
+  Optional[str] = None` parameter, resolved/checked the same way (this file already imports
+  `GROUND_TRUTH_MANIFEST` from `main_onnx_shared_vision_audio.py`, matching that file's existing
+  `raise FileNotFoundError` convention used for `cnn_path`/`audio_path` just above); `main()` gets
+  the matching `--marker-manifest` arg threaded through to the constructor; construction site at
+  ~line 217.
+
+Full patch text (ready to apply) is in this session's handback report to the orchestrator, not
+duplicated here.
+
+**Verified before concluding anything regressed**: `host_software/ml_vision/core/marker_classifier.py`
+is untouched this session (no edits made, by design — nothing outside it needed a write within
+this agent's lane). Full `ml_vision/tests/` suite re-run as a baseline check even though no vision
+code changed: `test_marker_classifier_manifest.py` 6/6 and `test_state_machine_auto_hold.py` 4/4
+still pass; the same pre-existing, unrelated collection errors/failures as always
+(`test_combined_controller.py` missing module, `test_openvino_yolo.py`/`test_yolo_ov.py` missing
+OpenVINO/YOLO weight files, `test_shared_vision_training.py` import path issue,
+`test_preprocessor.py`/`test_yolo_tracking.py` errors, `test_detect.py`/
+`test_auto_label_shared_vision.py` failures unrelated to the marker classifier) — 2 failed, 11
+passed, 6 errors/collection-errors, unchanged from baseline.
+
+**Not done, honestly**: the 3 patches are not applied anywhere, so production behavior is
+unchanged — `run_jetson_standalone.py`, `main_onnx_shared_vision_audio.py`,
+`main_onnx_shared_vision_nemo_audio.py` still construct `MarkerClassifier()` bare. No live-Jetson
+access from this session regardless of who applies the patches — `diagnose_small_cnn_grounder_
+live.py --instruction go_black` against the physically-mounted `aruco_markers_01` sheet is still
+the outstanding confirmation step for every call site, including the one already wired. Source:
+`docs/TODO.md`'s matching item (updated same session); "Manifest-position colour-ID fix wired into
+the live ACT grounding path" and "Marker Classifier: Manifest-Position Identification Tier
+Shipped" entries below.
+
 ### Ball-trajectory jerk/smoothness: the 2026-09-18 "needs new instrumentation" framing was checked and does NOT hold for this metric -- implemented
 
 The 18/09/2026 "Telemetry Field-History Audit" entry bundled two metrics under one blanket

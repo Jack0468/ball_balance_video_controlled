@@ -93,21 +93,40 @@ without any of these — the ledger below leads with exactly which items those a
   scope (`host_software/ml_vision/` only); see new item below. Source: `docs/PROJECT_LOGBOOK.md`
   13/10/2026 entries (`f88877e`, `9c76748`); fix logged 13/10/2026, "Marker Classifier:
   Manifest-Position Identification Tier Shipped".
-- [ ] **Marker-classifier manifest-position fix: wired into 1 of 4 live call sites**
-  `[wiring the other 3 is pure code, no hardware needed; final confirmation is JETSON-HW]`
+- [ ] **Marker-classifier manifest-position fix: wired into 1 of 4 live call sites — patches for
+  the other 3 drafted, blocked on a write-boundary conflict, not yet applied**
+  `[wiring is pure code, no hardware needed; final confirmation is JETSON-HW]`
   (flagged 2026-10-13, updated same day) — `small_cnn_grounder.py`'s `SmallCnnGroundingPolicy` now
   passes `manifest_path=` (defaulting to `aruco_markers_01_manifest.json`, confirmed physically
   mounted today; overridable via `--small-cnn-marker-manifest`), so today's live ACT-testing path
-  actually benefits. **Still unwired**: `run_jetson_standalone.py`, `main_onnx_shared_vision_audio.py`,
-  `main_onnx_shared_vision_nemo_audio.py` — the real production ball-balancing vision pipeline —
-  still construct `MarkerClassifier()` with no manifest. Needs: (1) each of those 3 passing the
-  currently-mounted sheet's manifest path; (2) a live-Jetson re-run of
-  `diagnose_small_cnn_grounder_live.py --instruction go_black` against `aruco_markers_01` to
-  confirm the fix transfers off the historical harness, same discipline as every prior
-  marker-classifier entry (not yet done for any call site, including the one now wired). Deliberately
-  not rushed into the production pipeline alongside the ACT-path fix — deserves its own careful
-  pass. Source: `docs/PROJECT_LOGBOOK.md` 13/10/2026, "Manifest-position colour-ID fix wired into
-  the live ACT grounding path."
+  actually benefits. **Still unwired**: `run_jetson_standalone.py`
+  (`host_software/ml_jetson_vla/runtime/run_jetson_standalone.py`), `main_onnx_shared_vision_audio.py`,
+  `main_onnx_shared_vision_nemo_audio.py` (both `host_software/`, top level) — the real production
+  ball-balancing vision pipeline — still construct `MarkerClassifier()` with no manifest.
+  **New finding this session**: none of these 3 files live under `host_software/ml_vision/` —
+  confirmed by `Glob`/`find` against the real repo tree, not assumed from the TODO wording (which
+  reads naturally as if they were in-lane). `ml-vision`'s own write boundary is scoped to
+  `host_software/ml_vision/` only, so this agent drafted the 3 patches (mirroring
+  `small_cnn_grounder.py`'s exact pattern: a `--marker-manifest`/`marker_manifest_path` override,
+  default resolving to `aruco_markers_01_manifest.json` via `os.path.dirname(GROUND_TRUTH_MANIFEST)`,
+  same as the already-shipped call site) but did not apply them, rather than writing outside its
+  lane unasked. The patches are fully specified (exact diff text) in this session's handback report
+  to the orchestrator — whoever owns `host_software/ml_jetson_vla/` (`ml-multimodal`, per
+  `CLAUDE.md`) and whoever owns top-level `host_software/` entry points should apply them, or an
+  explicit boundary exception should be granted. `host_software/ml_vision/core/marker_classifier.py`
+  itself is unchanged this session (confirmed: full `ml_vision/tests/` suite re-run, same baseline
+  as before — `test_marker_classifier_manifest.py` 6/6 and `test_state_machine_auto_hold.py` 4/4
+  pass; the pre-existing unrelated collection errors/failures, e.g. `test_combined_controller.py`,
+  `test_openvino_yolo.py`, `test_yolo_ov.py`, `test_preprocessor.py`, `test_yolo_tracking.py`,
+  `test_detect.py`, `test_auto_label_shared_vision.py`, are all still present and still unrelated to
+  `MarkerClassifier`). Once applied: still needs a live-Jetson re-run of
+  `diagnose_small_cnn_grounder_live.py --instruction go_black` against `aruco_markers_01` to confirm
+  the fix transfers off the historical harness, same discipline as every prior marker-classifier
+  entry (not yet done for any call site, including the one now wired) — no Jetson/hardware access
+  from this session either way. Source: `docs/PROJECT_LOGBOOK.md` 13/10/2026, "Manifest-position
+  colour-ID fix wired into the live ACT grounding path" and this session's new entry, "Manifest-
+  position fix for the 3 remaining call sites: patches drafted, write-boundary conflict found and
+  not overridden."
 
 ## Multimodal / VLA (`ml-multimodal`)
 
