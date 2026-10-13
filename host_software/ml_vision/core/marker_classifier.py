@@ -19,9 +19,11 @@ against the ball-label point-reflection fix in auto_label_shared_vision.py
 (2026-08-12).
 """
 
+import json
 import math
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import cv2
 import numpy as np
@@ -202,6 +204,16 @@ class MarkerDetection:
     x_mm: float
     y_mm: float
     area_px: float
+    # 13/10/2026 sheet-identity fix (see _load_feature_positions_touch_mm() and
+    # MarkerClassifier's manifest_path param below): which tier actually produced
+    # `color` for this blob -- "manifest_position" (ground-truth sheet lookup,
+    # lighting-invariant) or "hsv_bins" (the original, lighting-sensitive classical-
+    # CV path). New field with a fixed default -- every existing consumer
+    # (main_onnx_shared_vision_audio.py, run_jetson_standalone.py,
+    # small_cnn_grounder.py, ...) only ever reads .color/.shape/.x_mm/.y_mm/.area_px
+    # by attribute, never positionally/by field count, so this is additive and does
+    # not change behavior for any caller that doesn't look at it.
+    classification_source: str = "hsv_bins"
 
 
 def _classify_shape(contour: np.ndarray, area: float) -> str:
@@ -363,6 +375,71 @@ def _soft_argmax_centroid(heatmap: np.ndarray, blob_mask: np.ndarray) -> Tuple[f
     return cx, cy
 
 
+# Default manifest-position match radius (mm). Same "half of the sheet's real
+# 30mm inter-marker spacing" convention already used elsewhere for exactly this
+# purpose: host_software/src/state_machine.py's _MarkerPositionFilter.jump_threshold_mm
+# (15.0) and host_software/ml_vision/experiments/marker_classifier_green_fallback_sweep.py's
+# own 15mm nearest-feature match radius -- a real blob at its own marker's
+# position should land well inside this, and a different marker's own blob
+# (30mm away) should land well outside it, per aruco_markers_01/02/03_manifest.json's
+# shared feature layout (see ground_truth_manifest.json / CLAUDE.md "Marker labels").
+DEFAULT_MANIFEST_MATCH_RADIUS_MM = 15.0
+
+
+def _load_feature_positions_touch_mm(manifest_path: Union[str, Path]) -> List[Dict[str, Any]]:
+    """Load one sheet manifest's ground-truth `features` list -- each marker's
+    physical color/shape/position, known by design for the currently-mounted
+    sheet (see `hardware/platform_templates/*_manifest.json`, CLAUDE.md's
+    "Marker labels" rule) -- and convert each entry's `center_mm` into the same
+    touch-mm frame `MarkerDetection` reports blobs in, via the identical
+    `touch_x = W/2 - manifest_x`, `touch_y = manifest_y - H/2` convention
+    `_px_to_touch_mm()` already uses (see this module's docstring).
+
+    This is the real fix for the 13/10/2026 "aruco_markers_01 vs _03, different
+    sheet + lighting" failure (docs/PROJECT_LOGBOOK.md): a static marker's color
+    is fixed, by design, for the life of a session on a given sheet -- looking it
+    up by matched physical slot position is lighting/camera/ink invariant,
+    because unlike `_classify_color()` it never inspects a single pixel of the
+    live frame at all. The investigation that day confirmed real blob positions
+    already match the manifest to <0.5mm even when every HSV bin fails on that
+    same frame -- i.e. position identification was already working throughout;
+    only color identification needed fixing, and this sidesteps it instead of
+    re-tuning more bins.
+
+    Deliberately self-contained (reads the manifest JSON directly) rather than
+    importing `data_processing/auto_label_shared_vision.py`'s own
+    `load_manifest_full()`: that would be this file's first-ever sibling-
+    ml_vision-directory import, and `marker_classifier.py` is consumed from
+    several call sites (`main_onnx_shared_vision_audio.py`,
+    `run_jetson_standalone.py`, `small_cnn_grounder.py`, ...) whose own sys.path
+    setup was not audited as part of this change -- duplicating ~10 lines of
+    already-stable manifest schema is a smaller, more contained risk than a new
+    cross-directory import silently breaking an untouched call site.
+    """
+    path = Path(manifest_path)
+    with open(path, "r", encoding="utf-8") as handle:
+        payload = json.load(handle)
+
+    platform_w_mm = float(payload["platform_width_mm"])
+    platform_h_mm = float(payload["platform_height_mm"])
+
+    positions: List[Dict[str, Any]] = []
+    for feature in payload.get("features", []):
+        manifest_x, manifest_y = feature["center_mm"]
+        touch_x = platform_w_mm / 2.0 - float(manifest_x)
+        touch_y = float(manifest_y) - platform_h_mm / 2.0
+        positions.append(
+            {
+                "name": feature.get("name", feature.get("id", "unknown")),
+                "color": str(feature["color"]),
+                "shape": feature.get("shape", "circle"),
+                "x_mm": touch_x,
+                "y_mm": touch_y,
+            }
+        )
+    return positions
+
+
 class MarkerClassifier:
     def __init__(
         self,
@@ -409,11 +486,25 @@ class MarkerClassifier:
         # fallback-disabled) -- verified, not assumed, same as the S-floor
         # check above.
         fallback_hue_threshold: float = 10.0,
+        # 13/10/2026 sheet-identity fix. Opt-in and None by default -- every
+        # existing call site (main_onnx_shared_vision_audio.py,
+        # run_jetson_standalone.py, small_cnn_grounder.py, ...) constructs
+        # MarkerClassifier() without this argument, so self._manifest_features
+        # stays [] and classify() falls through to the exact same _classify_color()
+        # HSV path as before, byte-for-byte -- zero behavior change for any
+        # caller that doesn't explicitly opt in. See
+        # _load_feature_positions_touch_mm()'s docstring for the fix itself.
+        manifest_path: Optional[Union[str, Path]] = None,
+        manifest_match_radius_mm: float = DEFAULT_MANIFEST_MATCH_RADIUS_MM,
     ) -> None:
         self.input_size = input_size
         self.mask_threshold = mask_threshold
         self.min_blob_area_px = min_blob_area_px
         self.fallback_hue_threshold = fallback_hue_threshold
+        self.manifest_match_radius_mm = manifest_match_radius_mm
+        self._manifest_features: List[Dict[str, Any]] = (
+            _load_feature_positions_touch_mm(manifest_path) if manifest_path is not None else []
+        )
 
         h, w = input_size
         self._mm_per_px_x = (TOUCHPAD_W_MM + 2 * PAPER_MARGIN_MM) / w
@@ -445,7 +536,7 @@ class MarkerClassifier:
             return []
 
         hsv_full = cv2.cvtColor(warped_frame_bgr, cv2.COLOR_BGR2HSV)
-        detections: List[MarkerDetection] = []
+        blob_infos: List[Dict[str, Any]] = []
 
         for label in range(1, num_labels):
             area = float(stats[label, cv2.CC_STAT_AREA])
@@ -465,12 +556,77 @@ class MarkerClassifier:
             # see _circular_mean_hue()'s docstring and docs/PROJECT_LOGBOOK.md).
             _, mean_s, mean_v, _ = cv2.mean(hsv_full, mask=blob_mask * 255)
             mean_h = _circular_mean_hue(hsv_full[:, :, 0], blob_mask)
-            mean_hsv = (mean_h, mean_s, mean_v)
-            color = _classify_color(mean_hsv, fallback_hue_threshold=self.fallback_hue_threshold)
             shape = _classify_shape(contour, area)
             cx_px, cy_px = _soft_argmax_centroid(heatmap_prob, blob_mask)
             x_mm, y_mm = self._px_to_touch_mm(cx_px, cy_px)
 
-            detections.append(MarkerDetection(color=color, shape=shape, x_mm=x_mm, y_mm=y_mm, area_px=area))
+            blob_infos.append(
+                {
+                    "area": area,
+                    "shape": shape,
+                    "x_mm": x_mm,
+                    "y_mm": y_mm,
+                    "mean_hsv": (mean_h, mean_s, mean_v),
+                }
+            )
 
-        return detections
+        # Color identification, two tiers:
+        #   1. Manifest-position lookup (self._manifest_features, only non-empty when
+        #      `manifest_path` was supplied at construction) -- a static marker's color
+        #      is fixed, by design, for the whole session on whatever sheet is actually
+        #      mounted, so matching this blob's own (x_mm, y_mm) against the active
+        #      sheet's known feature slots and reading `color` straight off the manifest
+        #      never inspects a single pixel of this frame. Lighting/camera/ink-invariant
+        #      by construction -- the real fix for the 13/10/2026 "_01 vs _03, different
+        #      sheet + lighting" failure (see _load_feature_positions_touch_mm()).
+        #   2. _classify_color()'s HSV bins (original path, unchanged) -- used whenever
+        #      no manifest was supplied, or this specific blob doesn't land within
+        #      manifest_match_radius_mm of any still-unclaimed slot (wrong sheet loaded,
+        #      a spurious/off-position blob, or a real marker reading unusually far off
+        #      its true spot that frame).
+        #
+        # Largest-area-first claim order (only exercised when the manifest tier is
+        # active -- with it off, every index's own iteration order is unaffected, so
+        # manifest_path=None reproduces the pre-fix behavior exactly) so a small spurious
+        # blob can't steal a real marker's slot out from under it before the real, larger
+        # blob gets a chance to claim it; each manifest slot is claimed at most once.
+        claim_order = (
+            sorted(range(len(blob_infos)), key=lambda i: blob_infos[i]["area"], reverse=True)
+            if self._manifest_features
+            else list(range(len(blob_infos)))
+        )
+        claimed_feature_indices: set = set()
+        detections_by_index: Dict[int, MarkerDetection] = {}
+
+        for i in claim_order:
+            info = blob_infos[i]
+            color: Optional[str] = None
+            source = "hsv_bins"
+
+            if self._manifest_features:
+                best_idx: Optional[int] = None
+                best_dist = float("inf")
+                for fidx, feature in enumerate(self._manifest_features):
+                    if fidx in claimed_feature_indices:
+                        continue
+                    dist = math.hypot(info["x_mm"] - feature["x_mm"], info["y_mm"] - feature["y_mm"])
+                    if dist < best_dist:
+                        best_dist, best_idx = dist, fidx
+                if best_idx is not None and best_dist <= self.manifest_match_radius_mm:
+                    color = str(self._manifest_features[best_idx]["color"])
+                    claimed_feature_indices.add(best_idx)
+                    source = "manifest_position"
+
+            if color is None:
+                color = _classify_color(info["mean_hsv"], fallback_hue_threshold=self.fallback_hue_threshold)
+
+            detections_by_index[i] = MarkerDetection(
+                color=color,
+                shape=info["shape"],
+                x_mm=info["x_mm"],
+                y_mm=info["y_mm"],
+                area_px=info["area"],
+                classification_source=source,
+            )
+
+        return [detections_by_index[i] for i in range(len(blob_infos))]

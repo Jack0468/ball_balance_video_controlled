@@ -889,6 +889,131 @@ process) so liveness can be checked externally without relying on the agent sess
 Status as of this entry: retry in progress / outcome to be appended once known -- see
 `docs/TODO.md` for current status if this file hasn't been updated since.
 
+### State Machine: `maybe_auto_hold()` Routed Through the Existing Marker Jump-Gate Filter
+
+**Scoped fix, `docs/TODO.md` item flagged 2026-09-15**: `TargetStateMachine.maybe_auto_hold()`
+(`host_software/src/state_machine.py`) still read `marker_coords[self.current_target_name]` --
+the current frame's raw, unfiltered per-color classifier reading -- directly, for its "close
+enough to auto-latch" distance check. The 2026-09-15 "Marker Target Jump-Gate" entry (see `##
+15/09/2026` below) added `_MarkerPositionFilter` and routed `get_target_coords()` through it
+specifically to reject single-frame marker-misclassification noise, but explicitly left this
+second mechanism out of scope at the time, flagged as open item (1) in that entry.
+
+**Fix**: `maybe_auto_hold()` now reads `self.marker_filters[self.current_target_name].position`
+-- the same jump-gated/seeded estimate `get_target_coords()` already uses -- instead of the raw
+dict; when that filter hasn't confirmed a position yet (`position is None`), it no-ops exactly
+like the old "color absent from marker_coords" branch did, matching `get_target_coords()`'s own
+center-fallback discipline. `marker_coords` stays a parameter (unused inside the function now)
+only for call-site compatibility -- every real caller (`main_onnx_shared_vision_audio.py`,
+`main_onnx_shared_vision_nemo_audio.py`, `run_jetson_standalone.py`) already calls
+`update_markers(marker_coords)` earlier in the same frame, so the filter reflects this frame's
+accepted/rejected detection by the time `maybe_auto_hold()` reads it -- verified by reading all
+three call sites' actual call order, not assumed.
+
+**New tests**, since none existed for `state_machine.py` at all before this:
+`host_software/ml_vision/tests/test_state_machine_auto_hold.py` (4 tests) -- a seeded color whose
+raw `marker_coords` argument is deliberately garbage (999, 999) still auto-latches correctly
+because the filtered estimate is used instead (the core regression this fix is for); an
+unconfirmed color's filter correctly no-ops instead of latching or crashing; a genuine in-range
+dwell still latches normally (positive-path check, proving the fix doesn't just make everything
+reject); center/hold targets' existing no-op behavior is unchanged. All 4 pass. Full
+`host_software/ml_vision/tests/` suite re-run alongside: 12 passed / 2 failed / 2 errors -- the 2
+failures (`test_auto_label_shared_vision.py`'s `load_manifest` vs `load_manifest_full` API drift,
+`test_shared_vision_training.py`'s `SharedVisionDataset.__getitem__` return-arity mismatch) and 2
+errors (`test_preprocessor.py`/`test_yolo_tracking.py`, both script-style files with no pytest
+fixtures, not real pytest tests) are pre-existing and unrelated to this change -- confirmed by
+running the same suite before touching `state_machine.py` and getting the identical 2
+failed/2 errors, just without this fix's own tests counted. No regression.
+
+### Marker Classifier: Manifest-Position Identification Tier Shipped (Sheet-Identity Fix, Not a Third Bin-Tuning Pass)
+
+**`docs/TODO.md` item flagged 2026-10-13 earlier today** ("Marker colour classification needs a
+robust design, not another hardcoded fix"), following the `aruco_markers_01`-vs-`_03` failure
+documented in this same day's two entries above ("Live-hardware verification closes...",
+`f88877e`/`9c76748`) -- explicitly judged there as "not fixable by bin tuning": two confounded
+causes (a genuinely different physical sheet, plus a global colour-cast/lighting shift), not an
+isolated per-colour miscalibration. Re-tuning `COLOR_BINS` a third time was deliberately not
+attempted, per that entry's own conclusion and this ledger item's explicit ask for something
+structurally different.
+
+**The actual fix leans on a fact that investigation already proved true and never acted on**: a
+sheet's color markers are static, physical objects at known physical positions for the life of a
+session (`hardware/platform_templates/*_manifest.json`'s `features` list, by design -- see
+CLAUDE.md's "Marker labels" rule) -- and that same `f88877e`/`9c76748` investigation's own
+results table showed every real blob's `(x_mm, y_mm)` (the classifier's existing ArUco-homography
+-derived soft-argmax centroid) matching the manifest to <0.5mm on the exact frame where every HSV
+bin failed. Position identification was never broken; only color identification was. So: look
+the marker's color up by matching its already-computed position against the currently-mounted
+sheet's known feature slots -- this never inspects a single pixel of the live frame, so it is
+lighting/ink/camera invariant by construction, unlike every HSV-bin approach tried before it.
+
+**Implementation** (`host_software/ml_vision/core/marker_classifier.py`, the only file touched):
+- `MarkerClassifier.__init__` gained `manifest_path: Optional[Union[str, Path]] = None` and
+  `manifest_match_radius_mm: float = DEFAULT_MANIFEST_MATCH_RADIUS_MM` (15.0mm -- the same "half
+  the sheet's real 30mm inter-marker spacing" convention already used by
+  `state_machine.py`'s `_MarkerPositionFilter.jump_threshold_mm` and
+  `marker_classifier_green_fallback_sweep.py`'s own match radius, not a new invented number).
+  Default `None` -- `self._manifest_features` stays `[]`, so every existing call site
+  (`main_onnx_shared_vision_audio.py`, `main_onnx_shared_vision_nemo_audio.py`,
+  `run_jetson_standalone.py`, `small_cnn_grounder.py`, none of which pass this new argument)
+  classifies exactly as before, byte-for-byte -- confirmed, not assumed (see numbers below).
+- New `_load_feature_positions_touch_mm()` reads a manifest's `features` list and converts each
+  entry's `center_mm` into the same touch-mm frame `MarkerDetection` already reports, via the
+  identical `touch_x = W/2 - manifest_x`, `touch_y = manifest_y - H/2` convention
+  `_px_to_touch_mm()` uses. Deliberately self-contained (reads the JSON directly) rather than
+  importing `data_processing/auto_label_shared_vision.py`'s existing `load_manifest_full()` --
+  this file has zero sibling-ml_vision-directory imports today and is consumed from several call
+  sites whose sys.path setup wasn't audited as part of this change; duplicating ~10 lines of
+  already-stable manifest schema was judged the smaller, more contained risk.
+- `classify()`: for each blob, if a manifest is loaded, first try to claim the nearest
+  not-yet-claimed manifest slot within `manifest_match_radius_mm`; if found, `color` comes
+  straight from the manifest (tagged `classification_source="manifest_position"` on the
+  `MarkerDetection`, a new field with a fixed default -- every consumer only ever reads
+  `.color`/`.shape`/`.x_mm`/`.y_mm`/`.area_px` by attribute, confirmed by reading all call sites,
+  so this is purely additive). Otherwise falls through to the original `_classify_color()` HSV
+  path unchanged. Claims are largest-blob-first and each slot can be claimed once per frame, so a
+  small spurious blob landing near a real marker's slot can't steal its identity out from under
+  it.
+- **Real measured numbers, same validated 1200-frame harness as every prior marker-classifier
+  entry** (`marker_classifier_green_fallback_sweep.py`'s own `run_harness()`/
+  `load_feature_positions()`, reused unmodified via a throwaway driver script, against
+  `session_20260810_114330`, shipped defaults otherwise):
+  - **Before (manifest_path=None, i.e. every current real call site's actual behavior)**:
+    black_circle 1124/1200 (93.7%), blue_triangle 595/1181 (50.4%), yellow_square 1154/1198
+    (96.3%), green_hexagon 1145/1191 (96.1%), red_triangle 1169/1196 (97.7%) -- **byte-identical**
+    to the numbers already logged in the "cv2.mean() Hue-Wraparound Bug Fixed For Real" entry
+    above, confirming this change adds zero regression to the default path.
+  - **After (`manifest_path=aruco_markers_03_manifest.json`)**: black_circle 1196/1200 (99.7%),
+    blue_triangle 1181/1181 (**100.0%**), yellow_square 1196/1198 (99.8%), green_hexagon
+    1189/1191 (99.8%), red_triangle 1196/1196 (**100.0%**) -- improvement on every single color,
+    regression on none. `blue_triangle`'s own 50.4%->100% is the starkest: it was the one color
+    the HSV-fallback-tier work from 2026-09-15 never managed to fully fix (its own strict bin
+    only ever matched 1.5% of its real blobs), and manifest-position lookup resolves it
+    completely since it never depended on blue's own saturation/hue at all.
+- **New tests**, `host_software/ml_vision/tests/test_marker_classifier_manifest.py` (6 tests, all
+  passing): the loader's conversion matches `aruco_markers_01`'s real confirmed layout
+  (center=blue, top=black, right=red, bottom=green, left=yellow); `manifest_path=None` preserves
+  the pure-HSV path; and -- the two tests that matter most for this specific TODO item -- a
+  synthetic frame built from the **exact real measured HSV values logged in the "Live-hardware
+  verification closes" entry above** (black_circle mean_h/s/v = 7.8/47.3/148.2, green_circle =
+  34.2/51.9/157.6) first reproduces that real documented failure (reads "red"/"yellow") without a
+  manifest, then confirms supplying `aruco_markers_01`'s manifest resolves both to their true
+  color via `classification_source="manifest_position"`; plus a far-off-blob rejection test and a
+  claim-uniqueness/largest-blob-wins test. `host_software/ml_vision/tests/` full suite (12
+  passed / 2 failed / 2 errors, same pre-existing unrelated issues as the `state_machine.py`
+  entry above) and `host_software/ml_jetson_vla/tests/test_small_cnn_grounder_cpu.py` (9 passed,
+  a real consumer of this exact class) both re-run clean. No regressions.
+- **Not done, explicitly out of this fix's file-boundary scope** (writes limited to
+  `host_software/ml_vision/` this session): no live call site actually passes `manifest_path=`
+  yet, so the running system doesn't benefit from this until that's wired in --
+  `run_jetson_standalone.py`, `main_onnx_shared_vision_audio.py`,
+  `main_onnx_shared_vision_nemo_audio.py`, and `small_cnn_grounder.py` all still construct
+  `MarkerClassifier()` bare. Also not done: live-Jetson re-verification against
+  `aruco_markers_01` with the fix actually wired in (everything above is from the historical
+  `aruco_markers_03` harness plus synthetic frames built from real logged numbers, not a fresh
+  live capture) -- flagged as a new, separate `docs/TODO.md` item rather than silently assumed
+  fixed end-to-end.
+
 ## 07/10/2026 (ongoing)
 ### Arm 2 action-head design work; a second, distinct touch-sensor data bug found by manual image review
 

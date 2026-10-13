@@ -37,15 +37,18 @@ just delete it, logbook already has the history) once genuinely done.
   architecture decision that should be made before locking Arm 1's final pipeline. Source:
   `CLAUDE.md` Architecture Decisions table; `host_software/ml_jetson_vla/docs/ARCHITECTURE.md`
   "What's confirmed vs still open" table.
-- [ ] **`TargetStateMachine.maybe_auto_hold()` still reads raw, unfiltered `marker_coords`**
-  (flagged 2026-09-15, owner: ml-vision) — confirmed still true in
-  `host_software/src/state_machine.py` (`target_x, target_y = marker_coords[self.current_target_name]`
-  at line ~278). The 2026-09-15 jump-gate fix added `_MarkerPositionFilter` and routed
-  `get_target_coords()` through it, but `maybe_auto_hold()`'s own "close enough to auto-latch"
-  distance check was explicitly left out of scope at the time and still reads the current
-  frame's raw per-color detection directly — same single-frame-noise exposure the jump-gate fix
-  was built to close elsewhere. Source: `docs/PROJECT_LOGBOOK.md` 15/09/2026 "Marker Target
-  Jump-Gate" entry, open item (1).
+- [x] **`TargetStateMachine.maybe_auto_hold()` still reads raw, unfiltered `marker_coords`**
+  (flagged 2026-09-15, fixed 2026-10-13, owner: ml-vision) — `maybe_auto_hold()` now reads
+  `self.marker_filters[self.current_target_name].position` (the same jump-gated/seeded
+  `_MarkerPositionFilter` estimate `get_target_coords()` already used) instead of the raw
+  per-frame `marker_coords` dict, in `host_software/src/state_machine.py`. New test
+  `host_software/ml_vision/tests/test_state_machine_auto_hold.py` (4 tests, all passing)
+  specifically proves a noisy/misclassified raw `marker_coords` reading no longer affects
+  auto-latch once the filter is confirmed. Full `host_software/ml_vision/tests/` suite re-run
+  clean alongside it (same pre-existing, unrelated failures/errors as before this change — see
+  `docs/PROJECT_LOGBOOK.md` 13/10/2026 entry for exact before/after counts). Source:
+  `docs/PROJECT_LOGBOOK.md` 15/09/2026 "Marker Target Jump-Gate" entry, open item (1); fix logged
+  13/10/2026.
 - [ ] **iPhone-derived extended-eval datasets unusable for grounding eval: no language labels,
   coordinate frame mismatch** (flagged 2026-10-07, owner: ml-vision) — `02_silver_unified_pose`,
   `03_gold/images_iphone`, and the iPhone `video1-5` sets have ball/marker positions but no
@@ -55,18 +58,48 @@ just delete it, logbook already has the history) once genuinely done.
   `docs/PROJECT_LOGBOOK.md` 07/10/2026 "Extended-eval data inventory" entry,
   `host_software/ml_jetson_vla/reports/extended_data_inventory.csv`.
 
-- [ ] **Marker colour classification needs a robust design, not another hardcoded fix**
-  (flagged 2026-10-13, owner: ml-vision) — Today's live Jetson test revealed the physical test
-  sheet in use (`aruco_markers_01`, plain circles) doesn't match the sheet every HSV bin has
-  ever been calibrated against (`aruco_markers_03`, triangles/squares/hexagons). Static
-  per-colour HSV bins are fundamentally fragile to sheet/ink/lighting changes -- this exact
-  class of failure has now happened twice (15/09/2026, 13/10/2026), each time "fixed" by
-  re-tuning bins against one specific historical dataset. **The next fix should be a genuinely
-  robust approach** (e.g. per-session/per-sheet auto-calibration, relative/contrastive colour
-  matching instead of absolute bins, or explicit sheet-identity detection with sheet-specific
-  calibration loaded at runtime) rather than a third round of hardcoded bin tuning that will
-  just as easily break on the next sheet or lighting change. Source: `docs/PROJECT_LOGBOOK.md`
-  13/10/2026 entries (`f88877e`, `9c76748`).
+- [x] **Marker colour classification needs a robust design, not another hardcoded fix**
+  (flagged 2026-10-13, robust fix shipped same day, owner: ml-vision) — rather than a third
+  bin-tuning pass, `MarkerClassifier` (`host_software/ml_vision/core/marker_classifier.py`) gained
+  an opt-in manifest-position identification tier: a static marker's colour is already known by
+  design for whatever sheet is physically mounted (`hardware/platform_templates/*_manifest.json`),
+  and the classifier already computes each blob's ArUco-homography-derived (x_mm, y_mm) — matching
+  that position against the active sheet's known feature slots (15mm radius, largest-blob-first
+  claim) and reading `color` straight off the manifest is lighting/ink/camera invariant by
+  construction, since it never inspects a pixel. Falls back to the original HSV bins when no
+  manifest is supplied or no slot matches — `manifest_path=None` by default, so every existing
+  call site is byte-for-byte unaffected unless it opts in. **Real measured numbers, same validated
+  1200-frame harness** (`marker_classifier_green_fallback_sweep.py`, `session_20260810_114330`):
+  shipped-defaults baseline reproduced exactly (black 1124/1200 93.7%, blue_triangle 595/1181
+  50.4%, yellow_square 1154/1198 96.3%, green_hexagon 1145/1191 96.1%, red_triangle 1169/1196
+  97.7% — byte-identical to the pre-change numbers, confirming zero regression to the default
+  path); with `manifest_path` supplied: black 1196/1200 99.7%, blue_triangle 1181/1181 **100%**,
+  yellow_square 1196/1198 99.8%, green_hexagon 1189/1191 99.8%, red_triangle 1196/1196 **100%** —
+  improvement on every color, no regression on any. New tests:
+  `host_software/ml_vision/tests/test_marker_classifier_manifest.py` (6 tests, including two that
+  replay the exact real HSV values logged for `aruco_markers_01`'s misclassified black/green
+  blobs and confirm the manifest tier resolves them correctly). Full `ml_vision/tests/` suite and
+  `ml_jetson_vla/tests/test_small_cnn_grounder_cpu.py` (a real consumer) re-run clean, 0
+  regressions. **Not yet done**: wiring `manifest_path=` into the actual live call sites
+  (`run_jetson_standalone.py`, `main_onnx_shared_vision_*_audio.py`, `small_cnn_grounder.py`) and
+  live-Jetson hardware re-verification on `aruco_markers_01` — out of this fix's file-boundary
+  scope (`host_software/ml_vision/` only); see new item below. Source: `docs/PROJECT_LOGBOOK.md`
+  13/10/2026 entries (`f88877e`, `9c76748`); fix logged 13/10/2026, "Marker Classifier:
+  Manifest-Position Identification Tier Shipped".
+- [ ] **Marker-classifier manifest-position fix (above) not yet wired into any live call site**
+  (flagged 2026-10-13, owner: ml-vision) — `MarkerClassifier(manifest_path=...)` is built and
+  tested but no production script passes it yet: `run_jetson_standalone.py`,
+  `main_onnx_shared_vision_audio.py`, `main_onnx_shared_vision_nemo_audio.py`, and
+  `small_cnn_grounder.py` all still construct `MarkerClassifier()` with no manifest, so the
+  `aruco_markers_01`-on-Jetson failure is fixed in code but not yet in the running system. Needs:
+  (1) each call site passing the currently-mounted sheet's manifest path (already loaded nearby
+  for homography in most of them) to `MarkerClassifier(...)`; (2) a live-Jetson re-run of
+  `diagnose_small_cnn_grounder_live.py --instruction go_black` against `aruco_markers_01` to
+  confirm the fix transfers off the historical harness, same discipline as every prior
+  marker-classifier entry. Out of scope for the ml-vision agent boundary that shipped the
+  classifier fix (file writes limited to `host_software/ml_vision/`); needs orchestration or
+  explicit sign-off to touch the other files. Source: `docs/PROJECT_LOGBOOK.md` 13/10/2026,
+  "Marker Classifier: Manifest-Position Identification Tier Shipped".
 
 ## Multimodal / VLA (`ml-multimodal`)
 

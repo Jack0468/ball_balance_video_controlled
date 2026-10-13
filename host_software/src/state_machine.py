@@ -271,11 +271,23 @@ class TargetStateMachine:
             self._on_target_frames = 0
             return
 
-        if self.current_target_name not in marker_coords:
+        # Route through the same jump-gated/seeded _MarkerPositionFilter
+        # estimate get_target_coords() uses, instead of this frame's raw
+        # marker_coords -- the 2026-09-15 jump-gate fix (see
+        # docs/PROJECT_LOGBOOK.md "Marker Target Jump-Gate") built that filter
+        # specifically to reject single-frame color-flicker noise, but left
+        # this auto-latch distance check reading the unfiltered dict directly,
+        # so it kept the same noise exposure the rest of the fix closed.
+        # Callers already call update_markers(marker_coords) earlier in the
+        # same frame (see main_onnx_shared_vision_*_audio.py /
+        # run_jetson_standalone.py), so the filter already reflects this
+        # frame's accepted/rejected detection by the time we read it here.
+        filt = self.marker_filters.get(self.current_target_name)
+        if filt is None or filt.position is None:
             self._on_target_frames = 0
             return
 
-        target_x, target_y = marker_coords[self.current_target_name]
+        target_x, target_y = filt.position
         dx = float(target_x) - float(cam_x)
         dy = float(target_y) - float(cam_y)
         dist = (dx * dx + dy * dy) ** 0.5
