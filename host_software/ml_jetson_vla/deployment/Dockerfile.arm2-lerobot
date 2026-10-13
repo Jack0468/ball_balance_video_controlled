@@ -20,6 +20,8 @@
 #
 # Run (bench_action_models.py writes its JSON into the bind-mounted repo, not the image):
 #   docker run --runtime nvidia --rm -it -v $HOME/VRI_2026:/workspace/VRI_2026 -v $HOME/.cache/huggingface:/root/.cache/huggingface arm2-lerobot:r36.4.0
+# (resnet18 ImageNet weights are pre-cached INTO the image below -- no torch hub cache mount needed
+# for that; the huggingface cache mount above is for actual HF Hub downloads, e.g. Qwen checkpoints)
 
 FROM dustynv/pytorch:2.7-r36.4.0-cu128-24.04
 
@@ -73,6 +75,17 @@ RUN python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all: \
 # shows up at runtime, that's the first thing to revisit.
 RUN python3 -m pip install -c /opt/base_constraints.txt --only-binary=:all: \
       --index-url https://pypi.org/simple onnxruntime==1.31.0
+
+# Pre-cache ImageNet ResNet18 weights INTO the image: lerobot's ACT policy config (see any trained
+# checkpoint's config.json, e.g. models/ACT/run_2/.../pretrained_model/config.json --
+# pretrained_backbone_weights: "ResNet18_Weights.IMAGENET1K_V1") makes ACTPolicy.from_pretrained()
+# reconstruct that backbone and download these weights via torch.hub on first use. `docker run --rm`
+# throws away the container filesystem every time, so without this the ~45MB download repeated on
+# EVERY live-test run (confirmed real behaviour, 2026-10-13, not a one-off) -- wasted network time
+# before every hardware test, and a hard failure if the Jetson's network is down in the lab. Baking
+# it into the image (not just documenting a cache volume mount) means it is never re-fetched
+# regardless of how the container is launched.
+RUN python3 -c "import torchvision.models as m; m.resnet18(weights=m.ResNet18_Weights.IMAGENET1K_V1); print('resnet18 IMAGENET1K_V1 weights cached in image')"
 
 # Gate: fail the build if versions drifted or either policy import is broken. Printed so the build log records what
 # resolved. cuda_available is printed, not asserted: `docker build` may run without the nvidia runtime.

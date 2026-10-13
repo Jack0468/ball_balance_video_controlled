@@ -14,6 +14,7 @@ without either. Model construction reuses the loaders in deployment/bench_action
 
 from __future__ import annotations
 
+import os
 import time
 from typing import Any, Optional, Protocol
 
@@ -106,7 +107,17 @@ class ActFastLayer:
         else:
             from lerobot.policies.act.modeling_act import ACTPolicy
 
-            policy = ACTPolicy.from_pretrained(checkpoint_dir)
+            # Must be absolute: lerobot's from_pretrained does os.path.isdir(path) to decide
+            # local-vs-hub, and a relative path that doesn't resolve against the *current*
+            # cwd falls through to treating the string as a HF Hub repo id (real failure mode
+            # hit 2026-10-13: HFValidationError instead of a local-file read).
+            resolved_checkpoint_dir = os.path.abspath(checkpoint_dir)
+            if not os.path.isdir(resolved_checkpoint_dir):
+                raise FileNotFoundError(
+                    f"ACT checkpoint dir not found: {resolved_checkpoint_dir} "
+                    f"(resolved from {checkpoint_dir!r} against cwd {os.getcwd()!r})"
+                )
+            policy = ACTPolicy.from_pretrained(resolved_checkpoint_dir)
             self.weights_status = f"TRAINED checkpoint {checkpoint_dir}; normaliser stats not verified"
         self._policy: Any = policy.to(device=device, dtype=self._dtype).eval()
 
