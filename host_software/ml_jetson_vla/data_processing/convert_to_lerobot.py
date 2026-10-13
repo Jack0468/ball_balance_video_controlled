@@ -93,6 +93,22 @@ Rows missing touch/theta ground truth (SessionTouchTap.get_latest_touch() return
 for that frame -- e.g. very start of a session before the first 'T,...' line arrives) are
 skipped, not zero-filled, since LeRobotDataset requires every "observation.state"/"action"
 value to be a real number and zero-filling would silently fabricate ground truth.
+
+**2026-10-13 extension (safety-envelope filter, root-caused in
+`docs/PROJECT_LOGBOOK.md`'s "Real live re-test with normalisation applied: 100% chunk
+rejection" entry):** the first real trained ACT_FAST checkpoint (`run_2`) was trained on
+this converter's output and rejected 111/111 live chunks because `PID_REGIME_NAME` actions
+go as far as -22.27/+29.70 deg, well outside the firmware's real downlink safety envelope
+(`experiments/serial_protocol.py` `MAX_MOTOR_ANGLE_DEG = 11.025`, which REJECTS rather than
+clamps an out-of-range angle) -- 58.7% of `pid_webcam`'s 110,993 samples violate it, vs. 0%
+of `jetson_track4_rl`'s 40,713 (that regime already enforces the same limit live). Per the
+user's explicit decision (not an agent call -- reverses a considered Stage-0 blending
+choice): keep `pid_webcam` blended with the untouched `jetson_track4_rl` regime, but drop
+only the `pid_webcam` *frames* whose action exceeds the envelope, rather than dropping the
+whole regime. This is enforced below, per-frame, for `PID_REGIME_NAME` rows only --
+`TRACK4_REGIME_NAME` rows are never evaluated against this filter at all (that regime is
+already 100% compliant, and the check is gated on `regime == PID_REGIME_NAME` so a future
+regression in Track4's own data could never silently start being filtered here).
 """
 
 from __future__ import annotations
@@ -100,6 +116,7 @@ from __future__ import annotations
 import argparse
 import glob
 import json
+import math
 import os
 import sys
 from datetime import datetime
@@ -137,6 +154,14 @@ NO_INSTRUCTION_PID_REGIME = "(no instruction: PID regime, no command was ever is
 # consistent value across both the flat-JSON and LeRobot dataset outputs.
 TRACK4_REGIME_NAME = "jetson_track4_rl"
 PID_REGIME_NAME = "pid_webcam"
+
+# 2026-10-13: the real firmware downlink safety envelope (experiments/serial_protocol.py's
+# MAX_MOTOR_ANGLE_DEG -- AngleStepControl.cpp REJECTS, never clamps, an out-of-range angle).
+# Duplicated as a literal constant rather than imported: serial_protocol.py lives in
+# experiments/ (a different package context, pulled in dynamically by other scripts via
+# importlib), and this converter has no other reason to depend on it. Keep this value in sync
+# with experiments/serial_protocol.py.MAX_MOTOR_ANGLE_DEG if the firmware limit ever changes.
+PID_SAFETY_MAX_ABS_ACTION_DEG: float = 11.025
 
 REQUIRED_COLUMNS = [
     "frame_index",
@@ -347,6 +372,19 @@ def compute_touch_glitch(df: pd.DataFrame) -> np.ndarray:
     return flags
 
 
+def is_pid_action_safety_compliant(theta_a: float, theta_b: float, theta_c: float) -> bool:
+    """True iff all three action angles are finite and within
+    +/-PID_SAFETY_MAX_ABS_ACTION_DEG -- the real firmware downlink safety envelope
+    (experiments/serial_protocol.py's `is_angle_in_range`, mirrored here). Only ever called for
+    PID_REGIME_NAME frames (see convert()'s per-row loop) -- TRACK4_REGIME_NAME frames are never
+    passed through this check, since that regime already enforces the same limit live and is
+    confirmed 100% compliant (docs/PROJECT_LOGBOOK.md 2026-10-13)."""
+    return all(
+        math.isfinite(v) and abs(v) <= PID_SAFETY_MAX_ABS_ACTION_DEG
+        for v in (theta_a, theta_b, theta_c)
+    )
+
+
 def _probe_first_frame_size(video_path: str) -> tuple:
     cap = cv2.VideoCapture(video_path)
     try:
@@ -455,9 +493,16 @@ def convert(
         "frames_written": 0,
         "frames_skipped_missing_ground_truth": 0,
         "frames_skipped_video_underrun": 0,
+        # 2026-10-13: PID_REGIME_NAME frames dropped for exceeding the firmware safety envelope
+        # (see is_pid_action_safety_compliant / module docstring). Always 0 for TRACK4_REGIME_NAME
+        # since the check is never run against that regime's rows.
+        "frames_skipped_pid_safety_envelope": 0,
         "by_regime": {
             TRACK4_REGIME_NAME: {"sessions_converted": 0, "frames_written": 0},
-            PID_REGIME_NAME: {"sessions_converted": 0, "frames_written": 0},
+            PID_REGIME_NAME: {
+                "sessions_converted": 0, "frames_written": 0,
+                "frames_skipped_safety_envelope": 0,
+            },
         },
     }
 
@@ -525,6 +570,16 @@ def convert(
                     # No ground truth for this frame (e.g. before the first 'T,...' line
                     # arrived) -- skip rather than zero-fill, see module docstring.
                     stats["frames_skipped_missing_ground_truth"] += 1
+                    continue
+
+                if regime == PID_REGIME_NAME and not is_pid_action_safety_compliant(
+                    float(row["theta_a"]), float(row["theta_b"]), float(row["theta_c"])
+                ):
+                    # 2026-10-13 safety-envelope filter -- see module docstring and
+                    # is_pid_action_safety_compliant's docstring. Never evaluated for
+                    # TRACK4_REGIME_NAME rows (regime == PID_REGIME_NAME guards this branch).
+                    stats["frames_skipped_pid_safety_envelope"] += 1
+                    stats["by_regime"][PID_REGIME_NAME]["frames_skipped_safety_envelope"] += 1
                     continue
 
                 frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)

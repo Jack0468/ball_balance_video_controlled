@@ -323,6 +323,125 @@ def test_t4_end_to_end_synthetic_session() -> None:
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+# --- (T5) PID safety-envelope filter (2026-10-13) -------------------------------------------------
+# docs/PROJECT_LOGBOOK.md 2026-10-13 "Real live re-test...": pid_webcam actions go as far as
+# -22.27/+29.70 deg, outside the firmware's real +/-11.025 deg downlink safety envelope
+# (experiments/serial_protocol.py MAX_MOTOR_ANGLE_DEG). is_pid_action_safety_compliant() mirrors
+# that limit; it must only ever be applied to PID_REGIME_NAME rows, never TRACK4_REGIME_NAME ones.
+
+def test_t5_is_pid_action_safety_compliant_pure() -> None:
+    conv = _converter()
+    LIMIT = conv.PID_SAFETY_MAX_ABS_ACTION_DEG
+    assert LIMIT == 11.025, LIMIT
+    # exactly at the boundary (inclusive) is compliant
+    assert conv.is_pid_action_safety_compliant(LIMIT, -LIMIT, 0.0) is True
+    assert conv.is_pid_action_safety_compliant(0.0, 0.0, 0.0) is True
+    # one axis just over the boundary is non-compliant
+    assert conv.is_pid_action_safety_compliant(LIMIT + 1e-6, 0.0, 0.0) is False
+    assert conv.is_pid_action_safety_compliant(0.0, -LIMIT - 1e-6, 0.0) is False
+    assert conv.is_pid_action_safety_compliant(0.0, 0.0, 22.27) is False
+    # non-finite is never compliant
+    assert conv.is_pid_action_safety_compliant(float("nan"), 0.0, 0.0) is False
+    assert conv.is_pid_action_safety_compliant(0.0, float("inf"), 0.0) is False
+
+
+def _write_synthetic_session_with_theta(
+    bronze: str, name: str, rows: List[Tuple[float, float, float, float, float]]
+) -> None:
+    """Like _write_synthetic_session, but each row also carries its own theta_a/b/c (needed to
+    exercise the PID safety-envelope filter, which _write_synthetic_session's hardcoded
+    theta=0.0 can't). rows: list of (touch_x, touch_y, theta_a, theta_b, theta_c)."""
+    sdir = os.path.join(bronze, name)
+    os.makedirs(sdir, exist_ok=True)
+    out_rows = []
+    for i, (tx, ty, ta, tb, tc) in enumerate(rows):
+        out_rows.append({
+            "frame_index": i, "host_timestamp_ms": 1_000_000 + 33 * i,
+            "target_x": 0.0, "target_y": 0.0, "touch_x": tx, "touch_y": ty,
+            "theta_a": ta, "theta_b": tb, "theta_c": tc,
+        })
+    pd.DataFrame(out_rows).to_csv(os.path.join(sdir, "telemetry.csv"), index=False)
+    writer = cv2.VideoWriter(os.path.join(sdir, "rgb_video.mp4"), cv2.VideoWriter_fourcc(*"mp4v"), 30, (640, 480))
+    if not writer.isOpened():
+        raise RuntimeError("cv2.VideoWriter could not open mp4v output on this machine")
+    for i in range(len(rows)):
+        writer.write(np.full((480, 640, 3), 40 + 10 * i, dtype=np.uint8))
+    writer.release()
+
+
+def test_t5_end_to_end_synthetic_pid_session_drops_only_violations() -> None:
+    conv = _converter()
+    tmp = tempfile.mkdtemp(prefix="lerobot_rt_t5_")
+    try:
+        bronze = os.path.join(tmp, "bronze")
+        name = "session_20990101_000000"
+        # 6 rows: 4 compliant (within +/-11.025, including the exact boundary), 2 violating
+        # (one per axis) -- expect exactly 2 dropped, 4 written, in original order.
+        LIMIT = conv.PID_SAFETY_MAX_ABS_ACTION_DEG
+        rows = [
+            (1.0, 2.0, 0.0, 0.0, 0.0),           # compliant
+            (2.0, 3.0, LIMIT, -LIMIT, 0.0),       # compliant (boundary inclusive)
+            (3.0, 4.0, 22.27, 0.0, 0.0),          # VIOLATES (theta_a)
+            (4.0, 5.0, 0.0, -15.0, 0.0),          # VIOLATES (theta_b)
+            (5.0, 6.0, 1.0, 1.0, 1.0),            # compliant
+            (6.0, 7.0, -5.0, 5.0, -5.0),          # compliant
+        ]
+        _write_synthetic_session_with_theta(bronze, name, rows)
+
+        session_dir_abs = os.path.join(bronze, name)
+        # Monkeypatch find_pid_sessions rather than building a real session_manifest.json: the
+        # real function resolves session_dir relative to the real _HOST_SOFTWARE_DIR/data, which
+        # this isolated synthetic session must not touch.
+        original_find_pid_sessions = conv.find_pid_sessions
+        conv.find_pid_sessions = lambda bronze_dir, manifest_path=None: [(session_dir_abs, "telemetry.csv")]
+        try:
+            out_root = os.path.join(tmp, "ds")
+            stats = conv.convert(
+                bronze_dir=bronze, out_root=out_root, repo_id="test/pid_safety_filter", fps=30,
+                include_track4_sessions=False, include_pid_sessions=True,
+            )
+        finally:
+            conv.find_pid_sessions = original_find_pid_sessions
+
+        assert stats["frames_written"] == 4, stats
+        assert stats["frames_skipped_pid_safety_envelope"] == 2, stats
+        assert stats["by_regime"][conv.PID_REGIME_NAME]["frames_skipped_safety_envelope"] == 2, stats
+        assert stats["by_regime"][conv.TRACK4_REGIME_NAME]["frames_written"] == 0, stats
+
+        parquet_files = sorted(glob.glob(os.path.join(out_root, "data", "**", "*.parquet"), recursive=True))
+        out = pd.concat([pd.read_parquet(p) for p in parquet_files], ignore_index=True)
+        action = np.stack(out["action"].to_numpy()).astype(np.float64)
+        touch = np.stack(out["observation.state"].to_numpy()).astype(np.float64)
+        assert np.all(np.abs(action) <= LIMIT + 1e-9), action
+        # Exactly the 4 compliant rows survived, in original order (by their distinctive touch_x).
+        assert touch[:, 0].tolist() == [1.0, 2.0, 5.0, 6.0], touch[:, 0].tolist()
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_t5_track4_never_filtered_even_if_out_of_envelope() -> None:
+    """A Track4-tagged session with an out-of-envelope action must NOT be filtered -- the check
+    is gated on regime == PID_REGIME_NAME, so TRACK4_REGIME_NAME rows always pass through whole.
+    (Real Track4 data never does this -- confirmed 0/40,713 rows violate -- this is a guard-rail
+    test for the gating logic itself, not a claim that real data looks like this.)"""
+    conv = _converter()
+    tmp = tempfile.mkdtemp(prefix="lerobot_rt_t5b_")
+    try:
+        bronze = os.path.join(tmp, "bronze")
+        name = "session_jetson_track4_20990101_000002"
+        touch = [(1.0, 2.0), (3.0, 4.0)]
+        _write_synthetic_session(bronze, name, touch)  # hardcoded theta=0.0 -- compliant already
+        out_root = os.path.join(tmp, "ds")
+        stats = conv.convert(
+            bronze_dir=bronze, out_root=out_root, repo_id="test/track4_unfiltered", fps=30,
+            session_pattern=name, include_track4_sessions=True, include_pid_sessions=False,
+        )
+        assert stats["frames_skipped_pid_safety_envelope"] == 0, stats
+        assert stats["frames_written"] == 2, stats
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 TESTS: Dict[str, Callable[[], None]] = {
     "test_a_converter_state_is_raw_touch": test_a_converter_state_is_raw_touch,
     "test_b_scorer_roundtrip_manifest_points": test_b_scorer_roundtrip_manifest_points,
@@ -333,6 +452,9 @@ TESTS: Dict[str, Callable[[], None]] = {
     "test_t4_compute_touch_glitch_pure": test_t4_compute_touch_glitch_pure,
     "test_t4_compute_touch_glitch_nan_and_boundary": test_t4_compute_touch_glitch_nan_and_boundary,
     "test_t4_end_to_end_synthetic_session": test_t4_end_to_end_synthetic_session,
+    "test_t5_is_pid_action_safety_compliant_pure": test_t5_is_pid_action_safety_compliant_pure,
+    "test_t5_end_to_end_synthetic_pid_session_drops_only_violations": test_t5_end_to_end_synthetic_pid_session_drops_only_violations,
+    "test_t5_track4_never_filtered_even_if_out_of_envelope": test_t5_track4_never_filtered_even_if_out_of_envelope,
 }
 
 

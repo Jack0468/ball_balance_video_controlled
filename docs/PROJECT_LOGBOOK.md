@@ -695,6 +695,74 @@ only its safety-compliant 41.3% and keeping it blended, vs. some other approach 
 not an agent's call to make unilaterally given it reverses a considered design choice from the
 Stage 0 plan.
 
+### Safety-envelope filter implemented in `convert_to_lerobot.py`; real per-frame kept/dropped counts measured
+
+Per the user's explicit decision (not re-litigated here): keep `pid_webcam` blended with the
+untouched `jetson_track4_rl` regime, but drop only the `pid_webcam` *frames* whose action exceeds
+the firmware's real downlink safety envelope (`experiments/serial_protocol.py`
+`MAX_MOTOR_ANGLE_DEG = 11.025`), rather than dropping the whole regime or retraining on Track4
+alone.
+
+**Confirmed the gold-JSON-only approach would NOT have worked**: ACT training consumes the
+LeRobot-format dataset `data_processing/convert_to_lerobot.py` builds directly from bronze session
+CSVs/video -- NOT `host_software/data/03_gold/vla_dataset.json` (a separate data product used only
+for the earlier diagnostic). The filter had to go into the converter itself.
+
+**Implemented** in `convert_to_lerobot.py`: `PID_SAFETY_MAX_ABS_ACTION_DEG = 11.025` (mirrors
+`serial_protocol.MAX_MOTOR_ANGLE_DEG`, duplicated as a literal since the converter has no other
+reason to import from `experiments/`) and `is_pid_action_safety_compliant(theta_a, theta_b,
+theta_c)` (all three finite and `abs(v) <= limit`). Called in `convert()`'s per-row loop, gated on
+`regime == PID_REGIME_NAME` -- `TRACK4_REGIME_NAME` rows are never evaluated against this check at
+all, so a future regression in that regime's own data could never silently start being filtered
+here. New stats fields: `frames_skipped_pid_safety_envelope` (top-level) and
+`by_regime["pid_webcam"]["frames_skipped_safety_envelope"]`.
+
+**Real measured numbers** (not gold-JSON estimates -- ran the actual shipped
+`is_pid_action_safety_compliant()` against 100% of the real `frame_synced_csv` rows for all 5
+usable PID sessions, and the real `telemetry.csv` rows for all 10 Track4 sessions):
+
+| regime | rows (ground-truth-valid) | kept | dropped | % kept | % dropped |
+|---|---|---|---|---|---|
+| `pid_webcam` | 110,993 | **45,840** | **65,153** | **41.30%** | **58.70%** |
+| `jetson_track4_rl` | 40,713 | 40,713 | 0 | 100% | 0% |
+
+Per-PID-session breakdown (session, total rows, kept, dropped):
+`session_20260728_102908` 7,913 / 3,276 / 4,637;
+`session_20260810_104132` 28,794 / 12,251 / 16,543;
+`session_20260810_110239` 20,850 / 9,187 / 11,663;
+`session_20260810_112047` 26,677 / 11,420 / 15,257;
+`session_20260810_114330` 26,759 / 9,706 / 17,053.
+Confirmed separately that all 40,713 Track4 rows would pass the filter even if it were (wrongly)
+applied to them (0 violations) -- the regime gate is provably a no-op for this data, not a silent
+behavior change.
+
+**Verification sequence** (`data-pipeline-verification` skill): (1) small-sample dry run through
+the real `convert()` (`--max-frames-per-session 200`, both regimes, 15 sessions) confirmed 0/1000
+written PID rows violate the envelope and all 2000 Track4 rows are untouched; (2) added 3 new
+tests to `tests/test_lerobot_frame_roundtrip.py` (`is_pid_action_safety_compliant` boundary cases,
+an end-to-end synthetic PID session with 2 of 6 rows violating -- confirms exactly those 2 are
+dropped in-order, and a guard-rail test proving Track4 rows are never evaluated against the check
+even if they were out-of-envelope). Full `ml_jetson_vla/tests/` suite: 147 passed, 1 pre-existing
+skip, 0 regressions (144 baseline + 3 new).
+
+**Full local LeRobotDataset rebuild (the actual Colab training input) -- attempted, lost ~100
+minutes to a dead background process, relaunched with monitoring.** First attempt (output under
+`host_software/data/03_gold/lerobot_combined_20261013_safety_filtered`) stalled twice during the
+very first session's HF-datasets `Map`/parquet-write step (one ~12min gap, one ~76min gap) then
+died silently with no second session ever starting -- confirmed via `Get-CimInstance
+Win32_Process` that no matching python process was alive afterward. Most likely cause: the repo
+workspace was reportedly moved on disk around the same time; a background process holding stale
+relative/open-file state during that move is a plausible mechanism for a stall-then-death pattern
+(not a code bug -- `git diff` confirmed `convert_to_lerobot.py`/the test file were untouched by the
+dead run). Partial output directory removed before retrying, per the data-pipeline-verification
+skill's "don't resume into a corrupted partial state" rule. Retried with output redirected to the
+local scratch directory (avoids whatever filesystem contention the data/ tree hit) and the real
+Win32 PID captured independently via `Get-CimInstance` (not bash's own `$!`, which is an
+MSYS-internal PID in a different namespace and does not reliably reflect the real `python.exe`
+process) so liveness can be checked externally without relying on the agent session staying alive.
+Status as of this entry: retry in progress / outcome to be appended once known -- see
+`docs/TODO.md` for current status if this file hasn't been updated since.
+
 ## 07/10/2026 (ongoing)
 ### Arm 2 action-head design work; a second, distinct touch-sensor data bug found by manual image review
 
