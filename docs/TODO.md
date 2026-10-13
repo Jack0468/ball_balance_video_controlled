@@ -13,10 +13,17 @@ added here before the session is considered wrapped up — don't wait to be aske
 Source: <doc/entry reference>.` Check the box and move the line to a dated "Resolved" note (or
 just delete it, logbook already has the history) once genuinely done.
 
+**Hardware-access tags** (added 2026-10-13 end-of-session pass): `[JETSON-HW]` marks an item whose
+*final verification* genuinely requires the real robot (live camera/touch/serial/motors) — no
+amount of code or offline-data work can close it alone. `[CLOUD]` marks an item blocked on Drive/
+Colab access instead. `[HUMAN]` marks a physical-hardware or scope decision needing a person's
+sign-off, not a software fix at all. An item with no tag is software/design work that can proceed
+without any of these — the ledger below leads with exactly which items those are.
+
 ## Vision (`ml-vision`)
 
 - [ ] **Vision-accuracy calibration correction built and validated, never integrated or
-  hardware-tested** (flagged 2026-09-24, owner: ml-vision) — a per-session affine correction
+  hardware-tested** `[HUMAN sign-off first, then JETSON-HW]` (flagged 2026-09-24, owner: ml-vision) — a per-session affine correction
   (`host_software/ml_jetson_vla/core/vision_calibration.py`: `AffineCorrection`,
   `fit_affine_correction`, `apply_correction`, etc.) reduces mean vision error 5.6mm → 4.4-4.5mm
   (~20%) on offline-validated data, against the user's stated <3mm Steady-State Error target
@@ -31,7 +38,7 @@ just delete it, logbook already has the history) once genuinely done.
   yet investigated. Source: `docs/PROJECT_LOGBOOK.md` 23-24/09/2026 "Steady-State Error Root
   Cause" entry; `docs/EVALUATION_STRATEGY.md` section 1; `host_software/ml_jetson_vla/docs/VISION_CALIBRATION_PROPOSAL.md`.
 - [ ] **Arm 1 vision-model-class decision still undecided: small (Shared Backbone CNN) vs.
-  medium (YOLO/ResNet lineage)** (flagged 2026-08-14, owner: user/ml-vision) — both remain live
+  medium (YOLO/ResNet lineage)** `[HUMAN]` (flagged 2026-08-14, owner: user/ml-vision) — both remain live
   candidates; `CLAUDE.md`'s Architecture Decisions table states this explicitly ("don't assume
   either side") after the YOLO/ResNet ban was lifted 2026-08-13. Not a bug, a pending
   architecture decision that should be made before locking Arm 1's final pipeline. Source:
@@ -87,6 +94,7 @@ just delete it, logbook already has the history) once genuinely done.
   13/10/2026 entries (`f88877e`, `9c76748`); fix logged 13/10/2026, "Marker Classifier:
   Manifest-Position Identification Tier Shipped".
 - [ ] **Marker-classifier manifest-position fix: wired into 1 of 4 live call sites**
+  `[wiring the other 3 is pure code, no hardware needed; final confirmation is JETSON-HW]`
   (flagged 2026-10-13, updated same day) — `small_cnn_grounder.py`'s `SmallCnnGroundingPolicy` now
   passes `manifest_path=` (defaulting to `aruco_markers_01_manifest.json`, confirmed physically
   mounted today; overridable via `--small-cnn-marker-manifest`), so today's live ACT-testing path
@@ -104,7 +112,8 @@ just delete it, logbook already has the history) once genuinely done.
 ## Multimodal / VLA (`ml-multimodal`)
 
 - [ ] **ACT_FAST retrain on the safety-filtered dataset — data side fully done, actual Colab
-  retrain not yet run** (flagged 2026-10-13, updated same day) — filter implemented in
+  retrain not yet run** `[CLOUD to retrain, then JETSON-HW to re-test the new checkpoint live]`
+  (flagged 2026-10-13, updated same day) — filter implemented in
   `convert_to_lerobot.py`, committed, tested. Real measured per-frame counts: `pid_webcam` 45,840
   kept / 65,153 dropped of 110,993 (41.30%/58.70%); `jetson_track4_rl` all 40,713 rows untouched.
   **Full LeRobotDataset rebuild now complete and verified** (first attempt died ~100min in,
@@ -118,7 +127,7 @@ just delete it, logbook already has the history) once genuinely done.
   `MyDrive/2026_VRI_WINTER/colab_bundle/`, then actually run the notebook to retrain, then
   re-test live on hardware. Source: `docs/PROJECT_LOGBOOK.md` 13/10/2026, "Safety-filtered LeRobot
   dataset rebuild completed, verified, packaged."
-- [ ] **Eval cell (h) torchcodec crash in `act_train_colab.ipynb`** (flagged 2026-10-13, patched
+- [ ] **Eval cell (h) torchcodec crash in `act_train_colab.ipynb`** `[CLOUD]` (flagged 2026-10-13, patched
   same day — NOT yet confirmed working) — diagnosed as likely a Colab-side decoder-backend issue
   (torchcodec vs. the software decoder used to verify the dataset's own video files are clean),
   not source-data corruption. Cell (h) now monkeypatches `torchcodec.decoders.VideoDecoder` to
@@ -129,7 +138,7 @@ just delete it, logbook already has the history) once genuinely done.
   If it still crashes, remove the patch and reopen the investigation using the newly-named
   batch/episode. Source: `docs/PROJECT_LOGBOOK.md` 13/10/2026, "`act_train_colab.ipynb` cell (h)
   patched to force torchcodec onto CPU decode" and "Eval-only torchcodec video-decode crash."
-- [ ] **Qwen grounding full Colab run still interim** (flagged 2026-10-13) — only 5 of 10
+- [ ] **Qwen grounding full Colab run still interim** `[CLOUD]` (flagged 2026-10-13) — only 5 of 10
   sessions scored as of last check (93.3% ball-xy hit@20mm, 59.9% marker-grounding -- both
   interim). Re-score once all 10 sessions finish; the marker-grounding discrepancy vs. the
   validated 68.3% sweep figure is unexplained and needs the full run to resolve. Source:
@@ -139,7 +148,7 @@ just delete it, logbook already has the history) once genuinely done.
   touch+grounding. Root cause of 3 earlier failed attempts (looked like a hang, was actually a
   silently-swallowed chunk-size-mismatch crash) fixed in `fast_layers.py`/`core/hybrid_policy.py`.
   Source: `docs/PROJECT_LOGBOOK.md` 13/10/2026, "Checklist item 9... root-caused a 3-run hang."
-- [ ] **Touch-sensor single-position anomaly, unexplained** (flagged 2026-10-13) — one specific
+- [ ] **Touch-sensor single-position anomaly, unexplained** `[JETSON-HW]` (flagged 2026-10-13) — one specific
   ball placement (overlapping an ArUco marker directly) produced 0/136 valid touch samples,
   while all four platform corners tested normal read fine. Localized, not systemic, not chased
   further. Source: `docs/PROJECT_LOGBOOK.md` 13/10/2026, H1 corner-testing entries.
@@ -161,7 +170,7 @@ just delete it, logbook already has the history) once genuinely done.
   writeup); `host_software/ml_jetson_vla/docs/EXPERIMENT_OPTIONS_PLAN_2026_10_07.md` section 4,
   "Known limit #2" (updated in place).
 - [ ] **SmolVLA's 6-to-3 output reduction and state zero-padding are undecided placeholders**
-  (flagged 2026-10-07, owner: ml-multimodal) — `SmolVLADirectPolicy`/`SmolVLAFastLayer` reduce
+  `[HUMAN]` (flagged 2026-10-07, owner: ml-multimodal) — `SmolVLADirectPolicy`/`SmolVLAFastLayer` reduce
   the model's native 6-value action output to this platform's 3 (`theta_a/b/c`) by taking the
   first 3 values, and zero-pad the 2-dim real state to the checkpoint's native state width; both
   are explicitly flagged as placeholders, and the output-reduction scheme in particular is an
@@ -169,7 +178,7 @@ just delete it, logbook already has the history) once genuinely done.
   `host_software/ml_jetson_vla/docs/EXPERIMENT_OPTIONS_PLAN_2026_10_07.md` section 2 and
   section 6.
 - [ ] **Hybrid Qwen+ACT pipeline's real grounding accuracy under `arm2-lerobot`'s transformers
-  4.57.6 has never been scored against ground truth** (flagged 2026-10-09, re-confirmed still
+  4.57.6 has never been scored against ground truth** `[JETSON-HW]` (flagged 2026-10-09, re-confirmed still
   open 2026-10-13, owner: ml-multimodal) — `bench_hybrid_qwen_act.py` gained the scoring
   instrumentation (`qwen.grounding_accuracy`) 2026-10-09, but no real hybrid run's output has
   ever been saved/scored with it. **2026-10-13: checked both existing saved outputs that could
@@ -192,6 +201,7 @@ just delete it, logbook already has the history) once genuinely done.
   benchmark can now measure its own real Qwen grounding accuracy" entries; 13/10/2026 "Checked
   for a saved, scorable `hybrid_qwen_act` run before trying to produce one" entry.
 - [ ] **Task Success Rate can't distinguish a dropped ball from a trial that never settled**
+  `[design is software-only; confirming a chosen signal against real drops is JETSON-HW]`
   (flagged 2026-09-18, owner: ml-multimodal/orchestration) — confirmed still true in
   `evaluate_system_control.py` (its own comment: "no ball-drop signal exists in current
   telemetry, so a dropped ball is NOT distinguished from a trial that simply never settled").
@@ -220,6 +230,7 @@ just delete it, logbook already has the history) once genuinely done.
   "Extended Metrics" section (updated in place); `docs/PROJECT_LOGBOOK.md` 18/09/2026 "Telemetry
   Field-History Audit" entry; 13/10/2026 "Ball-trajectory jerk/smoothness" entry.
 - [ ] **Disturbance-rejection/robustness metric under injected perturbation never implemented**
+  `[JETSON-HW — needs a real physical perturbation test protocol, not a formula]`
   (flagged 2026-09-18, re-confirmed still open and genuinely instrumentation-blocked 2026-10-13,
   owner: ml-multimodal/orchestration) — confirmed still absent from `evaluate_system_control.py`.
   Unlike jerk/smoothness (above, now implemented), this one genuinely needs a dedicated hardware
@@ -228,7 +239,7 @@ just delete it, logbook already has the history) once genuinely done.
   either time, deliberately left alone this session per that same scoping. Source:
   `docs/EVALUATION_STRATEGY.md` "Extended Metrics" section; `docs/PROJECT_LOGBOOK.md` 18/09/2026
   "Telemetry Field-History Audit" entry.
-- [ ] **Track 2 and Track 3 (Phase 6 workstreams) have never been named or scoped**  (flagged
+- [ ] **Track 2 and Track 3 (Phase 6 workstreams) have never been named or scoped** `[HUMAN]` (flagged
   2026-08-14, owner: orchestration) — `CLAUDE.md`'s own Terminology section states this
   plainly: only Track 1 (small-class expert pipeline) and Track 4 (in-house large-VLA research
   spike) are named/scoped; "Track 2 and 3 have never been named or scoped in any doc — a real,
@@ -237,21 +248,25 @@ just delete it, logbook already has the history) once genuinely done.
 
 ## FPGA
 
-- [ ] **Arm 3 framing decision** (flagged 2026-10-13) — is Arm 3 a real fabricated photonic
+- [ ] **Arm 3 framing decision** `[HUMAN]` (flagged 2026-10-13) — is Arm 3 a real fabricated photonic
   chip, a simulation/co-design-only arm, or a commercial product? Everything in the first-draft
   interface spec is written conditional on "real chip" since that's the only scenario with
   concrete numbers available -- this is a one-line question that unblocks or reframes the whole
   spec, not yet answered. Source: `fpga/docs/optical_bridge_interface_spec_draft.md` section 1.
-- [ ] **Camera/UDP video streaming** (status per `CLAUDE.md`'s Current State table: "separately
-  unresolved") -- not touched this session, carried over from project state.
+- [ ] **Camera/UDP video streaming** `[FPGA/camera hardware — not the Jetson robot, but still
+  real physical hardware to verify against, not software-closeable alone]` (status per
+  `CLAUDE.md`'s Current State table: "separately unresolved") -- not touched this session,
+  carried over from project state.
 
 ## Hardware (human/EE decisions — not an agent's call)
 
-- [ ] **Power connector, FPGA power delivery, microphone integration, PCB consolidation** — all
+- [ ] **Power connector, FPGA power delivery, microphone integration, PCB consolidation** `[HUMAN]` — all
   four listed as open in `CLAUDE.md`'s "Hardware Decisions (OPEN)" table, requiring human/EE
   sign-off. No agent should choose or design around these without that sign-off.
 - [ ] **Touch-plate sensor transient-spike artifact's root cause still unconfirmed at the
-  circuit/ADC level** (flagged 2026-09-18, owner: Electrical Engineer/firmware owner) — isolated
+  circuit/ADC level** `[JETSON-HW — raw ADC logging code can be drafted without hardware, but
+  means nothing until run/probed on the real touch plate]`
+  (flagged 2026-09-18, owner: Electrical Engineer/firmware owner) — isolated
   single-frame jumps in `touch_x`/`touch_y` (usually positive, landing in a recurring
   ~40-98mm band, reverting on the very next sample) are real and quantified (`touch_stale`/
   `touch_glitch` detectors exist and flag them), but the underlying cause is still only a
