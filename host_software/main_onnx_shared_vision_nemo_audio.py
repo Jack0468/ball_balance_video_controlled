@@ -123,6 +123,14 @@ def main() -> None:
     parser.add_argument("--kalman", action="store_true", help="Replace PredictionGate's EMA smoothing with a constant-velocity Kalman filter (jump-gate/seed/no-ball logic unchanged). Needs R/Q from --kalman-params to be trustworthy -- see kalman_filter.py")
     parser.add_argument("--kalman-params", type=str, default=None, help="Path to a JSON file with 'r' (2x2) and 'q' (4x4) matrices, as produced by estimate_kalman_noise_params.py --output-json. Without this, --kalman uses illustrative fallback values (not validated -- see kalman_filter.py docstring)")
     parser.add_argument("--mask-threshold", type=float, default=0.5, help="Sigmoid threshold for marker segmentation mask")
+    parser.add_argument(
+        "--marker-manifest", type=str, default=None,
+        help="Override path to the per-sheet marker colour/shape manifest for the 2026-10-13 "
+             "manifest-position colour-ID tier (MarkerClassifier(manifest_path=...)). Default: "
+             "hardware/platform_templates/aruco_markers_01_manifest.json -- the sheet confirmed "
+             "physically mounted as of 2026-10-13. NOT the same file as GROUND_TRUTH_MANIFEST "
+             "(ground_truth_manifest.json), whose own 'features' list is empty.",
+    )
     parser.add_argument("--mlp", action="store_true", help="Apply the shared-vision MLP time corrector on top of raw CNN output (default off -- see PROJECT_LOGBOOK for validation results)")
     parser.add_argument("--mlp-model-path", type=str, default=None, help="Override path to the MLP corrector .pth (default: models/mlp_corrector_shared_vision_v1/mlp_corrector_best.pth)")
     parser.add_argument("--audio-model", type=str, default=None, help=f"Path to a .nemo checkpoint (default: preliminary NOISE_MIX checkpoint at {DEFAULT_NEMO_MODEL} -- see module docstring; pass the plan's recommended ml_audio/models/nemo_matchboxnet_v1/matchboxnet_finetuned.nemo for a validated number instead)")
@@ -209,7 +217,16 @@ def main() -> None:
         print("Initializing NeMo Audio Receiver...")
         audio_receiver = NemoAudioCommandReceiver(audio_path, mic_device=mic_device)
     state_machine = TargetStateMachine()
-    marker_classifier = MarkerClassifier(input_size=INPUT_SIZE, mask_threshold=args.mask_threshold)
+    marker_manifest_path = os.path.abspath(
+        args.marker_manifest
+        or os.path.join(os.path.dirname(GROUND_TRUTH_MANIFEST), "aruco_markers_01_manifest.json")
+    )
+    if not os.path.exists(marker_manifest_path):
+        print(f"Error: --marker-manifest resolved to {marker_manifest_path}, which does not exist.")
+        return
+    marker_classifier = MarkerClassifier(
+        input_size=INPUT_SIZE, mask_threshold=args.mask_threshold, manifest_path=marker_manifest_path
+    )
 
     # ---- 2. ArUco / Warp Init ----
     aruco_markers, _features, platform_w_mm, platform_h_mm = load_manifest_full(GROUND_TRUTH_MANIFEST)

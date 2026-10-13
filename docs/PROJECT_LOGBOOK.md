@@ -1221,6 +1221,45 @@ telemetry.csv`): `Average_Jerk_Mean_mm_s3 = 16360.98`, `Average_Jerk_RMS_mm_s3 =
 correct wiring, not just a clean import. No test suite exists yet for `evaluate_system_control.py`
 (confirmed, none found) -- this real end-to-end run against known-real data stands in for one.
 
+### Manifest-position colour-ID fix wired into all 4 live call sites — production vision pipeline now included
+
+Closes the gap the earlier entry left open: the `ml-vision` agent dispatched to wire the 3
+remaining production call sites correctly refused to cross its own write boundary
+(`host_software/ml_vision/` only) once it discovered none of the 3 targets actually live there --
+my own dispatch had the paths wrong (`run_jetson_standalone.py` is under `ml_jetson_vla/`, and both
+`main_onnx_shared_vision*.py` files are top-level `host_software/`, none under `ml_vision/`). It
+did the right thing: verified the whole manifest situation independently against the real JSON
+files (confirming my/its shared understanding was still accurate, not assumed), drafted exact
+ready-to-apply patches, and escalated rather than silently skipping the task or silently crossing
+its boundary. Applied the 3 drafted patches directly (orchestrator, not bound by that agent's
+narrower lane):
+
+- `host_software/main_onnx_shared_vision_audio.py` and `main_onnx_shared_vision_nemo_audio.py`:
+  new `--marker-manifest` CLI override (default `None`), resolved against
+  `os.path.dirname(GROUND_TRUTH_MANIFEST)` + `aruco_markers_01_manifest.json` when unset, passed
+  into `MarkerClassifier(..., manifest_path=...)`.
+- `host_software/ml_jetson_vla/runtime/run_jetson_standalone.py`: `JetsonExpertPolicy.__init__`
+  gained a `marker_manifest_path: Optional[str] = None` parameter, same resolution logic, same
+  `FileNotFoundError` convention this constructor already uses for `cnn_path`/`audio_path`; threaded
+  through from a new `--marker-manifest` CLI arg at the real (only) construction call site
+  (confirmed via repo-wide grep -- `JetsonExpertPolicy(` has exactly one call site, and it already
+  uses keyword args throughout, so inserting a new parameter mid-signature is safe).
+
+All 3 files verified: `py_compile` clean on each; full `ml_jetson_vla/tests/` suite re-run (154
+passed, 1 pre-existing skip, 0 regressions -- `run_jetson_standalone.py` has no dedicated test file,
+confirmed, but this catches anything that imports it indirectly); `ml_vision/tests/` re-run,
+identical pre-existing baseline to the dispatched agent's own run (2 failed/11 passed/6 errors, all
+pre-existing and unrelated). Then directly constructed a real `JetsonExpertPolicy` (real ONNX CNN
+session, `dummy_audio=True` to skip the audio model, `script_dir='.'` from `host_software/`) --
+confirmed it builds successfully and `marker_classifier._manifest_features` loads exactly the 5 real
+`aruco_markers_01` features (`blue_circle` at `(0,0)`, etc.), not a mock.
+
+**Still genuinely outstanding, honestly**: live-Jetson confirmation against the real, physically-
+mounted `aruco_markers_01` sheet (`diagnose_small_cnn_grounder_live.py --instruction go_black`-style
+verification) has not been run for ANY of the now-4 wired call sites, including the one wired
+yesterday. Nothing in this entry should be read as hardware-confirmed -- it's offline/code-level
+verification only, same honest boundary the dispatched agent itself insisted on.
+
 ## 07/10/2026 (ongoing)
 ### Arm 2 action-head design work; a second, distinct touch-sensor data bug found by manual image review
 
