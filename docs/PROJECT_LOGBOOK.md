@@ -338,6 +338,99 @@ fraction excluding the first chunk -- same clean pattern as every other real run
   mostly-GPU-bound Qwen grounding thread didn't. Still safely inside the 333ms chunk budget at
   chunk_len=10 (hence 0 rejects, ~0% stalls) -- a real curiosity, not a problem.
 
+### Marker Classifier: cv2.mean() Hue-Wraparound Bug Fixed For Real
+
+**Trigger**: `diagnose_small_cnn_grounder_live.py` (built earlier today, commit `e577376`) run against
+10 real consecutive live Jetson frames requesting `go_black` showed 6 blobs detected every frame (ArUco
+and blob-formation both confirmed fine), but 2-3 of the 6 consistently read `"red"` and 0 ever read
+`"black"`, despite only one real red marker on the platform -- see `SmallCnnGroundingPolicy.last_debug`
+output quoted in that commit's follow-up. This directly blocks `docs/EVALUATION_STRATEGY.md`'s
+sequence's `go_black` step on real hardware, not just a historical-dataset curiosity.
+
+**Root cause, confirmed (not assumed) via real pixel-level measurement, extending the 15/09/2026
+"Marker Classifier" entries' investigation rather than re-deriving it**: those entries found and
+explicitly left unfixed ("pre-existing, out-of-scope") that `_classify_color()`'s `cv2.mean()` call
+linearly averages OpenCV hue -- a circular quantity that wraps at 180->0 -- over each blob's pixels,
+corrupting any blob whose true color straddles the wrap. Measured directly today on
+`session_20260810_114330` (1200-frame real-data harness, same methodology as every prior entry):
+real `red_triangle` blobs have 38.1% of pixels <=H10 and 59.2% >=H160 (genuinely wrap-straddling) --
+the OLD linear mean reports ~104.6 (nowhere near red's bin, explaining 15/09's measured 44/1196, 3.7%
+red_triangle recall); the CORRECT circular mean (unit-vector/atan2 construction) reports ~161.9-177.8,
+squarely inside it.
+
+**Does this explain black-reading-as-red specifically, not just red's own recall?** Partially directly,
+partially via a second, distinct mechanism found during this investigation -- checked rather than
+assumed, per the task's own instruction not to take the obvious hypothesis on faith:
+1. Fixing `cv2.mean()` alone (`_circular_mean_hue()`, wired into `MarkerClassifier.classify()`'s call
+   site) does NOT make `black_circle`'s own blob satisfy red's *strict* bin on this dataset (measured:
+   0.0% both before and after) -- black's average-case circular-mean hue is still ~120-125 (near blue's
+   canonical center), matching the 15/09 entry's finding.
+2. It DOES, however, reveal a real right-tail in black_circle's hue distribution reaching into
+   160-180 (p95=163.4, p99=171.9, n=1200) -- close enough to red's canonical fallback center (0.0) to
+   be claimed by the *nearest-hue fallback tier* (not the strict bin) once that tier's distances are no
+   longer computed from a wrap-corrupted mean. Measured directly: switching to the circular mean alone
+   (fallback tier otherwise untouched) raised black_circle's false-"red" count via the fallback tier
+   from 0/1200 to 19/1200 -- a real, newly-exposed mechanism, reproduced end-to-end, not inferred.
+3. Added a saturation gate to the fallback tier (`MIN_FALLBACK_SATURATION`): hue is only a meaningful
+   signal once a pixel has real chroma, the same reasoning the 09/15 entry already used to exclude
+   "black" from `COLOR_HUE_CENTERS` in the first place -- this closes the gap in that reasoning (it
+   stopped black from *claiming* a hue-fallback label, but never stopped black's own blobs from being
+   pulled toward one). Swept 20/25/30/35/40 end-to-end: black's false-"red" count falls 19->9->6->1->0,
+   but `blue_triangle`'s own correct rate (which comes almost entirely from this same fallback tier --
+   only 1.5% without it) holds flat through 30 (51.1%->50.8%->50.4%) then cliffs at 35 (31.5%) and 40
+   (7.7%), because blue's own real mean saturation (38.5) starts getting excluded by the gate itself.
+   Shipped 30: cuts black's false-red 68% (19->6) for a small, real cost (-0.7pp blue, -1.4pp red).
+4. **Live Jetson's reported magnitude (2-3/6 blobs reading red every single frame) is larger than this
+   historical dataset's measured residual (6/1200, 0.5%)** -- read honestly as evidence the live
+   camera's exposure/color-cast is a more extreme case of the same real mechanism, not full
+   confirmation; live hardware verification (see below) is still the real test.
+
+**A second, independent regression found and fixed, not glossed over**: switching to the correct
+circular mean, by itself, revealed that `yellow_square`'s real circular-mean hue (full/CNN-realistic
+mask, matched-by-position population) sits at p1=7.8/p50=15.1/p99=23.7 -- almost entirely *inside*
+red's old 0-15 lower bound, and well below yellow's own 20 floor (both calibrated against the OLD,
+buggy linear mean on 09/15, which is a different, uncomparable number). Tested in isolation before
+touching anything else: circular-mean fix alone collapsed yellow_square's correct rate from 86.6% to
+2.2% (524/1198 of its own blobs newly satisfying red's full strict bin). Confirmed NOT a check-order
+issue (swapping `COLOR_CHECK_ORDER` to check yellow before red had zero effect -- yellow's blobs were
+failing yellow's own H>=20 floor outright, not being stolen by an earlier check). Fix: narrowed red's
+lower bound 15->6 (red's own low-end samples measure p99=5.8, essentially never above it) and lowered
+yellow's floor 20->9, leaving the small real ~2-unit gap (5.8 to 7.8) deliberately unclaimed -- same
+"safer unknown than confidently wrong" discipline as the existing 42-45 yellow/green gap.
+
+A third, smaller regression (green_hexagon 94.5%->91.7% from the circular-mean fix alone, because its
+own real hue has an ~8% tail sitting just below the old 45 floor -- previously, coincidentally, pulled
+up into range by the very bug being fixed) was found and fully recovered by re-sweeping the floor
+(45/44/43/42/40 -> 91.7%/95.1%/96.1%/96.4%/96.6%, yellow's own count byte-for-byte unchanged at every
+value by construction). Shipped 43, keeping a deliberate 1-unit gap above yellow's ceiling rather than
+touching it.
+
+**Final end-to-end numbers, same 1200-frame real-data harness, MarkerClassifier() shipped defaults,
+before (09/15 state) -> after (today)**:
+- `red_triangle`: 44/1196 (3.7%) -> **1169/1196 (97.7%)** -- the primary target, fixed for real.
+- `yellow_square`: 1038/1198 (86.6%) -> 1154/1198 (96.3%) -- improved (recalibration side effect).
+- `green_hexagon`: 1126/1191 (94.5%) -> 1145/1191 (96.1%) -- improved, no regression (recovered + net gain).
+- `black_circle`: 1124/1200 (93.7%) -> 1124/1200 (93.7%) -- unchanged, no regression; its wrong-label
+  mix shifted (false-red 0->6/1200, offset by fewer false-green/blue/yellow), net correct count identical.
+- `blue_triangle`: 593/1181 (50.2%) -> 595/1181 (50.4%) -- unchanged within noise.
+
+All four of the task's explicit no-regression/improvement checks hold: no regression on
+green_hexagon/yellow_square/black_circle, and a dramatic real improvement on red_triangle.
+
+**Not yet done / explicitly open**: live-hardware verification is still the real outstanding step, same
+as the 15/09/2026 entries' own "live-hardware verification still outstanding" note -- every number
+above comes from `session_20260810_114330` (laptop webcam, historical), never the Jetson's own
+camera/lighting that produced today's bug report. Re-run, on the Jetson, using the exact script that produced today's original evidence:
+`python host_software/ml_jetson_vla/experiments/diagnose_small_cnn_grounder_live.py --instruction go_black --n-frames 20`
+(repo root as cwd; swap in whatever Python/camera-index the Jetson's own environment uses) and confirm
+`black_circle` now reads `"black"` (or at worst `"unknown"`, never `"red"`) across those
+frames, and that `red_triangle` itself still reads `"red"` reliably (not a regression introduced by
+narrowing its bin). The residual 6/1200 (~0.5%) false-"black"-as-"red" rate on the historical dataset is
+a known, quantified, NOT fully eliminated risk, same shape as the black S-cap and green S-floor
+residuals already documented in `marker_classifier.py` itself -- if live verification shows it's worse
+than this historical rate (plausible, see point 4 above), the next lever is `MIN_FALLBACK_SATURATION`
+itself (currently 30, with blue_triangle's cliff at 35 as the real ceiling on how far it can move).
+
 ## 07/10/2026 (ongoing)
 ### Arm 2 action-head design work; a second, distinct touch-sensor data bug found by manual image review
 

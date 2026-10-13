@@ -21,7 +21,7 @@ against the ball-label point-reflection fix in auto_label_shared_vision.py
 
 import math
 from dataclasses import dataclass
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -79,10 +79,58 @@ PAPER_MARGIN_MM = 6.0
 #     eliminated residual risk -- tightening further trades away real
 #     black_circle recall for diminishing false-positive reduction (see
 #     black_s_cap_tradeoff numbers in the 2026-09-15 logbook entry).
+#
+# 13/10/2026 follow-up (docs/PROJECT_LOGBOOK.md, "Marker Classifier: cv2.mean()
+# Hue-Wraparound Bug Fixed For Real"): fixing the separate cv2.mean()
+# linear-hue-averaging bug (see _circular_mean_hue()) changed what _classify_color()
+# actually sees for yellow_square's and red_triangle's own hue -- the 2026-09-15
+# yellow ceiling (42) was tuned against the OLD buggy linear mean, which is a
+# different number from the correctly-computed circular mean. Re-measured yellow's
+# own real circular-mean hue (same 1200-frame real-data method as the 09-15 entry,
+# full/CNN-realistic mask, matched-by-position population): p1=7.8, p50=15.1,
+# p99=23.7 -- nowhere near the old floor of 20, let alone 35. Separately, real
+# red_triangle's own low-end (non-wrapped) samples measure p99=5.8 -- the two
+# real distributions sit right next to each other with only a ~2-unit true gap
+# (yellow's p1=7.8 vs red's p99=5.8). Narrowed red's lower bound 15->6 and
+# lowered yellow's floor 20->9, leaving that small real gap deliberately
+# unclaimed (same "safer unknown than confidently wrong" discipline as the
+# green/yellow 42-45 gap above) instead of moving the boundary on faith.
+#
+# Separately, the circular-mean fix alone (before any bin edits) measurably
+# regressed green_hexagon 94.5%->91.7% end-to-end -- its own real circular-mean
+# hue (same measurement method) has p5=44.2, i.e. ~8% of its real population
+# now legitimately sits just below the old 45 floor (this tail was previously,
+# coincidentally, pulled up into the 45-85 bin by the linear-mean bug -- a case
+# of the bug accidentally compensating for an over-tight floor, not a correct
+# classification for the right reason). Swept the floor at 45/44/43/42/40
+# end-to-end: green_hexagon recovers 91.7%/95.1%/96.1%/96.4%/96.6% as the floor
+# drops, with yellow_square's own correct count byte-for-byte UNCHANGED at
+# every value (1154/1198) -- guaranteed by construction, yellow is checked
+# before green in COLOR_CHECK_ORDER, so lowering green's floor can only claim
+# blobs yellow already rejected. Chose 43, not 40 or 42, to keep a deliberate
+# 1-unit gap above yellow's own ceiling (42) rather than touching it exactly --
+# diminishing returns past 43 (+2.9pp more green, by touching the boundary
+# outright) weren't worth giving up that margin.
 COLOR_BINS = {
     "blue": [(np.array([90, 50, 50]), np.array([150, 255, 255]))],
+    # Red's lower-wrap bound narrowed 15->7 (13/10/2026, alongside the
+    # _circular_mean_hue() fix below): once hue is computed correctly instead
+    # of via cv2.mean()'s linear average, real red_triangle's own low-end
+    # samples (the ones near H=0, not the ones near H=180) measure p90=3.3,
+    # p99=5.8 (n=36/398 real matched blobs, session_20260810_114330) -- never
+    # anywhere near the old 15 bound. Real yellow_square, measured the same
+    # way, sits at H p1=7.8/p50=15.1/p95=19.3 -- i.e. yellow's entire real
+    # range used to be inside red's old 0-15 bin. Before this narrowing, the
+    # circular-mean fix alone (tested in isolation) caused yellow_square's
+    # own correct-detection rate to collapse 86.6%->2.2% (524/1198 of its own
+    # blobs newly satisfying red's full strict H/S/V bin) -- NOT a check-order
+    # issue (confirmed by swapping COLOR_CHECK_ORDER with no effect: yellow's
+    # blobs were failing yellow's OWN H>=20 floor outright, not being stolen
+    # by an earlier check). Narrowing to 7 sits in the real gap between red's
+    # p99 (5.8) and yellow's p1 (7.8) -- same gap-leaving discipline as the
+    # yellow/green H boundary fix (2026-09-15).
     "red": [
-        (np.array([0, 50, 50]), np.array([15, 255, 255])),
+        (np.array([0, 50, 50]), np.array([6, 255, 255])),
         (np.array([165, 50, 50]), np.array([180, 255, 255])),
     ],
     # S floor lowered 50->20 (2026-09-15 follow-up): green_hexagon's real
@@ -108,13 +156,15 @@ COLOR_BINS = {
     # green tail relative to the old S=50 bin -- black_circle 0->14/1200
     # (1.2%), yellow_square 52->78/1198 (+2.2 points, since yellow's dim tail
     # already leaked into green somewhat even at S=50), red_triangle
-    # 359->375/1196 (+1.3 points, on top of the separate, already-documented
-    # red/blue hue-wraparound bug below -- this is a small amplification of
-    # that pre-existing bug, not a new one), blue_triangle 0->9/1181 (0.8%).
+    # 359->375/1196 (+1.3 points, on top of the separate red/blue
+    # cv2.mean()-hue-averaging bug -- see _circular_mean_hue() -- this was a
+    # small amplification of that bug while it was still unfixed; it was
+    # still present at the time this S-floor sweep was run (2026-09-15), fixed
+    # for real 13/10/2026), blue_triangle 0->9/1181 (0.8%).
     # All previously "unknown" blobs turning into a specific wrong color, not
     # previously-correct classifications being overwritten.
-    "green": [(np.array([45, 20, 50]), np.array([85, 255, 255]))],
-    "yellow": [(np.array([20, 50, 50]), np.array([42, 255, 255]))],
+    "green": [(np.array([43, 20, 50]), np.array([85, 255, 255]))],
+    "yellow": [(np.array([9, 50, 50]), np.array([42, 255, 255]))],
     "black": [(np.array([0, 0, 0]), np.array([180, 20, 150]))],
 }
 # Check order matters: black's V bound can overlap the low-V edge of the hue
@@ -176,24 +226,103 @@ def _classify_shape(contour: np.ndarray, area: float) -> str:
 
 def _circular_hue_distance(h1: float, h2: float, hue_range: float = 180.0) -> float:
     """Wrap-aware distance between two OpenCV hues (0-180 scale, wraps at
-    180->0). NOT the same mistake as the pre-existing, out-of-scope
-    cv2.mean()-over-a-wrapping-blob bug documented above (that one averages
-    raw hue values linearly before this function ever sees them -- e.g. a
-    blob straddling the wrap can report a mean hue of ~90 for a true red
-    blob). This function only fixes the DISTANCE calculation from an already
-    -computed (possibly still wrap-contaminated) mean hue to a canonical
-    color center -- e.g. naive `abs(178 - 2)` would report 176 (nearly
+    180->0). Originally written only to fix the fallback tier's own
+    center-distance calculation, while a separate `cv2.mean()`-over-a-
+    wrapping-blob bug in blob HSV extraction was deliberately left unfixed
+    (see `_circular_mean_hue()` below, which now fixes that bug for real,
+    13/10/2026) -- e.g. naive `abs(178 - 2)` would report 176 (nearly
     maximally far) when the true circular distance is 4."""
     diff = abs(h1 - h2) % hue_range
     return min(diff, hue_range - diff)
 
 
-def _nearest_hue_fallback(h: float, threshold: float) -> str:
+def _circular_mean_hue(hue_channel: np.ndarray, blob_mask: np.ndarray, hue_range: float = 180.0) -> float:
+    """Wrap-aware mean of a blob's OpenCV hue values (0-180 scale, wraps at
+    180->0). Fixes the real bug previously described at the `cv2.mean()` call
+    site below as "pre-existing" and "out-of-scope" (13/10/2026,
+    docs/PROJECT_LOGBOOK.md -- see "Marker Classifier: cv2.mean() Hue-
+    Wraparound Bug Fixed For Real"): a plain scalar average of hue is wrong
+    whenever a blob's true color straddles the hue wrap point, because hue is
+    an angle, not a linear quantity -- e.g. a blob whose pixels split between
+    H~178 and H~2 (a real red blob, noisy near the wrap) linearly averages to
+    ~90 (green/cyan), nowhere near its true red hue. The fix: treat each
+    pixel's hue as a point on the unit circle (angle = hue * 2*pi/180),
+    average the unit vectors (mean sin, mean cos), and take the angle of the
+    resulting vector (atan2) as the circular mean -- the standard construction
+    for averaging angular/circular data, equivalent to minimizing total
+    circular distance to every sample. Confirmed end-to-end against real data
+    (1200-frame harness, session_20260810_114330): red_triangle's real blobs
+    have 38.1% of pixels <=H10 and 59.2% >=H160 (a genuinely wrap-straddling
+    distribution) -- the old linear mean reports ~104.6 (does not reach
+    red's bin at all); the circular mean correctly reports ~161.9-177.8,
+    squarely inside it."""
+    ys, xs = np.nonzero(blob_mask)
+    if len(ys) == 0:
+        return 0.0
+    hues = hue_channel[ys, xs].astype(np.float64)
+    angles = hues * (2.0 * math.pi / hue_range)
+    mean_sin = float(np.sin(angles).mean())
+    mean_cos = float(np.cos(angles).mean())
+    mean_angle = math.atan2(mean_sin, mean_cos)
+    mean_hue = (mean_angle * hue_range) / (2.0 * math.pi)
+    return mean_hue % hue_range
+
+
+# Minimum mean saturation required before the nearest-hue fallback tier is
+# allowed to claim a blob at all (13/10/2026 fix, alongside _circular_mean_hue()
+# -- docs/PROJECT_LOGBOOK.md, "Marker Classifier: cv2.mean() Hue-Wraparound Bug
+# Fixed For Real"). Rationale, same one the file already uses to justify
+# excluding "black" from COLOR_HUE_CENTERS: hue is only a meaningful signal
+# once a pixel has real chroma -- for a low-saturation/achromatic blob, even a
+# *correctly computed* circular mean hue is still just amplified sensor noise,
+# not a stable color reading. Before this gate, a live-Jetson diagnostic
+# (`diagnose_small_cnn_grounder_live.py`) showed black_circle blobs reading as
+# "red" multiple frames in a row -- reproduced here on the historical harness
+# once _circular_mean_hue() was wired in: black_circle's own strict S<=20/V<=150
+# bin (its correct tier) already fails to match ~6% of its real blobs for
+# reasons unrelated to hue (borderline S/V, pre-existing residual, see the
+# black S-cap note above) -- those blobs used to scatter toward whichever of
+# blue/green/yellow the fallback tier's circular-hue search happened to land
+# nearest, and after the circular-mean fix, land nearest to RED far more often
+# for a real, measured reason: black_circle's circular-mean hue has a genuine
+# right tail reaching into the 160-180 range (p95=163.4, p99=171.9 on the
+# 1200-frame harness) -- well within the fallback threshold's reach of red's
+# 0.0 center.
+#
+# Threshold swept (not assumed) at 20/25/30/35/40 end-to-end via the same
+# 1200-frame real-data harness, MarkerClassifier() shipped defaults otherwise:
+# black_circle's false-"red" count via the fallback tier falls 19 (S=20,
+# fallback unguarded) -> 9 (25) -> 6 (30) -> 1 (35) -> 0 (40) as the gate
+# tightens. But blue_triangle's own correct-detection rate (which comes almost
+# entirely FROM this fallback tier -- only 1.5% without it) holds nearly flat
+# through 30 (51.1% -> 50.8% -> 50.4%) then falls off a cliff at 35->40 (31.5%
+# -> 7.7%), because blue_triangle's own real mean saturation (38.5, measured
+# via the hue-stats diagnostic) starts getting excluded by the gate itself
+# past that point. Chose 30: sits clearly below blue's cliff (cost: -0.7pp
+# blue, -1.4pp red_triangle, both real but small) while still cutting black's
+# false-red count 19->6 (68% relative reduction) -- the residual 6/1200
+# (~0.5%) is a known, quantified, NOT fully eliminated risk, same shape as the
+# black S-cap and green S-floor residuals documented elsewhere in this file;
+# pushing past 30 trades away blue_triangle's entire real recovery for
+# diminishing black-side returns. yellow_square's correct count (1154/1198,
+# 96.3%) is unaffected by this parameter across the whole swept range -- it
+# no longer depends on the fallback tier at all after the H-floor fix above.
+MIN_FALLBACK_SATURATION = 30.0
+
+
+def _nearest_hue_fallback(h: float, s: float, threshold: float, min_saturation: Optional[float] = None) -> str:
     """Second-tier color assignment for blobs that hit no strict COLOR_BINS
     entry: nearest COLOR_HUE_CENTERS entry by circular hue distance, IF within
-    `threshold`. Returns "unknown" if nothing is close enough (threshold<=0
-    disables the tier entirely, since no real distance can be <= 0)."""
-    if threshold <= 0:
+    `threshold` AND the blob has enough saturation for hue to be a meaningful
+    signal at all (see MIN_FALLBACK_SATURATION). Returns "unknown" if nothing
+    is close enough, or if saturation is too low to trust hue in the first
+    place (threshold<=0 disables the tier entirely, since no real distance
+    can be <= 0). `min_saturation` defaults to the module-level
+    MIN_FALLBACK_SATURATION, looked up at call time (not bound as a mutable
+    default argument) so tests/sweeps can monkeypatch the module constant."""
+    if min_saturation is None:
+        min_saturation = MIN_FALLBACK_SATURATION
+    if threshold <= 0 or s < min_saturation:
         return "unknown"
     best_color, best_dist = "unknown", float("inf")
     for color, center in COLOR_HUE_CENTERS.items():
@@ -214,8 +343,9 @@ def _classify_color(mean_hsv: Tuple[float, float, float], fallback_hue_threshold
                 return color
     # Second tier: only reached when no strict bin matched above -- never
     # overrides a confident classification. See COLOR_HUE_CENTERS' comment for
-    # why "black" doesn't participate.
-    return _nearest_hue_fallback(h, fallback_hue_threshold)
+    # why "black" doesn't participate, and MIN_FALLBACK_SATURATION's comment
+    # for why low-saturation blobs are blocked from this tier entirely.
+    return _nearest_hue_fallback(h, s, fallback_hue_threshold)
 
 
 def _soft_argmax_centroid(heatmap: np.ndarray, blob_mask: np.ndarray) -> Tuple[float, float]:
@@ -328,7 +458,14 @@ class MarkerClassifier:
                 continue
             contour = max(contours, key=cv2.contourArea)
 
-            mean_hsv = cv2.mean(hsv_full, mask=blob_mask * 255)[:3]
+            # S/V are scalar (non-circular) quantities -- cv2.mean()'s plain average
+            # is correct for them. H is an angle and needs the wrap-aware circular
+            # mean (_circular_mean_hue()) instead; using cv2.mean()'s linear average
+            # for H here was the real, previously out-of-scope bug (13/10/2026 fix,
+            # see _circular_mean_hue()'s docstring and docs/PROJECT_LOGBOOK.md).
+            _, mean_s, mean_v, _ = cv2.mean(hsv_full, mask=blob_mask * 255)
+            mean_h = _circular_mean_hue(hsv_full[:, :, 0], blob_mask)
+            mean_hsv = (mean_h, mean_s, mean_v)
             color = _classify_color(mean_hsv, fallback_hue_threshold=self.fallback_hue_threshold)
             shape = _classify_shape(contour, area)
             cx_px, cy_px = _soft_argmax_centroid(heatmap_prob, blob_mask)
