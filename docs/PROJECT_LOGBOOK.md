@@ -1133,6 +1133,20 @@ death): `...\scratchpad\lerobot_combined_20261013_safety_filtered` (dataset) and
 `act_train_colab.ipynb`'s `run_003` cell already expects), then run that notebook for the actual
 retrain.
 
+### Jerk/smoothness metric wired into `evaluate_system_control.py` (the one piece ml-multimodal's fix left outside its write boundary)
+
+One-line addition, as scoped: `compute_metrics()` now merges
+`**jerk_metrics_for_segments(times, touch_x, touch_y, segments)` into its return dict, importing
+from `ml_multimodal.evaluations.trajectory_smoothness` (via `_HOST_SOFTWARE_DIR` already on
+`sys.path`, confirmed resolvable with no `__init__.py` needed -- implicit namespace package).
+`times`/`touch_x`/`touch_y`/`segments` are all already-computed local variables in
+`compute_metrics()`; nothing else changed. Re-ran end-to-end against the same real telemetry the
+original implementation was verified against (`session_jetson_track4_20260915_151627/
+telemetry.csv`): `Average_Jerk_Mean_mm_s3 = 16360.98`, `Average_Jerk_RMS_mm_s3 = 45838.09`,
+`Jerk_Trials_Excluded = 0` of 11 total trials -- identical to the standalone verification, confirming
+correct wiring, not just a clean import. No test suite exists yet for `evaluate_system_control.py`
+(confirmed, none found) -- this real end-to-end run against known-real data stands in for one.
+
 ## 07/10/2026 (ongoing)
 ### Arm 2 action-head design work; a second, distinct touch-sensor data bug found by manual image review
 

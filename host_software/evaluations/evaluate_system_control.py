@@ -38,6 +38,8 @@ _HOST_SOFTWARE_DIR = os.path.abspath(os.path.join(_THIS_DIR, ".."))
 if _HOST_SOFTWARE_DIR not in sys.path:
     sys.path.append(_HOST_SOFTWARE_DIR)
 
+from ml_multimodal.evaluations.trajectory_smoothness import jerk_metrics_for_segments  # noqa: E402
+
 from src.touch_ground_truth_filter import flag_touch_position_outliers
 
 REQUIRED_COLUMNS = [
@@ -391,6 +393,7 @@ def compute_metrics(df, run_label="run"):
             "trial to have succeeded."
         ),
         **_inference_latency_stats(df),
+        **jerk_metrics_for_segments(times, touch_x, touch_y, segments),
     }
 
 

@@ -224,10 +224,12 @@ without any of these — the ledger below leads with exactly which items those a
   excluded): `Average_Jerk_Mean_mm_s3 ≈ 16361`, `Average_Jerk_RMS_mm_s3 ≈ 45838` unfiltered,
   dropping to `≈10622`/`≈14002` with `--filter-touch-outliers` (confirms real sensitivity to the
   known touch-plate glitch pattern — always report alongside whether filtering was applied).
-  **Still needed, outside this fix's scope**: the `evaluate_system_control.py` owner wiring
-  `**jerk_metrics_for_segments(times, touch_x, touch_y, segments)` into `compute_metrics()`'s
-  return dict — a one-line addition, no further design work. Source: `docs/EVALUATION_STRATEGY.md`
-  "Extended Metrics" section (updated in place); `docs/PROJECT_LOGBOOK.md` 18/09/2026 "Telemetry
+  **Wired into `evaluate_system_control.py` 2026-10-13 (end-of-session pass)**:
+  `compute_metrics()` now merges `**jerk_metrics_for_segments(times, touch_x, touch_y, segments)`
+  into its return dict; re-run end-to-end against the same real telemetry gave identical numbers
+  to the standalone verification above, confirming correct wiring. Fully closed. Source:
+  `docs/EVALUATION_STRATEGY.md` "Extended Metrics" section (updated in place);
+  `docs/PROJECT_LOGBOOK.md` 18/09/2026 "Telemetry
   Field-History Audit" entry; 13/10/2026 "Ball-trajectory jerk/smoothness" entry.
 - [ ] **Disturbance-rejection/robustness metric under injected perturbation never implemented**
   `[JETSON-HW — needs a real physical perturbation test protocol, not a formula]`
