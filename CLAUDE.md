@@ -90,6 +90,18 @@ Agents must not choose, implement, or design around any of these — surface tra
 | Microphone integration | Standalone INMP441 breakout, **or** design the mic circuit directly into a custom PCB |
 | PCB consolidation | Not committed — one PCB carrying motor-driver headers, FPGA comms, mic circuit, and internal PSU is a brainstorm, not a spec |
 
+## TODO Ledger
+
+`docs/TODO.md` is the top-level ledger of significant open items (architecture decisions, real
+unresolved bugs, genuine blockers — not minor cleanup notes). Check it for work relevant to your
+lane before starting something new; `docs/PROJECT_LOGBOOK.md` has the full history/rationale
+behind each entry, `docs/TODO.md` tracks current actionable status only.
+
+**End-of-session rule**: before considering a work session wrapped up, review what was attempted
+versus actually completed. Anything flagged, started-but-unfinished, or explicitly deferred must
+be added to `docs/TODO.md` — figure this out proactively from the session's own content, don't
+wait to be asked. Remove or check off an entry once it's genuinely resolved.
+
 ## Coding Conventions & Engineering Standards
 
 - **Python environment:** `C:/Users/Admin/.conda/envs/ball_balance_env/python.exe`. Always use this interpreter (several pinned deps — tensorflow, torch, fastmcp — are only validated against Python 3.10 in this env).
