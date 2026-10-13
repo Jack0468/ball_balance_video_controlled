@@ -111,17 +111,23 @@ just delete it, logbook already has the history) once genuinely done.
   ball placement (overlapping an ArUco marker directly) produced 0/136 valid touch samples,
   while all four platform corners tested normal read fine. Localized, not systemic, not chased
   further. Source: `docs/PROJECT_LOGBOOK.md` 13/10/2026, H1 corner-testing entries.
-- [ ] **No periodic re-grounding: colour targets go stale for seconds at a time** (flagged
-  2026-10-06, owner: ml-multimodal) — confirmed still absent in `core/hybrid_policy.py` (no
-  periodic/re-grounding logic found). Every real/replay run of `HybridQwenActPolicy`/
-  `HybridSmallCnnActPolicy` tested to date grounds a colour command once, then never refreshes
-  it while the command is held, producing target-age p90 of ~4.2-8.9s depending on session —
-  well past the project's own proposed <=2000ms criterion
-  (`EXPERIMENT_OPTIONS_PLAN_2026_10_07.md` section 3). A faster grounder (the 2026-10-13
-  small-CNN grounder) reduces the fraction of ticks with no target at all but does not fix this
-  staleness mechanism, which is architectural. Source: `docs/PROJECT_LOGBOOK.md` 2026-10-06/07/09/13
-  entries; `host_software/ml_jetson_vla/docs/EXPERIMENT_OPTIONS_PLAN_2026_10_07.md` section 4,
-  "Known limit #2."
+- [x] **No periodic re-grounding: colour targets go stale for seconds at a time** (flagged
+  2026-10-06, resolved 2026-10-13, owner: ml-multimodal) — `core/hybrid_policy.py`'s `act()` now
+  re-submits a held colour command to the grounder on a cadence (`DEFAULT_REGROUND_INTERVAL_S`,
+  1.0s default, constructor-overridable) instead of grounding once on instruction-change and
+  never again, bounding steady-state target age by roughly `max(interval, grounding backend
+  latency)` instead of letting it grow for the whole hold duration (previously measured p90
+  ~4.2-8.9s, well past the project's own proposed <=2000ms criterion). Verified with a new
+  synthetic test (`tests/test_hybrid_policy_cpu.py`'s `PeriodicRegroundingTests`, driven through
+  the real `_Grounder`/`_FastWorker` threads) showing measured target age stays under 2000ms
+  while a command is held, and that `SmolVLADirectPolicy` is structurally unaffected. Full
+  `ml_jetson_vla/tests/` suite: 133 passed/1 skip before, 136 passed/1 skip after, 0 regressions.
+  **Not yet re-measured against a real session replay/live run with the real Qwen or small-CNN
+  backend** (needs Jetson/Docker access) — the old 4.2-8.9s figures are the pre-fix baseline this
+  closes, not superseded by a new measured number yet. Source: `docs/PROJECT_LOGBOOK.md`
+  2026-10-06/07/09/13 entries (13/10's "Periodic re-grounding added..." entry has the full
+  writeup); `host_software/ml_jetson_vla/docs/EXPERIMENT_OPTIONS_PLAN_2026_10_07.md` section 4,
+  "Known limit #2" (updated in place).
 - [ ] **SmolVLA's 6-to-3 output reduction and state zero-padding are undecided placeholders**
   (flagged 2026-10-07, owner: ml-multimodal) — `SmolVLADirectPolicy`/`SmolVLAFastLayer` reduce
   the model's native 6-value action output to this platform's 3 (`theta_a/b/c`) by taking the

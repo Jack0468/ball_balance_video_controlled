@@ -2,6 +2,52 @@
 
 ## 13/10/2026
 
+### Periodic re-grounding added to `core/hybrid_policy.py` -- closes the 2026-10-06 target-staleness gap
+
+Confirmed the gap was still real before touching anything: `HybridQwenActPolicy`/
+`HybridSmallCnnActPolicy`'s `act()` only called `_Grounder.request()` when the incoming
+`instruction` differed from `self._last_instruction` -- a colour command held for seconds (the
+real/replay-measured norm) never triggered a second grounding call, so the target it drove the
+fast layer against kept aging for the whole hold duration (p90 4.2-8.9s measured across real
+sessions, `EXPERIMENT_OPTIONS_PLAN_2026_10_07.md` section 4 "Known limit #2", well past the
+project's own proposed <=2000ms criterion in section 3).
+
+**Fix**: `act()` now tracks `self._active_grounding_instruction` -- the raw colour-command
+instruction currently being held, set whenever the orchestrator resolves a marker-label request,
+cleared by a directional/hold/stop resolve (which supersedes any held colour target) or by
+`reset()`. A new block re-submits that instruction to the grounder on a cadence
+(`DEFAULT_REGROUND_INTERVAL_S`, 1.0s default, both policies take an optional
+`reground_interval_s` constructor override) whenever the per-tick instruction-change block did
+not already just issue a request this same tick -- avoids a double-fire in the same `act()` call.
+`_Grounder.request()`'s existing non-blocking, drop-if-busy contract (queue `maxsize=1`) is
+unchanged and already makes this safe: a periodic request during an in-flight slow call to Qwen
+just gets dropped, exactly like an instruction-change request would.
+
+**Why this bound works**: steady-state target age becomes roughly
+`max(reground_interval_s, grounding backend latency)` instead of growing for the whole hold
+duration. For Qwen (~1.7-2s/call, the dominant term since it exceeds the 1.0s default interval)
+this lands a fresh result roughly every ~1.7-2s, keeping age under the <=2000ms target at the
+margin; for the 2026-10-13 small-CNN grounder (<10ms/call) the 1.0s interval itself dominates,
+giving a tighter bound. Not yet re-measured against a real session replay/live run with either
+real backend -- that requires Jetson/Docker access not available from here; what changed here is
+the mechanism, verified with a synthetic/CPU test, not a new measured number superseding the
+old 4.2-8.9s figures (those stay accurate as the pre-fix baseline).
+
+**Tests** (`tests/test_hybrid_policy_cpu.py`, new `PeriodicRegroundingTests`, 3 tests, driven
+through the REAL `_Grounder`/`_FastWorker` background threads via `_FakeSmallCnnGroundingPolicy`,
+no mocked clock): (1) holding the same colour instruction for ~1s at a 0.1s re-ground interval
+produces more than one real grounding call and keeps measured target age under 2000ms throughout;
+(2) switching to a directional command (`hold`) clears `_active_grounding_instruction` and stops
+further periodic calls; (3) `SmolVLADirectPolicy` (no `_Grounder` at all) is structurally
+unaffected -- no `_active_grounding_instruction`/`_grounder` attributes, `act()` behaviour
+unchanged. Full `ml_jetson_vla/tests/` suite: **133 passed/1 pre-existing skip before this change,
+136 passed/1 pre-existing skip after (the 3 new tests), 0 regressions** -- confirmed via
+`git stash push` on only the two changed files to get a true before/after on the same working
+tree (other in-flight work on `data_processing/convert_to_lerobot.py` and its background
+conversion job were left untouched throughout). Also updated
+`EXPERIMENT_OPTIONS_PLAN_2026_10_07.md` section 4 point 2 to record the fix in place (it
+previously read "Not implemented").
+
 ### Non-Qwen grounder built so ACT can be tested/trained in isolation from Qwen's grounding noise/latency
 
 ACT (`experiments/fast_layers.py`'s `ActFastLayer`) still isn't trained. Testing/training its own

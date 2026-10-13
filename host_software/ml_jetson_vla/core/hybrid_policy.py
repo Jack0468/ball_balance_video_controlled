@@ -9,8 +9,14 @@ latest instruction into a `TargetRequest`. Colour commands are handed to a backg
 worker (`_Grounder`, `QwenVLBackend` via `core.minimal_vlm_policy.MinimalVLMPolicy`, reusing its
 prompt/parse/pixel-to-mm pipeline rather than re-deriving it) running on its own slow cadence --
 same `TargetStore` split as `deployment/bench_hybrid_qwen_act.py`'s slow loop, imported from there,
-not reimplemented. Directional/hold/stop commands resolve to a fixed mm target with no grounding
-call. The fast layer (`ActFastLayer`, or `StubFastLayer` for CPU/offline use) runs in its own
+not reimplemented. **Periodic re-grounding (2026-10-13 fix, see `DEFAULT_REGROUND_INTERVAL_S`)**:
+a colour command is re-submitted to the grounder on that cadence for as long as it stays the held
+instruction, not just once when it first arrives -- closes the staleness gap flagged 2026-10-06
+(target-age p90 measured 4.2-8.9s with no re-grounding) and
+`EXPERIMENT_OPTIONS_PLAN_2026_10_07.md` section 4 "Known limit #2". Directional/hold/stop commands
+resolve to a fixed mm target with no grounding call (and clear any held colour command's periodic
+re-grounding, since it is no longer the active target). The fast layer (`ActFastLayer`, or
+`StubFastLayer` for CPU/offline use) runs in its own
 background worker (`_FastWorker`), chunk-scheduled via `experiments.schedule.ChunkScheduler` --
 `act()` never blocks on either worker: it serves whatever chunk element is already scheduled and
 submits a new replan if one is due, exactly like `bench_hybrid_qwen_act.py`'s two-rate model and
@@ -132,6 +138,19 @@ from ml_jetson_vla.experiments.serial_protocol import AngleOutOfRangeError, form
 _QUEUE_POLL_S: float = 0.05
 _THREAD_JOIN_TIMEOUT_S: float = 2.0
 TRAINED_MARKER: str = "TRAINED checkpoint"  # exact substring ActFastLayer sets for a real checkpoint
+
+# Periodic re-grounding cadence (2026-10-13 fix for the staleness gap flagged 2026-10-06 and
+# EXPERIMENT_OPTIONS_PLAN_2026_10_07.md section 4 "Known limit #2"): a held colour command used to
+# ground exactly once, then never again, letting target age grow unbounded for as long as the
+# command stayed held (measured p90 4.2-8.9s across real sessions). Re-requesting on this cadence
+# instead bounds steady-state target age by roughly max(interval, grounding backend latency):
+# Qwen's own measured ~1.7-2s/call (`docs/PROJECT_LOGBOOK.md` 09/10/2026) dominates when it is the
+# backend, landing a fresh result roughly every ~1.7-2s and keeping age under this project's
+# proposed <=2000ms criterion (`EXPERIMENT_OPTIONS_PLAN_2026_10_07.md` section 3); the 2026-10-13
+# small-CNN grounder (<10ms/call) is instead bounded by this interval itself. `_Grounder.request()`
+# is already non-blocking and drops a request if the previous one is still in flight (unchanged),
+# so firing this on every tick once the interval has elapsed is safe and never stalls `act()`.
+DEFAULT_REGROUND_INTERVAL_S: float = 1.0
 
 
 def _is_trained_for_task(weights_status: str) -> bool:
@@ -344,6 +363,7 @@ class HybridQwenActPolicy(Policy):
         grounding_prompt_variant: str = "baseline",
         control_hz: float = CONTROL_HZ,
         margin_ms: float = DEFAULT_MARGIN_MS,
+        reground_interval_s: float = DEFAULT_REGROUND_INTERVAL_S,
     ) -> None:
         grounder: Optional[_Grounder] = None
         if grounding_backend is not None:
@@ -351,7 +371,7 @@ class HybridQwenActPolicy(Policy):
                 grounding_backend, pixel_to_mm=pixel_to_mm, prompt_variant=grounding_prompt_variant
             )
             grounder = _Grounder(grounding_policy)
-        self._init_common(fast_layer, orchestrator, grounder, control_hz, margin_ms)
+        self._init_common(fast_layer, orchestrator, grounder, control_hz, margin_ms, reground_interval_s)
 
     def _init_common(
         self,
@@ -360,6 +380,7 @@ class HybridQwenActPolicy(Policy):
         grounder: Optional[_Grounder],
         control_hz: float,
         margin_ms: float,
+        reground_interval_s: float = DEFAULT_REGROUND_INTERVAL_S,
     ) -> None:
         """Shared construction tail for `HybridQwenActPolicy` and `HybridSmallCnnActPolicy` --
         everything downstream of "what `Policy` backs the `_Grounder`, if any". Not part of either
@@ -376,6 +397,13 @@ class HybridQwenActPolicy(Policy):
         self._used_done_s: float = -float("inf")
         self._last_instruction: Optional[str] = None
         self._instruction_text: Optional[str] = None  # command_to_text() form, for the fast layer
+        self._reground_interval_s: float = reground_interval_s
+        # The instruction currently being grounded on a periodic cadence (the raw vocabulary form,
+        # e.g. "go_red" -- `_Grounder.request()`'s expected form), or None while no colour command
+        # is held (directional/hold/stop, or nothing yet). Set on every colour-command resolve,
+        # cleared on a directional/hold/stop resolve or `reset()`. See `DEFAULT_REGROUND_INTERVAL_S`.
+        self._active_grounding_instruction: Optional[str] = None
+        self._last_ground_request_s: float = -float("inf")
         self.last_debug: dict = {}
 
     @property
@@ -411,6 +439,8 @@ class HybridQwenActPolicy(Policy):
         self._used_done_s = -float("inf")
         self._last_instruction = None
         self._instruction_text = None
+        self._active_grounding_instruction = None
+        self._last_ground_request_s = -float("inf")
         self.last_debug = {}
 
     def close(self) -> None:
@@ -429,6 +459,7 @@ class HybridQwenActPolicy(Policy):
             "trained_for_task": self.trained_for_task,
         }
 
+        just_resolved_new_instruction = False
         if instruction is not None and instruction != self._last_instruction and touch_mm is not None:
             req, not_impl = _resolve_target_request(self._orchestrator, instruction, image, touch_mm)
             if not_impl is not None:
@@ -437,15 +468,38 @@ class HybridQwenActPolicy(Policy):
                 self._last_instruction = instruction
                 self._instruction_text = command_to_text(instruction)
                 if req.marker_label is not None:
+                    just_resolved_new_instruction = True
+                    self._active_grounding_instruction = req.instruction
                     debug["grounding_requested"] = True
                     if self._grounder is None:
                         debug["grounding_unavailable"] = "no grounding_policy configured"
-                    elif not self._grounder.request(image, req.instruction):
+                    elif self._grounder.request(image, req.instruction):
+                        self._last_ground_request_s = now
+                    else:
                         debug["grounding_queue_full"] = True
                 else:
                     assert req.fixed_target_mm is not None
+                    # Directional/hold/stop supersedes any colour command currently being held --
+                    # stop periodically re-grounding a target that is no longer the active one.
+                    self._active_grounding_instruction = None
                     self._fixed_target_mm = req.fixed_target_mm
                     self._fixed_target_done_s = now
+
+        # Periodic re-grounding (see `DEFAULT_REGROUND_INTERVAL_S`): while the same colour command
+        # stays held (no new instruction this tick, so the block above did not already just issue
+        # a request for it), keep re-requesting on a cadence instead of grounding once and letting
+        # the target go stale for as long as the command is held. `_Grounder.request()` is
+        # non-blocking and already drops a request if the previous one is still in flight.
+        if (
+            not just_resolved_new_instruction
+            and self._active_grounding_instruction is not None
+            and self._grounder is not None
+            and touch_mm is not None
+            and (now - self._last_ground_request_s) >= self._reground_interval_s
+        ):
+            if self._grounder.request(image, self._active_grounding_instruction):
+                self._last_ground_request_s = now
+                debug["regrounding_requested"] = True
 
         latest = self._grounder.store.latest() if self._grounder is not None else None
         target_xy: Optional[tuple] = None
@@ -524,9 +578,10 @@ class HybridSmallCnnActPolicy(HybridQwenActPolicy):
         grounding_policy: Optional[Policy] = None,
         control_hz: float = CONTROL_HZ,
         margin_ms: float = DEFAULT_MARGIN_MS,
+        reground_interval_s: float = DEFAULT_REGROUND_INTERVAL_S,
     ) -> None:
         grounder: Optional[_Grounder] = _Grounder(grounding_policy) if grounding_policy is not None else None
-        self._init_common(fast_layer, orchestrator, grounder, control_hz, margin_ms)
+        self._init_common(fast_layer, orchestrator, grounder, control_hz, margin_ms, reground_interval_s)
 
 
 class SmolVLADirectPolicy(Policy):

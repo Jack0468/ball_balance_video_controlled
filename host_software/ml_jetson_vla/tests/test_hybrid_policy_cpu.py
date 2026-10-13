@@ -328,6 +328,91 @@ class HybridSmallCnnActPolicyTests(unittest.TestCase):
         self.assertEqual(cmd2.target_y_mm, 20.0)
 
 
+class PeriodicRegroundingTests(unittest.TestCase):
+    """2026-10-13 fix: a held colour command must be periodically re-submitted to the grounder,
+    not grounded once and then left stale for as long as the command is held (flagged
+    2026-10-06; `EXPERIMENT_OPTIONS_PLAN_2026_10_07.md` section 4 "Known limit #2"; target-age
+    p90 measured 4.2-8.9s across real sessions with no re-grounding). Driven through the REAL
+    `_Grounder` background thread with `_FakeSmallCnnGroundingPolicy` (near-instant), same style
+    as `HybridSmallCnnActPolicyTests` above, so this exercises the actual cadence/timing logic in
+    `act()` rather than a mocked stand-in."""
+
+    def setUp(self) -> None:
+        self._opened: list[Any] = []
+
+    def tearDown(self) -> None:
+        for p in self._opened:
+            p.close()
+
+    def _policy(self, grounding_policy: Any, **kwargs: Any) -> HybridSmallCnnActPolicy:
+        p = HybridSmallCnnActPolicy(
+            StubFastLayer(value_deg=0.0, chunk_len=5), grounding_policy=grounding_policy, **kwargs
+        )
+        self._opened.append(p)
+        return p
+
+    def test_periodic_reground_keeps_target_age_bounded_while_command_is_held(self) -> None:
+        fake = _FakeSmallCnnGroundingPolicy()
+        p = self._policy(fake, reground_interval_s=0.1)
+        touch = (0.0, 0.0)
+
+        # First tick resolves "go_red" and issues the initial grounding request.
+        p.act(_FRAME, "go_red", {"touch_mm": touch})
+        self.assertTrue(_wait_for(lambda: fake.n_calls > 0))
+
+        # Hold the SAME instruction (None passed every subsequent tick, matching real usage --
+        # the audio command is only re-delivered on change) across several re-grounding cycles.
+        max_age_ms = 0.0
+        deadline = time.monotonic() + 1.0
+        while time.monotonic() < deadline:
+            p.act(_FRAME, None, {"touch_mm": touch})
+            if p.last_debug.get("has_target"):
+                latest = p._grounder.store.latest()  # type: ignore[union-attr]
+                age_ms = max(0.0, time.monotonic() - latest.done_monotonic_s) * 1000.0
+                max_age_ms = max(max_age_ms, age_ms)
+            time.sleep(1.0 / CONTROL_HZ)
+
+        # The whole point of the fix: more than one grounding call happened while the SAME
+        # instruction was held, not just the single initial one.
+        self.assertGreater(fake.n_calls, 1)
+        # And the measured target age never grew anywhere near the old 4.2-8.9s failure mode --
+        # bounded by the project's own proposed <=2000ms criterion (section 3 of the plan doc).
+        self.assertLess(max_age_ms, 2000.0)
+
+    def test_directional_command_clears_active_grounding_and_stops_periodic_requests(self) -> None:
+        fake = _FakeSmallCnnGroundingPolicy()
+        p = self._policy(fake, reground_interval_s=0.05)
+        touch = (0.0, 0.0)
+
+        p.act(_FRAME, "go_red", {"touch_mm": touch})
+        self.assertTrue(_wait_for(lambda: fake.n_calls > 0))
+        self.assertIsNotNone(p._active_grounding_instruction)
+
+        # A directional/hold command supersedes the held colour target.
+        p.act(_FRAME, "hold", {"touch_mm": touch})
+        self.assertIsNone(p._active_grounding_instruction)
+
+        n_calls_at_switch = fake.n_calls
+        for _ in range(10):
+            p.act(_FRAME, None, {"touch_mm": touch})
+            time.sleep(0.05)
+        # No further periodic re-grounding once the colour command is no longer active.
+        self.assertEqual(fake.n_calls, n_calls_at_switch)
+
+    def test_smolvla_direct_unaffected_by_periodic_reground_change(self) -> None:
+        """`SmolVLADirectPolicy` has no `_Grounder`/`_active_grounding_instruction` at all --
+        confirms the fix did not leak into its construction or `act()` behaviour."""
+        p = SmolVLADirectPolicy(StubFastLayer(value_deg=0.0, chunk_len=5))
+        try:
+            self.assertFalse(hasattr(p, "_active_grounding_instruction"))
+            self.assertFalse(hasattr(p, "_grounder"))
+            cmd = p.act(_FRAME, "go green", {"touch_mm": (1.0, 2.0)})
+            self.assertTrue(np.isnan(cmd.target_x_mm))
+            self.assertTrue(np.isnan(cmd.target_y_mm))
+        finally:
+            p.close()
+
+
 @unittest.skipUnless(os.path.exists(_SESSION), f"real Track 4 session not found: {_SESSION}")
 class RealSessionReplayTests(unittest.TestCase):
     """Drives HybridQwenActPolicy (StubFastLayer, no grounding backend) against one real logged
