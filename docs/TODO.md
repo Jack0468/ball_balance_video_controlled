@@ -65,52 +65,29 @@ without any of these — the ledger below leads with exactly which items those a
   `docs/PROJECT_LOGBOOK.md` 07/10/2026 "Extended-eval data inventory" entry,
   `host_software/ml_jetson_vla/reports/extended_data_inventory.csv`.
 
-- [x] **Marker colour classification needs a robust design, not another hardcoded fix**
-  (flagged 2026-10-13, robust fix shipped same day, owner: ml-vision) — rather than a third
-  bin-tuning pass, `MarkerClassifier` (`host_software/ml_vision/core/marker_classifier.py`) gained
-  an opt-in manifest-position identification tier: a static marker's colour is already known by
-  design for whatever sheet is physically mounted (`hardware/platform_templates/*_manifest.json`),
-  and the classifier already computes each blob's ArUco-homography-derived (x_mm, y_mm) — matching
-  that position against the active sheet's known feature slots (15mm radius, largest-blob-first
-  claim) and reading `color` straight off the manifest is lighting/ink/camera invariant by
-  construction, since it never inspects a pixel. Falls back to the original HSV bins when no
-  manifest is supplied or no slot matches — `manifest_path=None` by default, so every existing
-  call site is byte-for-byte unaffected unless it opts in. **Real measured numbers, same validated
-  1200-frame harness** (`marker_classifier_green_fallback_sweep.py`, `session_20260810_114330`):
-  shipped-defaults baseline reproduced exactly (black 1124/1200 93.7%, blue_triangle 595/1181
-  50.4%, yellow_square 1154/1198 96.3%, green_hexagon 1145/1191 96.1%, red_triangle 1169/1196
-  97.7% — byte-identical to the pre-change numbers, confirming zero regression to the default
-  path); with `manifest_path` supplied: black 1196/1200 99.7%, blue_triangle 1181/1181 **100%**,
-  yellow_square 1196/1198 99.8%, green_hexagon 1189/1191 99.8%, red_triangle 1196/1196 **100%** —
-  improvement on every color, no regression on any. New tests:
-  `host_software/ml_vision/tests/test_marker_classifier_manifest.py` (6 tests, including two that
-  replay the exact real HSV values logged for `aruco_markers_01`'s misclassified black/green
-  blobs and confirm the manifest tier resolves them correctly). Full `ml_vision/tests/` suite and
-  `ml_jetson_vla/tests/test_small_cnn_grounder_cpu.py` (a real consumer) re-run clean, 0
-  regressions. **Not yet done**: wiring `manifest_path=` into the actual live call sites
-  (`run_jetson_standalone.py`, `main_onnx_shared_vision_*_audio.py`, `small_cnn_grounder.py`) and
-  live-Jetson hardware re-verification on `aruco_markers_01` — out of this fix's file-boundary
-  scope (`host_software/ml_vision/` only); see new item below. Source: `docs/PROJECT_LOGBOOK.md`
-  13/10/2026 entries (`f88877e`, `9c76748`); fix logged 13/10/2026, "Marker Classifier:
-  Manifest-Position Identification Tier Shipped".
-- [ ] **Marker-classifier manifest-position fix: now wired into all 4 live call sites; live-Jetson
-  confirmation still outstanding** `[JETSON-HW]` (flagged 2026-10-13, updated same day) —
-  `small_cnn_grounder.py`, `run_jetson_standalone.py`, `main_onnx_shared_vision_audio.py`, and
-  `main_onnx_shared_vision_nemo_audio.py` all now pass `manifest_path=`/`--marker-manifest`
-  (defaulting to `aruco_markers_01_manifest.json`, confirmed physically mounted today) into
-  `MarkerClassifier`. The dispatched `ml-vision` agent correctly refused to cross its own write
-  boundary (`host_software/ml_vision/` only — none of the 3 remaining call sites actually live
-  there, a mistake in how the task was scoped, not the agent's error) and drafted exact patches
-  instead of silently skipping or overstepping; the orchestrator applied them directly. Verified:
-  all 3 edited files `py_compile` clean; full `ml_jetson_vla/tests/` suite re-run (154 passed, 1
-  pre-existing skip, 0 regressions); `ml_vision/tests/` re-run (same pre-existing baseline, 2
-  failed/11 passed/6 errors, all unrelated); a real `JetsonExpertPolicy` constructed directly
-  (real ONNX session, `dummy_audio=True`) confirmed to load the correct 5 real `aruco_markers_01`
-  features, not mocked. **Still genuinely outstanding**: live-Jetson confirmation
-  (`diagnose_small_cnn_grounder_live.py --instruction go_black`-style re-run against the real
-  mounted sheet) has not happened for ANY of the 4 wired call sites yet, including the one wired
-  yesterday — nothing here should be read as hardware-confirmed. Source: `docs/PROJECT_LOGBOOK.md`
-  13/10/2026, "Manifest-position colour-ID fix wired into all 4 live call sites."
+- [ ] **Marker colour classification needs a robust design, not another hardcoded fix —
+  REOPENED 2026-10-14, corrected framing** (flagged 2026-10-13, owner: ml-vision) — `_01`-vs-`_03`
+  sheet mismatch is real and still unresolved for live operation (every HSV bin was only ever
+  calibrated against `_03`; the physically-mounted sheet is `_01`). 13/10's "fix" (`MarkerClassifier`'s
+  opt-in manifest-position identification tier -- matching a blob's position against the sheet
+  manifest to read its colour straight off the manifest, bypassing pixel classification) was wired
+  into all 4 live/operation call sites over 13-14/10, then **reverted on 2026-10-14 per explicit
+  user correction**: using ground truth at inference time defeats the project's actual purpose —
+  the CNN+`MarkerClassifier` pipeline is supposed to be the thing determining marker colour from
+  the camera; the manifest's real role is scoring how good that determination is, and generating
+  training/eval labels, never standing in for inference on the real robot. The capability itself
+  (`MarkerClassifier(manifest_path=...)`) stays in `marker_classifier.py` — genuinely correct for
+  evaluation/training scripts — but is no longer wired into `small_cnn_grounder.py`,
+  `run_jetson_standalone.py`, `main_onnx_shared_vision_audio.py`, or
+  `main_onnx_shared_vision_nemo_audio.py` (all 4 reverted, verified: 150 passed/1 pre-existing
+  skip/0 regressions, a real `JetsonExpertPolicy` reconstructed and confirmed back to pixel-based
+  classification). **The genuinely still-needed fix**: something that actually classifies colour
+  from pixels correctly under the current sheet/lighting — per-session/per-sheet HSV
+  auto-calibration, a trained/learned colour classifier, relative/contrastive colour matching, or
+  explicit sheet-identity detection paired with sheet-specific *pixel* calibration loaded at
+  runtime (not a position-to-ground-truth lookup). Source: `docs/PROJECT_LOGBOOK.md` 13/10/2026
+  entries (`f88877e`, `9c76748`, manifest-tier shipped) and 14/10/2026, "Reverted the
+  manifest-position colour-ID fix out of all 4 live/operation call sites."
 
 ## Multimodal / VLA (`ml-multimodal`)
 

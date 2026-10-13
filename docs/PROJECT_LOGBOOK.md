@@ -1,5 +1,63 @@
 # VRI 2026 Project Logbook
 
+## 14/10/2026
+
+### Reverted the manifest-position colour-ID fix out of all 4 live/operation call sites — real design-direction correction, not a bug
+
+User correction, directly quoted because it's the actual governing principle and shouldn't be
+paraphrased into something weaker: *"the idea is that the ML is performing the computation to
+determine the location of coloured markers. we use the manifest to determine 'how good' the model
+was at identifying that coloured marker and also for supervised training... hence that should not
+be wired into any main.py or robot operation scripts."*
+
+What went wrong, honestly: the 13/10/2026 "manifest-position identification tier" (matching a
+blob's already-known position against the sheet manifest to resolve its colour, bypassing pixel
+classification entirely) was built and framed by the dispatched `ml-vision` agent as *the* fix for
+the real, confirmed `aruco_markers_01`-vs-`_03` sheet-mismatch failure -- and I accepted that
+framing and extended it into all 4 live call sites over two sessions without questioning whether
+using ground truth at inference time was consistent with what this project's vision pipeline is
+*for*. It isn't: the whole point of the CNN + `MarkerClassifier` pipeline is that the model itself
+determines marker colour from the camera image. A live policy that reads the answer off the
+manifest isn't running the vision system at all for that purpose -- it's returning a ground-truth
+lookup and presenting it as if the model produced it. That's a legitimate technique for *scoring*
+how good the model's colour classification is, or for *generating* training/eval labels (which is
+exactly what `data_processing/auto_label_shared_vision.py` and similar already do) -- never for an
+inference path that drives the real robot.
+
+**Reverted** (`MarkerClassifier(manifest_path=...)` itself stays in `marker_classifier.py` --
+that capability is legitimate for evaluation/training scripts, nothing wrong with the code that
+was written, only with where it got wired):
+- `core/small_cnn_grounder.py`'s `SmallCnnGroundingPolicy` -- back to bare
+  `MarkerClassifier(input_size=INPUT_SIZE, mask_threshold=mask_threshold)`, no
+  `marker_manifest_path` parameter.
+- `experiments/run_policy_live.py` / `run_policy_replay.py` -- removed `--small-cnn-marker-manifest`
+  CLI flag and all threading through `build_policy()`.
+- `runtime/run_jetson_standalone.py`'s `JetsonExpertPolicy` -- removed `marker_manifest_path`
+  parameter, `--marker-manifest` CLI flag, and the construction-site resolution logic.
+- `main_onnx_shared_vision_audio.py` / `main_onnx_shared_vision_nemo_audio.py` -- same removal.
+- Removed the 4 tests that specifically exercised this now-removed wiring
+  (`test_small_cnn_grounder_cpu.py`'s 3 manifest-constructor tests, `test_run_policy_replay_cpu.py`'s
+  1 forwarding test) -- testing removed functionality doesn't make sense. Left
+  `test_marker_classifier_manifest.py` (tests `MarkerClassifier`'s own `manifest_path` capability
+  directly) untouched -- that capability itself is fine and may genuinely be useful for evaluation/
+  training scripts.
+
+Verified: full `ml_jetson_vla/tests/` suite, 150 passed (154 - 4 removed), 1 pre-existing skip, 0
+regressions. All 6 touched files `py_compile` clean. Directly re-constructed a real
+`JetsonExpertPolicy` (real ONNX session, `dummy_audio=True`) and confirmed
+`marker_classifier._manifest_features` is now empty (`[]`) -- confirming the production class is
+back to pure pixel-based HSV classification for live operation, not a lookup.
+
+**Consequence, left honestly open**: the real, original problem -- `MarkerClassifier`'s static HSV
+bins misclassify markers on the physically-mounted `aruco_markers_01` sheet, since every bin was
+only ever calibrated against `_03` -- is **unresolved again** for live operation. The
+manifest-position tier remains available and correct for its real purpose (scoring/training), but
+is no longer a path to fixing live colour classification. `docs/TODO.md`'s marker-colour-robustness
+item is reopened with this corrected framing: the genuinely robust fix still needs to be something
+that actually classifies colour from pixels under the current sheet/lighting (auto-calibration, a
+trained/learned classifier, relative colour matching, etc.) -- not a ground-truth shortcut, no
+matter how well-tested that shortcut is.
+
 ## 13/10/2026
 
 ### Manifest-position fix for the 3 remaining call sites: patches drafted, write-boundary conflict found and not overridden

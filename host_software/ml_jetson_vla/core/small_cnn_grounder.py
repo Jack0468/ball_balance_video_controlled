@@ -123,7 +123,6 @@ class SmallCnnGroundingPolicy(Policy):
         host_software_dir: Optional[str] = None,
         cnn_path: Optional[str] = None,
         mask_threshold: float = 0.5,
-        marker_manifest_path: Optional[str] = None,
     ) -> None:
         host_software_dir = host_software_dir or _HOST_SOFTWARE_DIR
         resolved_cnn_path = os.path.abspath(cnn_path or os.path.join(host_software_dir, _DEFAULT_CNN_RELPATH))
@@ -135,26 +134,14 @@ class SmallCnnGroundingPolicy(Policy):
         cnn_opts.inter_op_num_threads = 1
         self.cnn_session = ort.InferenceSession(resolved_cnn_path, sess_options=cnn_opts, providers=["CPUExecutionProvider"])
         self.cnn_input_name = self.cnn_session.get_inputs()[0].name
-        # Wires in the 2026-10-13 manifest-position colour-ID fix (marker_classifier.py's
-        # MarkerClassifier(manifest_path=...)): matching a blob's already-computed position
-        # against a sheet's known marker slots resolves colour without reading pixel hue at all,
-        # fixing the aruco_markers_01-vs-_03 cross-sheet failure outright. NOTE:
-        # ground_truth_manifest.json (used below for ArUco homography) has an EMPTY "features"
-        # list -- the per-sheet colour/shape manifest lives in the separate
-        # aruco_markers_0N_manifest.json files, so this is deliberately NOT the same path as
-        # GROUND_TRUTH_MANIFEST. Defaults to aruco_markers_01, the sheet confirmed physically
-        # mounted as of 2026-10-13 (docs/PROJECT_LOGBOOK.md) -- if the physical sheet changes,
-        # this default must be updated (or override via marker_manifest_path), otherwise this
-        # reintroduces exactly the mismatch it fixes.
-        resolved_marker_manifest = marker_manifest_path or os.path.join(
-            os.path.dirname(GROUND_TRUTH_MANIFEST), "aruco_markers_01_manifest.json",
-        )
-        resolved_marker_manifest = os.path.abspath(resolved_marker_manifest)
-        if not os.path.exists(resolved_marker_manifest):
-            raise FileNotFoundError(f"marker colour/shape manifest not found at {resolved_marker_manifest}")
-        self.marker_classifier = MarkerClassifier(
-            input_size=INPUT_SIZE, mask_threshold=mask_threshold, manifest_path=resolved_marker_manifest
-        )
+        # NOT wired to MarkerClassifier(manifest_path=...) (reverted 2026-10-14, see
+        # docs/PROJECT_LOGBOOK.md): that tier looks a blob's colour up from the sheet manifest by
+        # matched position instead of classifying it from pixel hue. Correct for evaluation/
+        # training (scoring how well the model identifies colour, or generating labels) --
+        # wrong here, since this grounder drives real robot motor commands and the whole point
+        # is that the CNN+MarkerClassifier pipeline is the thing actually determining marker
+        # colour, not a ground-truth lookup standing in for it.
+        self.marker_classifier = MarkerClassifier(input_size=INPUT_SIZE, mask_threshold=mask_threshold)
 
         aruco_markers, _features, platform_w_mm, platform_h_mm = load_manifest_full(GROUND_TRUTH_MANIFEST)
         self.aruco_lookup = {int(m["id"]): list(m["center_mm"]) for m in aruco_markers}

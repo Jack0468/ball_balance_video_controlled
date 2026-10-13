@@ -78,12 +78,10 @@ class _FakeSmolVLAFastLayer:
 
 class _FakeSmallCnnGroundingPolicyCtor:
     """Duck-typed stand-in for `core.small_cnn_grounder.SmallCnnGroundingPolicy`'s constructor --
-    records the `mask_threshold`/`marker_manifest_path` it was built with, no onnxruntime/cv2/real
-    ONNX model or manifest file needed."""
+    records the `mask_threshold` it was built with, no onnxruntime/cv2/real ONNX model needed."""
 
-    def __init__(self, mask_threshold: float = 0.5, marker_manifest_path: Optional[str] = None) -> None:
+    def __init__(self, mask_threshold: float = 0.5) -> None:
         self.mask_threshold = mask_threshold
-        self.marker_manifest_path = marker_manifest_path
         self.last_debug: dict = {}
 
     def act(self, image: Any, instruction: Optional[str], state: dict) -> Any:
@@ -249,19 +247,6 @@ class BuildPolicyHybridSmallCnnActTests(unittest.TestCase):
             )
         try:
             self.assertEqual(policy._grounder.policy.mask_threshold, 0.9)
-        finally:
-            policy.close()
-
-    def test_build_policy_forwards_custom_marker_manifest_path(self) -> None:
-        with mock.patch.object(rpr, "SmallCnnGroundingPolicy", _FakeSmallCnnGroundingPolicyCtor):
-            policy = rpr.build_policy(
-                "hybrid_small_cnn_act", chunk_len=5, margin_ms=40.0,
-                small_cnn_marker_manifest="/some/aruco_markers_03_manifest.json",
-            )
-        try:
-            self.assertEqual(
-                policy._grounder.policy.marker_manifest_path, "/some/aruco_markers_03_manifest.json"
-            )
         finally:
             policy.close()
 

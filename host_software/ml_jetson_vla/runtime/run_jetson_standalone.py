@@ -154,7 +154,6 @@ class JetsonExpertPolicy(Policy):
     def __init__(self, script_dir: str, marker_gate_mm: float, jump_gate_mm: float,
                  gate_ema_alpha: float, seed_window: int, seed_consistency_mm: float,
                  lost_frames: int, mask_threshold: float,
-                 marker_manifest_path: Optional[str] = None,
                  dummy_audio: bool = False, mic_device: Optional[str] = None,
                  kalman: Optional[KalmanFilter2D] = None,
                  eval_sequence: bool = False,
@@ -215,15 +214,12 @@ class JetsonExpertPolicy(Policy):
         else:
             self.audio_receiver = AudioCommandReceiverONNX(audio_path, mic_device=mic_device)
         self.state_machine = TargetStateMachine()
-        resolved_marker_manifest = os.path.abspath(
-            marker_manifest_path
-            or os.path.join(os.path.dirname(GROUND_TRUTH_MANIFEST), "aruco_markers_01_manifest.json")
-        )
-        if not os.path.exists(resolved_marker_manifest):
-            raise FileNotFoundError(f"marker colour/shape manifest not found at {resolved_marker_manifest}")
-        self.marker_classifier = MarkerClassifier(
-            input_size=INPUT_SIZE, mask_threshold=mask_threshold, manifest_path=resolved_marker_manifest
-        )
+        # NOT wired to MarkerClassifier(manifest_path=...) (reverted 2026-10-14, see
+        # docs/PROJECT_LOGBOOK.md): that tier is for evaluation/training (scoring colour-ID
+        # accuracy, generating labels), not live operation -- this policy drives the real robot,
+        # and the CNN+MarkerClassifier pipeline must be the thing actually determining marker
+        # colour here, not a ground-truth lookup standing in for it.
+        self.marker_classifier = MarkerClassifier(input_size=INPUT_SIZE, mask_threshold=mask_threshold)
 
         aruco_markers, _features, platform_w_mm, platform_h_mm = load_manifest_full(GROUND_TRUTH_MANIFEST)
         self.aruco_lookup = {int(m["id"]): list(m["center_mm"]) for m in aruco_markers}
@@ -321,14 +317,6 @@ def main() -> None:
     parser.add_argument("--seed-consistency-mm", type=float, default=15.0)
     parser.add_argument("--lost-frames", type=int, default=30)
     parser.add_argument("--mask-threshold", type=float, default=0.5)
-    parser.add_argument(
-        "--marker-manifest", type=str, default=None,
-        help="Override path to the per-sheet marker colour/shape manifest for the 2026-10-13 "
-             "manifest-position colour-ID tier (MarkerClassifier(manifest_path=...)). Default: "
-             "hardware/platform_templates/aruco_markers_01_manifest.json -- the sheet confirmed "
-             "physically mounted as of 2026-10-13. NOT the same file as GROUND_TRUTH_MANIFEST "
-             "(ground_truth_manifest.json), whose own 'features' list is empty.",
-    )
     parser.add_argument("--kalman", action="store_true", help="Replace PredictionGate's EMA smoothing with a constant-velocity Kalman filter (jump-gate/seed/no-ball logic unchanged). Needs R/Q from --kalman-params to be trustworthy -- see kalman_filter.py")
     parser.add_argument("--kalman-params", type=str, default=None, help="Path to a JSON file with 'r' (2x2) and 'q' (4x4) matrices, as produced by estimate_kalman_noise_params.py --output-json. Without this, --kalman uses illustrative fallback values (not validated -- see kalman_filter.py docstring)")
     parser.add_argument("--log-csv", type=str, default="auto", help="Ground-truth telemetry CSV via TouchTelemetryLogger/TouchProbe.cpp's existing 'T,...' uplink (confirmed live on this firmware 2026-09-15, no firmware change needed): 'auto' (timestamped file in data/01_bronze/evaluation/), 'off' (disable persistence -- the serial I/O thread still runs), or an explicit path. Only active when NOT --remote-control (Phase B's TelemetryReader already owns reading this same serial handle -- see module docstring).")
@@ -452,7 +440,6 @@ def main() -> None:
         seed_consistency_mm=args.seed_consistency_mm,
         lost_frames=args.lost_frames,
         mask_threshold=args.mask_threshold,
-        marker_manifest_path=args.marker_manifest,
         dummy_audio=args.dummy_audio,
         mic_device=args.mic_device,
         kalman=kalman,
