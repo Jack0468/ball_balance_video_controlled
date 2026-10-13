@@ -184,7 +184,10 @@ class SmallCnnGroundingPolicy(Policy):
             if det.color == color and (best is None or det.area_px > best.area_px):
                 best = det
 
-        debug = {"instruction": instruction, "color": color, "n_detections": len(detections)}
+        debug = {
+            "instruction": instruction, "color": color, "n_detections": len(detections),
+            "detected_colors": [det.color for det in detections],
+        }
         if best is None:
             debug["parse_ok"] = False
             debug["reason"] = "no_matching_marker_detected"
