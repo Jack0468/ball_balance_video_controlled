@@ -91,12 +91,17 @@ just delete it, logbook already has the history) once genuinely done.
   — same "don't resume into a different dataset" reasoning as the earlier `run_001`->`run_002`
   move) and the new zip name, then retrain and re-test live. Source: `docs/PROJECT_LOGBOOK.md`
   13/10/2026, "Safety-envelope filter implemented in `convert_to_lerobot.py`."
-- [ ] **Eval cell (h) torchcodec crash in `act_train_colab.ipynb`** (flagged 2026-10-13) —
-  diagnosed as likely a Colab-side decoder-backend issue (torchcodec vs. the software decoder
-  used to verify the dataset's own video files are clean), not source-data corruption. Not
-  fixed. Next step: force `torchcodec` to CPU/software decode on the specific crashing episode
-  to confirm. Source: `docs/PROJECT_LOGBOOK.md` 13/10/2026, "Eval-only torchcodec video-decode
-  crash."
+- [ ] **Eval cell (h) torchcodec crash in `act_train_colab.ipynb`** (flagged 2026-10-13, patched
+  same day — NOT yet confirmed working) — diagnosed as likely a Colab-side decoder-backend issue
+  (torchcodec vs. the software decoder used to verify the dataset's own video files are clean),
+  not source-data corruption. Cell (h) now monkeypatches `torchcodec.decoders.VideoDecoder` to
+  force `device="cpu"` and reports the exact batch/episode range on any decode failure instead of
+  a plain `for batch in loader:` (notebook JSON verified to still parse, new cell source verified
+  to compile as valid Python). **Structural fix pending the user's next real Colab run** — no
+  Colab/GPU access from this session, so whether the crash actually disappears is still unknown.
+  If it still crashes, remove the patch and reopen the investigation using the newly-named
+  batch/episode. Source: `docs/PROJECT_LOGBOOK.md` 13/10/2026, "`act_train_colab.ipynb` cell (h)
+  patched to force torchcodec onto CPU decode" and "Eval-only torchcodec video-decode crash."
 - [ ] **Qwen grounding full Colab run still interim** (flagged 2026-10-13) — only 5 of 10
   sessions scored as of last check (93.3% ball-xy hit@20mm, 59.9% marker-grounding -- both
   interim). Re-score once all 10 sessions finish; the marker-grounding discrepancy vs. the

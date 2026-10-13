@@ -2,6 +2,43 @@
 
 ## 13/10/2026
 
+### `act_train_colab.ipynb` cell (h) patched to force torchcodec onto CPU decode -- structural fix pending a real Colab run, not confirmed working
+
+Closes the "next step" identified by the earlier torchcodec investigation entry below (same date):
+force torchcodec's decoder to CPU/software decode on the crashing eval episodes to test the
+hardware/software AV1 decoder-backend hypothesis, since the crash was already shown NOT to be file
+corruption (all 4 eval video files decoded clean start-to-finish under PyAV/libdav1d, read-only,
+offline).
+
+**What changed, cell (h) only**: (1) `torchcodec.decoders.VideoDecoder` is monkeypatched at the top
+of the cell to a subclass that forces `device="cpu"` via `kwargs.setdefault("device", "cpu")`.
+Confirmed by reading the installed `lerobot==0.4.4` package directly (matches the Colab pin in
+cell (b) exactly) that `VideoDecoderCache.get_decoder()` does a LOCAL
+`from torchcodec.decoders import VideoDecoder` inside its own method body on every call, not a
+module-level import cached at import time -- so patching the attribute on `torchcodec.decoders`
+before `eval_ds`/the `DataLoader` are built is picked up without touching the installed lerobot
+package at all. (2) The `for batch in loader:` loop was changed to a manual `next(loader_iter)`
+loop so that if decoding still fails, the exception handler can name the batch index and the exact
+episodes/sessions spanned by that batch range before re-raising -- the original per the logbook's
+own "recommended next diagnostic step" (name the exact episode), adapted to batch granularity since
+individual per-sample fetches happen inside the `DataLoader`'s own `__next__()`, not somewhere this
+cell can intercept per-frame without `num_workers=0` and manual indexing.
+
+**Verified, this session (no Colab/GPU access from here)**: the notebook JSON still parses
+(`json.load()`), the new cell (h) source still compiles as valid Python (`compile(src, ..., 'exec')`
+raises nothing), and the diff against the previous committed version is minimal and additive (64
+insertions, 1 deletion -- the `for batch in loader:` line replaced by the manual-iterator
+equivalent; every other cell untouched).
+
+**NOT verified**: this patch has never actually been run. It is a structural fix pending the next
+real Colab run, exactly as the earlier entry already flagged -- read its outcome honestly either
+way (comment left in the cell itself): if the eval cell now runs clean, the hardware-decode
+hypothesis is confirmed and the patch should stay or get upstreamed properly; if it still crashes,
+the hypothesis is wrong, the patch should be removed, and the batch/episode names the new exception
+handler prints should drive the next round of investigation. Source: `docs/TODO.md` Multimodal/VLA
+section; the "Eval-only torchcodec video-decode crash" entry immediately below (same date, earlier
+in the day) has the original diagnosis this fix acts on.
+
 ### Periodic re-grounding added to `core/hybrid_policy.py` -- closes the 2026-10-06 target-staleness gap
 
 Confirmed the gap was still real before touching anything: `HybridQwenActPolicy`/
