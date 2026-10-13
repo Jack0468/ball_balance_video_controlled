@@ -2,7 +2,12 @@
 
 ACT_FAST (name "act_fast"): ACT with the target as two extra state elements, observation.state is
 4-dim [touch_x, touch_y, target_x, target_y]. RANDOM weights unless a trained checkpoint directory
-is given. Action output is not un-normalised here (no dataset stats are applied): see the plan doc.
+is given. For a trained checkpoint, the batch is run through that checkpoint's OWN saved
+pre/post-processors (real dataset normalization/unnormalization stats, loaded via
+`lerobot.policies.factory.make_pre_post_processors`) -- closed 2026-10-13; previously the model's
+raw, still-normalised output was sent straight to the firmware (see
+EXPERIMENT_OPTIONS_PLAN_2026_10_07.md line 26, "blocking for any hardware test that uses real
+weights"). The random-weights path has no such stats and applies none.
 
 SMOLVLA_DIRECT (name "smolvla_direct"): pretrained lerobot/smolvla_base at a pinned commit. Receives
 the instruction text plus frame and state, does its own grounding. Its 6-value output is reduced to
@@ -101,6 +106,8 @@ class ActFastLayer:
         self._chunk_len: int = chunk_len
         self._device: str = device
         self._dtype: Any = torch.float32  # bf16 failed in the Orin benchmark; fp32 until autocast is verified
+        self._preprocessor: Any = None
+        self._postprocessor: Any = None
         if checkpoint_dir is None:
             policy, _cfg = build_act_policy(chunk_len, with_target=True)
             self.weights_status: str = ACT_WEIGHTS_RANDOM
@@ -118,7 +125,33 @@ class ActFastLayer:
                     f"(resolved from {checkpoint_dir!r} against cwd {os.getcwd()!r})"
                 )
             policy = ACTPolicy.from_pretrained(resolved_checkpoint_dir)
-            self.weights_status = f"TRAINED checkpoint {checkpoint_dir}; normaliser stats not verified"
+            # Real, pre-existing, already-documented gap (EXPERIMENT_OPTIONS_PLAN_2026_10_07.md
+            # line 26: "Action normalisation... Blocking for any hardware test that uses real
+            # weights"), closed here: the checkpoint's own saved policy_preprocessor.json/
+            # policy_postprocessor.json carry the REAL dataset normalization/unnormalization
+            # stats (NormalizerProcessorStep/UnnormalizerProcessorStep) -- predict_action_chunk()
+            # does NOT apply these internally (confirmed by reading lerobot 0.4.4's own
+            # modeling_act.py: no normalize/unnormalize call anywhere in it, by design -- this
+            # lerobot version moved normalization out of the model into separate pipeline
+            # objects the caller is responsible for applying, same as lerobot's own reference
+            # usage in control_utils.py/lerobot_eval.py). Without this, every real chunk sent to
+            # the firmware was the model's raw, still-normalised output -- real on-hardware
+            # symptom, 2026-10-13: the first live-motor run with this checkpoint sent well-formed,
+            # safety-gate-accepted angle lines, but the platform did not move sensibly. Loaded via
+            # the same generic factory lerobot's own lerobot_eval.py uses for an arbitrary
+            # pretrained checkpoint (NOT make_act_pre_post_processors, which builds fresh
+            # pipelines from dataset_stats we don't have standalone -- this checkpoint already
+            # saved its own). device_processor override matches lerobot_eval.py's own pattern
+            # (overriding the config's saved/training-time device with the actual inference
+            # device).
+            from lerobot.policies.factory import make_pre_post_processors
+
+            self._preprocessor, self._postprocessor = make_pre_post_processors(
+                policy_cfg=policy.config,
+                pretrained_path=resolved_checkpoint_dir,
+                preprocessor_overrides={"device_processor": {"device": device}},
+            )
+            self.weights_status = f"TRAINED checkpoint {checkpoint_dir}; normaliser stats applied via checkpoint's own pre/post-processors"
             # The checkpoint's own config.chunk_size is the real output shape of
             # predict_action_chunk() -- it is NOT the caller's to set. Using the caller's
             # chunk_len (e.g. the CLI's ACT_DEFAULT_CHUNK_LEN=10, sized for the random-weights
@@ -160,7 +193,11 @@ class ActFastLayer:
         batch = {IMAGE_KEY: image, STATE_KEY: state}
         with torch.inference_mode():
             t0 = time.perf_counter()
+            if self._preprocessor is not None:
+                batch = self._preprocessor(batch)
             out = self._policy.predict_action_chunk(batch)
+            if self._postprocessor is not None:
+                out = self._postprocessor(out)
             _sync(self._device)
             inference_ms = (time.perf_counter() - t0) * 1000.0
         actions = _chunk_to_array(out, self._chunk_len)

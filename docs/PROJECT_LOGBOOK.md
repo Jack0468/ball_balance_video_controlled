@@ -619,6 +619,46 @@ checkpoint on real hardware**, closing checklist item 9. Qualitative check (did 
 tilt sensibly toward the yellow marker, not just "motors received a well-formed command") still
 pending direct observation from the user.
 
+**Follow-up same day: that qualitative check failed ("not really").** Traced to a second, separate,
+already-documented-but-never-closed gap: `EXPERIMENT_OPTIONS_PLAN_2026_10_07.md` line 26 explicitly
+flagged "Action normalisation: the scaffold does not apply dataset stats. The trained checkpoint
+must carry stats and the wrapper must apply them. **Blocking** for any hardware test that uses real
+weights" -- and line 99's H3 test was explicitly gated on "after training and normalisation are in
+place." Normalisation was never wired in before today's H3-equivalent test ran. Confirmed via
+lerobot 0.4.4's own source (`modeling_act.py`): `predict_action_chunk()`/`forward()` apply no
+normalize/unnormalize step internally by design -- this lerobot version moved that into separate
+`PolicyProcessorPipeline` objects (`policy_preprocessor.json`/`policy_postprocessor.json`, already
+saved inside the checkpoint directory) that the caller must apply itself, same as lerobot's own
+reference usage in `control_utils.py`/`lerobot_eval.py`. So every chunk sent on the previous
+(confirmed-"working") run was the model's raw, still-normalised output sent straight to the
+firmware as if it were already in degrees -- a well-formed, safety-gate-accepted, but likely
+near-meaningless-scale command. This is NOT a contradiction of the earlier "confirmed working"
+entry -- the *pipeline* (grounding -> ACT -> safety gate -> serial) is confirmed working; the
+*policy's output scale* was always wrong, independently of that.
+
+**Fixed**: `ActFastLayer.__init__` (`fast_layers.py`) now loads the checkpoint's own pre/post-
+processors via `lerobot.policies.factory.make_pre_post_processors(policy_cfg=policy.config,
+pretrained_path=resolved_checkpoint_dir, preprocessor_overrides={"device_processor": {"device":
+device}})` (the generic factory lerobot's own `lerobot_eval.py` uses for an arbitrary pretrained
+checkpoint -- not `make_act_pre_post_processors`, which needs `dataset_stats` passed in separately
+rather than reading the checkpoint's own saved ones). `plan()` now runs the batch through
+`self._preprocessor`/`self._postprocessor` around `predict_action_chunk()` when a trained
+checkpoint is loaded (random-weights path: neither exists, none applied). Verified safe by reading
+`NormalizerProcessorStep`/`UnnormalizerProcessorStep`'s actual math (`normalize_processor.py`): pure
+elementwise `(x - mean) / std` / `x * std + mean` broadcasting, confirmed to apply correctly across
+the whole `(1, 100, 3)` chunk at once, not just a single action. `AddBatchDimensionObservationStep`
+(part of the preprocessor) confirmed idempotent against our already-batched tensors (checks
+`.dim() == 1`/`.dim() == 3` before adding a dim, so already-batched 2D/4D tensors pass through
+unchanged). Full `host_software/ml_jetson_vla/tests/` suite re-run clean after this change: 144
+passed, 1 pre-existing skip, 0 regressions (the trained-checkpoint code path itself still cannot be
+unit-tested on this Windows interpreter -- same transformers>=5 import blocker as before).
+
+Extended `experiments/diagnose_act_checkpoint_forward.py` (no hardware) to print raw-vs-processed
+action values and ranges side by side, so the fix can be sanity-checked (raw values should look
+roughly normalized, e.g. near `[-3, 3]`/`[-1, 1]`; processed values should land in the real
+`+/-11.025` deg firmware range) before trusting it on live motors again -- **not yet run**; this is
+the next concrete step before re-attempting the live motor test.
+
 ## 07/10/2026 (ongoing)
 ### Arm 2 action-head design work; a second, distinct touch-sensor data bug found by manual image review
 
