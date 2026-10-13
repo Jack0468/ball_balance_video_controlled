@@ -117,7 +117,7 @@ def run_live(args: argparse.Namespace) -> dict[str, Any]:
 
     policy = build_policy(
         args.policy, args.chunk_len, args.margin_ms, args.fast_layer, args.device, args.act_checkpoint,
-        args.small_cnn_grounding, args.small_cnn_mask_threshold,
+        args.small_cnn_grounding, args.small_cnn_mask_threshold, args.small_cnn_marker_manifest,
     )
 
     ser = serial.Serial(args.serial_port, args.baud, timeout=0.1)
@@ -306,6 +306,13 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     p.add_argument(
         "--small-cnn-mask-threshold", type=float, default=0.5,
         help="--policy hybrid_small_cnn_act only: MarkerClassifier mask threshold (default 0.5).",
+    )
+    p.add_argument(
+        "--small-cnn-marker-manifest", default=None,
+        help="--policy hybrid_small_cnn_act only: path to the per-sheet marker colour/shape manifest "
+             "(hardware/platform_templates/aruco_markers_0N_manifest.json) for the 2026-10-13 "
+             "manifest-position colour-ID fix. Defaults to aruco_markers_01 (the sheet confirmed "
+             "physically mounted as of 2026-10-13) -- override if a different sheet is mounted.",
     )
     # live (gated) -- same flags/defaults as run_experiment.py --mode live
     p.add_argument(MOTOR_GATE_FLAG, dest="i_understand_this_drives_motors", action="store_true")

@@ -126,6 +126,59 @@ class ConstructionAndProtocolTests(unittest.TestCase):
         policy.reset()
         self.assertEqual(policy.last_debug, {})
 
+    def test_default_marker_manifest_is_aruco_markers_01(self) -> None:
+        """2026-10-13 manifest-position colour-ID fix: default must point at the sheet
+        confirmed physically mounted that day, and NOT at ground_truth_manifest.json (whose
+        own "features" list is empty -- confirmed separately, see small_cnn_grounder.py's
+        constructor comment) -- getting this wrong silently reintroduces the cross-sheet
+        failure this feature exists to fix."""
+        captured: dict = {}
+
+        def _capture_manifest_classifier(**kw: Any) -> Any:
+            captured["manifest_path"] = kw.get("manifest_path")
+            return _FakeMarkerClassifier([])
+
+        fake_ort = mock.Mock()
+        fake_ort.SessionOptions.return_value = mock.Mock()
+        fake_ort.InferenceSession.return_value = _FakeSession()
+        with mock.patch.object(scg, "ort", fake_ort), \
+             mock.patch.object(scg, "load_manifest_full", return_value=(_MARKERS, [], 187.5, 142.0)), \
+             mock.patch.object(scg, "MarkerClassifier", side_effect=_capture_manifest_classifier):
+            scg.SmallCnnGroundingPolicy()
+        self.assertIsNotNone(captured["manifest_path"])
+        self.assertTrue(captured["manifest_path"].endswith("aruco_markers_01_manifest.json"))
+        self.assertTrue(os.path.exists(captured["manifest_path"]))
+
+    def test_marker_manifest_path_override_is_honoured(self) -> None:
+        captured: dict = {}
+
+        def _capture_manifest_classifier(**kw: Any) -> Any:
+            captured["manifest_path"] = kw.get("manifest_path")
+            return _FakeMarkerClassifier([])
+
+        # A real file must exist at the override path (constructor checks this) -- reuse the
+        # real aruco_markers_03 manifest, a real, different, existing file.
+        override_path = os.path.join(
+            _HOST_SOFTWARE_DIR, "..", "hardware", "platform_templates", "aruco_markers_03_manifest.json",
+        )
+        fake_ort = mock.Mock()
+        fake_ort.SessionOptions.return_value = mock.Mock()
+        fake_ort.InferenceSession.return_value = _FakeSession()
+        with mock.patch.object(scg, "ort", fake_ort), \
+             mock.patch.object(scg, "load_manifest_full", return_value=(_MARKERS, [], 187.5, 142.0)), \
+             mock.patch.object(scg, "MarkerClassifier", side_effect=_capture_manifest_classifier):
+            scg.SmallCnnGroundingPolicy(marker_manifest_path=override_path)
+        self.assertEqual(os.path.abspath(captured["manifest_path"]), os.path.abspath(override_path))
+
+    def test_missing_marker_manifest_raises_file_not_found(self) -> None:
+        fake_ort = mock.Mock()
+        fake_ort.SessionOptions.return_value = mock.Mock()
+        fake_ort.InferenceSession.return_value = _FakeSession()
+        with mock.patch.object(scg, "ort", fake_ort), \
+             mock.patch.object(scg, "load_manifest_full", return_value=(_MARKERS, [], 187.5, 142.0)):
+            with self.assertRaises(FileNotFoundError):
+                scg.SmallCnnGroundingPolicy(marker_manifest_path="/does/not/exist_manifest.json")
+
 
 class UnrecognisedInstructionTests(unittest.TestCase):
     def test_unrecognised_instruction_returns_nan_without_touching_vision(self) -> None:

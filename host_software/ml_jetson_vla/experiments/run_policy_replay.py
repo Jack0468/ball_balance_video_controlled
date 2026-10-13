@@ -107,6 +107,7 @@ def build_policy(
     act_checkpoint: Optional[str] = None,
     small_cnn_grounding: bool = True,
     small_cnn_mask_threshold: float = 0.5,
+    small_cnn_marker_manifest: Optional[str] = None,
 ) -> Any:
     if fast_layer == "act":
         layer: Any = ActFastLayer(chunk_len, device=device, checkpoint_dir=act_checkpoint)
@@ -124,7 +125,11 @@ def build_policy(
         # debugging/staging policy (see module docstring) is to give ACT a real, cheap grounding
         # signal. --no-small-cnn-grounding disables it (e.g. no ONNX model file on this machine).
         grounding_policy = (
-            SmallCnnGroundingPolicy(mask_threshold=small_cnn_mask_threshold) if small_cnn_grounding else None
+            SmallCnnGroundingPolicy(
+                mask_threshold=small_cnn_mask_threshold, marker_manifest_path=small_cnn_marker_manifest
+            )
+            if small_cnn_grounding
+            else None
         )
         return HybridSmallCnnActPolicy(layer, grounding_policy=grounding_policy, margin_ms=margin_ms)
     return SmolVLADirectPolicy(layer, margin_ms=margin_ms)
@@ -140,7 +145,7 @@ def run_replay(args: argparse.Namespace) -> dict[str, Any]:
 
     policy = build_policy(
         args.policy, args.chunk_len, args.margin_ms, args.fast_layer, args.device, args.act_checkpoint,
-        args.small_cnn_grounding, args.small_cnn_mask_threshold,
+        args.small_cnn_grounding, args.small_cnn_mask_threshold, args.small_cnn_marker_manifest,
     )
     reader = VideoRowReader(os.path.join(session, "rgb_video.mp4"))
 
@@ -259,6 +264,13 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         "--small-cnn-mask-threshold", type=float, default=0.5,
         help="--policy hybrid_small_cnn_act only: MarkerClassifier mask threshold (default 0.5, "
              "matches JetsonExpertPolicy's own default).",
+    )
+    p.add_argument(
+        "--small-cnn-marker-manifest", default=None,
+        help="--policy hybrid_small_cnn_act only: path to the per-sheet marker colour/shape manifest "
+             "(hardware/platform_templates/aruco_markers_0N_manifest.json) for the 2026-10-13 "
+             "manifest-position colour-ID fix. Defaults to aruco_markers_01 (the sheet confirmed "
+             "physically mounted as of 2026-10-13) -- override if a different sheet is mounted.",
     )
     args = p.parse_args(argv)
     if args.max_sim_seconds <= 0 or args.chunk_len < 1 or args.speedup <= 0:

@@ -86,20 +86,20 @@ just delete it, logbook already has the history) once genuinely done.
   scope (`host_software/ml_vision/` only); see new item below. Source: `docs/PROJECT_LOGBOOK.md`
   13/10/2026 entries (`f88877e`, `9c76748`); fix logged 13/10/2026, "Marker Classifier:
   Manifest-Position Identification Tier Shipped".
-- [ ] **Marker-classifier manifest-position fix (above) not yet wired into any live call site**
-  (flagged 2026-10-13, owner: ml-vision) — `MarkerClassifier(manifest_path=...)` is built and
-  tested but no production script passes it yet: `run_jetson_standalone.py`,
-  `main_onnx_shared_vision_audio.py`, `main_onnx_shared_vision_nemo_audio.py`, and
-  `small_cnn_grounder.py` all still construct `MarkerClassifier()` with no manifest, so the
-  `aruco_markers_01`-on-Jetson failure is fixed in code but not yet in the running system. Needs:
-  (1) each call site passing the currently-mounted sheet's manifest path (already loaded nearby
-  for homography in most of them) to `MarkerClassifier(...)`; (2) a live-Jetson re-run of
+- [ ] **Marker-classifier manifest-position fix: wired into 1 of 4 live call sites**
+  (flagged 2026-10-13, updated same day) — `small_cnn_grounder.py`'s `SmallCnnGroundingPolicy` now
+  passes `manifest_path=` (defaulting to `aruco_markers_01_manifest.json`, confirmed physically
+  mounted today; overridable via `--small-cnn-marker-manifest`), so today's live ACT-testing path
+  actually benefits. **Still unwired**: `run_jetson_standalone.py`, `main_onnx_shared_vision_audio.py`,
+  `main_onnx_shared_vision_nemo_audio.py` — the real production ball-balancing vision pipeline —
+  still construct `MarkerClassifier()` with no manifest. Needs: (1) each of those 3 passing the
+  currently-mounted sheet's manifest path; (2) a live-Jetson re-run of
   `diagnose_small_cnn_grounder_live.py --instruction go_black` against `aruco_markers_01` to
   confirm the fix transfers off the historical harness, same discipline as every prior
-  marker-classifier entry. Out of scope for the ml-vision agent boundary that shipped the
-  classifier fix (file writes limited to `host_software/ml_vision/`); needs orchestration or
-  explicit sign-off to touch the other files. Source: `docs/PROJECT_LOGBOOK.md` 13/10/2026,
-  "Marker Classifier: Manifest-Position Identification Tier Shipped".
+  marker-classifier entry (not yet done for any call site, including the one now wired). Deliberately
+  not rushed into the production pipeline alongside the ACT-path fix — deserves its own careful
+  pass. Source: `docs/PROJECT_LOGBOOK.md` 13/10/2026, "Manifest-position colour-ID fix wired into
+  the live ACT grounding path."
 
 ## Multimodal / VLA (`ml-multimodal`)
 

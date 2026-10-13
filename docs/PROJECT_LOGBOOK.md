@@ -1067,6 +1067,45 @@ lighting/ink/camera invariant by construction, unlike every HSV-bin approach tri
   live capture) -- flagged as a new, separate `docs/TODO.md` item rather than silently assumed
   fixed end-to-end.
 
+### Manifest-position colour-ID fix wired into the live ACT grounding path (`small_cnn_grounder.py`) — 1 of 4 call sites
+
+Closes one piece of the gap left open above: `SmallCnnGroundingPolicy.__init__`
+(`host_software/ml_jetson_vla/core/small_cnn_grounder.py`) now constructs its `MarkerClassifier`
+with `manifest_path=` set, so today's live ACT/small-CNN-grounder testing actually benefits from
+the fix instead of still reading raw HSV bins. New optional `marker_manifest_path` constructor
+param (default `None` -> resolves to `hardware/platform_templates/aruco_markers_01_manifest.json`,
+the sheet confirmed physically mounted today). **Important, checked directly before wiring
+anything**: `GROUND_TRUTH_MANIFEST` (`ground_truth_manifest.json`, already loaded in this file for
+ArUco homography) has an **empty** `"features"` list -- the real per-sheet colour/shape manifest
+lives only in the separate `aruco_markers_0N_manifest.json` files. Wiring in
+`ground_truth_manifest.json` by mistake (an easy mistake given both are "the manifest" in this
+file) would have silently done nothing; confirmed this by inspecting all 4 manifest files' real
+JSON content before writing any code, not assumed.
+
+Caught and fixed my own bug before it shipped: first draft built the default path via 3 redundant
+`os.path.join(..., "..", "..", "..")` traversals based on a wrong mental model of
+`GROUND_TRUTH_MANIFEST`'s directory depth -- `os.path.dirname(GROUND_TRUTH_MANIFEST)` is already
+`hardware/platform_templates/`, no traversal needed at all. Caught by actually printing the
+resolved directory before trusting the path, not by assuming the construction was right.
+
+Exposed as `--small-cnn-marker-manifest` (override) on both `run_policy_replay.py` and
+`run_policy_live.py`'s CLIs, threaded through `build_policy()`, matching the existing
+`--small-cnn-mask-threshold` pattern. 7 new/updated tests: 3 in `test_small_cnn_grounder_cpu.py`
+(default resolves to the real `aruco_markers_01` file and the file genuinely exists on disk;
+override is honoured; a missing manifest path raises `FileNotFoundError` rather than silently
+degrading), 1 new in `test_run_policy_replay_cpu.py` (CLI override forwards correctly), plus 3
+pre-existing `build_policy` tests fixed (their `_FakeSmallCnnGroundingPolicyCtor` stand-in didn't
+accept the new kwarg yet). Full `ml_jetson_vla/tests/` suite: **154 passed, 1 pre-existing skip, 0
+regressions** (was 147 before this fix + the 3 newly-broken-then-fixed tests + 4 new ones = 154).
+
+**Still open, honestly**: only `small_cnn_grounder.py` is wired -- the other 3 real production
+call sites (`run_jetson_standalone.py`, `main_onnx_shared_vision_audio.py`,
+`main_onnx_shared_vision_nemo_audio.py`) still construct `MarkerClassifier()` bare, unchanged.
+Those are the actual production ball-balancing vision pipeline, not today's ACT-testing path --
+wiring those in deserves its own careful pass (same "verify against a live Jetson capture, not
+just the historical harness" caution the original fix's entry already flagged), not a rushed
+addition alongside this one. Left as a `docs/TODO.md` item, not silently assumed done everywhere.
+
 ## 07/10/2026 (ongoing)
 ### Arm 2 action-head design work; a second, distinct touch-sensor data bug found by manual image review
 
