@@ -431,6 +431,117 @@ residuals already documented in `marker_classifier.py` itself -- if live verific
 than this historical rate (plausible, see point 4 above), the next lever is `MIN_FALLBACK_SATURATION`
 itself (currently 30, with blue_triangle's cliff at 35 as the real ceiling on how far it can move).
 
+### Live-hardware verification closes: black/green still never appear post-fix -- real cause is NOT the
+### cv2.mean() bug's residual, and is NOT a safely fixable bin -- different physical sheet + lighting
+
+**Trigger**: the live-hardware verification flagged as outstanding in the entry immediately above. Two
+real frames captured today from the Jetson's own camera/lighting (`diagnose_small_cnn_grounder_live.py
+--instruction go_black`, extended in commit `b56bd08` to also save the warped view): `C:\Users\Admin\
+raw_frame_0.png` (full scene) and `C:\Users\Admin\warped_frame_0.png` (the exact 128x128 image
+`SmallCnnGroundingPolicy.act()` classifies). This is the first time this investigation has had real
+Jetson pixel data rather than extrapolating from `session_20260810_114330` (laptop webcam, historical) --
+stating that plainly per this project's own "state which evidence class you're using" discipline.
+
+**Method**: ran the real pipeline end to end against `warped_frame_0.png` -- the actual
+`shared_vision_backbone_v2` ONNX checkpoint, then `MarkerClassifier.classify()` unmodified -- not a
+re-implementation, so the measurement exactly matches what `SmallCnnGroundingPolicy.act()` sees live.
+Dumped every connected-component blob's real mean S/V and real circular-mean H (`_circular_mean_hue()`,
+today's earlier fix, confirmed active) before and after `_classify_color()`.
+
+**First real finding: the live diagnostic photographed `aruco_markers_01` ("5 solid-colour circles"),
+not `aruco_markers_03`** (`session_20260810_114330`'s sheet, the one every bin in `marker_classifier.py`
+has ever been tuned against). Confirmed two independent ways, not assumed: (1) visual inspection of
+`raw_frame_0.png` shows 5 plain filled circles in a quincunx/plus layout, no triangles/squares/hexagons;
+(2) every one of the 5 real blobs' computed `(x_mm, y_mm)` (via `MarkerClassifier`'s own
+`_px_to_touch_mm()`) matches `aruco_markers_01_manifest.json`'s 5 feature positions to <0.5mm, while the
+manifest's `aruco_markers` (ArUco corner IDs, identical across sheets 00/01/02/03) is what the homography
+actually uses -- the colour/shape "features" are never looked up by the live code at all, so this
+mismatch was silent. `aruco_markers_01`'s layout: center=blue, **top=black**, right=red,
+**bottom=green**, left=yellow. (This same cross-sheet-identity risk was independently flagged, for a
+different pair of sessions, in `host_software/ml_jetson_vla/reports/black_marker_occlusion_2026_10_07.md`
+-- not a one-off coincidence.)
+
+**Real measured HSV for all 6 blobs (`warped_frame_0.png`, mask_threshold=0.5), with true identity
+resolved by position match above, not by eye:**
+
+| blob (px centroid) | true identity | mean H | mean S | mean V | `classify()` output | strict-bin or fallback |
+|---|---|---|---|---|---|---|
+| (64, 39) | **black_circle** (true black) | 7.8 | 47.3 | 148.2 | **red** (WRONG) | fallback (dist-to-red-center 7.8 < 10) |
+| (45, 64) | yellow_circle | 15.1 | 100.9 | 234.7 | yellow (correct) | strict |
+| (64, 64) | blue_circle | 129.8 | 34.6 | 157.9 | blue (correct) | fallback (dist-to-blue-center 9.8 < 10) |
+| (83, 64) | red_circle | 1.9 | 84.4 | 214.8 | red (correct) | strict |
+| (64, 89) | **green_circle** (true green) | 34.2 | 51.9 | 157.6 | **yellow** (WRONG) | strict (checked before green) |
+| (112, 13), 1x5px, area=5 | none -- spurious | 3.8 | 32.8 | 198.0 | red (spurious) | strict |
+
+This reproduces the live symptom's exact colour multiset (3x red, 2x yellow, 1x blue, 0x black, 0x
+green) from this single frame alone -- not inferred, counted directly from `classify()`'s own real
+output list.
+
+**Q: is this the cv2.mean()/fallback residual the prior entry flagged as possibly worse live?** No --
+checked, not assumed. That residual was specifically "black's own blob, correctly read as achromatic/
+low-chroma, drifting into red's fallback hue-center via a real right-tail in its circular-mean hue
+distribution." Here, black's own blob measures **S=47.3**, more than double the black bin's S<=20 cap
+and 48% past the worst value (31.5) ever measured for real black_circle on the historical sheet -- this
+is not a hue-tail effect on an otherwise-correctly-achromatic blob, it is a blob with real, substantial
+chroma that was never achromatic in the first place under this capture. A materially different failure
+mode from the one already fixed today.
+
+**Q: is this fixable with a bin/threshold adjustment? No, for two independent, measured reasons --
+stating this plainly rather than forcing a code change that would not hold up, per this project's own
+convention:**
+
+1. **black_circle's S=47.3 cannot be absorbed by raising the black bin's S cap.** The cap sits at 20
+   specifically because the 2026-09-15 entry already measured and rejected the alternative: widening it
+   caused real collateral misclassification of the other 4 colours' own dim frames into false "black"
+   (their S distribution, median 29.2 down to 13.6, already overlaps black's own, median 13.8/p95 27.2/
+   max 31.5). Reaching 47.3 would require roughly doubling the cap again past that already-rejected
+   danger zone -- and this exact frame shows the risk is live, not theoretical: the real blue_circle
+   blob here independently measures S=34.6 (already below its own strict floor of 50, already recovered
+   only via the fallback tier) -- a black bin wide enough to catch 47.3 would sit well above blue's own
+   real reading on this same frame, i.e. on this lighting condition the two colours' saturations are not
+   even close to separable at any single cap value.
+2. **green_circle's H=34.2 cannot be excluded from yellow's bin without breaking real yellow.** 34.2 is
+   not a boundary-adjacent case inside the deliberately-left 42/43 gap -- it sits with real margin
+   (S=51.9, V=157.6, both comfortably clear of the S>=50/V>=50 floor) inside yellow's own already-
+   recalibrated strict bin (9-42), caught before green's own bin or the fallback tier are ever reached
+   (`COLOR_CHECK_ORDER` checks yellow first). Tightening yellow's strict ceiling below 34 would not even
+   fix it: yellow's fallback hue-centre (31.0) is only 3.2 degrees from this blob's own measured hue --
+   nearer than green's own centre (65.0, 30.8 degrees away) by an order of magnitude -- so the blob would
+   still be reclaimed as "yellow" via the fallback tier regardless of where the strict ceiling sits.
+   Moving yellow's own centre away from 31.0 to fix this would break real yellow_circle/yellow_square
+   detection instead (real yellow's own historical p50 is 15.1, nowhere near needing to move).
+
+**Both failures point the same direction: this is a real, scene-wide colour-cast/lighting-and-ink
+condition different from the one every bin in this file has ever been calibrated against, confounded
+with (not isolated from) the fact this frame is also a different physical sheet (`_01`) than the one
+calibration has only ever used (`_03`).** Every marker in this single frame reads measurably different
+from its historical counterpart -- not just black and green, the two that happen to cross a bin boundary
+-- consistent with a global exposure/white-balance shift (and/or `_01`'s circles simply being a different
+print run/ink than `_03`'s shapes) rather than an isolated per-colour miscalibration. Per this project's
+own convention of saying so plainly rather than forcing a software fix onto a hardware/lighting problem:
+**no code change made.** `marker_classifier.py` is unmodified from today's earlier (`f88877e`) state.
+
+**Separate, smaller finding, not acted on (insufficient evidence from n=1 frame)**: the 6th blob is a
+genuine CNN mask false positive -- a 1x5px, 5-area-px sliver near the top-right corner of the warped
+frame (112, 13), nowhere near any of the 5 real marker positions, that happens to average into red's
+strict bin by chance and barely clears `min_blob_area_px=4.0`. This adds a phantom 3rd "red" on top of
+the black-circle misclassification above; it does not, on its own, explain why black/green never
+appear (that's fully explained by the two bin collisions above, independent of this blob). Raising
+`min_blob_area_px` (e.g. to ~20, well below the 5 real markers' ~110-113px but well above this 5px
+sliver) is a plausible, low-risk-looking fix, but not made today: one frame is not enough to know if
+this is a recurring artifact or a one-off, nor to rule out a legitimate small/edge-clipped real blob
+elsewhere in the dataset being caught by the same change. Flagged as a real, open, low-priority
+follow-up, not a verified fix.
+
+**Recommended next step, not done here (no Jetson access beyond these 2 saved files)**: re-run
+`diagnose_small_cnn_grounder_live.py --save-dir ... --instruction go_black` on the Jetson against the
+**same physical sheet the bins were calibrated against** (`aruco_markers_03`) to separate the two
+confounded variables above -- if black/green resolve correctly on `_03` under today's live lighting,
+the lighting itself is not the (sole) problem and this was primarily a cross-sheet-identity issue;
+if they still fail on `_03`, lighting/exposure is implicated directly and a fresh calibration pass
+(same discipline as 2026-09-15/today, against live Jetson photos rather than the historical webcam
+session) is the real fix, not a further bin nudge.
+
 ## 07/10/2026 (ongoing)
 ### Arm 2 action-head design work; a second, distinct touch-sensor data bug found by manual image review
 
