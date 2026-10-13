@@ -103,27 +103,21 @@ just delete it, logbook already has the history) once genuinely done.
 
 ## Multimodal / VLA (`ml-multimodal`)
 
-- [ ] **ACT_FAST retrain on the safety-filtered dataset — filter done/tested, full dataset
-  rebuild still outstanding** (flagged 2026-10-13, updated same day) — filter implemented in
-  `convert_to_lerobot.py` (`is_pid_action_safety_compliant`, `PID_SAFETY_MAX_ABS_ACTION_DEG =
-  11.025`, gated on `regime == PID_REGIME_NAME` so `jetson_track4_rl` rows are never evaluated at
-  all) and committed. 3 new tests added to `tests/test_lerobot_frame_roundtrip.py`; full
-  `ml_jetson_vla/tests/` suite 147 passed/1 pre-existing skip/0 regressions. **Real measured
-  per-frame counts**, run against 100% of the real session CSVs (not the gold JSON, which doesn't
-  feed training): `pid_webcam` 45,840 kept / 65,153 dropped of 110,993 (41.30%/58.70%);
-  `jetson_track4_rl` all 40,713 rows untouched (confirmed would be 0 violations even if checked).
-  **Still outstanding**: the actual LeRobotDataset rebuild (what Colab trains from) is a
-  long-running local job (historically run overnight, ~1.5-3h of video decode/encode). First
-  attempt died silently after ~100min with no error surfaced (workspace reportedly moved on disk
-  mid-run — plausible cause, not a code bug, see logbook for the Win32-process-table confirmation
-  that it died and that the source files were untouched). Retried with output on local scratch and
-  an externally-verifiable Win32 PID. Check `docs/PROJECT_LOGBOOK.md`'s most recent 2026-10-13
-  entry for the retry's outcome before re-dispatching. Once a real dataset exists: run
-  `data_processing/verify_and_package_dataset.py`, upload the zip to Drive, point
-  `training/colab/act_train_colab.ipynb` cell 1 at a new `DRIVE_RUN_DIR` (`run_003`, not `run_002`
-  — same "don't resume into a different dataset" reasoning as the earlier `run_001`->`run_002`
-  move) and the new zip name, then retrain and re-test live. Source: `docs/PROJECT_LOGBOOK.md`
-  13/10/2026, "Safety-envelope filter implemented in `convert_to_lerobot.py`."
+- [ ] **ACT_FAST retrain on the safety-filtered dataset — data side fully done, actual Colab
+  retrain not yet run** (flagged 2026-10-13, updated same day) — filter implemented in
+  `convert_to_lerobot.py`, committed, tested. Real measured per-frame counts: `pid_webcam` 45,840
+  kept / 65,153 dropped of 110,993 (41.30%/58.70%); `jetson_track4_rl` all 40,713 rows untouched.
+  **Full LeRobotDataset rebuild now complete and verified** (first attempt died ~100min in,
+  workspace-move suspected; retry succeeded): real output confirmed `total_episodes: 15`,
+  `total_frames: 86553` (exactly 40,713+45,840). `verify_and_package_dataset.py
+  --check-video-decode` confirms every one of 86,553 frames across all 8 video files decodes
+  cleanly, zero corruption. Packaged: `lerobot_full_2026_10_13_safety_filtered.zip` (~1.13 GiB,
+  sha256 `3e7014eb...`), currently sitting in this session's local scratch path (not yet on
+  Drive). `act_train_colab.ipynb` already points at `run_003`/this exact zip filename. **Still
+  outstanding, needs the user's own Drive/Colab access**: upload the zip to
+  `MyDrive/2026_VRI_WINTER/colab_bundle/`, then actually run the notebook to retrain, then
+  re-test live on hardware. Source: `docs/PROJECT_LOGBOOK.md` 13/10/2026, "Safety-filtered LeRobot
+  dataset rebuild completed, verified, packaged."
 - [ ] **Eval cell (h) torchcodec crash in `act_train_colab.ipynb`** (flagged 2026-10-13, patched
   same day — NOT yet confirmed working) — diagnosed as likely a Colab-side decoder-backend issue
   (torchcodec vs. the software decoder used to verify the dataset's own video files are clean),

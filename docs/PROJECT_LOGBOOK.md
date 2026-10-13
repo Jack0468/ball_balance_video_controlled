@@ -1106,6 +1106,33 @@ wiring those in deserves its own careful pass (same "verify against a live Jetso
 just the historical harness" caution the original fix's entry already flagged), not a rushed
 addition alongside this one. Left as a `docs/TODO.md` item, not silently assumed done everywhere.
 
+### Safety-filtered LeRobot dataset rebuild completed, verified, packaged — ready for the run_003 Colab retrain
+
+The background rebuild (started earlier today after the first attempt died ~100min in, workspace
+move suspected) completed successfully. Confirmed directly against the real output directory
+(`meta/info.json`), not just the log: `total_episodes: 15` (5 `pid_webcam` + 10 `jetson_track4_rl`,
+all of them), `total_frames: 86553` -- exactly `40,713 + 45,840`, matching the filter's own
+predicted kept-count to the frame. LeRobotDataset v3.0 consolidated-chunk format (1 parquet file,
+8 video files covering all 15 episodes).
+
+Ran `data_processing/verify_and_package_dataset.py --check-video-decode` (the slow, thorough path
+that actually decodes every video frame-by-frame with PyAV, not just a schema/row-count check):
+**`total_decoded_frames: 86553`** -- every single frame in every one of the 8 video files decodes
+cleanly, zero corruption anywhere. `stale_rate_by_regime`/`glitch_rate_by_regime` both sane and
+low (pid_webcam 11.5%/0.002%, jetson_track4_rl 30.6%/0.31% -- informational, not failure criteria).
+Packaged: `lerobot_full_2026_10_13_safety_filtered.zip`, 1,213,858,224 bytes (~1.13 GiB),
+sha256 `3e7014ebeb347169c3a7e35cd29ee3534550960cbff076df12624f7a6abbe2de`.
+
+Both the dataset directory and the zip live in this session's local scratch path (not the project
+tree, matching where the agent redirected output after the first attempt's workspace-move-related
+death): `...\scratchpad\lerobot_combined_20261013_safety_filtered` (dataset) and
+`...\scratchpad\lerobot_full_2026_10_13_safety_filtered.zip` (package).
+
+**Remaining steps, not done here (need the user's own Drive/Colab access)**: upload the zip to
+`MyDrive/2026_VRI_WINTER/colab_bundle/lerobot_full_2026_10_13_safety_filtered.zip` (the exact name
+`act_train_colab.ipynb`'s `run_003` cell already expects), then run that notebook for the actual
+retrain.
+
 ## 07/10/2026 (ongoing)
 ### Arm 2 action-head design work; a second, distinct touch-sensor data bug found by manual image review
 

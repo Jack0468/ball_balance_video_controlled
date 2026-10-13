@@ -1,0 +1,487 @@
+[convert_to_lerobot] Skipping 01_bronze/session_20260730_174916: no frame_synced_csv in manifest (never synced -- unusable at frame level).
+[ WARN:0@4.536] global cap_gstreamer.cpp:2824 cv::handleMessage OpenCV | GStreamer warning: your GStreamer installation is missing a required plugin: Quicktime demuxer
+[ WARN:0@4.536] global cap_gstreamer.cpp:2840 cv::handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module uridecodebin0 reported: Your GStreamer installation is missing a plug-in.
+[ WARN:0@4.537] global cap_gstreamer.cpp:1698 cv::GStreamerCapture::open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@4.537] global cap_gstreamer.cpp:1173 cv::GStreamerCapture::isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+WARNING:root:'torchcodec' is not available in your platform, falling back to 'pyav' as a default decoder
+[ WARN:0@4.726] global cap_gstreamer.cpp:2824 cv::handleMessage OpenCV | GStreamer warning: your GStreamer installation is missing a required plugin: Quicktime demuxer
+[ WARN:0@4.726] global cap_gstreamer.cpp:2840 cv::handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module uridecodebin1 reported: Your GStreamer installation is missing a plug-in.
+[ WARN:0@4.726] global cap_gstreamer.cpp:1698 cv::GStreamerCapture::open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@4.726] global cap_gstreamer.cpp:1173 cv::GStreamerCapture::isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+[ WARN:0@4.796] global cap_gstreamer.cpp:2824 cv::handleMessage OpenCV | GStreamer warning: your GStreamer installation is missing a required plugin: Quicktime demuxer
+[ WARN:0@4.796] global cap_gstreamer.cpp:2840 cv::handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module uridecodebin2 reported: Your GStreamer installation is missing a plug-in.
+[ WARN:0@4.796] global cap_gstreamer.cpp:1698 cv::GStreamerCapture::open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@4.796] global cap_gstreamer.cpp:1173 cv::GStreamerCapture::isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+Map:   0%|          | 0/2596 [00:00<?, ? examples/s]Map:   1%|          | 23/2596 [00:00<00:13, 185.45 examples/s]Map:   2%|1         | 46/2596 [00:00<00:23, 106.32 examples/s]Map:   3%|2         | 68/2596 [00:00<00:19, 129.27 examples/s]Map:   3%|3         | 86/2596 [00:00<00:17, 141.12 examples/s]Map:   4%|4         | 107/2596 [00:00<00:18, 137.38 examples/s]Map:   5%|4         | 124/2596 [00:00<00:17, 144.84 examples/s]Map:   6%|5         | 145/2596 [00:01<00:15, 159.84 examples/s]Map:   6%|6         | 167/2596 [00:01<00:13, 174.19 examples/s]Map:   7%|7         | 186/2596 [00:01<00:13, 174.32 examples/s]Map:   9%|8         | 222/2596 [00:01<00:12, 188.94 examples/s]Map:  10%|9         | 248/2596 [00:01<00:12, 181.31 examples/s]Map:  10%|#         | 269/2596 [00:01<00:12, 185.57 examples/s]Map:  11%|#1        | 297/2596 [00:01<00:12, 183.97 examples/s]Map:  12%|#2        | 323/2596 [00:01<00:11, 197.08 examples/s]Map:  13%|#3        | 348/2596 [00:02<00:10, 208.32 examples/s]Map:  14%|#4        | 375/2596 [00:02<00:10, 221.67 examples/s]Map:  15%|#5        | 401/2596 [00:02<00:09, 229.46 examples/s]Map:  17%|#6        | 436/2596 [00:02<00:09, 228.20 examples/s]Map:  18%|#7        | 460/2596 [00:02<00:09, 228.03 examples/s]Map:  19%|#8        | 491/2596 [00:02<00:09, 215.27 examples/s]Map:  20%|##        | 532/2596 [00:02<00:09, 228.42 examples/s]Map:  22%|##1       | 564/2596 [00:02<00:09, 217.92 examples/s]Map:  23%|##2       | 590/2596 [00:03<00:10, 189.28 examples/s]Map:  24%|##3       | 616/2596 [00:03<00:10, 180.76 examples/s]Map:  25%|##4       | 644/2596 [00:03<00:09, 198.57 examples/s]Map:  26%|##5       | 673/2596 [00:03<00:09, 193.22 examples/s]Map:  27%|##7       | 707/2596 [00:03<00:08, 222.32 examples/s]Map:  28%|##8       | 739/2596 [00:03<00:08, 213.33 examples/s]Map:  30%|###       | 780/2596 [00:03<00:07, 252.04 examples/s]Map:  31%|###1      | 810/2596 [00:04<00:07, 231.57 examples/s]Map:  33%|###2      | 855/2596 [00:04<00:06, 248.94 examples/s]Map:  34%|###4      | 884/2596 [00:04<00:06, 254.12 examples/s]Map:  36%|###5      | 925/2596 [00:04<00:05, 288.31 examples/s]Map:  37%|###7      | 963/2596 [00:04<00:05, 275.59 examples/s]Map:  39%|###8      | 1000/2596 [00:04<00:06, 259.88 examples/s]Map:  40%|###9      | 1034/2596 [00:04<00:05, 275.04 examples/s]Map:  42%|####1     | 1078/2596 [00:05<00:06, 247.78 examples/s]Map:  43%|####2     | 1106/2596 [00:05<00:06, 223.37 examples/s]Map:  44%|####3     | 1137/2596 [00:05<00:06, 240.70 examples/s]Map:  45%|####5     | 1177/2596 [00:05<00:05, 271.02 examples/s]Map:  47%|####6     | 1219/2596 [00:05<00:05, 238.99 examples/s]Map:  48%|####8     | 1259/2596 [00:05<00:05, 240.87 examples/s]Map:  50%|####9     | 1293/2596 [00:06<00:05, 229.12 examples/s]Map:  51%|#####1    | 1329/2596 [00:06<00:05, 230.90 examples/s]Map:  53%|#####3    | 1382/2596 [00:06<00:04, 292.09 examples/s]Map:  55%|#####4    | 1420/2596 [00:06<00:04, 276.44 examples/s]Map:  56%|#####5    | 1452/2596 [00:06<00:04, 254.32 examples/s]Map:  57%|#####7    | 1485/2596 [00:06<00:04, 266.54 examples/s]Map:  59%|#####8    | 1519/2596 [00:06<00:03, 275.88 examples/s]Map:  60%|######    | 1558/2596 [00:06<00:03, 300.20 examples/s]Map:  62%|######1   | 1602/2596 [00:07<00:03, 284.88 examples/s]Map:  63%|######3   | 1640/2596 [00:07<00:03, 297.41 examples/s]Map:  65%|######4   | 1677/2596 [00:07<00:03, 270.01 examples/s]Map:  67%|######6   | 1728/2596 [00:07<00:02, 324.64 examples/s]Map:  69%|######8   | 1780/2596 [00:07<00:02, 371.26 examples/s]Map:  71%|#######   | 1831/2596 [00:07<00:02, 355.44 examples/s]Map:  72%|#######1  | 1869/2596 [00:07<00:02, 361.03 examples/s]Map:  74%|#######3  | 1913/2596 [00:08<00:02, 332.68 examples/s]Map:  75%|#######5  | 1957/2596 [00:08<00:01, 349.93 examples/s]Map:  77%|#######7  | 2000/2596 [00:08<00:01, 313.31 examples/s]Map:  79%|#######8  | 2045/2596 [00:08<00:01, 338.05 examples/s]Map:  81%|########  | 2099/2596 [00:08<00:01, 339.19 examples/s]Map:  82%|########2 | 2136/2596 [00:08<00:01, 343.95 examples/s]Map:  84%|########3 | 2178/2596 [00:08<00:01, 357.52 examples/s]Map:  86%|########5 | 2225/2596 [00:08<00:01, 298.68 examples/s]Map:  87%|########7 | 2261/2596 [00:09<00:01, 308.27 examples/s]Map:  89%|########8 | 2306/2596 [00:09<00:00, 299.88 examples/s]Map:  91%|######### | 2360/2596 [00:09<00:00, 303.06 examples/s]Map:  93%|#########2| 2407/2596 [00:09<00:00, 300.08 examples/s]Map:  94%|#########4| 2452/2596 [00:09<00:00, 292.19 examples/s]Map:  96%|#########5| 2492/2596 [00:09<00:00, 313.47 examples/s]Map:  98%|#########7| 2533/2596 [00:10<00:00, 293.91 examples/s]Map:  99%|#########9| 2574/2596 [00:10<00:00, 283.35 examples/s]Map: 100%|##########| 2596/2596 [00:10<00:00, 251.21 examples/s]
+[convert_to_lerobot] session_jetson_track4_20260915_151627 (jetson_track4_rl): 2596 frames -> episode saved
+[convert_to_lerobot] Skipping session_jetson_track4_20260915_151627.dvc (jetson_track4_rl): missing telemetry.csv or rgb_video.mp4
+[ WARN:0@182.140] global cap_gstreamer.cpp:2824 cv::handleMessage OpenCV | GStreamer warning: your GStreamer installation is missing a required plugin: Quicktime demuxer
+[ WARN:0@182.140] global cap_gstreamer.cpp:2840 cv::handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module uridecodebin3 reported: Your GStreamer installation is missing a plug-in.
+[ WARN:0@182.140] global cap_gstreamer.cpp:1698 cv::GStreamerCapture::open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@182.140] global cap_gstreamer.cpp:1173 cv::GStreamerCapture::isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+[ WARN:0@182.747] global cap_gstreamer.cpp:2824 cv::handleMessage OpenCV | GStreamer warning: your GStreamer installation is missing a required plugin: Quicktime demuxer
+[ WARN:0@182.748] global cap_gstreamer.cpp:2840 cv::handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module uridecodebin4 reported: Your GStreamer installation is missing a plug-in.
+[ WARN:0@182.749] global cap_gstreamer.cpp:1698 cv::GStreamerCapture::open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@182.749] global cap_gstreamer.cpp:1173 cv::GStreamerCapture::isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+Map:   0%|          | 0/2294 [00:00<?, ? examples/s]Map:   7%|7         | 163/2294 [00:00<00:01, 1589.54 examples/s]Map:  17%|#7        | 395/2294 [00:00<00:01, 1546.28 examples/s]Map:  24%|##4       | 557/2294 [00:00<00:01, 1567.95 examples/s]Map:  32%|###1      | 730/2294 [00:00<00:01, 1370.51 examples/s]Map:  38%|###8      | 875/2294 [00:00<00:01, 1390.91 examples/s]Map:  44%|####4     | 1018/2294 [00:00<00:00, 1398.80 examples/s]Map:  52%|#####1    | 1187/2294 [00:00<00:00, 1480.91 examples/s]Map:  59%|#####9    | 1364/2294 [00:00<00:00, 1541.64 examples/s]Map:  67%|######7   | 1545/2294 [00:01<00:00, 1580.65 examples/s]Map:  75%|#######4  | 1716/2294 [00:01<00:00, 1587.54 examples/s]Map:  83%|########2 | 1904/2294 [00:01<00:00, 1619.01 examples/s]Map:  94%|#########4| 2157/2294 [00:01<00:00, 1584.77 examples/s]Map: 100%|##########| 2294/2294 [00:01<00:00, 1530.28 examples/s]
+[convert_to_lerobot] session_jetson_track4_20260915_153053 (jetson_track4_rl): 2294 frames -> episode saved
+[convert_to_lerobot] Skipping session_jetson_track4_20260915_153053.dvc (jetson_track4_rl): missing telemetry.csv or rgb_video.mp4
+[ WARN:0@329.970] global cap_gstreamer.cpp:2824 cv::handleMessage OpenCV | GStreamer warning: your GStreamer installation is missing a required plugin: Quicktime demuxer
+[ WARN:0@329.970] global cap_gstreamer.cpp:2840 cv::handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module uridecodebin5 reported: Your GStreamer installation is missing a plug-in.
+[ WARN:0@329.971] global cap_gstreamer.cpp:1698 cv::GStreamerCapture::open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@329.971] global cap_gstreamer.cpp:1173 cv::GStreamerCapture::isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+[ WARN:0@330.041] global cap_gstreamer.cpp:2824 cv::handleMessage OpenCV | GStreamer warning: your GStreamer installation is missing a required plugin: Quicktime demuxer
+[ WARN:0@330.041] global cap_gstreamer.cpp:2840 cv::handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module uridecodebin6 reported: Your GStreamer installation is missing a plug-in.
+[ WARN:0@330.041] global cap_gstreamer.cpp:1698 cv::GStreamerCapture::open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@330.041] global cap_gstreamer.cpp:1173 cv::GStreamerCapture::isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+Map:   0%|          | 0/2370 [00:00<?, ? examples/s]Map:   6%|6         | 149/2370 [00:00<00:01, 1455.57 examples/s]Map:  13%|#2        | 305/2370 [00:00<00:01, 1167.06 examples/s]Map:  19%|#9        | 453/2370 [00:00<00:01, 1287.24 examples/s]Map:  26%|##5       | 613/2370 [00:00<00:01, 1392.28 examples/s]Map:  32%|###2      | 762/2370 [00:00<00:01, 1408.36 examples/s]Map:  39%|###9      | 925/2370 [00:00<00:00, 1471.51 examples/s]Map:  48%|####7     | 1134/2370 [00:00<00:00, 1432.03 examples/s]Map:  54%|#####4    | 1280/2370 [00:00<00:00, 1433.05 examples/s]Map:  62%|######2   | 1479/2370 [00:01<00:00, 1359.19 examples/s]Map:  71%|#######   | 1680/2370 [00:01<00:00, 1347.01 examples/s]Map:  79%|#######8  | 1872/2370 [00:01<00:00, 1323.17 examples/s]Map:  87%|########7 | 2068/2370 [00:01<00:00, 1251.88 examples/s]Map:  96%|#########5| 2265/2370 [00:01<00:00, 1264.87 examples/s]Map: 100%|##########| 2370/2370 [00:01<00:00, 1316.93 examples/s]
+[convert_to_lerobot] session_jetson_track4_20260915_153247 (jetson_track4_rl): 2370 frames -> episode saved
+[convert_to_lerobot] Skipping session_jetson_track4_20260915_153247.dvc (jetson_track4_rl): missing telemetry.csv or rgb_video.mp4
+[ WARN:0@491.490] global cap_gstreamer.cpp:2824 cv::handleMessage OpenCV | GStreamer warning: your GStreamer installation is missing a required plugin: Quicktime demuxer
+[ WARN:0@491.490] global cap_gstreamer.cpp:2840 cv::handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module uridecodebin7 reported: Your GStreamer installation is missing a plug-in.
+[ WARN:0@491.491] global cap_gstreamer.cpp:1698 cv::GStreamerCapture::open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@491.491] global cap_gstreamer.cpp:1173 cv::GStreamerCapture::isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+[ WARN:0@491.736] global cap_gstreamer.cpp:2824 cv::handleMessage OpenCV | GStreamer warning: your GStreamer installation is missing a required plugin: Quicktime demuxer
+[ WARN:0@491.736] global cap_gstreamer.cpp:2840 cv::handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module uridecodebin8 reported: Your GStreamer installation is missing a plug-in.
+[ WARN:0@491.738] global cap_gstreamer.cpp:1698 cv::GStreamerCapture::open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@491.738] global cap_gstreamer.cpp:1173 cv::GStreamerCapture::isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+Map:   0%|          | 0/5057 [00:00<?, ? examples/s]Map:   3%|3         | 172/5057 [00:00<00:02, 1671.01 examples/s]Map:   7%|6         | 351/5057 [00:00<00:02, 1702.73 examples/s]Map:  12%|#1        | 602/5057 [00:00<00:02, 1676.00 examples/s]Map:  15%|#5        | 780/5057 [00:00<00:02, 1692.20 examples/s]Map:  20%|##        | 1023/5057 [00:00<00:02, 1590.10 examples/s]Map:  24%|##3       | 1203/5057 [00:00<00:02, 1602.19 examples/s]Map:  28%|##7       | 1392/5057 [00:00<00:02, 1633.22 examples/s]Map:  32%|###2      | 1637/5057 [00:01<00:02, 1618.20 examples/s]Map:  36%|###5      | 1817/5057 [00:01<00:02, 1462.63 examples/s]Map:  39%|###9      | 1991/5057 [00:01<00:02, 1208.40 examples/s]Map:  42%|####2     | 2148/5057 [00:01<00:02, 1267.73 examples/s]Map:  46%|####5     | 2309/5057 [00:01<00:02, 1173.81 examples/s]Map:  48%|####8     | 2444/5057 [00:01<00:02, 1078.64 examples/s]Map:  51%|#####     | 2570/5057 [00:01<00:02, 1114.08 examples/s]Map:  54%|#####4    | 2756/5057 [00:02<00:01, 1255.60 examples/s]Map:  58%|#####7    | 2910/5057 [00:02<00:01, 1314.55 examples/s]Map:  62%|######1   | 3126/5057 [00:02<00:01, 1202.34 examples/s]Map:  65%|######5   | 3302/5057 [00:02<00:01, 1172.05 examples/s]Map:  69%|######8   | 3476/5057 [00:02<00:01, 1290.03 examples/s]Map:  72%|#######2  | 3652/5057 [00:02<00:01, 1240.80 examples/s]Map:  75%|#######5  | 3815/5057 [00:02<00:01, 1070.87 examples/s]Map:  78%|#######8  | 3958/5057 [00:03<00:01, 924.45 examples/s] Map:  81%|########  | 4095/5057 [00:03<00:00, 1004.43 examples/s]Map:  83%|########3 | 4217/5057 [00:03<00:00, 1034.42 examples/s]Map:  86%|########5 | 4338/5057 [00:03<00:00, 950.69 examples/s] Map:  89%|########8 | 4477/5057 [00:03<00:00, 1048.01 examples/s]Map:  92%|#########1| 4648/5057 [00:03<00:00, 1206.11 examples/s]Map:  95%|#########5| 4812/5057 [00:03<00:00, 1313.30 examples/s]Map:  98%|#########8| 4979/5057 [00:03<00:00, 1383.70 examples/s]Map: 100%|##########| 5057/5057 [00:04<00:00, 1256.92 examples/s]
+Svt[info]: -------------------------------------------
+Svt[info]: SVT [version]:	SVT-AV1 Encoder Lib v3.0.0
+Svt[info]: SVT [build]  :	GCC 15.1.0	 64 bit
+Svt[info]: LIB Build date: Jul  3 2025 03:17:54
+Svt[info]: -------------------------------------------
+Svt[warn]: Preset M12 is mapped to M10.
+Svt[info]: Level of Parallelism: 5
+Svt[info]: Number of PPCS 76
+Svt[info]: [asm level on system : up to avx2]
+Svt[info]: [asm level selected : up to avx2]
+Svt[info]: -------------------------------------------
+Svt[info]: SVT [config]: main profile	tier (auto)	level (auto)
+Svt[info]: SVT [config]: width / height / fps numerator / fps denominator 		: 640 / 480 / 30 / 1
+Svt[info]: SVT [config]: bit-depth / color format 					: 8 / YUV420
+Svt[info]: SVT [config]: preset / tune / pred struct 					: 10 / PSNR / random access
+Svt[info]: SVT [config]: gop size / mini-gop size / key-frame type 			: 2 / 16 / key frame
+Svt[info]: SVT [config]: BRC mode / rate factor 					: CRF / 30 
+Svt[info]: SVT [config]: AQ mode / variance boost 					: 2 / 0
+Svt[info]: SVT [config]: sharpness / luminance-based QP bias 			: 0 / 0
+Svt[info]: Svt[info]: -------------------------------------------
+Svt[info]: -------------------------------------------
+Svt[info]: SVT [version]:	SVT-AV1 Encoder Lib v3.0.0
+Svt[info]: SVT [build]  :	GCC 15.1.0	 64 bit
+Svt[info]: LIB Build date: Jul  3 2025 03:17:54
+Svt[info]: -------------------------------------------
+Svt[warn]: Preset M12 is mapped to M10.
+Svt[info]: Level of Parallelism: 5
+Svt[info]: Number of PPCS 76
+Svt[info]: [asm level on system : up to avx2]
+Svt[info]: [asm level selected : up to avx2]
+Svt[info]: -------------------------------------------
+Svt[info]: SVT [config]: main profile	tier (auto)	level (auto)
+Svt[info]: SVT [config]: width / height / fps numerator / fps denominator 		: 640 / 480 / 30 / 1
+Svt[info]: SVT [config]: bit-depth / color format 					: 8 / YUV420
+Svt[info]: SVT [config]: preset / tune / pred struct 					: 10 / PSNR / random access
+Svt[info]: SVT [config]: gop size / mini-gop size / key-frame type 			: 2 / 16 / key frame
+Svt[info]: SVT [config]: BRC mode / rate factor 					: CRF / 30 
+Svt[info]: SVT [config]: AQ mode / variance boost 					: 2 / 0
+Svt[info]: SVT [config]: sharpness / luminance-based QP bias 			: 0 / 0
+Svt[info]: Svt[info]: -------------------------------------------
+[mp4 @ 000001f806d74c00] Starting second pass: moving the moov atom to the beginning of the file
+Svt[info]: -------------------------------------------
+Svt[info]: SVT [version]:	SVT-AV1 Encoder Lib v3.0.0
+Svt[info]: SVT [build]  :	GCC 15.1.0	 64 bit
+Svt[info]: LIB Build date: Jul  3 2025 03:17:54
+Svt[info]: -------------------------------------------
+Svt[warn]: Preset M12 is mapped to M10.
+Svt[info]: Level of Parallelism: 5
+Svt[info]: Number of PPCS 76
+Svt[info]: [asm level on system : up to avx2]
+Svt[info]: [asm level selected : up to avx2]
+Svt[info]: -------------------------------------------
+Svt[info]: SVT [config]: main profile	tier (auto)	level (auto)
+Svt[info]: SVT [config]: width / height / fps numerator / fps denominator 		: 640 / 480 / 30 / 1
+Svt[info]: SVT [config]: bit-depth / color format 					: 8 / YUV420
+Svt[info]: SVT [config]: preset / tune / pred struct 					: 10 / PSNR / random access
+Svt[info]: SVT [config]: gop size / mini-gop size / key-frame type 			: 2 / 16 / key frame
+Svt[info]: SVT [config]: BRC mode / rate factor 					: CRF / 30 
+Svt[info]: SVT [config]: AQ mode / variance boost 					: 2 / 0
+Svt[info]: SVT [config]: sharpness / luminance-based QP bias 			: 0 / 0
+Svt[info]: Svt[info]: -------------------------------------------
+[mp4 @ 000001f78e2e9b80] Starting second pass: moving the moov atom to the beginning of the file
+Svt[info]: -------------------------------------------
+Svt[info]: SVT [version]:	SVT-AV1 Encoder Lib v3.0.0
+Svt[info]: SVT [build]  :	GCC 15.1.0	 64 bit
+Svt[info]: LIB Build date: Jul  3 2025 03:17:54
+Svt[info]: -------------------------------------------
+Svt[warn]: Preset M12 is mapped to M10.
+Svt[info]: Level of Parallelism: 5
+Svt[info]: Number of PPCS 76
+Svt[info]: [convert_to_lerobot] session_jetson_track4_20260915_160025 (jetson_track4_rl): 5057 frames -> episode saved
+[convert_to_lerobot] Skipping session_jetson_track4_20260915_160025.dvc (jetson_track4_rl): missing telemetry.csv or rgb_video.mp4
+[ WARN:0@765.311] global cap_gstreamer.cpp:2824 cv::handleMessage OpenCV | GStreamer warning: your GStreamer installation is missing a required plugin: Quicktime demuxer
+[ WARN:0@765.311] global cap_gstreamer.cpp:2840 cv::handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module uridecodebin9 reported: Your GStreamer installation is missing a plug-in.
+[ WARN:0@765.311] global cap_gstreamer.cpp:1698 cv::GStreamerCapture::open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@765.312] global cap_gstreamer.cpp:1173 cv::GStreamerCapture::isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+[ WARN:0@765.524] global cap_gstreamer.cpp:2824 cv::handleMessage OpenCV | GStreamer warning: your GStreamer installation is missing a required plugin: Quicktime demuxer
+[ WARN:0@765.524] global cap_gstreamer.cpp:2840 cv::handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module uridecodebin10 reported: Your GStreamer installation is missing a plug-in.
+[ WARN:0@765.526] global cap_gstreamer.cpp:1698 cv::GStreamerCapture::open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@765.526] global cap_gstreamer.cpp:1173 cv::GStreamerCapture::isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+Map:   0%|          | 0/4747 [00:00<?, ? examples/s]Map:   4%|3         | 170/4747 [00:00<00:02, 1575.20 examples/s]Map:   7%|7         | 346/4747 [00:00<00:02, 1650.43 examples/s]Map:  11%|#         | 520/4747 [00:00<00:02, 1674.17 examples/s]Map:  15%|#4        | 703/4747 [00:00<00:02, 1679.41 examples/s]Map:  19%|#8        | 881/4747 [00:00<00:02, 1672.24 examples/s]Map:  24%|##3       | 1128/4747 [00:00<00:02, 1615.62 examples/s]Map:  28%|##7       | 1307/4747 [00:00<00:02, 1628.41 examples/s]Map:  32%|###1      | 1506/4747 [00:00<00:01, 1659.56 examples/s]Map:  35%|###5      | 1680/4747 [00:01<00:01, 1668.17 examples/s]Map:  39%|###8      | 1851/4747 [00:01<00:01, 1672.63 examples/s]Map:  44%|####4     | 2104/4747 [00:01<00:01, 1630.83 examples/s]Map:  48%|####8     | 2289/4747 [00:01<00:01, 1655.34 examples/s]Map:  52%|#####1    | 2465/4747 [00:01<00:01, 1655.65 examples/s]Map:  55%|#####5    | 2632/4747 [00:01<00:01, 1648.82 examples/s]Map:  59%|#####9    | 2808/4747 [00:01<00:01, 1669.36 examples/s]Map:  63%|######2   | 2989/4747 [00:01<00:01, 1678.88 examples/s]Map:  68%|######8   | 3247/4747 [00:01<00:00, 1632.63 examples/s]Map:  72%|#######2  | 3436/4747 [00:02<00:00, 1643.54 examples/s]Map:  76%|#######6  | 3631/4747 [00:02<00:00, 1667.82 examples/s]Map:  80%|########  | 3820/4747 [00:02<00:00, 1680.59 examples/s]Map:  84%|########4 | 3991/4747 [00:02<00:00, 1686.30 examples/s]Map:  88%|########8 | 4181/4747 [00:02<00:00, 1636.69 examples/s]Map:  92%|#########2| 4371/4747 [00:02<00:00, 1644.68 examples/s]Map:  96%|#########6| 4567/4747 [00:02<00:00, 1673.34 examples/s]Map: 100%|#########9| 4738/4747 [00:02<00:00, 1675.33 examples/s]Map: 100%|##########| 4747/4747 [00:02<00:00, 1650.51 examples/s]
+[convert_to_lerobot] session_jetson_track4_20260915_160509 (jetson_track4_rl): 4747 frames -> episode saved
+[convert_to_lerobot] Skipping session_jetson_track4_20260915_160509.dvc (jetson_track4_rl): missing telemetry.csv or rgb_video.mp4
+[ WARN:0@986.911] global cap_gstreamer.cpp:2824 cv::handleMessage OpenCV | GStreamer warning: your GStreamer installation is missing a required plugin: Quicktime demuxer
+[ WARN:0@986.911] global cap_gstreamer.cpp:2840 cv::handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module uridecodebin11 reported: Your GStreamer installation is missing a plug-in.
+[ WARN:0@986.912] global cap_gstreamer.cpp:1698 cv::GStreamerCapture::open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@986.912] global cap_gstreamer.cpp:1173 cv::GStreamerCapture::isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+[ WARN:0@987.183] global cap_gstreamer.cpp:2824 cv::handleMessage OpenCV | GStreamer warning: your GStreamer installation is missing a required plugin: Quicktime demuxer
+[ WARN:0@987.183] global cap_gstreamer.cpp:2840 cv::handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module uridecodebin12 reported: Your GStreamer installation is missing a plug-in.
+[ WARN:0@987.184] global cap_gstreamer.cpp:1698 cv::GStreamerCapture::open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@987.184] global cap_gstreamer.cpp:1173 cv::GStreamerCapture::isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+Map:   0%|          | 0/5193 [00:00<?, ? examples/s]Map:   4%|3         | 193/5193 [00:00<00:02, 1713.05 examples/s]Map:   7%|7         | 376/5193 [00:00<00:02, 1715.67 examples/s]Map:  11%|#         | 556/5193 [00:00<00:02, 1705.95 examples/s]Map:  15%|#4        | 773/5193 [00:00<00:02, 1702.99 examples/s]Map:  19%|#8        | 965/5193 [00:00<00:02, 1685.50 examples/s]Map:  23%|##3       | 1203/5193 [00:00<00:02, 1606.24 examples/s]Map:  26%|##6       | 1366/5193 [00:00<00:02, 1610.53 examples/s]Map:  30%|###       | 1561/5193 [00:00<00:02, 1661.27 examples/s]Map:  33%|###3      | 1735/5193 [00:01<00:02, 1679.17 examples/s]Map:  37%|###7      | 1939/5193 [00:01<00:01, 1690.48 examples/s]Map:  42%|####2     | 2186/5193 [00:01<00:01, 1639.79 examples/s]Map:  46%|####5     | 2366/5193 [00:01<00:01, 1657.29 examples/s]Map:  49%|####8     | 2540/5193 [00:01<00:01, 1659.61 examples/s]Map:  52%|#####2    | 2716/5193 [00:01<00:01, 1659.43 examples/s]Map:  56%|#####5    | 2885/5193 [00:01<00:01, 1646.66 examples/s]Map:  60%|#####9    | 3114/5193 [00:01<00:01, 1584.17 examples/s]Map:  63%|######3   | 3295/5193 [00:02<00:01, 1605.32 examples/s]Map:  67%|######7   | 3482/5193 [00:02<00:01, 1616.09 examples/s]Map:  70%|#######   | 3650/5193 [00:02<00:00, 1606.08 examples/s]Map:  74%|#######3  | 3822/5193 [00:02<00:00, 1625.30 examples/s]Map:  77%|#######6  | 3991/5193 [00:02<00:00, 1640.11 examples/s]Map:  81%|########1 | 4230/5193 [00:02<00:00, 1594.11 examples/s]Map:  85%|########4 | 4410/5193 [00:02<00:00, 1612.90 examples/s]Map:  88%|########8 | 4594/5193 [00:02<00:00, 1611.86 examples/s]Map:  92%|#########1| 4756/5193 [00:02<00:00, 1610.15 examples/s]Map:  95%|#########4| 4928/5193 [00:03<00:00, 1610.70 examples/s]Map:  99%|#########9| 5164/5193 [00:03<00:00, 1557.32 examples/s]Map: 100%|##########| 5193/5193 [00:03<00:00, 1624.04 examples/s]
+[convert_to_lerobot] session_jetson_track4_20260915_161239 (jetson_track4_rl): 5193 frames -> episode saved
+[convert_to_lerobot] Skipping session_jetson_track4_20260915_161239.dvc (jetson_track4_rl): missing telemetry.csv or rgb_video.mp4
+[ WARN:0@1230.193] global cap_gstreamer.cpp:2824 cv::handleMessage OpenCV | GStreamer warning: your GStreamer installation is missing a required plugin: Quicktime demuxer
+[ WARN:0@1230.193] global cap_gstreamer.cpp:2840 cv::handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module uridecodebin13 reported: Your GStreamer installation is missing a plug-in.
+[ WARN:0@1230.194] global cap_gstreamer.cpp:1698 cv::GStreamerCapture::open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@1230.194] global cap_gstreamer.cpp:1173 cv::GStreamerCapture::isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+[ WARN:0@1230.443] global cap_gstreamer.cpp:2824 cv::handleMessage OpenCV | GStreamer warning: your GStreamer installation is missing a required plugin: Quicktime demuxer
+[ WARN:0@1230.443] global cap_gstreamer.cpp:2840 cv::handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module uridecodebin14 reported: Your GStreamer installation is missing a plug-in.
+[ WARN:0@1230.444] global cap_gstreamer.cpp:1698 cv::GStreamerCapture::open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@1230.444] global cap_gstreamer.cpp:1173 cv::GStreamerCapture::isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+Map:   0%|          | 0/4946 [00:00<?, ? examples/s]Map:   4%|3         | 179/4946 [00:00<00:02, 1701.25 examples/s]Map:   7%|7         | 355/4946 [00:00<00:02, 1710.88 examples/s]Map:  11%|#         | 533/4946 [00:00<00:02, 1716.86 examples/s]Map:  15%|#4        | 736/4946 [00:00<00:02, 1716.19 examples/s]Map:  18%|#8        | 912/4946 [00:00<00:02, 1710.75 examples/s]Map:  24%|##3       | 1174/4946 [00:00<00:02, 1647.91 examples/s]Map:  28%|##8       | 1393/4946 [00:00<00:02, 1671.02 examples/s]Map:  32%|###1      | 1571/4946 [00:00<00:02, 1678.99 examples/s]Map:  35%|###5      | 1748/4946 [00:01<00:01, 1680.12 examples/s]Map:  39%|###9      | 1933/4946 [00:01<00:01, 1704.45 examples/s]Map:  45%|####4     | 2208/4946 [00:01<00:01, 1679.20 examples/s]Map:  49%|####9     | 2424/4946 [00:01<00:01, 1693.76 examples/s]Map:  53%|#####2    | 2602/4946 [00:01<00:01, 1696.85 examples/s]Map:  56%|#####6    | 2787/4946 [00:01<00:01, 1699.47 examples/s]Map:  60%|#####9    | 2966/4946 [00:01<00:01, 1714.65 examples/s]Map:  64%|######3   | 3146/4946 [00:01<00:01, 1655.16 examples/s]Map:  67%|######7   | 3328/4946 [00:01<00:00, 1682.81 examples/s]Map:  71%|#######1  | 3519/4946 [00:02<00:00, 1694.04 examples/s]Map:  75%|#######5  | 3721/4946 [00:02<00:00, 1697.97 examples/s]Map:  79%|#######9  | 3912/4946 [00:02<00:00, 1701.42 examples/s]Map:  84%|########3 | 4154/4946 [00:02<00:00, 1643.77 examples/s]Map:  88%|########7 | 4338/4946 [00:02<00:00, 1676.54 examples/s]Map:  91%|#########1| 4522/4946 [00:02<00:00, 1701.81 examples/s]Map:  95%|#########5| 4706/4946 [00:02<00:00, 1716.54 examples/s]Map:  99%|#########9| 4903/4946 [00:02<00:00, 1733.71 examples/s]Map: 100%|##########| 4946/4946 [00:02<00:00, 1691.27 examples/s]
+[asm level on system : up to avx2]
+Svt[info]: [asm level selected : up to avx2]
+Svt[info]: -------------------------------------------
+Svt[info]: SVT [config]: main profile	tier (auto)	level (auto)
+Svt[info]: SVT [config]: width / height / fps numerator / fps denominator 		: 640 / 480 / 30 / 1
+Svt[info]: SVT [config]: bit-depth / color format 					: 8 / YUV420
+Svt[info]: SVT [config]: preset / tune / pred struct 					: 10 / PSNR / random access
+Svt[info]: SVT [config]: gop size / mini-gop size / key-frame type 			: 2 / 16 / key frame
+Svt[info]: SVT [config]: BRC mode / rate factor 					: CRF / 30 
+Svt[info]: SVT [config]: AQ mode / variance boost 					: 2 / 0
+Svt[info]: SVT [config]: sharpness / luminance-based QP bias 			: 0 / 0
+Svt[info]: Svt[info]: -------------------------------------------
+[mp4 @ 000001f801072b00] Starting second pass: moving the moov atom to the beginning of the file
+Svt[info]: -------------------------------------------
+Svt[info]: SVT [version]:	SVT-AV1 Encoder Lib v3.0.0
+Svt[info]: SVT [build]  :	GCC 15.1.0	 64 bit
+Svt[info]: LIB Build date: Jul  3 2025 03:17:54
+Svt[info]: -------------------------------------------
+Svt[warn]: Preset M12 is mapped to M10.
+Svt[info]: Level of Parallelism: 5
+Svt[info]: Number of PPCS 76
+Svt[info]: [asm level on system : up to avx2]
+Svt[info]: [asm level selected : up to avx2]
+Svt[info]: -------------------------------------------
+Svt[info]: SVT [config]: main profile	tier (auto)	level (auto)
+Svt[info]: SVT [config]: width / height / fps numerator / fps denominator 		: 640 / 480 / 30 / 1
+Svt[info]: SVT [config]: bit-depth / color format 					: 8 / YUV420
+Svt[info]: SVT [config]: preset / tune / pred struct 					: 10 / PSNR / random access
+Svt[info]: SVT [config]: gop size / mini-gop size / key-frame type 			: 2 / 16 / key frame
+Svt[info]: SVT [config]: BRC mode / rate factor 					: CRF / 30 
+Svt[info]: SVT [config]: AQ mode / variance boost 					: 2 / 0
+Svt[info]: SVT [config]: sharpness / luminance-based QP bias 			: 0 / 0
+Svt[info]: Svt[info]: -------------------------------------------
+Svt[info]: -------------------------------------------
+Svt[info]: SVT [version]:	SVT-AV1 Encoder Lib v3.0.0
+Svt[info]: SVT [build]  :	GCC 15.1.0	 64 bit
+Svt[info]: LIB Build date: Jul  3 2025 03:17:54
+Svt[info]: -------------------------------------------
+Svt[warn]: Preset M12 is mapped to M10.
+Svt[info]: Level of Parallelism: 5
+Svt[info]: Number of PPCS 76
+Svt[info]: [asm level on system : up to avx2]
+Svt[info]: [asm level selected : up to avx2]
+Svt[info]: -------------------------------------------
+Svt[info]: SVT [config]: main profile	tier (auto)	level (auto)
+Svt[info]: SVT [config]: width / height / fps numerator / fps denominator 		: 640 / 480 / 30 / 1
+Svt[info]: SVT [config]: bit-depth / color format 					: 8 / YUV420
+Svt[info]: SVT [config]: preset / tune / pred struct 					: 10 / PSNR / random access
+Svt[info]: SVT [config]: gop size / mini-gop size / key-frame type 			: 2 / 16 / key frame
+Svt[info]: SVT [config]: BRC mode / rate factor 					: CRF / 30 
+Svt[info]: SVT [config]: AQ mode / variance boost 					: 2 / 0
+Svt[info]: SVT [config]: sharpness / luminance-based QP bias 			: 0 / 0
+Svt[info]: Svt[info]: -------------------------------------------
+[mp4 @ 000001f78e7dba00] Starting second pass: moving the moov atom to the beginning of the file
+Svt[info]: -------------------------------------------
+Svt[info]: SVT [version]:	SVT-AV1 Encoder Lib v3.0.0
+Svt[info]: SVT [build]  :	GCC 15.1.0	 64 bit
+Svt[info]: LIB Build date: Jul  3 2025 03:17:54
+Svt[info]: -------------------------------------------
+Svt[warn]: Preset M12 is mapped to M10.
+Svt[info]: Level of Parallelism: 5
+Svt[info]: Number of PPCS 76
+Svt[info]: [asm level on system : up to avx2]
+Svt[info]: [asm level selected : up to avx2]
+Svt[info]: -------------------------------------------
+Svt[info]: SVT [config]: main profile	tier (auto)	level (auto)
+Svt[info]: SVT [config]: width / height / fps numerator / fps denominator 		: 640 / 480 / 30 / 1
+Svt[info]: SVT [config]: bit-depth / color format 					: 8 / YUV420
+Svt[info[convert_to_lerobot] session_jetson_track4_20260915_161712 (jetson_track4_rl): 4946 frames -> episode saved
+[convert_to_lerobot] Skipping session_jetson_track4_20260915_161712.dvc (jetson_track4_rl): missing telemetry.csv or rgb_video.mp4
+[ WARN:0@1465.318] global cap_gstreamer.cpp:2824 cv::handleMessage OpenCV | GStreamer warning: your GStreamer installation is missing a required plugin: Quicktime demuxer
+[ WARN:0@1465.318] global cap_gstreamer.cpp:2840 cv::handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module uridecodebin15 reported: Your GStreamer installation is missing a plug-in.
+[ WARN:0@1465.318] global cap_gstreamer.cpp:1698 cv::GStreamerCapture::open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@1465.318] global cap_gstreamer.cpp:1173 cv::GStreamerCapture::isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+[ WARN:0@1465.596] global cap_gstreamer.cpp:2824 cv::handleMessage OpenCV | GStreamer warning: your GStreamer installation is missing a required plugin: Quicktime demuxer
+[ WARN:0@1465.596] global cap_gstreamer.cpp:2840 cv::handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module uridecodebin16 reported: Your GStreamer installation is missing a plug-in.
+[ WARN:0@1465.596] global cap_gstreamer.cpp:1698 cv::GStreamerCapture::open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@1465.596] global cap_gstreamer.cpp:1173 cv::GStreamerCapture::isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+Map:   0%|          | 0/3535 [00:00<?, ? examples/s]Map:   5%|4         | 168/3535 [00:00<00:02, 1650.03 examples/s]Map:  11%|#         | 376/3535 [00:00<00:01, 1683.72 examples/s]Map:  16%|#5        | 558/3535 [00:00<00:01, 1694.55 examples/s]Map:  21%|##        | 734/3535 [00:00<00:01, 1679.50 examples/s]Map:  27%|##6       | 949/3535 [00:00<00:01, 1343.11 examples/s]Map:  33%|###2      | 1163/3535 [00:00<00:01, 1335.52 examples/s]Map:  38%|###7      | 1338/3535 [00:00<00:01, 1392.14 examples/s]Map:  43%|####3     | 1525/3535 [00:01<00:01, 1439.01 examples/s]Map:  48%|####7     | 1685/3535 [00:01<00:01, 1459.88 examples/s]Map:  53%|#####2    | 1860/3535 [00:01<00:01, 1490.66 examples/s]Map:  59%|#####9    | 2086/3535 [00:01<00:00, 1465.25 examples/s]Map:  64%|######3   | 2262/3535 [00:01<00:00, 1499.14 examples/s]Map:  69%|######9   | 2454/3535 [00:01<00:00, 1409.72 examples/s]Map:  74%|#######4  | 2618/3535 [00:01<00:00, 1440.49 examples/s]Map:  79%|#######8  | 2789/3535 [00:01<00:00, 1494.35 examples/s]Map:  85%|########4 | 3000/3535 [00:02<00:00, 1398.52 examples/s]Map:  89%|########9 | 3155/3535 [00:02<00:00, 1429.90 examples/s]Map:  95%|#########4| 3358/3535 [00:02<00:00, 1393.20 examples/s]Map: 100%|#########9| 3531/3535 [00:02<00:00, 1465.00 examples/s]Map: 100%|##########| 3535/3535 [00:02<00:00, 1460.25 examples/s]
+[convert_to_lerobot] session_jetson_track4_20260915_163702 (jetson_track4_rl): 3535 frames -> episode saved
+[convert_to_lerobot] Skipping session_jetson_track4_20260915_163702.dvc (jetson_track4_rl): missing telemetry.csv or rgb_video.mp4
+[ WARN:0@1639.803] global cap_gstreamer.cpp:2824 cv::handleMessage OpenCV | GStreamer warning: your GStreamer installation is missing a required plugin: Quicktime demuxer
+[ WARN:0@1639.803] global cap_gstreamer.cpp:2840 cv::handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module uridecodebin17 reported: Your GStreamer installation is missing a plug-in.
+[ WARN:0@1639.804] global cap_gstreamer.cpp:1698 cv::GStreamerCapture::open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@1639.804] global cap_gstreamer.cpp:1173 cv::GStreamerCapture::isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+[ WARN:0@1639.997] global cap_gstreamer.cpp:2824 cv::handleMessage OpenCV | GStreamer warning: your GStreamer installation is missing a required plugin: Quicktime demuxer
+[ WARN:0@1639.997] global cap_gstreamer.cpp:2840 cv::handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module uridecodebin18 reported: Your GStreamer installation is missing a plug-in.
+[ WARN:0@1639.998] global cap_gstreamer.cpp:1698 cv::GStreamerCapture::open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@1639.998] global cap_gstreamer.cpp:1173 cv::GStreamerCapture::isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+Map:   0%|          | 0/4856 [00:00<?, ? examples/s]Map:   3%|3         | 148/4856 [00:00<00:03, 1462.39 examples/s]Map:   7%|6         | 316/4856 [00:00<00:02, 1582.38 examples/s]Map:  10%|#         | 489/4856 [00:00<00:02, 1627.22 examples/s]Map:  14%|#3        | 668/4856 [00:00<00:02, 1647.22 examples/s]Map:  17%|#7        | 849/4856 [00:00<00:02, 1659.30 examples/s]Map:  22%|##2       | 1082/4856 [00:00<00:02, 1584.31 examples/s]Map:  26%|##5       | 1246/4856 [00:00<00:02, 1559.88 examples/s]Map:  29%|##9       | 1414/4856 [00:00<00:02, 1590.23 examples/s]Map:  34%|###3      | 1640/4856 [00:01<00:02, 1538.38 examples/s]Map:  37%|###7      | 1801/4856 [00:01<00:01, 1548.52 examples/s]Map:  40%|####      | 1965/4856 [00:01<00:01, 1556.52 examples/s]Map:  44%|####3     | 2132/4856 [00:01<00:01, 1540.49 examples/s]Map:  47%|####7     | 2303/4856 [00:01<00:01, 1584.86 examples/s]Map:  51%|#####1    | 2477/4856 [00:01<00:01, 1614.96 examples/s]Map:  55%|#####4    | 2648/4856 [00:01<00:01, 1629.13 examples/s]Map:  58%|#####7    | 2816/4856 [00:01<00:01, 1635.93 examples/s]Map:  61%|######1   | 2986/4856 [00:01<00:01, 1650.68 examples/s]Map:  66%|######6   | 3213/4856 [00:02<00:01, 1596.15 examples/s]Map:  70%|######9   | 3388/4856 [00:02<00:00, 1626.28 examples/s]Map:  73%|#######3  | 3559/4856 [00:02<00:00, 1641.57 examples/s]Map:  77%|#######7  | 3747/4856 [00:02<00:00, 1655.19 examples/s]Map:  81%|########  | 3920/4856 [00:02<00:00, 1613.83 examples/s]Map:  86%|########6 | 4178/4856 [00:02<00:00, 1577.09 examples/s]Map:  90%|########9 | 4347/4856 [00:02<00:00, 1601.36 examples/s]Map:  93%|#########3| 4536/4856 [00:02<00:00, 1616.13 examples/s]Map:  98%|#########7| 4735/4856 [00:02<00:00, 1638.96 examples/s]Map: 100%|##########| 4856/4856 [00:03<00:00, 1597.65 examples/s]
+[convert_to_lerobot] session_jetson_track4_20260915_164115 (jetson_track4_rl): 4856 frames -> episode saved
+[convert_to_lerobot] Skipping session_jetson_track4_20260915_164115.dvc (jetson_track4_rl): missing telemetry.csv or rgb_video.mp4
+[ WARN:0@1896.027] global cap_gstreamer.cpp:2824 cv::handleMessage OpenCV | GStreamer warning: your GStreamer installation is missing a required plugin: Quicktime demuxer
+[ WARN:0@1896.028] global cap_gstreamer.cpp:2840 cv::handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module uridecodebin19 reported: Your GStreamer installation is missing a plug-in.
+[ WARN:0@1896.028] global cap_gstreamer.cpp:1698 cv::GStreamerCapture::open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@1896.028] global cap_gstreamer.cpp:1173 cv::GStreamerCapture::isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+[ WARN:0@1896.140] global cap_gstreamer.cpp:2824 cv::handleMessage OpenCV | GStreamer warning: your GStreamer installation is missing a required plugin: Quicktime demuxer
+[ WARN:0@1896.140] global cap_gstreamer.cpp:2840 cv::handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module uridecodebin20 reported: Your GStreamer installation is missing a plug-in.
+[ WARN:0@1896.141] global cap_gstreamer.cpp:1698 cv::GStreamerCapture::open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@1896.141] global cap_gstreamer.cpp:1173 cv::GStreamerCapture::isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+Map:   0%|          | 0/5119 [00:00<?, ? examples/s]Map:   2%|2         | 123/5119 [00:00<00:04, 1166.60 examples/s]Map:   5%|4         | 241/5119 [00:00<00:04, 1087.44 examples/s]Map:   7%|7         | 359/5119 [00:00<00:04, 1053.33 examples/s]Map:   9%|9         | 470/5119 [00:00<00:06, 768.75 examples/s] Map:  11%|#1        | 572/5119 [00:00<00:07, 636.46 examples/s]Map:  13%|#2        | 665/5119 [00:00<00:07, 629.28 examples/s]Map:  14%|#4        | 740/5119 [00:01<00:06, 654.60 examples/s]Map:  16%|#6        | 822/5119 [00:01<00:06, 675.44 examples/s]Map:  18%|#7        | 896/5119 [00:01<00:07, 547.71 examples/s]Map:  19%|#8        | 971/5119 [00:01<00:08, 481.55 examples/s]Map:  20%|##        | 1027/5119 [00:01<00:08, 459.39 examples/s]Map:  21%|##1       | 1089/5119 [00:01<00:08, 489.30 examples/s]Map:  22%|##2       | 1149/5119 [00:01<00:07, 510.85 examples/s]Map:  24%|##3       | 1212/5119 [00:01<00:07, 537.14 examples/s]Map:  25%|##5       | 1303/5119 [00:02<00:06, 624.97 examples/s]Map:  27%|##6       | 1381/5119 [00:02<00:05, 662.21 examples/s]Map:  29%|##8       | 1483/5119 [00:02<00:04, 750.29 examples/s]Map:  31%|###1      | 1596/5119 [00:02<00:04, 846.39 examples/s]Map:  33%|###3      | 1709/5119 [00:02<00:04, 782.78 examples/s]Map:  35%|###5      | 1795/5119 [00:02<00:04, 782.16 examples/s]Map:  38%|###7      | 1923/5119 [00:02<00:03, 893.97 examples/s]Map:  41%|####      | 2078/5119 [00:02<00:02, 1026.82 examples/s]Map:  43%|####2     | 2196/5119 [00:03<00:03, 934.54 examples/s] Map:  45%|####5     | 2306/5119 [00:03<00:02, 956.78 examples/s]Map:  47%|####7     | 2412/5119 [00:03<00:02, 955.33 examples/s]Map:  50%|####9     | 2543/5119 [00:03<00:03, 807.68 examples/s]Map:  52%|#####1    | 2637/5119 [00:03<00:02, 834.66 examples/s]Map:  53%|#####3    | 2731/5119 [00:03<00:02, 823.83 examples/s]Map:  55%|#####5    | 2837/5119 [00:03<00:02, 775.60 examples/s]Map:  58%|#####8    | 2972/5119 [00:03<00:02, 870.06 examples/s]Map:  61%|######    | 3121/5119 [00:04<00:02, 832.39 examples/s]Map:  63%|######3   | 3242/5119 [00:04<00:02, 908.67 examples/s]Map:  66%|######5   | 3377/5119 [00:04<00:01, 996.46 examples/s]Map:  68%|######8   | 3483/5119 [00:04<00:01, 982.20 examples/s]Map:  71%|#######   | 3616/5119 [00:04<00:01, 1067.66 examples/s]Map:  74%|#######4  | 3791/5119 [00:04<00:01, 1095.58 examples/s]Map:  77%|#######6  | 3934/5119 [00:04<00:01, 1174.87 examples/s]Map:  79%|#######9  | 4059/5119 [00:04<00:00, 1141.13 examples/s]Map:  83%|########2 | 4240/5119 [00:05<00:00, 1127.97 examples/s]Map:  86%|########6 | 4410/5119 [00:05<00:00, 1109.33 examples/s]Map:  89%|########9 | 4581/5119 [00:05<00:00, 1104.39 examples/s]Map:  92%|#########1| 4695/5119 [00:05<00:00, 1094.11 examples/s]Map:  94%|#########3| 4805/5119 [00:05<00:00, 1064.74 examples/s]Map:  96%|#########6| 4919/5119 [00:05<00:00, 930.57 examples/s] Map:  99%|#########8| 5057/5119 [00:06<00:00, 813.92 examples/s]Map: 100%|##########| 5119/5119 [00:06<00:00, 837.59 examples/s]
+]: SVT [config]: preset / tune / pred struct 					: 10 / PSNR / random access
+Svt[info]: SVT [config]: gop size / mini-gop size / key-frame type 			: 2 / 16 / key frame
+Svt[info]: SVT [config]: BRC mode / rate factor 					: CRF / 30 
+Svt[info]: SVT [config]: AQ mode / variance boost 					: 2 / 0
+Svt[info]: SVT [config]: sharpness / luminance-based QP bias 			: 0 / 0
+Svt[info]: Svt[info]: -------------------------------------------
+Svt[info]: -------------------------------------------
+Svt[info]: SVT [version]:	SVT-AV1 Encoder Lib v3.0.0
+Svt[info]: SVT [build]  :	GCC 15.1.0	 64 bit
+Svt[info]: LIB Build date: Jul  3 2025 03:17:54
+Svt[info]: -------------------------------------------
+Svt[warn]: Preset M12 is mapped to M10.
+Svt[info]: Level of Parallelism: 5
+Svt[info]: Number of PPCS 76
+Svt[info]: [asm level on system : up to avx2]
+Svt[info]: [asm level selected : up to avx2]
+Svt[info]: -------------------------------------------
+Svt[info]: SVT [config]: main profile	tier (auto)	level (auto)
+Svt[info]: SVT [config]: width / height / fps numerator / fps denominator 		: 640 / 480 / 30 / 1
+Svt[info]: SVT [config]: bit-depth / color format 					: 8 / YUV420
+Svt[info]: SVT [config]: preset / tune / pred struct 					: 10 / PSNR / random access
+Svt[info]: SVT [config]: gop size / mini-gop size / key-frame type 			: 2 / 16 / key frame
+Svt[info]: SVT [config]: BRC mode / rate factor 					: CRF / 30 
+Svt[info]: SVT [config]: AQ mode / variance boost 					: 2 / 0
+Svt[info]: SVT [config]: sharpness / luminance-based QP bias 			: 0 / 0
+Svt[info]: Svt[info]: -------------------------------------------
+[mp4 @ 000001f79087ba00] Starting second pass: moving the moov atom to the beginning of the file
+Svt[info]: -------------------------------------------
+Svt[info]: SVT [version]:	SVT-AV1 Encoder Lib v3.0.0
+Svt[info]: SVT [build]  :	GCC 15.1.0	 64 bit
+Svt[info]: LIB Build date: Jul  3 2025 03:17:54
+Svt[info]: -------------------------------------------
+Svt[warn]: Preset M12 is mapped to M10.
+Svt[info]: Level of Parallelism: 5
+Svt[info]: Number of PPCS 76
+Svt[info]: [asm level on system : up to avx2]
+Svt[info]: [asm level selected : up to avx2]
+Svt[info]: -------------------------------------------
+Svt[info]: SVT [config]: main profile	tier (auto)	level (auto)
+Svt[info]: SVT [config]: width / height / fps numerator / fps denominator 		: 640 / 480 / 30 / 1
+Svt[info]: SVT [config]: bit-depth / color format 					: 8 / YUV420
+Svt[info]: SVT [config]: preset / tune / pred struct 					: 10 / PSNR / random access
+Svt[info]: SVT [config]: gop size / mini-gop size / key-frame type 			: 2 / 16 / key frame
+Svt[info]: SVT [config]: BRC mode / rate factor 					: CRF / 30 
+Svt[info]: SVT [config]: AQ mode / variance boost 					: 2 / 0
+Svt[info]: SVT [config]: sharpness / luminance-based QP bias 			: 0 / 0
+Svt[info]: Svt[info]: -------------------------------------------
+[mp4 @ 000001f803f3b7c0] Starting second pass: moving the moov atom to the beginning of the file
+Svt[info]: -------------------------------------------
+Svt[info]: SVT [version]:	SVT-AV1 Encoder Lib v3.0.0
+Svt[info]: SVT [build]  :	GCC 15.1.0	 64 bit
+Svt[info]: LIB Build date: Jul  3 2025 03:17:54
+Svt[info]: -------------------------------------------
+Svt[warn]: Preset M12 is mapped to M10.
+Svt[info]: Level of Parallelism: 5
+Svt[info]: Number of PPCS 76
+Svt[info]: [asm level on system : up to avx2]
+Svt[info]: [asm level selected : up to avx2]
+Svt[info]: -------------------------------------------
+Svt[info]: SVT [config]: main profile	tier (auto)	level (auto)
+Svt[info]: SVT [config]: width / height / fps numerator / fps denominator 		: 640 / 480 / 30 / 1
+Svt[info]: SVT [config]: bit-depth / color format 					: 8 / YUV420
+Svt[info]: SVT [config]: preset / tune / pred struct 					: 10 / PSNR / random access
+Svt[info]: SVT [config]: gop size / mini-gop size / key-frame type 			: 2 / 16 / key frame
+Svt[info]: SVT [config]: BRC mode / rate factor 					: CRF / 30 
+Svt[info]: SVT [config]: AQ mode / variance boost 					: 2 / 0
+Svt[info]: SVT [config]: sharpness / luminance-based QP bias 			: 0 / 0
+Sv[convert_to_lerobot] session_jetson_track4_20260915_164743 (jetson_track4_rl): 5119 frames -> episode saved
+[convert_to_lerobot] Skipping session_jetson_track4_20260915_164743.dvc (jetson_track4_rl): missing telemetry.csv or rgb_video.mp4
+[ WARN:0@2275.077] global cap_gstreamer.cpp:2824 cv::handleMessage OpenCV | GStreamer warning: your GStreamer installation is missing a required plugin: Quicktime demuxer
+[ WARN:0@2275.077] global cap_gstreamer.cpp:2840 cv::handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module uridecodebin21 reported: Your GStreamer installation is missing a plug-in.
+[ WARN:0@2275.078] global cap_gstreamer.cpp:1698 cv::GStreamerCapture::open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@2275.078] global cap_gstreamer.cpp:1173 cv::GStreamerCapture::isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+[ WARN:0@2275.329] global cap_gstreamer.cpp:2824 cv::handleMessage OpenCV | GStreamer warning: your GStreamer installation is missing a required plugin: Quicktime demuxer
+[ WARN:0@2275.329] global cap_gstreamer.cpp:2840 cv::handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module uridecodebin22 reported: Your GStreamer installation is missing a plug-in.
+[ WARN:0@2275.330] global cap_gstreamer.cpp:1698 cv::GStreamerCapture::open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@2275.330] global cap_gstreamer.cpp:1173 cv::GStreamerCapture::isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+Map:   0%|          | 0/3276 [00:00<?, ? examples/s]Map:   5%|5         | 172/3276 [00:00<00:01, 1680.67 examples/s]Map:  11%|#         | 344/3276 [00:00<00:01, 1690.40 examples/s]Map:  16%|#5        | 519/3276 [00:00<00:01, 1687.71 examples/s]Map:  22%|##1       | 707/3276 [00:00<00:01, 1688.63 examples/s]Map:  29%|##9       | 954/3276 [00:00<00:01, 1643.80 examples/s]Map:  36%|###6      | 1187/3276 [00:00<00:01, 1597.13 examples/s]Map:  42%|####1     | 1362/3276 [00:00<00:01, 1632.99 examples/s]Map:  47%|####7     | 1550/3276 [00:00<00:01, 1652.69 examples/s]Map:  53%|#####2    | 1722/3276 [00:01<00:00, 1649.04 examples/s]Map:  58%|#####7    | 1891/3276 [00:01<00:00, 1658.68 examples/s]Map:  65%|######4   | 2125/3276 [00:01<00:00, 1611.81 examples/s]Map:  70%|#######   | 2295/3276 [00:01<00:00, 1629.25 examples/s]Map:  75%|#######5  | 2473/3276 [00:01<00:00, 1661.04 examples/s]Map:  81%|########1 | 2656/3276 [00:01<00:00, 1672.20 examples/s]Map:  86%|########6 | 2827/3276 [00:01<00:00, 1672.61 examples/s]Map:  92%|#########1| 3000/3276 [00:01<00:00, 1649.41 examples/s]Map:  98%|#########8| 3223/3276 [00:01<00:00, 1578.32 examples/s]Map: 100%|##########| 3276/3276 [00:02<00:00, 1630.77 examples/s]
+[convert_to_lerobot] session_20260728_102908 (pid_webcam): 3276 frames -> episode saved
+[ WARN:0@2477.466] global cap_gstreamer.cpp:2824 cv::handleMessage OpenCV | GStreamer warning: your GStreamer installation is missing a required plugin: Quicktime demuxer
+[ WARN:0@2477.466] global cap_gstreamer.cpp:2840 cv::handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module uridecodebin23 reported: Your GStreamer installation is missing a plug-in.
+[ WARN:0@2477.466] global cap_gstreamer.cpp:1698 cv::GStreamerCapture::open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@2477.466] global cap_gstreamer.cpp:1173 cv::GStreamerCapture::isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+[ WARN:0@2477.798] global cap_gstreamer.cpp:2824 cv::handleMessage OpenCV | GStreamer warning: your GStreamer installation is missing a required plugin: Quicktime demuxer
+[ WARN:0@2477.798] global cap_gstreamer.cpp:2840 cv::handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module uridecodebin24 reported: Your GStreamer installation is missing a plug-in.
+[ WARN:0@2477.799] global cap_gstreamer.cpp:1698 cv::GStreamerCapture::open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@2477.799] global cap_gstreamer.cpp:1173 cv::GStreamerCapture::isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+Map:   0%|          | 0/12251 [00:00<?, ? examples/s]Map:   1%|          | 97/12251 [00:00<00:13, 933.47 examples/s]Map:   2%|1         | 201/12251 [00:00<00:12, 952.42 examples/s]Map:   2%|2         | 304/12251 [00:00<00:12, 982.96 examples/s]Map:   3%|3         | 408/12251 [00:00<00:12, 986.91 examples/s]Map:   4%|4         | 551/12251 [00:00<00:12, 964.25 examples/s]Map:   6%|5         | 687/12251 [00:00<00:12, 924.46 examples/s]Map:   6%|6         | 795/12251 [00:00<00:13, 848.39 examples/s]Map:   7%|7         | 908/12251 [00:01<00:15, 727.07 examples/s]Map:   8%|8         | 1000/12251 [00:01<00:16, 674.12 examples/s]Map:   9%|8         | 1075/12251 [00:01<00:17, 621.00 examples/s]Map:   9%|9         | 1153/12251 [00:01<00:19, 583.55 examples/s]Map:  10%|#         | 1251/12251 [00:01<00:16, 666.69 examples/s]Map:  11%|#         | 1322/12251 [00:01<00:16, 668.91 examples/s]Map:  11%|#1        | 1392/12251 [00:01<00:16, 673.38 examples/s]Map:  12%|#2        | 1496/12251 [00:01<00:14, 767.85 examples/s]Map:  13%|#3        | 1602/12251 [00:02<00:14, 737.19 examples/s]Map:  14%|#4        | 1719/12251 [00:02<00:12, 833.54 examples/s]Map:  15%|#4        | 1836/12251 [00:02<00:11, 915.12 examples/s]Map:  16%|#6        | 1989/12251 [00:02<00:11, 924.48 examples/s]Map:  18%|#7        | 2144/12251 [00:02<00:10, 956.61 examples/s]Map:  18%|#8        | 2261/12251 [00:02<00:10, 991.97 examples/s]Map:  20%|#9        | 2419/12251 [00:02<00:09, 998.10 examples/s]Map:  21%|##        | 2543/12251 [00:03<00:09, 1050.52 examples/s]Map:  22%|##1       | 2670/12251 [00:03<00:08, 1103.10 examples/s]Map:  23%|##2       | 2793/12251 [00:03<00:09, 990.57 examples/s] Map:  24%|##3       | 2896/12251 [00:03<00:11, 794.93 examples/s]Map:  24%|##4       | 3000/12251 [00:03<00:11, 824.90 examples/s]Map:  25%|##5       | 3103/12251 [00:03<00:10, 860.44 examples/s]Map:  26%|##6       | 3227/12251 [00:03<00:09, 928.17 examples/s]Map:  27%|##7       | 3349/12251 [00:03<00:10, 858.61 examples/s]Map:  29%|##8       | 3496/12251 [00:04<00:09, 883.50 examples/s]Map:  30%|##9       | 3649/12251 [00:04<00:08, 1022.13 examples/s]Map:  31%|###1      | 3810/12251 [00:04<00:07, 1154.20 examples/s]Map:  32%|###2      | 3969/12251 [00:04<00:06, 1236.87 examples/s]Map:  34%|###3      | 4107/12251 [00:04<00:07, 1103.90 examples/s]Map:  35%|###4      | 4280/12251 [00:04<00:07, 1095.19 examples/s]Map:  36%|###5      | 4407/12251 [00:04<00:06, 1121.02 examples/s]Map:  37%|###7      | 4537/12251 [00:04<00:06, 1157.38 examples/s]Map:  38%|###8      | 4694/12251 [00:05<00:06, 1257.79 examples/s]Map:  40%|###9      | 4842/12251 [00:05<00:05, 1290.61 examples/s]Map:  41%|####      | 4991/12251 [00:05<00:05, 1315.87 examples/s]Map:  42%|####2     | 5181/12251 [00:05<00:06, 1135.07 examples/s]Map:  44%|####3     | 5342/12251 [00:05<00:06, 1089.61 examples/s]Map:  45%|####4     | 5465/12251 [00:05<00:06, 1119.28 examples/s]Map:  46%|####6     | 5637/12251 [00:05<00:05, 1203.68 examples/s]Map:  47%|####7     | 5777/12251 [00:05<00:05, 1235.84 examples/s]Map:  48%|####8     | 5911/12251 [00:06<00:05, 1235.99 examples/s]Map:  50%|####9     | 6072/12251 [00:06<00:05, 1164.13 examples/s]Map:  51%|#####     | 6204/12251 [00:06<00:05, 1173.61 examples/s]Map:  52%|#####1    | 6332/12251 [00:06<00:04, 1194.17 examples/s]Map:  53%|#####2    | 6486/12251 [00:06<00:05, 1109.49 examples/s]Map:  54%|#####3    | 6611/12251 [00:06<00:04, 1142.11 examples/s]Map:  55%|#####5    | 6741/12251 [00:06<00:04, 1179.69 examples/s]Map:  56%|#####6    | 6904/12251 [00:06<00:04, 1125.24 examples/s]Map:  57%|#####7    | 7032/12251 [00:07<00:04, 1144.03 examples/s]Map:  58%|#####8    | 7152/12251 [00:07<00:04, 1136.53 examples/s]Map:  60%|#####9    | 7301/12251 [00:07<00:04, 1210.06 examples/s]Map:  61%|######1   | 7486/12251 [00:07<00:04, 1069.64 examples/s]Map:  62%|######2   | 7601/12251 [00:07<00:04, 1067.45 examples/s]Map:  63%|######3   | 7744/12251 [00:07<00:03, 1153.66 examples/s]Map:  65%|######4   | 7917/12251 [00:07<00:03, 1138.89 examples/s]Map:  66%|######6   | 8104/12251 [00:08<00:03, 1158.73 examples/s]Map:  68%|######7   | 8289/12251 [00:08<00:03, 1055.00 examples/s]Map:  69%|######8   | 8448/12251 [00:08<00:03, 1134.50 examples/s]Map:  70%|######9   | 8569/12251 [00:08<00:03, 1135.01 examples/s]Map:  71%|#######   | 8692/12251 [00:08<00:03, 1144.40 examples/s]Map:  72%|#######2  | 8836/12251 [00:08<00:02, 1207.91 examples/s]Map:  73%|#######3  | 8974/12251 [00:08<00:02, 1243.72 examples/s]Map:  74%|#######4  | 9125/12251 [00:08<00:02, 1155.55 examples/s]Map:  75%|#######5  | 9245/12251 [00:09<00:02, 1155.05 examples/s]Map:  77%|#######6  | 9383/12251 [00:09<00:02, 1048.08 examples/s]Map:  77%|#######7  | 9492/12251 [00:09<00:02, 1046.86 examples/s]Map:  79%|#######8  | 9650/12251 [00:09<00:02, 1041.61 examples/s]Map:  80%|#######9  | 9771/12251 [00:09<00:02, 1047.09 examples/s]Map:  81%|########  | 9907/12251 [00:09<00:02, 1114.09 examples/s]Map:  82%|########2 | 10064/12251 [00:09<00:02, 1077.86 examples/s]Map:  83%|########3 | 10215/12251 [00:09<00:01, 1045.59 examples/s]Map:  84%|########4 | 10323/12251 [00:10<00:01, 1050.16 examples/s]Map:  85%|########5 | 10438/12251 [00:10<00:01, 1059.39 examples/s]Map:  86%|########6 | 10552/12251 [00:10<00:01, 1068.30 examples/s]Map:  87%|########7 | 10667/12251 [00:10<00:01, 1070.14 examples/s]Map:  88%|########7 | 10776/12251 [00:10<00:01, 1072.19 examples/s]Map:  89%|########8 | 10884/12251 [00:10<00:01, 1063.19 examples/s]Map:  90%|########9 | 10995/12251 [00:10<00:01, 1069.95 examples/s]Map:  91%|######### | 11142/12251 [00:10<00:01, 1018.20 examples/s]Map:  92%|#########1| 11251/12251 [00:10<00:00, 1033.76 examples/s]Map:  93%|#########2| 11389/12251 [00:11<00:00, 985.01 examples/s] Map:  94%|#########4| 11539/12251 [00:11<00:00, 979.38 examples/s]Map:  95%|#########5| 11650/12251 [00:11<00:00, 990.86 examples/s]Map:  96%|#########6| 11795/12251 [00:11<00:00, 972.77 examples/s]Map:  97%|#########7| 11897/12251 [00:11<00:00, 980.07 examples/s]Map:  98%|#########7| 12000/12251 [00:11<00:00, 956.63 examples/s]Map:  99%|#########8| 12113/12251 [00:11<00:00, 984.10 examples/s]Map: 100%|#########9| 12216/12251 [00:11<00:00, 987.60 examples/s]Map: 100%|##########| 12251/12251 [00:11<00:00, 1021.12 examples/s]
+[convert_to_lerobot] session_20260810_104132 (pid_webcam): 12251 frames -> episode saved
+[ WARN:0@3295.832] global cap_gstreamer.cpp:2824 cv::handleMessage OpenCV | GStreamer warning: your GStreamer installation is missing a required plugin: Quicktime demuxer
+[ WARN:0@3295.832] global cap_gstreamer.cpp:2840 cv::handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module uridecodebin25 reported: Your GStreamer installation is missing a plug-in.
+[ WARN:0@3295.833] global cap_gstreamer.cpp:1698 cv::GStreamerCapture::open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@3295.833] global cap_gstreamer.cpp:1173 cv::GStreamerCapture::isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+[ WARN:0@3296.291] global cap_gstreamer.cpp:2824 cv::handleMessage OpenCV | GStreamer warning: your GStreamer installation is missing a required plugin: Quicktime demuxer
+[ WARN:0@3296.291] global cap_gstreamer.cpp:2840 cv::handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module uridecodebin26 reported: Your GStreamer installation is missing a plug-in.
+[ WARN:0@3296.293] global cap_gstreamer.cpp:1698 cv::GStreamerCapture::open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@3296.293] global cap_gstreamer.cpp:1173 cv::GStreamerCapture::isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+Map:   0%|          | 0/9187 [00:00<?, ? examples/s]Map:   1%|1         | 105/9187 [00:00<00:08, 1022.67 examples/s]Map:   3%|2         | 263/9187 [00:00<00:08, 1038.57 examples/s]Map:   4%|4         | 388/9187 [00:00<00:07, 1119.11 examples/s]Map:   6%|5         | 516/9187 [00:00<00:07, 1154.74 examples/s]Map:   7%|6         | 633/9187 [00:00<00:07, 1144.99 examples/s]Map:   8%|8         | 749/9187 [00:00<00:07, 1146.00 examples/s]Map:   9%|9         | 867/9187 [00:00<00:07, 1151.85 examples/s]Map:  11%|#         | 1005/9187 [00:00<00:07, 1048.93 examples/s]Map:  13%|#2        | 1155/9187 [00:01<00:07, 1026.30 examples/s]Map:  14%|#3        | 1278/9187 [00:01<00:08, 949.75 examples/s] Map:  15%|#5        | 1389/9187 [00:01<00:07, 986.68 examples/s]Map:  17%|#6        | 1550/9187 [00:01<00:07, 1015.77 examples/s]Map:  18%|#8        | 1680/9187 [00:01<00:06, 1082.63 examples/s]Map:  20%|##        | 1856/9187 [00:01<00:06, 1108.03 examples/s]Map:  22%|##1       | 1984/9187 [00:01<00:07, 1018.09 examples/s]Map:  23%|##2       | 2104/9187 [00:02<00:08, 815.42 examples/s] Map:  24%|##3       | 2196/9187 [00:02<00:08, 829.16 examples/s]Map:  25%|##5       | 2298/9187 [00:02<00:08, 777.77 examples/s]Map:  26%|##6       | 2409/9187 [00:02<00:07, 849.51 examples/s]Map:  28%|##7       | 2530/9187 [00:02<00:07, 934.07 examples/s]Map:  29%|##8       | 2645/9187 [00:02<00:06, 985.39 examples/s]Map:  30%|##9       | 2754/9187 [00:02<00:06, 1010.05 examples/s]Map:  31%|###1      | 2876/9187 [00:02<00:05, 1060.65 examples/s]Map:  33%|###2      | 2995/9187 [00:02<00:05, 1093.73 examples/s]Map:  34%|###4      | 3145/9187 [00:03<00:05, 1055.66 examples/s]Map:  36%|###5      | 3265/9187 [00:03<00:05, 1088.17 examples/s]Map:  37%|###6      | 3384/9187 [00:03<00:05, 1111.70 examples/s]Map:  39%|###8      | 3545/9187 [00:03<00:05, 1089.30 examples/s]Map:  40%|####      | 3695/9187 [00:03<00:05, 1054.61 examples/s]Map:  41%|####1     | 3808/9187 [00:03<00:05, 1066.65 examples/s]Map:  43%|####2     | 3917/9187 [00:03<00:04, 1068.65 examples/s]Map:  44%|####4     | 4045/9187 [00:03<00:05, 987.94 examples/s] Map:  45%|####5     | 4153/9187 [00:04<00:05, 995.82 examples/s]Map:  46%|####6     | 4261/9187 [00:04<00:04, 1012.26 examples/s]Map:  48%|####7     | 4372/9187 [00:04<00:04, 1034.93 examples/s]Map:  49%|####8     | 4479/9187 [00:04<00:04, 1041.31 examples/s]Map:  50%|####9     | 4588/9187 [00:04<00:04, 1054.18 examples/s]Map:  52%|#####1    | 4750/9187 [00:04<00:04, 1059.69 examples/s]Map:  53%|#####3    | 4891/9187 [00:04<00:04, 1011.41 examples/s]Map:  54%|#####4    | 4999/9187 [00:04<00:04, 1013.05 examples/s]Map:  56%|#####5    | 5130/9187 [00:05<00:04, 961.31 examples/s] Map:  57%|#####7    | 5256/9187 [00:05<00:03, 1026.05 examples/s]Map:  58%|#####8    | 5363/9187 [00:05<00:03, 1031.51 examples/s]Map:  60%|######    | 5522/9187 [00:05<00:03, 1036.13 examples/s]Map:  61%|######1   | 5636/9187 [00:05<00:04, 821.85 examples/s] Map:  63%|######2   | 5748/9187 [00:05<00:05, 639.91 examples/s]Map:  64%|######3   | 5836/9187 [00:06<00:05, 623.12 examples/s]Map:  64%|######4   | 5915/9187 [00:06<00:05, 652.73 examples/s]Map:  65%|######5   | 5988/9187 [00:06<00:04, 665.16 examples/s]Map:  66%|######6   | 6077/9187 [00:06<00:04, 626.73 examples/s]Map:  67%|######7   | 6183/9187 [00:06<00:04, 638.06 examples/s]Map:  68%|######8   | 6275/9187 [00:06<00:04, 627.00 examples/s]Map:  69%|######9   | 6354/9187 [00:06<00:04, 595.38 examples/s]Map:  70%|#######   | 6443/9187 [00:07<00:04, 659.21 examples/s]Map:  71%|#######1  | 6538/9187 [00:07<00:03, 727.91 examples/s]Map:  72%|#######2  | 6635/9187 [00:07<00:03, 787.97 examples/s]Map:  73%|#######3  | 6728/9187 [00:07<00:03, 814.37 examples/s]Map:  74%|#######4  | 6819/9187 [00:07<00:02, 836.87 examples/s]Map:  76%|#######5  | 6944/9187 [00:07<00:02, 822.87 examples/s]Map:  77%|#######6  | 7071/9187 [00:07<00:02, 819.27 examples/s]Map:  78%|#######8  | 7202/9187 [00:07<00:02, 834.24 examples/s]Map:  79%|#######9  | 7301/9187 [00:07<00:02, 861.31 examples/s]Map:  81%|########  | 7402/9187 [00:08<00:01, 893.09 examples/s]Map:  82%|########1 | 7507/9187 [00:08<00:01, 933.00 examples/s]Map:  83%|########2 | 7602/9187 [00:08<00:01, 922.25 examples/s]Map:  84%|########4 | 7730/9187 [00:08<00:01, 893.80 examples/s]Map:  85%|########5 | 7828/9187 [00:08<00:01, 911.44 examples/s]Map:  86%|########6 | 7930/9187 [00:08<00:01, 821.76 examples/s]Map:  88%|########7 | 8043/9187 [00:08<00:01, 787.73 examples/s]Map:  89%|########8 | 8136/9187 [00:08<00:01, 816.80 examples/s]Map:  90%|########9 | 8237/9187 [00:09<00:01, 860.64 examples/s]Map:  91%|######### | 8334/9187 [00:09<00:00, 879.04 examples/s]Map:  92%|#########2| 8471/9187 [00:09<00:00, 876.53 examples/s]Map:  94%|#########3| 8596/9187 [00:09<00:00, 856.53 examples/s]Map:  95%|#########4| 8711/9187 [00:09<00:00, 816.19 examples/s]Map:  96%|#########6| 8843/9187 [00:09<00:00, 832.84 examples/s]Map:  97%|#########7| 8952/9187 [00:09<00:00, 877.80 examples/s]Map:  99%|#########8| 9053/9187 [00:10<00:00, 870.14 examples/s]Map: 100%|#########9| 9161/9187 [00:10<00:00, 920.49 examples/s]Map: 100%|##########| 9187/9187 [00:10<00:00, 906.57 examples/s]
+[convert_to_lerobot] session_20260810_110239 (pid_webcam): 9187 frames -> episode saved
+[ WARN:0@3955.861] global cap_gstreamer.cpp:2824 cv::handleMessage OpenCV | GStreamer warning: your GStreamer installation is missing a required plugin: Quicktime demuxer
+[ WARN:0@3955.861] global cap_gstreamer.cpp:2840 cv::handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module uridecodebin27 reported: Your GStreamer installation is missing a plug-in.
+[ WARN:0@3955.861] global cap_gstreamer.cpp:1698 cv::GStreamerCapture::open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@3955.861] global cap_gstreamer.cpp:1173 cv::GStreamerCapture::isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+[ WARN:0@3956.054] global cap_gstreamer.cpp:2824 cv::handleMessage OpenCV | GStreamer warning: your GStreamer installation is missing a required plugin: Quicktime demuxer
+[ WARN:0@3956.054] global cap_gstreamer.cpp:2840 cv::handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module uridecodebin28 reported: Your GStreamer installation is missing a plug-in.
+[ WARN:0@3956.054] global cap_gstreamer.cpp:1698 cv::GStreamerCapture::open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@3956.054] global cap_gstreamer.cpp:1173 cv::GStreamerCapture::isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+Map:   0%|          | 0/11420 [00:00<?, ? examples/s]Map:   1%|1         | 165/11420 [00:00<00:06, 1623.69 examples/s]Map:   3%|3         | 345/11420 [00:00<00:06, 1685.70 examples/s]Map:   5%|4         | 520/11420 [00:00<00:06, 1696.29 examples/s]Map:   6%|6         | 701/11420 [00:00<00:06, 1708.34 examples/s]Map:   8%|7         | 879/11420 [00:00<00:06, 1714.32 examples/s]Map:  10%|9         | 1123/11420 [00:00<00:06, 1657.59 examples/s]Map:  11%|#1        | 1309/11420 [00:00<00:05, 1704.96 examples/s]Map:  14%|#3        | 1556/11420 [00:00<00:05, 1673.10 examples/s]Map:  15%|#5        | 1730/11420 [00:01<00:05, 1655.74 examples/s]Map:  17%|#6        | 1903/11420 [00:01<00:05, 1651.90 examples/s]Map:  19%|#8        | 2124/11420 [00:01<00:06, 1388.37 examples/s]Map:  20%|##        | 2337/11420 [00:01<00:07, 1222.76 examples/s]Map:  22%|##1       | 2506/11420 [00:01<00:06, 1309.12 examples/s]Map:  23%|##3       | 2657/11420 [00:01<00:06, 1349.93 examples/s]Map:  25%|##4       | 2853/11420 [00:01<00:06, 1297.75 examples/s]Map:  26%|##6       | 2998/11420 [00:02<00:06, 1319.23 examples/s]Map:  28%|##7       | 3149/11420 [00:02<00:06, 1359.22 examples/s]Map:  29%|##9       | 3320/11420 [00:02<00:05, 1445.82 examples/s]Map:  31%|###       | 3493/11420 [00:02<00:05, 1513.92 examples/s]Map:  33%|###2      | 3731/11420 [00:02<00:05, 1515.41 examples/s]Map:  34%|###4      | 3937/11420 [00:02<00:05, 1432.29 examples/s]Map:  37%|###6      | 4170/11420 [00:02<00:04, 1450.63 examples/s]Map:  38%|###7      | 4335/11420 [00:02<00:04, 1494.44 examples/s]Map:  39%|###9      | 4508/11420 [00:03<00:04, 1544.76 examples/s]Map:  41%|####      | 4680/11420 [00:03<00:04, 1379.38 examples/s]Map:  42%|####2     | 4838/11420 [00:03<00:04, 1420.02 examples/s]Map:  44%|####3     | 5000/11420 [00:03<00:04, 1400.34 examples/s]Map:  45%|####5     | 5157/11420 [00:03<00:04, 1427.59 examples/s]Map:  47%|####6     | 5314/11420 [00:03<00:04, 1428.18 examples/s]Map:  48%|####8     | 5491/11420 [00:03<00:03, 1505.99 examples/s]Map:  50%|####9     | 5696/11420 [00:03<00:04, 1420.07 examples/s]Map:  51%|#####1    | 5859/11420 [00:03<00:03, 1449.13 examples/s]Map:  53%|#####3    | 6062/11420 [00:04<00:04, 1232.07 examples/s]Map:  55%|#####4    | 6226/11420 [00:04<00:03, 1317.48 examples/s]Map:  56%|#####6    | 6402/11420 [00:04<00:03, 1404.35 examples/s]Map:  58%|#####7    | 6578/11420 [00:04<00:03, 1482.91 examples/s]Map:  59%|#####9    | 6763/11420 [00:04<00:03, 1376.61 examples/s]Map:  61%|######    | 6950/11420 [00:04<00:03, 1459.89 examples/s]Map:  63%|######2   | 7164/11420 [00:04<00:02, 1428.98 examples/s]Map:  64%|######4   | 7351/11420 [00:05<00:03, 1227.85 examples/s]Map:  66%|######5   | 7484/11420 [00:05<00:03, 1103.31 examples/s]Map:  67%|######6   | 7601/11420 [00:05<00:03, 1002.56 examples/s]Map:  68%|######7   | 7745/11420 [00:05<00:03, 1069.98 examples/s]Map:  69%|######8   | 7874/11420 [00:05<00:03, 1109.78 examples/s]Map:  70%|#######   | 8000/11420 [00:05<00:03, 1126.57 examples/s]Map:  71%|#######1  | 8155/11420 [00:05<00:02, 1218.11 examples/s]Map:  73%|#######2  | 8307/11420 [00:05<00:02, 1277.15 examples/s]Map:  74%|#######4  | 8501/11420 [00:06<00:02, 1419.98 examples/s]Map:  76%|#######6  | 8711/11420 [00:06<00:02, 1239.23 examples/s]Map:  78%|#######7  | 8878/11420 [00:06<00:01, 1318.32 examples/s]Map:  79%|#######9  | 9050/11420 [00:06<00:01, 1250.63 examples/s]Map:  80%|########  | 9183/11420 [00:06<00:02, 1117.22 examples/s]Map:  82%|########1 | 9341/11420 [00:06<00:01, 1166.93 examples/s]Map:  83%|########3 | 9481/11420 [00:07<00:01, 1079.17 examples/s]Map:  84%|########4 | 9604/11420 [00:07<00:01, 1079.33 examples/s]Map:  86%|########5 | 9792/11420 [00:07<00:01, 1127.31 examples/s]Map:  87%|########7 | 9971/11420 [00:07<00:01, 1248.28 examples/s]Map:  89%|########8 | 10137/11420 [00:07<00:01, 1177.84 examples/s]Map:  90%|######### | 10299/11420 [00:07<00:00, 1270.69 examples/s]Map:  92%|#########1| 10481/11420 [00:07<00:00, 1373.08 examples/s]Map:  93%|#########3| 10655/11420 [00:07<00:00, 1450.93 examples/s]Map:  95%|#########4| 10809/11420 [00:07<00:00, 1463.66 examples/s]Map:  96%|#########6| 10997/11420 [00:08<00:00, 1192.82 examples/s]Map:  98%|#########7| 11137/11420 [00:08<00:00, 1003.95 examples/s]Map:  99%|#########8| 11254/11420 [00:08<00:00, 1036.23 examples/s]Map: 100%|##########| 11420/11420 [00:08<00:00, 1146.31 examples/s]Map: 100%|##########| 11420/11420 [00:08<00:00, 1328.64 examples/s]
+t[info]: Svt[info]: -------------------------------------------
+Svt[info]: -------------------------------------------
+Svt[info]: SVT [version]:	SVT-AV1 Encoder Lib v3.0.0
+Svt[info]: SVT [build]  :	GCC 15.1.0	 64 bit
+Svt[info]: LIB Build date: Jul  3 2025 03:17:54
+Svt[info]: -------------------------------------------
+Svt[warn]: Preset M12 is mapped to M10.
+Svt[info]: Level of Parallelism: 5
+Svt[info]: Number of PPCS 76
+Svt[info]: [asm level on system : up to avx2]
+Svt[info]: [asm level selected : up to avx2]
+Svt[info]: -------------------------------------------
+Svt[info]: SVT [config]: main profile	tier (auto)	level (auto)
+Svt[info]: SVT [config]: width / height / fps numerator / fps denominator 		: 640 / 480 / 30 / 1
+Svt[info]: SVT [config]: bit-depth / color format 					: 8 / YUV420
+Svt[info]: SVT [config]: preset / tune / pred struct 					: 10 / PSNR / random access
+Svt[info]: SVT [config]: gop size / mini-gop size / key-frame type 			: 2 / 16 / key frame
+Svt[info]: SVT [config]: BRC mode / rate factor 					: CRF / 30 
+Svt[info]: SVT [config]: AQ mode / variance boost 					: 2 / 0
+Svt[info]: SVT [config]: sharpness / luminance-based QP bias 			: 0 / 0
+Svt[info]: Svt[info]: -------------------------------------------
+[mp4 @ 000001f805294440] Starting second pass: moving the moov atom to the beginning of the file
+Svt[info]: -------------------------------------------
+Svt[info]: SVT [version]:	SVT-AV1 Encoder Lib v3.0.0
+Svt[info]: SVT [build]  :	GCC 15.1.0	 64 bit
+Svt[info]: LIB Build date: Jul  3 2025 03:17:54
+Svt[info]: -------------------------------------------
+Svt[warn]: Preset M12 is mapped to M10.
+Svt[info]: Level of Parallelism: 5
+Svt[info]: Number of PPCS 76
+Svt[info]: [asm level on system : up to avx2]
+Svt[info]: [asm level selected : up to avx2]
+Svt[info]: -------------------------------------------
+Svt[info]: SVT [config]: main profile	tier (auto)	level (auto)
+Svt[info]: SVT [config]: width / height / fps numerator / fps denominator 		: 640 / 480 / 30 / 1
+Svt[info]: SVT [config]: bit-depth / color format 					: 8 / YUV420
+Svt[info]: SVT [config]: preset / tune / pred struct 					: 10 / PSNR / random access
+Svt[info]: SVT [config]: gop size / mini-gop size / key-frame type 			: 2 / 16 / key frame
+Svt[info]: SVT [config]: BRC mode / rate factor 					: CRF / 30 
+Svt[info]: SVT [config]: AQ mode / variance boost 					: 2 / 0
+Svt[info]: SVT [config]: sharpness / luminance-based QP bias 			: 0 / 0
+Svt[info]: Svt[info]: -------------------------------------------
+Svt[info]: -------------------------------------------
+Svt[info]: SVT [version]:	SVT-AV1 Encoder Lib v3.0.0
+Svt[info]: SVT [build]  :	GCC 15.1.0	 64 bit
+Svt[info]: LIB Build date: Jul  3 2025 03:17:54
+Svt[info]: -------------------------------------------
+Svt[warn]: Preset M12 is mapped to M10.
+Svt[info]: Level of Parallelism: 5
+Svt[info]: Number of PPCS 76
+Svt[info]: [asm level on system : up to avx2]
+Svt[info]: [asm level selected : up to avx2]
+Svt[info]: -------------------------------------------
+Svt[info]: SVT [config]: main profile	tier (auto)	level (auto)
+Svt[info]: SVT [config]: width / height / fps numerator / fps denominator 		: 640 / 480 / 30 / 1
+Svt[info]: SVT [config]: bit-depth / color format 					: 8 / YUV420
+Svt[info]: SVT [config]: preset / tune / pred struct 					: 10 / PSNR / random access
+Svt[info]: SVT [config]: gop size / mini-gop size / key-frame type 			: 2 / 16 / key frame
+Svt[info]: SVT [config]: BRC mode / rate factor 					: CRF / 30 
+Svt[info]: SVT [config]: AQ mode / variance boost 					: 2 / 0
+Svt[info]: SVT [config]: sharpness / luminance-based QP bias 			: 0 / 0
+Svt[info]: Svt[info]: -------------------------------------------
+Svt[info]: -------------------------------------------
+Svt[info]: SVT [version]:	SVT-AV1 Encoder Lib v3.0.0
+Svt[info]: SVT [build]  :	GCC 15.1.0	 64 bit
+Svt[info]: LIB Build date: Jul  3 2025 03:17:54
+Svt[info]: -------------------------------------------
+Svt[warn]: Preset M12 is mapped to M10.
+Svt[info]: Level of Parallelism: 5
+Svt[info]: Number of PPCS 76
+Svt[info]: [asm level on system : up to avx2[convert_to_lerobot] session_20260810_112047 (pid_webcam): 11420 frames -> episode saved
+[ WARN:0@4620.291] global cap_gstreamer.cpp:2824 cv::handleMessage OpenCV | GStreamer warning: your GStreamer installation is missing a required plugin: Quicktime demuxer
+[ WARN:0@4620.291] global cap_gstreamer.cpp:2840 cv::handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module uridecodebin29 reported: Your GStreamer installation is missing a plug-in.
+[ WARN:0@4620.291] global cap_gstreamer.cpp:1698 cv::GStreamerCapture::open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@4620.291] global cap_gstreamer.cpp:1173 cv::GStreamerCapture::isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+[ WARN:0@4620.601] global cap_gstreamer.cpp:2824 cv::handleMessage OpenCV | GStreamer warning: your GStreamer installation is missing a required plugin: Quicktime demuxer
+[ WARN:0@4620.601] global cap_gstreamer.cpp:2840 cv::handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module uridecodebin30 reported: Your GStreamer installation is missing a plug-in.
+[ WARN:0@4620.601] global cap_gstreamer.cpp:1698 cv::GStreamerCapture::open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@4620.601] global cap_gstreamer.cpp:1173 cv::GStreamerCapture::isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+Map:   0%|          | 0/9706 [00:00<?, ? examples/s]Map:   2%|1         | 179/9706 [00:00<00:05, 1681.93 examples/s]Map:   4%|3         | 363/9706 [00:00<00:05, 1711.37 examples/s]Map:   6%|5         | 549/9706 [00:00<00:05, 1729.68 examples/s]Map:   7%|7         | 725/9706 [00:00<00:05, 1737.10 examples/s]Map:   9%|9         | 913/9706 [00:00<00:05, 1739.58 examples/s]Map:  11%|#1        | 1090/9706 [00:00<00:05, 1666.56 examples/s]Map:  13%|#3        | 1276/9706 [00:00<00:05, 1682.50 examples/s]Map:  15%|#5        | 1466/9706 [00:00<00:04, 1697.10 examples/s]Map:  17%|#7        | 1678/9706 [00:00<00:04, 1711.64 examples/s]Map:  19%|#9        | 1860/9706 [00:01<00:04, 1722.11 examples/s]Map:  22%|##1       | 2094/9706 [00:01<00:04, 1649.94 examples/s]Map:  23%|##3       | 2266/9706 [00:01<00:04, 1666.52 examples/s]Map:  25%|##5       | 2458/9706 [00:01<00:04, 1678.74 examples/s]Map:  27%|##7       | 2654/9706 [00:01<00:04, 1691.69 examples/s]Map:  29%|##9       | 2849/9706 [00:01<00:04, 1708.12 examples/s]Map:  32%|###1      | 3093/9706 [00:01<00:04, 1614.64 examples/s]Map:  34%|###3      | 3286/9706 [00:01<00:03, 1646.17 examples/s]Map:  36%|###6      | 3515/9706 [00:02<00:04, 1536.21 examples/s]Map:  38%|###8      | 3710/9706 [00:02<00:05, 1175.92 examples/s]Map:  40%|###9      | 3866/9706 [00:02<00:05, 1131.03 examples/s]Map:  42%|####1     | 4036/9706 [00:02<00:05, 1113.72 examples/s]Map:  43%|####2     | 4156/9706 [00:02<00:04, 1120.37 examples/s]Map:  44%|####4     | 4287/9706 [00:02<00:05, 1025.41 examples/s]Map:  45%|####5     | 4403/9706 [00:03<00:05, 1045.77 examples/s]Map:  47%|####6     | 4539/9706 [00:03<00:05, 968.74 examples/s] Map:  48%|####8     | 4663/9706 [00:03<00:04, 1028.07 examples/s]Map:  50%|####9     | 4820/9706 [00:03<00:04, 988.12 examples/s] Map:  51%|#####     | 4937/9706 [00:03<00:04, 1027.13 examples/s]Map:  52%|#####1    | 5044/9706 [00:03<00:05, 895.42 examples/s] Map:  53%|#####3    | 5185/9706 [00:03<00:04, 907.89 examples/s]Map:  55%|#####4    | 5327/9706 [00:04<00:04, 996.37 examples/s]Map:  56%|#####6    | 5457/9706 [00:04<00:04, 918.50 examples/s]Map:  58%|#####7    | 5629/9706 [00:04<00:03, 1083.69 examples/s]Map:  59%|#####9    | 5747/9706 [00:04<00:03, 1083.01 examples/s]Map:  60%|######    | 5871/9706 [00:04<00:03, 1100.10 examples/s]Map:  62%|######1   | 6000/9706 [00:04<00:03, 1000.35 examples/s]Map:  63%|######2   | 6105/9706 [00:04<00:03, 964.13 examples/s] Map:  64%|######4   | 6232/9706 [00:04<00:03, 909.70 examples/s]Map:  66%|######6   | 6417/9706 [00:05<00:02, 1119.11 examples/s]Map:  68%|######7   | 6557/9706 [00:05<00:03, 1045.34 examples/s]Map:  69%|######8   | 6688/9706 [00:05<00:03, 964.68 examples/s] Map:  70%|#######   | 6805/9706 [00:05<00:02, 982.19 examples/s]Map:  71%|#######1  | 6919/9706 [00:05<00:02, 1017.03 examples/s]Map:  73%|#######2  | 7049/9706 [00:05<00:02, 1083.94 examples/s]Map:  74%|#######4  | 7221/9706 [00:05<00:02, 1228.50 examples/s]Map:  76%|#######6  | 7400/9706 [00:05<00:01, 1358.15 examples/s]Map:  78%|#######8  | 7579/9706 [00:06<00:01, 1469.08 examples/s]Map:  80%|#######9  | 7756/9706 [00:06<00:01, 1539.75 examples/s]Map:  82%|########1 | 7944/9706 [00:06<00:01, 1586.29 examples/s]Map:  84%|########3 | 8109/9706 [00:06<00:01, 1552.91 examples/s]Map:  85%|########5 | 8298/9706 [00:06<00:00, 1594.39 examples/s]Map:  87%|########7 | 8485/9706 [00:06<00:00, 1609.16 examples/s]Map:  89%|########9 | 8658/9706 [00:06<00:00, 1639.43 examples/s]Map:  91%|#########1| 8848/9706 [00:06<00:00, 1668.65 examples/s]Map:  94%|#########3| 9093/9706 [00:06<00:00, 1627.26 examples/s]Map:  95%|#########5| 9269/9706 [00:07<00:00, 1640.53 examples/s]Map:  97%|#########7| 9459/9706 [00:07<00:00, 1657.49 examples/s]Map:  99%|#########9| 9655/9706 [00:07<00:00, 1668.73 examples/s]Map: 100%|##########| 9706/9706 [00:07<00:00, 1327.73 examples/s]
+[convert_to_lerobot] session_20260810_114330 (pid_webcam): 9706 frames -> episode saved
+
+=== convert_to_lerobot.py summary ===
+  sessions_found: 25
+  sessions_converted: 15
+  sessions_skipped_shape_mismatch: 0
+  sessions_skipped_missing_files: 10
+  frames_written: 86553
+  frames_skipped_missing_ground_truth: 0
+  frames_skipped_video_underrun: 0
+  frames_skipped_pid_safety_envelope: 65153
+  by_regime: {'jetson_track4_rl': {'sessions_converted': 10, 'frames_written': 40713}, 'pid_webcam': {'sessions_converted': 5, 'frames_written': 45840, 'frames_skipped_safety_envelope': 65153}}
+  out_root: C:/Users/Admin/AppData/Local/Temp/claude/c--Users-Admin-Documents-Windows-codespace-VRI-2026/facca623-bcfc-421e-90d5-797d32ca56bf/scratchpad/lerobot_combined_20261013_safety_filtered
+  repo_id: vri2026/combined_jetson_track4_and_pid
+  session_episodes_file: C:/Users/Admin/AppData/Local/Temp/claude/c--Users-Admin-Documents-Windows-codespace-VRI-2026/facca623-bcfc-421e-90d5-797d32ca56bf/scratchpad/lerobot_combined_20261013_safety_filtered\meta\session_episodes.json
+]
+Svt[info]: [asm level selected : up to avx2]
+Svt[info]: -------------------------------------------
+Svt[info]: SVT [config]: main profile	tier (auto)	level (auto)
+Svt[info]: SVT [config]: width / height / fps numerator / fps denominator 		: 640 / 480 / 30 / 1
+Svt[info]: SVT [config]: bit-depth / color format 					: 8 / YUV420
+Svt[info]: SVT [config]: preset / tune / pred struct 					: 10 / PSNR / random access
+Svt[info]: SVT [config]: gop size / mini-gop size / key-frame type 			: 2 / 16 / key frame
+Svt[info]: SVT [config]: BRC mode / rate factor 					: CRF / 30 
+Svt[info]: SVT [config]: AQ mode / variance boost 					: 2 / 0
+Svt[info]: SVT [config]: sharpness / luminance-based QP bias 			: 0 / 0
+Svt[info]: Svt[info]: -------------------------------------------
+Svt[info]: -------------------------------------------
+Svt[info]: SVT [version]:	SVT-AV1 Encoder Lib v3.0.0
+Svt[info]: SVT [build]  :	GCC 15.1.0	 64 bit
+Svt[info]: LIB Build date: Jul  3 2025 03:17:54
+Svt[info]: -------------------------------------------
+Svt[warn]: Preset M12 is mapped to M10.
+Svt[info]: Level of Parallelism: 5
+Svt[info]: Number of PPCS 76
+Svt[info]: [asm level on system : up to avx2]
+Svt[info]: [asm level selected : up to avx2]
+Svt[info]: -------------------------------------------
+Svt[info]: SVT [config]: main profile	tier (auto)	level (auto)
+Svt[info]: SVT [config]: width / height / fps numerator / fps denominator 		: 640 / 480 / 30 / 1
+Svt[info]: SVT [config]: bit-depth / color format 					: 8 / YUV420
+Svt[info]: SVT [config]: preset / tune / pred struct 					: 10 / PSNR / random access
+Svt[info]: SVT [config]: gop size / mini-gop size / key-frame type 			: 2 / 16 / key frame
+Svt[info]: SVT [config]: BRC mode / rate factor 					: CRF / 30 
+Svt[info]: SVT [config]: AQ mode / variance boost 					: 2 / 0
+Svt[info]: SVT [config]: sharpness / luminance-based QP bias 			: 0 / 0
+Svt[info]: Svt[info]: -------------------------------------------
