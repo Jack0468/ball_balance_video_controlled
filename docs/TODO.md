@@ -30,6 +30,16 @@ just delete it, logbook already has the history) once genuinely done.
 
 ## Multimodal / VLA (`ml-multimodal`)
 
+- [ ] **ACT_FAST `run_2` checkpoint's action-chunk head trained on a safety-incompatible action
+  distribution; decide retraining approach** (flagged 2026-10-13) — the gold dataset blends
+  `pid_webcam` (58.7% of samples exceed the firmware's +/-11.025 deg limit, up to -22.3/+29.7 deg)
+  and `jetson_track4_rl` (0% exceed it) regimes for action-chunk supervision. Live test with
+  normalisation correctly applied got 100% chunk rejection (111/111) — not a bug, the model
+  legitimately learned to predict values the safety gate must refuse. Open decision: retrain on
+  `jetson_track4_rl` only (40,713 samples, 0% violations, matches real deployment regime) vs.
+  filtering `pid_webcam` to its compliant 41.3% vs. other approach. Not an agent call — reverses a
+  considered Stage-0 data-plan choice. Source: `docs/PROJECT_LOGBOOK.md` 13/10/2026, "Real live
+  re-test with normalisation applied: 100% chunk rejection."
 - [ ] **Eval cell (h) torchcodec crash in `act_train_colab.ipynb`** (flagged 2026-10-13) —
   diagnosed as likely a Colab-side decoder-backend issue (torchcodec vs. the software decoder
   used to verify the dataset's own video files are clean), not source-data corruption. Not

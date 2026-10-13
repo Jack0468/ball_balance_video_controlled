@@ -656,8 +656,44 @@ unit-tested on this Windows interpreter -- same transformers>=5 import blocker a
 Extended `experiments/diagnose_act_checkpoint_forward.py` (no hardware) to print raw-vs-processed
 action values and ranges side by side, so the fix can be sanity-checked (raw values should look
 roughly normalized, e.g. near `[-3, 3]`/`[-1, 1]`; processed values should land in the real
-`+/-11.025` deg firmware range) before trusting it on live motors again -- **not yet run**; this is
-the next concrete step before re-attempting the live motor test.
+`+/-11.025` deg firmware range) before trusting it on live motors again. Confirmed working: raw
+`[-2.0, 4.6]` (plausible MEAN_STD-normalised range) vs. processed `[-4.9, 31.0]` (clearly a
+different, real-degree-scale range) on a random/dummy input.
+
+### Real live re-test with normalisation applied: 100% chunk rejection, root-caused to a genuine training-data/safety-envelope mismatch (NOT a code bug)
+
+Re-ran live (`go_yellow`, 10s, real ball+touch, normalisation fix + chunk-len auto-derivation both
+active). Result: `n_replan_submitted: 112`, `n_rejected_chunks_total: 111` -- **every single chunk
+rejected**, `last_rejection_reason: "37 value(s) outside +/-11.025 deg or non-finite; whole chunk
+rejected, nothing sent"`. Not borderline/occasional -- 100%, across the whole run.
+
+Root-caused directly from the checkpoint's own saved stats, no Jetson needed: read
+`policy_postprocessor_step_0_unnormalizer_processor.safetensors` locally (`safetensors.torch.
+load_file`) -- `action.min = [-11.02, -22.27, -22.27]`, `action.max = [28.24, 29.70, 27.34]`,
+`action.count = 151706` (exactly matches the regenerated gold VLA dataset, 2026-09-23). Checked
+`host_software/data/03_gold/vla_dataset.json` directly, split by its own `regime` tag:
+
+| regime | n | theta_a/b/c range | % samples with any axis beyond +/-11.025 deg |
+|---|---|---|---|
+| `jetson_track4_rl` | 40,713 | exactly +/-11.025 deg, both ends | **0.0%** |
+| `pid_webcam` | 110,993 | down to -22.27 deg, up to +29.70 deg | **58.7%** |
+
+**Conclusive**: the Jetson Track4 (RL-controller) regime -- the one that actually matches today's
+real hardware/firmware -- is 100% compliant with the current safety envelope, exactly as expected
+(the RL control net enforces the same limit live). The `pid_webcam` regime (an earlier phase of
+the project, collected on the laptop under evidently looser or no angle limit) is not. Blending
+both regimes' `action` data for the action-chunk head's training supervision (an explicit, reasoned
+choice in the Stage 0 data-fix plan -- see `greedy-sleeping-fairy.md`'s plan, which flagged a
+*language*-labeling risk from blending regimes but not an *action-scale* risk) taught the model a
+distribution where a large share of its mass (58.7% of 73% of the combined set, roughly 43% of all
+151,706 training samples) sits in territory this hardware's safety gate will always reject. **This
+checkpoint is not usable for live motor control as trained** -- not a bug in today's fixes (both of
+which are independently confirmed correct and working), a real data-composition problem upstream of
+training. Not yet decided: retrain the action-chunk head on `jetson_track4_rl` samples only
+(40,713, 0% violations, directly matches the real deployment regime), vs. filtering `pid_webcam` to
+only its safety-compliant 41.3% and keeping it blended, vs. some other approach -- open decision,
+not an agent's call to make unilaterally given it reverses a considered design choice from the
+Stage 0 plan.
 
 ## 07/10/2026 (ongoing)
 ### Arm 2 action-head design work; a second, distinct touch-sensor data bug found by manual image review
