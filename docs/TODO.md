@@ -432,14 +432,57 @@ without any of these — the ledger below leads with exactly which items those a
   `docs/PROJECT_LOGBOOK.md` 09/10/2026 "Qwen transformers 4.57.6 vs 5.17.0 parity" and "Hybrid
   benchmark can now measure its own real Qwen grounding accuracy" entries; 13/10/2026 "Checked
   for a saved, scorable `hybrid_qwen_act` run before trying to produce one" entry.
-- [ ] **Task Success Rate can't distinguish a dropped ball from a trial that never settled**
-  `[design is software-only; confirming a chosen signal against real drops is JETSON-HW]`
-  (flagged 2026-09-18, owner: ml-multimodal/orchestration) — confirmed still true in
-  `evaluate_system_control.py` (its own comment: "no ball-drop signal exists in current
-  telemetry, so a dropped ball is NOT distinguished from a trial that simply never settled").
-  Closing this needs an upstream drop-detection signal (e.g. from vision), not a change to the
-  evaluator itself. Source: `docs/EVALUATION_STRATEGY.md` "Evaluation Pipeline" section;
-  `host_software/evaluations/evaluate_system_control.py`.
+- [~] **Task Success Rate can't distinguish a dropped ball from a trial that never settled**
+  `[design + wiring done 2026-10-14; JETSON-HW final confirmation still open]`
+  (flagged 2026-09-18, owner: ml-multimodal/orchestration) — **the design-and-offline-validation
+  half of this is now done, and wiring into `evaluate_system_control.py` is also done
+  (orchestration, since the file sits outside ml-multimodal's write boundary).** Chosen signal:
+  `touch_valid` (`TouchProbe.cpp`'s pressure-vote flag,
+  deliberately logged even on loss of contact). The other two candidates don't work: vision-side
+  ball tracking's "lost the ball" frames are never logged at all (by design — `act()` skips
+  `no_ball` frames entirely), and `touch_x`/`touch_y` carries no bounds/sentinel signal on drop
+  (firmware holds the last real position, only `touch_valid` flips). Implemented as a standalone
+  module (same reason as the jerk metric below — `host_software/evaluations/` is read-only for
+  this agent): `host_software/ml_multimodal/evaluations/ball_drop_detection.py`
+  (`ball_drop_metrics_for_segments()`), 14 passing tests in
+  `ml_multimodal/tests/test_ball_drop_detection.py`. Flags a trial segment as a drop when contact,
+  established earlier in that segment, is lost and never recovers for ≥1000ms before the segment
+  ends — threshold picked from a real, order-of-magnitude gap (≤120ms ordinary boundary noise vs.
+  ≥2760ms smallest real candidate) found in the one real audit possible with existing data.
+  **Real-data result** (all 15 `host_software/data/01_bronze/evaluation/ground_truth_jetson_*.csv`
+  sessions — the only sessions in this repo whose schema carries `touch_valid`): 3 of ~210 trial
+  segments flagged, all from anomalously short-duration sessions consistent with (not proof of) an
+  early-stopped run. **Honest limit, stated plainly per this task's own instruction: no session in
+  this repo carries a human-confirmed "a drop happened here" label**, so this is the strongest
+  offline proxy available, not a confirmed count — real-drop confirmation is genuinely
+  JETSON-HW-gated, same as this item's own original tag said. A second, independent finding from
+  the same audit: 2 of those 3 candidates are **currently counted as successes** by
+  `find_settling_time_ms()` today (it never checks `touch_valid`), which the module's
+  `Settled_Trials_Overridden_By_Drop`/`Task_Success_Rate_Percent_Drop_Corrected` fields correct,
+  not just annotate. **Wired into `evaluate_system_control.py` 2026-10-14 (orchestration pass,
+  following the module's own "Integration notes")**: `compute_metrics()` now tracks a
+  `settled_mask` list (`None`/`True`/`False` per segment, aligned with `segments`) through its
+  existing per-segment loop and merges `**ball_drop_metrics_for_segments(times, touch_valid_col,
+  segments, settled_mask)` into its return dict (after `jerk_metrics_for_segments`, so its more
+  complete `Task_Success_Rate_Caveat` wins the dict-literal duplicate-key override).
+  `Task_Success_Rate_Percent` itself is deliberately left unchanged for historical comparability
+  — `Task_Success_Rate_Percent_Drop_Corrected` is the corrected figure. **Verified end-to-end
+  against real data** (not just unit tests): ran `compute_metrics()` on all 15 real
+  `ground_truth_jetson_*.csv` sessions — flags the same 3 segments the standalone module's own
+  audit found, with `Settled_Trials_Overridden_By_Drop` matching exactly (2 of 3). Full
+  `ml_multimodal/tests/` suite: **29 passed** (5 dataset + 10 jerk/smoothness + 14 new ball-drop,
+  0 regressions). **Still open**: (1) `touch_valid` is missing from two of this project's
+  telemetry schemas — `ml_jetson_vla/runtime/session_recorder.py`'s Track 4
+  `TELEMETRY_CSV_FIELDS` parses it already (`SessionTouchTap._handle_line()`) but never writes it
+  to `telemetry.csv`, and the expert-pipeline PID schema
+  (`data/04_evaluation_expert/expert_evaluation_run*.csv`) has no equivalent column at all — so
+  this signal isn't yet available for every arm; (2) the JETSON-HW confirmation itself (no
+  session in this repo carries a human-confirmed "a drop happened here" label — the 3 flagged
+  segments are the strongest available offline proxy, not a confirmed count).
+  Source: `docs/EVALUATION_STRATEGY.md` "Evaluation Pipeline" + "Extended Metrics" sections (both
+  updated in place 2026-10-14); `host_software/ml_multimodal/evaluations/ball_drop_detection.py`'s
+  own module docstring has the full audit; `host_software/evaluations/evaluate_system_control.py`
+  (wiring).
 - [x] **Ball-trajectory jerk/smoothness metric** (flagged 2026-09-18/2026-09-24, implemented
   2026-10-13, owner: ml-multimodal) — **the old blanket "needs new instrumentation" framing did
   not actually hold for this metric once checked concretely; it was correct only for its sibling

@@ -39,6 +39,7 @@ if _HOST_SOFTWARE_DIR not in sys.path:
     sys.path.append(_HOST_SOFTWARE_DIR)
 
 from ml_multimodal.evaluations.trajectory_smoothness import jerk_metrics_for_segments  # noqa: E402
+from ml_multimodal.evaluations.ball_drop_detection import ball_drop_metrics_for_segments  # noqa: E402
 
 from src.touch_ground_truth_filter import flag_touch_position_outliers
 
@@ -297,6 +298,7 @@ def compute_metrics(df, run_label="run"):
     target_y = df["target_y"].to_numpy(dtype=float)
     touch_x = df["touch_x"].to_numpy(dtype=float)
     touch_y = df["touch_y"].to_numpy(dtype=float)
+    touch_valid_col = df["touch_valid"].to_numpy() if "touch_valid" in df.columns else None
 
     diff_a = df["theta_a"].diff().abs().dropna()
     diff_b = df["theta_b"].diff().abs().dropna()
@@ -307,11 +309,17 @@ def compute_metrics(df, run_label="run"):
     segments = segment_by_target(df)
     settling_times, settled_state_errors, successes = [], [], 0
     rise_times, overshoots_mm, overshoots_pct, iae_list, ise_list, itae_list = [], [], [], [], [], []
+    # Aligned 1:1 with `segments` -- None for a too-short-to-evaluate segment, True/False
+    # for whether find_settling_time_ms() below found a settle. Feeds
+    # ball_drop_metrics_for_segments() so a segment whose touch contact was later lost
+    # for good can be reclassified as Dropped_Ball_Trials even if it settled first.
+    settled_mask = []
 
     for start, end in segments:
         seg_times = times[start:end]
         seg_errors = errors[start:end]
         if len(seg_times) < 2:
+            settled_mask.append(None)
             continue  # too short to evaluate settling within
 
         # Computed for every long-enough trial regardless of success/failure --
@@ -333,9 +341,11 @@ def compute_metrics(df, run_label="run"):
             seg_times, seg_errors, SETTLE_TOLERANCE_MM, SETTLE_DURATION_MS
         )
         if settle_ms is None:
+            settled_mask.append(False)
             continue  # never settled -> counts against success rate, excluded from SSE average
 
         successes += 1
+        settled_mask.append(True)
         settling_times.append(settle_ms)
         settle_idx = int(np.searchsorted(seg_times, seg_times[0] + settle_ms, side="left"))
         settled_state_errors.append(float(np.mean(seg_errors[settle_idx:])))
@@ -394,6 +404,11 @@ def compute_metrics(df, run_label="run"):
         ),
         **_inference_latency_stats(df),
         **jerk_metrics_for_segments(times, touch_x, touch_y, segments),
+        # Overrides Task_Success_Rate_Caveat above with a more complete message when
+        # touch_valid is available (dict-literal duplicate key: last one wins). Does NOT
+        # change Task_Success_Rate_Percent itself (kept for historical comparability) --
+        # see Task_Success_Rate_Percent_Drop_Corrected for the drop-corrected figure.
+        **ball_drop_metrics_for_segments(times, touch_valid_col, segments, settled_mask),
     }
 
 

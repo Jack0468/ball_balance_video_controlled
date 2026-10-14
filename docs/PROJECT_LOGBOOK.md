@@ -2,6 +2,50 @@
 
 ## 14/10/2026
 
+### Ball-drop detection designed, offline-validated, and wired into `evaluate_system_control.py` — real `Task_Success_Rate_Percent_Drop_Corrected` now available
+
+Dispatched `ml-multimodal` for the long-open "Task Success Rate can't distinguish a dropped
+ball from a trial that never settled" item (software-design half only — final confirmation is
+JETSON-HW-gated). It investigated 3 candidate signals and ruled out 2 with real evidence before
+choosing: vision-side ball tracking never logs its own "lost the ball" frames at all (`act()`
+skips `no_ball` frames by design); `touch_x`/`touch_y` carries no bounds/sentinel signal on drop
+(firmware holds the last real position, only `touch_valid` flips). `touch_valid`
+(`TouchProbe.cpp`'s deliberately-logged-even-on-loss-of-contact pressure-vote flag) is the real
+working signal.
+
+Built `host_software/ml_multimodal/evaluations/ball_drop_detection.py`
+(`ball_drop_metrics_for_segments()`): flags a trial segment as dropped when contact established
+earlier in the segment is lost and never recovers for ≥1000ms before the segment ends —
+threshold picked from a real order-of-magnitude gap found by auditing all 15 real
+`ground_truth_jetson_*.csv` sessions (≤120ms ordinary boundary noise vs. ≥2760ms smallest real
+candidate), with the "leading-stale-value" artifact (`touch_ground_truth_filter.py`'s documented
+pre-recording-stale-position case) explicitly excluded. Real-data result: 3 of ~210 segments
+flagged, all from anomalously short sessions consistent with an early-stopped run. Honestly
+flagged, not overclaimed: no session in this repo carries a human-confirmed drop label, so this
+is the strongest offline proxy available, not a confirmed count — real confirmation stays
+JETSON-HW-gated. Bonus finding: 2 of the 3 candidates are *currently counted as successes* by
+`find_settling_time_ms()` today (it never checks `touch_valid`) — a real, previously-unknown
+mischaracterization risk in the existing metric, not just an unhandled edge case. 14 new tests
+(`ml_multimodal/tests/test_ball_drop_detection.py`), all passing.
+
+Unlike the jerk/smoothness precedent, this wasn't a pure trailing `**merge` — it needed to
+override the settle/success determination for a dropped segment, which needs lines inside
+`compute_metrics()`'s existing per-segment loop, outside `ml-multimodal`'s
+`host_software/evaluations/`-is-read-only boundary. The agent correctly flagged this back with
+an exact minimal patch instead of guessing at the right place to touch. **Applied the wiring
+directly (orchestration pass)**: `compute_metrics()` now tracks a `settled_mask` per segment and
+merges the new metrics into its return dict; `Task_Success_Rate_Percent` itself is left
+unchanged for historical comparability, with `Task_Success_Rate_Percent_Drop_Corrected` as the
+new corrected figure. Verified end-to-end against real data (not just trusting the unit tests):
+ran `compute_metrics()` on all 15 real sessions — flags the identical 3 segments and override
+count the standalone module's own audit found. Full `ml_multimodal/tests/` suite: 29 passed, 0
+regressions.
+
+Real, concrete follow-up surfaced but deliberately not fixed in this pass (not asked for by this
+task): `touch_valid` is missing from 2 of this project's telemetry schemas (Track 4's
+`session_recorder.py` parses it but never writes it to `telemetry.csv`; the expert-pipeline PID
+schema has no equivalent column at all) — this signal isn't yet available for every arm.
+
 ### Real, pixel-only marker-colour fix built — `AdaptiveColorCalibrator` — the project's own top-priority remaining item
 
 Dispatched `ml-vision` for the reopened "Marker colour classification needs a robust design, not
