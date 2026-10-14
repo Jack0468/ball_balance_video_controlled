@@ -88,6 +88,23 @@ class SharedVisionDataset(Dataset):
 
         image = cv2.cvtColor(cv2.imread(image_path), cv2.COLOR_BGR2RGB)
         mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+        # Defensive: ultralytics (imported anywhere earlier in THIS process -- e.g. a
+        # notebook/script that also trains or evaluates a YOLO model, as the still-open
+        # Arm 1 small-vs-medium comparison routinely does) globally monkeypatches
+        # cv2.imread/imwrite/imshow at import time (ultralytics/utils/__init__.py:
+        # "cv2.imread, cv2.imwrite, cv2.imshow = imread, imwrite, imshow"), and its
+        # replacement imread() unconditionally appends a trailing channel axis to any
+        # 2D (grayscale) result ("Always ensure 3 dimensions" -- see
+        # ultralytics/utils/patches.py). Confirmed directly: a plain IMREAD_GRAYSCALE
+        # read returns (H, W) before `from ultralytics import YOLO` runs anywhere in
+        # the process, and (H, W, 1) after -- silently, with no error, for every
+        # subsequent grayscale read for the rest of that process's life. Since this
+        # dataset's masks are square (128x128), that extra axis does NOT raise a shape
+        # error downstream -- it silently mis-broadcasts against mask_logits in the
+        # loss/IoU computation instead (the worse failure mode). Squeeze it back to the
+        # expected 2D shape regardless of which cv2.imread is currently bound.
+        if mask is not None and mask.ndim == 3:
+            mask = mask[..., 0]
 
         ball_x = float(row.get("ball_x_px", 0.0))
         ball_y = float(row.get("ball_y_px", 0.0))

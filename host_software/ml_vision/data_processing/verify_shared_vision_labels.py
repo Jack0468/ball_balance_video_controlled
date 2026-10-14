@@ -56,6 +56,12 @@ def build_grid(
             ax.imshow(img)
 
             mask = cv2.imread(str(mask_path), cv2.IMREAD_GRAYSCALE)
+            # Defensive: `ultralytics`, if imported anywhere earlier in this process,
+            # globally monkeypatches cv2.imread to always append a trailing channel
+            # axis to a grayscale read (see shared_vision_dataset.py's identical
+            # guard for the full explanation) -- ax.contour() expects a plain 2D array.
+            if mask is not None and mask.ndim == 3:
+                mask = mask[..., 0]
             if mask is not None and mask.max() > 0:
                 ax.contour(mask, levels=[127], colors="yellow", linewidths=1.2)
 

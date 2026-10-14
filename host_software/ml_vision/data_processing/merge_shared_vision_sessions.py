@@ -54,6 +54,16 @@ def build_combined_mask(mask_paths: List[Path], size: Tuple[int, int] = (128, 12
         if mask is None:
             print(f"  Warning: could not read mask {mask_path}, skipping")
             continue
+        # Defensive: if `ultralytics` was imported anywhere earlier in this process,
+        # it globally monkeypatches cv2.imread to always append a trailing channel
+        # axis to a grayscale read (confirmed: ultralytics/utils/__init__.py does
+        # "cv2.imread, ... = imread, ..." at import time; its replacement always
+        # does `im[..., None] if im.ndim == 2 else im`). Since masks here are square,
+        # that extra axis would silently mis-broadcast through np.maximum() below
+        # instead of raising -- squeeze it back to 2D regardless of which cv2.imread
+        # is currently bound.
+        if mask.ndim == 3:
+            mask = mask[..., 0]
         if mask.shape != (h, w):
             mask = cv2.resize(mask, (w, h), interpolation=cv2.INTER_NEAREST)
         combined = np.maximum(combined, mask)

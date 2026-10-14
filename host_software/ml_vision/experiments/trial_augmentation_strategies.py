@@ -80,6 +80,13 @@ class TrialAugmentedDataset(Dataset):
 
         image = cv2.cvtColor(cv2.imread(str(image_path)), cv2.COLOR_BGR2RGB)
         mask = cv2.imread(str(mask_path), cv2.IMREAD_GRAYSCALE)
+        # Defensive: `ultralytics`, if imported anywhere earlier in this process,
+        # globally monkeypatches cv2.imread to always append a trailing channel
+        # axis to a grayscale read (see shared_vision_dataset.py's identical guard
+        # for the full explanation) -- squeeze it back to 2D before handing it to
+        # the joint image/mask/keypoint transform below.
+        if mask is not None and mask.ndim == 3:
+            mask = mask[..., 0]
 
         ball_x = float(row["ball_x_px"])
         ball_y = float(row["ball_y_px"])
