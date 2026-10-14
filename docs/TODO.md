@@ -213,7 +213,7 @@ without any of these — the ledger below leads with exactly which items those a
   running `evaluate_nemo_live_receiver_stream.py` against the seed0 checkpoint first to know
   whether it's worth keeping as a reference point at all. Source:
   `host_software/main_onnx_shared_vision_nemo_audio.py` lines 97-102, 128.
-- [ ] **No automated regression coverage of the actual production audio inference/preprocessing
+- [x] **No automated regression coverage of the actual production audio inference/preprocessing
   path** (flagged 2026-10-14, owner: ml-audio) — `ml_audio/tests/test_audio.py` opens a mic
   stream for 2 seconds and prints whether it errored; zero assertions, not wired to any
   classifier/DSP code. `test_nemo_noise_mix.py` is a real smoke test but only exercises
@@ -221,11 +221,35 @@ without any of these — the ledger below leads with exactly which items those a
   on `_process_loop`/`audio_dsp.py`. This project has already paid for two severe
   train/production-preprocessing-divergence bugs (wrong label order; mismatched crop/
   renorm/noise-profile), both only caught by manual A/B investigation -- nothing today would
-  fail if either regressed again. Real fix (moderate effort, worth scoping separately): assert
-  the offline eval path and the live `_process_loop` path produce numerically identical features
-  for the same input clip, plus a fixed-checkpoint label-order sanity check. Source:
-  `host_software/ml_audio/tests/test_audio.py`; `audio_eval_notebook_refactor_plan.md`
+  fail if either regressed again. **Fixed 2026-10-14**: new
+  `host_software/ml_audio/tests/test_production_pipeline_parity.py` (282 lines, 4 tests) —
+  `OfflineLiveFeatureParityTests` drives a real `AudioCommandReceiver` (model/mic mocked) through
+  its real `chunk_queue` -> `_process_loop` path over all 11 real clips in
+  `ml_audio/data/01_evaluation_samples/*.wav`, asserting the spectrogram actually fed to the
+  model is numerically identical (`torch.allclose`, atol=1e-6) to the offline
+  `evaluate_audio_classifier.py` path's output for the same clip; `LabelOrderSanityTests` guards
+  the exact historical ~7.4%-accuracy label-order regression, including the hardcoded 12-class
+  fallback branch. Verified the tests have real teeth (not vacuous): temporarily reintroduced
+  both historical bug classes (a renorm scale factor; a non-alphabetical fallback order) and
+  confirmed both failed loudly with clear diagnostics, then reverted (confirmed clean via
+  `git status`). Independently re-run (not just trusting the agent's report):
+  `python -m unittest discover -s host_software/ml_audio/tests -p "test_*.py"` -> **13 tests,
+  OK** (4 new + 9 pre-existing). **Scope note, explicitly flagged by ml-audio and carried
+  forward here**: this covers the custom Conv1D CNN path only
+  (`audio_receiver_pytorch.py`/`evaluate_audio_classifier.py`) per the TODO item's original
+  wording — the pretrained NeMo MatchboxNet path (the actually-deployed production model per
+  `CLAUDE.md`'s Current State table) still has no equivalent coverage; see the new item below.
+  Source: `host_software/ml_audio/tests/test_audio.py`; `audio_eval_notebook_refactor_plan.md`
   "Evaluation Extraction" section.
+- [ ] **NeMo MatchboxNet production path has no parity/label-order regression coverage
+  equivalent to the Conv1D path's new tests** (flagged 2026-10-14, owner: ml-audio) — the item
+  above only covers the custom Conv1D CNN path; the NeMo path
+  (`evaluations/nemo_live_receiver.py`, `main_onnx_shared_vision_nemo_audio.py`) is the model
+  CLAUDE.md's Current State table names as actually in production, and is unguarded. Needs its
+  own fixture/assertion shape, not a drop-in extension of `test_production_pipeline_parity.py`:
+  it requires the separate NeMo conda env `test_nemo_noise_mix.py` already needs, and its label
+  order comes from `model.cfg.labels` inside a restored `.nemo` checkpoint rather than a sibling
+  `labels.json`.
 
 ## Shared / Fusion (`host_software/src/`)
 

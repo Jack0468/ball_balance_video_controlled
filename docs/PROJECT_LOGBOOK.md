@@ -2,6 +2,28 @@
 
 ## 14/10/2026
 
+### Real regression coverage added for the production audio Conv1D pipeline (offline/live feature parity + label-order sanity)
+
+Dispatched `ml-audio` for the TODO item scoping the project's two historical
+train/production-preprocessing-divergence incidents (wrong hardcoded label order crashing live
+accuracy to ~7.4%; mismatched crop/renorm/noise-profile costing ~40-50 more points) — both
+previously caught only by manual A/B investigation, nothing automated guarding either from
+regressing again. New `host_software/ml_audio/tests/test_production_pipeline_parity.py` (282
+lines, 4 tests): feeds all 11 real recorded clips in `ml_audio/data/01_evaluation_samples/*.wav`
+through the real live `AudioCommandReceiver._process_loop` path (model/mic mocked, matching this
+project's established style) and asserts the spectrogram it actually computes is numerically
+identical to the offline `evaluate_audio_classifier.py` path's output for the same clip; a
+second test class guards the exact historical label-order regression, including the hardcoded
+12-class fallback branch. The agent verified the tests have real teeth before handing back —
+temporarily reintroduced both historical bug classes (a renorm scale factor; a shuffled label
+order) and confirmed each failed loudly, then reverted cleanly. Independently re-verified here
+(not just trusting the report): confirmed the 11 real `.wav` fixtures exist at the real path,
+and re-ran `python -m unittest discover -s host_software/ml_audio/tests -p "test_*.py"` myself
+-> **13 tests, OK**, matching the agent's claim exactly. Scope gap honestly flagged by the agent
+and carried into a new TODO item: the NeMo MatchboxNet path (the actually-deployed production
+model per `CLAUDE.md`'s Current State table) still has no equivalent coverage — different
+fixture shape, needs the separate NeMo conda env.
+
 ### Preliminary, clearly-speculative FPGA↔photonic-bridge scaffolding — `fpga/optical_bridge/` — Arm 3 framing decision still unresolved
 
 Per the user's explicit request to start research-arm work ("plan or write preliminary code for
