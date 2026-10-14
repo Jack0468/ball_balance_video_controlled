@@ -1,7 +1,30 @@
 import json
+import logging
 import torch
 from torch.utils.data import Dataset
 from PIL import Image
+
+LOG = logging.getLogger(__name__)
+
+# Matches the real, recognized audio_command vocabulary (core.minimal_vlm_policy.COLOR_COMMANDS'
+# keys + DIRECTIONAL_COMMANDS), confirmed directly against real production telemetry
+# (session_jetson_track4_*/telemetry.csv) -- fixed 2026-10-14. The previous space-separated vocab
+# ("go red", "go blue", ...) never matched any real logged command string except "hold", so
+# cmd_idx silently resolved to the "hold" index for every real sample -- language conditioning
+# via FiLM (vla_architecture.py) was a no-op for the whole real-language-labeled dataset. A
+# checkpoint trained under the old mapping must be retrained under this one.
+VOCAB = {
+    "hold": 0,
+    "go_red": 1,
+    "go_green": 2,
+    "go_yellow": 3,
+    "go_black": 4,
+    "forward": 5,
+    "backward": 6,
+    "left": 7,
+    "right": 8,
+    "stop": 9,
+}
 
 
 class VLADataset(Dataset):
@@ -9,15 +32,8 @@ class VLADataset(Dataset):
         with open(json_path, "r") as f:
             self.data = json.load(f)
         self.transform = transform
-
-        # Simple vocabulary for audio commands
-        self.vocab = {
-            "hold": 0,
-            "go red": 1,
-            "go blue": 2,
-            "go green": 3,
-            "go yellow": 4,
-        }
+        self.vocab = VOCAB
+        self._image_fallback_count = 0
 
     def __len__(self):
         return len(self.data)
@@ -29,8 +45,16 @@ class VLADataset(Dataset):
         img_path = item["image_path"]
         try:
             img = Image.open(img_path).convert("RGB")
-        except:
-            # Fallback for missing images in a mock dataset
+        except (FileNotFoundError, OSError) as exc:
+            # Real fallback path (drive remount, a refactor moving 03_gold/images/, a partial
+            # sync) -- narrowed from a bare `except:` 2026-10-14 (that also caught
+            # KeyboardInterrupt/SystemExit) and now counted/logged so a high fallback rate is
+            # visible instead of silently degrading training/eval on blank images.
+            self._image_fallback_count += 1
+            LOG.warning(
+                "VLADataset: image load failed for %r (%s); substituting blank image "
+                "(fallback count this instance: %d)", img_path, exc, self._image_fallback_count,
+            )
             img = Image.new("RGB", (224, 224))
 
         if self.transform:

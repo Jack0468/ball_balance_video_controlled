@@ -79,7 +79,14 @@ class AudioCommandReceiver:
         print(f"Loading Audio Model from {model_path}...")
         self.device = torch.device("cpu")
 
-        global LABEL_NAMES
+        # Instance attribute, not the module-level global (fixed 2026-10-14): the global was
+        # the exact same bug class as the documented production incident where wrong label
+        # order crashed accuracy from ~86% to ~7.4% (audio_eval_notebook_refactor_plan.md) --
+        # constructing two receivers against checkpoints with different class counts/orders in
+        # one process would silently overwrite the label mapping the first instance's
+        # already-running thread depends on. NemoAudioCommandReceiver already does this
+        # correctly via self.labels; this mirrors that.
+        self.labels = LABEL_NAMES
         if model_path:
             state_dict = torch.load(
                 model_path, map_location=self.device, weights_only=True
@@ -101,9 +108,9 @@ class AudioCommandReceiver:
                         f"{labels_path} has {len(loaded_labels)} labels but "
                         f"checkpoint {model_path} has {num_classes} output classes"
                     )
-                LABEL_NAMES = loaded_labels
+                self.labels = loaded_labels
             elif num_classes == 7:
-                LABEL_NAMES = [
+                self.labels = [
                     "_background_",
                     "go_blue",
                     "go_green",
@@ -113,7 +120,7 @@ class AudioCommandReceiver:
                     "stop",
                 ]
             elif num_classes == 12:
-                LABEL_NAMES = [
+                self.labels = [
                     "_background_",
                     "backward",
                     "forward",
@@ -255,7 +262,7 @@ class AudioCommandReceiver:
                 probs = torch.nn.functional.softmax(logits, dim=-1).cpu().numpy()[0]
 
             top_id = int(np.argmax(probs))
-            top_label = LABEL_NAMES[top_id]
+            top_label = self.labels[top_id]
             top_conf = float(probs[top_id])
 
             top_two = np.partition(probs, -2)[-2:]

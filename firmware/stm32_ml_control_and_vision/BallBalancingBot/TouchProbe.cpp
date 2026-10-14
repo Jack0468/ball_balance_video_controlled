@@ -32,7 +32,14 @@
 #define TS_BOTTOM  92   // Raw X at Bottom Edge
 
 #define SCREEN_WIDTH_MM  187.5
-#define SCREEN_HEIGHT_MM 141.0
+// Was 141.0 since this file's first commit -- CLAUDE.md's System Constraints table states
+// 142.0mm is the confirmed source of truth ("never use old values"), independently corroborated
+// by docs/PROJECT_LOGBOOK.md's "CAD Plate vs. Resistive Touchpad Dimensions" entry (the
+// resistive touchpad itself, not just the outer acrylic plate, is 187.5x142.0mm). Fixed
+// 2026-10-14 -- a real ~0.7% scale bias on every touch_y_mm reading this firmware has ever
+// streamed. NOT yet re-flashed/re-verified on real hardware, and historically-collected
+// telemetry has NOT been retroactively rescaled -- see docs/PROJECT_LOGBOOK.md 14/10/2026.
+#define SCREEN_HEIGHT_MM 142.0
 
 // Contact threshold. Below this the STM32 ADC is just reading float noise.
 #define TS_PRESSURE_MIN 3

@@ -171,35 +171,32 @@ without any of these — the ledger below leads with exactly which items those a
   drop-oldest policy, or a watchdog comparing `latest_inference_time_ms` against `step_seconds`.
   Source: `host_software/ml_audio/evaluations/nemo_live_receiver.py` lines 100-105, 187-224;
   `host_software/ml_audio/audio_receiver_pytorch.py` lines 147, 234-274.
-- [ ] **Module-level mutable `LABEL_NAMES` global in the legacy PyTorch receiver — same bug
-  class that already cost ~80 accuracy points in production** (flagged 2026-10-14, owner:
-  ml-audio) — `audio_receiver_pytorch.py`'s `__init__` does `global LABEL_NAMES` and reassigns
-  it; `_process_loop` decodes predictions from that same global rather than an instance
-  attribute (the NeMo receiver already does this correctly via `self.labels`). Constructing two
-  `AudioCommandReceiver` instances against checkpoints with different class counts/orders in one
-  process would have the second construction silently overwrite the label mapping used by the
-  first instance's already-running thread — the identical failure shape as the documented
-  production incident where wrong label order crashed accuracy from ~86% to ~7.4%
-  (`audio_eval_notebook_refactor_plan.md`), just reachable through a different trigger. Current
-  blast radius is low (nothing in the repo today constructs two receivers in one process), but
-  given this exact bug class already happened once, worth closing. Fix is trivial: `self.labels`
-  instead of the global, everywhere. Source: `host_software/ml_audio/audio_receiver_pytorch.py`
-  lines 30-42, 82, 104/106/116, 258.
+- [x] **Module-level mutable `LABEL_NAMES` global in the legacy PyTorch receiver — same bug
+  class that already cost ~80 accuracy points in production** (flagged 2026-10-14, fixed same
+  day) — `audio_receiver_pytorch.py`'s `AudioCommandReceiver.__init__` no longer does
+  `global LABEL_NAMES`; all 3 assignment sites and the one read site now use `self.labels`
+  (the NeMo receiver already did this correctly). 3 new tests
+  (`ml_audio/tests/test_audio_receiver_pytorch_labels.py`): two receivers built against
+  different checkpoints in the same process no longer clobber each other's labels, the module
+  global is never mutated, and the no-`model_path` fallback still works. Had to mock both
+  `AudioCommandClassifier` (bakes in fixed registered-buffer weights, not freely constructible
+  with arbitrary shapes) and `sd.InputStream` — the first unmocked run of this test genuinely
+  opened this machine's real microphone, confirming the constructor had no test-safe path.
+  Source: `host_software/ml_audio/audio_receiver_pytorch.py`.
 - [ ] **Production entry point's default audio checkpoint is still the preliminary, never
   live-stream-scored one — contradicts `CLAUDE.md`'s own "Current State" narrative** (flagged
-  2026-10-14, owner: ml-audio) — `main_onnx_shared_vision_nemo_audio.py`'s `DEFAULT_NEMO_MODEL`
-  points at `nemo_matchboxnet_3x1x64_noisemix_seed0` (the code's own comment already calls this
-  "Preliminary/half-trained"), while `CLAUDE.md` describes `nemo_matchboxnet_v1` (8-9/10
-  live-stream, two independent runs) as the established result. Per the plan doc, the seed0
-  checkpoint never finished its original training run and its live-stream accuracy against the
-  real receiver harness has never been measured at all -- flagged as intentional for
-  integration-testing on 2026-09-15/16, but nothing since shows it was ever switched back, and
-  it's now 2026-10-14. Anyone running the production script with no flags gets the
-  unvalidated checkpoint; `--audio-model` must be passed explicitly to get the actually-
-  recommended one. Fix is trivial (flip the default) once someone confirms via
-  `evaluate_nemo_live_receiver_stream.py` whether the seed0 checkpoint is even worth keeping as a
-  reference point. Source: `host_software/main_onnx_shared_vision_nemo_audio.py` lines 97-102,
-  128.
+  2026-10-14, owner: ml-audio, NOT fixed -- see below) — `main_onnx_shared_vision_nemo_audio.py`'s
+  `DEFAULT_NEMO_MODEL` points at `nemo_matchboxnet_3x1x64_noisemix_seed0` (the code's own
+  comment already calls this "Preliminary/half-trained"), while `CLAUDE.md` describes
+  `nemo_matchboxnet_v1` (8-9/10 live-stream, two independent runs) as the established result.
+  **Checked the module docstring before touching this (2026-10-14): this was wired up at the
+  user's own explicit request for integration-testing on 2026-09-15/16, not a stale oversight.**
+  Deliberately NOT flipped — reversing an explicit prior instruction just because a month has
+  passed is a confirm-with-user call, not a trivial fix an agent should make unilaterally. `[HUMAN]`
+  to confirm either way; if confirmed stale, fix is a one-line default change, ideally after
+  running `evaluate_nemo_live_receiver_stream.py` against the seed0 checkpoint first to know
+  whether it's worth keeping as a reference point at all. Source:
+  `host_software/main_onnx_shared_vision_nemo_audio.py` lines 97-102, 128.
 - [ ] **No automated regression coverage of the actual production audio inference/preprocessing
   path** (flagged 2026-10-14, owner: ml-audio) — `ml_audio/tests/test_audio.py` opens a mic
   stream for 2 seconds and prints whether it errored; zero assertions, not wired to any
@@ -375,23 +372,19 @@ without any of these — the ledger below leads with exactly which items those a
   spike) are named/scoped; "Track 2 and 3 have never been named or scoped in any doc — a real,
   open gap, not an omission to paper over." Source: `CLAUDE.md` "Terminology: Phase / Track /
   Arm" section.
-- [ ] **`VLADataset`'s vocabulary never matches real audio-command strings — language
-  conditioning is a no-op for every real sample** (flagged 2026-10-14, owner: ml-multimodal) —
-  `core/dataset.py`'s `self.vocab` uses space-separated keys (`"go red"`, `"go blue"`, ...); the
+- [x] **`VLADataset`'s vocabulary never matched real audio-command strings — language
+  conditioning was a no-op for every real sample** (flagged 2026-10-14, fixed same day) —
+  `core/dataset.py`'s `self.vocab` used space-separated keys (`"go red"`, `"go blue"`, ...); the
   real recognized vocabulary (confirmed directly against 10 real `session_jetson_track4_*`
-  telemetry CSVs) is underscore-separated (`go_red`, `go_green`, `go_yellow`, `go_black`, `hold`,
-  `forward`/`backward`/`left`/`right`/`stop`) and matches `minimal_vlm_policy.py`'s
-  `COLOR_COMMANDS` exactly. None of the real strings hit a vocab key except `"hold"` — every
-  single real-language-labeled sample (~40,713 `jetson_track4_rl` rows) silently resolves to
-  `cmd_idx=0`, identical to "hold"; `"go_black"` has no vocab entry in any spelling. Confirmed
-  directly: `self.vocab.get(item.get("audio_command","hold"), 0)` against the real dict literal.
-  Since `cmd_idx` is the *only* language input (`FiLMLayer` modulation over the ResNet feature
-  map in `vla_architecture.py`), `RT1LiteVLA` as actually trained by `train_vla.py` has never
-  been language-conditioned at all despite the architecture being built for it. No test exists
-  for this mapping. Fix is trivial (normalize/extend the vocab to match real strings), but any
-  existing `models/vla_v1/best_vla.pth` checkpoint needs retraining under the corrected mapping.
-  Source: `host_software/ml_multimodal/core/dataset.py` lines 14-20, 40;
-  `host_software/ml_multimodal/core/vla_architecture.py` lines 67-75.
+  telemetry CSVs) is underscore-separated and matches `minimal_vlm_policy.py`'s
+  `COLOR_COMMANDS`/`DIRECTIONAL_COMMANDS` exactly. Fixed: `VOCAB` now has all 10 real strings
+  (`hold`, `go_red`, `go_green`, `go_yellow`, `go_black`, `forward`, `backward`, `left`, `right`,
+  `stop`) at distinct indices. 5 new tests (`ml_multimodal/tests/test_dataset.py`), all passing
+  — confirming every real command resolves to its own index (not silently aliasing "hold"), and
+  the old dead space-separated keys are gone. **Any existing `models/vla_v1/best_vla.pth`
+  checkpoint was trained under the old, broken mapping and needs retraining** to actually
+  benefit from this fix — not done here (a real compute cost, not an agent's call to schedule).
+  Source: `host_software/ml_multimodal/core/dataset.py`.
 - [ ] **`run_eval_baseline_vla.py`/`run_eval_our_vla.py` are 100% mocked but write
   schema-correct output indistinguishable from a real Arm comparison** (flagged 2026-10-14,
   owner: ml-multimodal) — both scripts never touch a camera or the firmware: mock marker
@@ -409,16 +402,12 @@ without any of these — the ledger below leads with exactly which items those a
   real fix (actual camera/serial integration + a real Stage-2 RL implementation) is substantial.
   Source: `host_software/ml_multimodal/evaluations/run_eval_baseline_vla.py` lines 17-18, 65-75,
   100-112; `run_eval_our_vla.py` lines 12-13; `train_vla.py` lines 112-129.
-- [ ] **`VLADataset.__getitem__`'s bare `except:` silently substitutes a blank image with zero
-  logging** (flagged 2026-10-14, owner: ml-multimodal) — catches everything (including
-  `KeyboardInterrupt`/`SystemExit`), substitutes a black placeholder image, no counter/log of how
-  many samples were blanked in a run. Low risk today since `generate_vla_dataset.py` writes a
-  real file per sample at build time, but a real risk against the kind of path-breakage
-  `docs/DATA_STORAGE.md`'s own portability audit flags (drive remount, a refactor moving
-  `03_gold/images/`, a partial sync) — training/eval would silently proceed on blanked samples
-  with no visible symptom beyond a slightly worse loss curve. Fix is trivial: narrow to
-  `(FileNotFoundError, OSError)`, count/log fallbacks, consider raising past a threshold. Source:
-  `host_software/ml_multimodal/core/dataset.py` lines 30-34.
+- [x] **`VLADataset.__getitem__`'s bare `except:` silently substituted a blank image with zero
+  logging** (flagged 2026-10-14, fixed same day) — narrowed to `(FileNotFoundError, OSError)`
+  (no longer catches `KeyboardInterrupt`/`SystemExit`), now counts and logs every fallback via
+  `self._image_fallback_count`. Verified by a new test confirming the counter increments
+  correctly across repeated failures (`ml_multimodal/tests/test_dataset.py`). Source:
+  `host_software/ml_multimodal/core/dataset.py`.
 - [ ] **Jetson expert-pipeline control-net port (`core/control_net.py`) is further along than
   `CLAUDE.md`'s current framing suggests, and its velocity-filter timing is unverified against
   real achieved loop rate** `[the dt-comparison analysis itself needs no hardware -- existing
@@ -532,23 +521,30 @@ without any of these — the ledger below leads with exactly which items those a
   directly. Needs hardware-level investigation (raw ADC logging or direct probing), not further
   data analysis alone. Source: `docs/PROJECT_LOGBOOK.md` 18/09/2026 "Touch-Plate Ground-Truth
   Sensor Artifact" entry; `firmware/stm32_ml_control_and_vision/BallBalancingBot/TouchProbe.cpp`.
-- [ ] **`TouchProbe.cpp`'s `SCREEN_HEIGHT_MM` hardcoded to 141.0, not the confirmed 142.0mm
-  platform height** (flagged 2026-10-14) — directly scales every `touch_y_mm` value this
-  firmware streams to the host. `CLAUDE.md`'s System Constraints table states Height=142.0mm is
-  the source of truth ("never use old values"), and `docs/PROJECT_LOGBOOK.md`'s "CAD Plate vs.
-  Resistive Touchpad Dimensions" entry independently confirms the resistive touchpad itself is
-  187.5x142.0mm. `141.0` has been the value since this file's very first commit, never changed.
-  A real, systematic ~0.7% scale bias on every logged/streamed `touch_y` reading -- already
-  *noticed* in a code comment (`touch_ground_truth_filter.py` lines 84-90, which explicitly calls
-  it "a separate, pre-existing firmware/spec discrepancy, not something this filter corrects")
-  but never promoted to this ledger or fixed in firmware. Distinct from the transient-spike item
-  above (that's single-frame glitches; this is a constant calibration bias). Fix is a trivial
-  one-line constant change, but re-validating historically-collected telemetry against the
-  corrected scale and re-running this same file's own "FRAME MATCH" reconciliation procedure
-  (lines 41-63, which already flags a second, larger, already-known vision/touch frame mismatch)
-  is non-trivial -- not something to do casually without re-running that whole calibration pass.
-  Confirmed directly: `grep SCREEN_HEIGHT_MM` shows `141.0` at line 35. Source:
-  `firmware/stm32_ml_control_and_vision/BallBalancingBot/TouchProbe.cpp` lines 35, 166.
+- [ ] **`TouchProbe.cpp`'s `SCREEN_HEIGHT_MM` constant fixed to 142.0 in the confirmed-live
+  firmware file; NOT yet re-flashed/hardware-verified, historical telemetry NOT rescaled, and 5
+  other firmware files define the same constant with unaudited status** `[JETSON-HW to
+  re-flash/re-verify]` (flagged 2026-10-14, code fix same day) — was hardcoded to `141.0` since
+  this file's first commit, directly scaling every `touch_y_mm` value streamed to the host, vs.
+  `CLAUDE.md`'s confirmed 142.0mm source of truth ("never use old values") and
+  `docs/PROJECT_LOGBOOK.md`'s independent "CAD Plate vs. Resistive Touchpad Dimensions"
+  confirmation. Fixed directly in
+  `firmware/stm32_ml_control_and_vision/BallBalancingBot/TouchProbe.cpp` (the one file
+  `CLAUDE.md` names as current source of truth) -- a clear, unambiguous constant correction
+  against a locked spec value, not a judgment call. **Explicitly NOT done**: (1) re-flashing
+  this onto real hardware or re-verifying live (needs the user); (2) retroactively rescaling any
+  historically-collected telemetry, or re-running this file's own "FRAME MATCH" reconciliation
+  procedure (lines 41-63) -- non-trivial, not attempted; (3) touching the other 5 firmware files
+  that also define `SCREEN_HEIGHT_MM` (`firmware/BallBalancingBot/Screen.cpp`,
+  `firmware/ExpertEvaluationFirmware/TouchProbe.cpp`,
+  `firmware/libraries/VRI_Core/src/Screen.cpp`,
+  `firmware/stm32_jetson_remote_control/BallBalancingBot/TouchProbe.cpp`,
+  `firmware/stm32_jetson_vla_angle_control/BallBalancingBot/TouchProbe.cpp`) -- deliberately out
+  of scope here per `CLAUDE.md`'s own firmware-duplication caution ("never assume a firmware
+  directory's purpose from its name alone"); each needs its own live/stale-status check before
+  editing, not a blind find-and-replace across all 6. Source:
+  `firmware/stm32_ml_control_and_vision/BallBalancingBot/TouchProbe.cpp` lines 34-42, 173;
+  `docs/PROJECT_LOGBOOK.md` 14/10/2026.
 - [ ] **Two complete, never-invoked control subsystems compile into the confirmed-live firmware
   image itself; a 7th `BallBalancingBot`-bearing directory is missing from `CLAUDE.md`'s own
   duplication inventory** (flagged 2026-10-14, owner: whoever owns firmware orchestration — not

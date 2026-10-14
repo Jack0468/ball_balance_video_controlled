@@ -58,6 +58,61 @@ that actually classifies colour from pixels under the current sheet/lighting (au
 trained/learned classifier, relative colour matching, etc.) -- not a ground-truth shortcut, no
 matter how well-tested that shortcut is.
 
+### Full codebase audit (5 domains) + real fixes for the trivial/well-scoped findings
+
+User asked for a broad pass over the codebase for significant improvements, independent of
+today's ACT/marker-colour work. Dispatched read-only audits to all 4 domain agents
+(ml-vision, ml-audio, ml-multimodal, fpga) plus a general-purpose pass on `host_software/src/`
+and the confirmed-live firmware, each explicitly told to verify against current code (not infer
+from names/docstrings) and report significant findings only, not edit `docs/TODO.md`
+themselves -- curated and spot-checked personally before adding anything, same discipline as the
+original TODO-mining pass. 16 verified findings added across Vision/Audio/Shared-Fusion/
+Multimodal/FPGA/Hardware sections (see each section's 2026-10-14 entries for full detail). One
+real mistake caught before it committed: an early draft TODO note claimed `hybrid_qwen_act` and
+`smolvla_direct` both route colour commands through `MarkerClassifier` -- checked directly,
+neither does (Qwen grounds via its own VLM reasoning on the image; SmolVLA grounds on
+instruction text alone) -- corrected same session.
+
+Standout finding: `VLADataset`'s vocabulary (`core/dataset.py`) used space-separated keys
+("go red", "go blue", ...) that never matched any real logged `audio_command` string except
+"hold" -- confirmed directly against real production telemetry. Language conditioning via FiLM
+has been a complete no-op for every real training sample; `RT1LiteVLA` as actually trained has
+never been language-conditioned at all despite the architecture being built for it.
+
+**Real fixes made** (not just logged), each independently verified before committing:
+- `VLADataset`'s vocab corrected to the real underscore-separated command set (confirmed against
+  `minimal_vlm_policy.COLOR_COMMANDS`/`DIRECTIONAL_COMMANDS`, the authoritative source); its bare
+  `except:` narrowed to `(FileNotFoundError, OSError)` with fallback counting/logging. 5 new
+  tests (`ml_multimodal/tests/test_dataset.py`), all passing.
+- `audio_receiver_pytorch.py`'s `AudioCommandReceiver` no longer mutates a module-level
+  `LABEL_NAMES` global from `__init__` -- now `self.labels`, closing the exact bug class that
+  already cost ~80 accuracy points once in production (wrong label order). 3 new tests
+  (`ml_audio/tests/test_audio_receiver_pytorch_labels.py`) -- had to mock both
+  `AudioCommandClassifier` (bakes in fixed registered-buffer weights, not freely constructible)
+  and `sd.InputStream`: the first unmocked test run genuinely opened this machine's real
+  microphone, confirming the constructor has no test-safe path by default.
+- `firmware/stm32_ml_control_and_vision/BallBalancingBot/TouchProbe.cpp`'s `SCREEN_HEIGHT_MM`
+  corrected from `141.0` to the confirmed `142.0` source-of-truth value -- a clear, unambiguous
+  constant fix against a locked `CLAUDE.md` spec, not a judgment call. Explicitly NOT done:
+  re-flashing/re-verifying on real hardware, rescaling historical telemetry, or touching the 5
+  OTHER firmware files that define the same constant with unaudited live/stale status (per
+  `CLAUDE.md`'s own firmware-duplication caution -- found while making this fix, added as a
+  separate, distinct TODO note rather than blindly find-and-replacing all 6).
+
+**Deliberately NOT fixed, judgment call**: `main_onnx_shared_vision_nemo_audio.py`'s default
+NeMo checkpoint (the preliminary NOISE_MIX seed0 export, vs. the validated `nemo_matchboxnet_v1`)
+looked like a stale-default bug at first read, but the module's own docstring confirms it was
+wired up **at the user's explicit request** for integration-testing on 2026-09-15/16 -- reversing
+an explicit prior instruction just because a month has passed is a confirm-with-user call, not a
+trivial fix. Left as a flagged `docs/TODO.md` item instead of silently flipped.
+
+**Also deliberately NOT fixed here**: the `fliplr=0.5` bug (2 YOLO scripts + 1 notebook) and the
+2 stale/broken tests + 3 pytest-collection-abort files -- dispatched back to the `ml-vision`
+agent (already has full audit context) to fix within its own write boundary; the FPGA findings
+(need real synthesis/hardware timing checks this session can't run) and the `go_grey`/dead-
+firmware-subsystem findings (need a design decision or firmware-owner sign-off) are left as
+ledger items only.
+
 ## 13/10/2026
 
 ### Manifest-position fix for the 3 remaining call sites: patches drafted, write-boundary conflict found and not overridden
