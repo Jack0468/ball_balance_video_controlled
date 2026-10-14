@@ -2,6 +2,35 @@
 
 ## 14/10/2026
 
+### Preliminary, clearly-speculative FPGA↔photonic-bridge scaffolding — `fpga/optical_bridge/` — Arm 3 framing decision still unresolved
+
+Per the user's explicit request to start research-arm work ("plan or write preliminary code for
+an fpga that could interface with our photonic chip when we get there"), dispatched `fpga` to
+build on its own 2026-10-13 `optical_bridge_interface_spec_draft.md`, whose own conclusion was
+"don't proceed to any RTL/HLS or AXI4-Lite register-map design... until question 1 has a real
+answer" (real chip vs. simulation vs. commercial product — still unanswered, `[HUMAN]`). The
+agent resolved that tension the same way the spec draft itself did: wrote genuinely preliminary
+code, explicitly and repeatedly flagged as speculative, conditional on framing (a) only as a
+drafting convenience.
+
+Built `fpga/optical_bridge/` (new directory alongside `fpga/docs/optical_bridge_interface_spec_draft.md`):
+`optical_bridge_axi_lite.v` (behavioral AXI4-Lite register wrapper + calibration-table store
++ write-DAC/settle/read-ADC sequencing FSM, every N/C/DAC_WIDTH/ADC_WIDTH/settle-timing value
+a named, commented placeholder parameter, physical-side bus explicitly invented/generic, not
+any real part's protocol), a self-checking `sim/tb_optical_bridge_axi_lite.v`, and a README
+restating the §1 blocker up front with a full placeholder-to-real-requirement checklist.
+Verified independently (not just trusting the agent's report): re-read the real `xsim.log` —
+genuine Vivado 2025.2 xsim run (`xvlog`/`xelab`/`xsim`, no `iverilog` on this machine's PATH),
+`[TB] RESULT: ALL CHECKS PASSED (0 errors)` across all 4 test sequences (small N=3/C=2 and
+default N=10/C=10 parameter sets, each run twice including an un-reset re-trigger). Cleaned up
+one stray `xvlog.pb` artifact left at the repo root (a tooling side effect, not an intended
+deliverable) before committing; `sim/.gitignore` correctly scopes the rest of the simulator
+build output out of version control.
+
+**This is scaffolding, not progress on the actual blocker** — the Arm 3 framing decision
+(`docs/TODO.md` "FPGA" section) remains open and nothing here should be read as leaning toward
+answering it.
+
 ### `get_target_coords()` now distinguishes "no filter at all" from "filter unconfirmed" — fixes the `go_grey` silent-failure TODO item
 
 `TargetStateMachine.get_target_coords()` (`host_software/src/state_machine.py`) previously

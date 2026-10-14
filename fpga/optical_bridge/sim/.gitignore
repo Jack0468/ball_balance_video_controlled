@@ -1,0 +1,9 @@
+# Vivado xsim simulation build artifacts -- regenerate with the commands in
+# ../README.md, don't commit these.
+xsim.dir/
+*.wdb
+*.jou
+*.log
+*.pb
+dfx_runtime.txt
+webtalk*

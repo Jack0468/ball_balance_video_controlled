@@ -468,6 +468,17 @@ without any of these — the ledger below leads with exactly which items those a
   interface spec is written conditional on "real chip" since that's the only scenario with
   concrete numbers available -- this is a one-line question that unblocks or reframes the whole
   spec, not yet answered. Source: `fpga/docs/optical_bridge_interface_spec_draft.md` section 1.
+  **2026-10-14 update**: still unanswered, still blocking any real RTL/register-map design — but
+  a new `fpga/optical_bridge/` directory now holds a clearly-flagged PRELIMINARY/SPECULATIVE
+  behavioral Verilog sketch (AXI4-Lite register wrapper + calibration-table store + write-DAC/
+  settle/read-ADC FSM, parameterized N/C/DAC_WIDTH/ADC_WIDTH/settle-cycles with every value
+  called out as a placeholder) built explicitly as scaffolding for whenever this decision lands,
+  not a step toward deciding it. Testbench run for real via Vivado xsim 2025.2 (`xvlog`/`xelab`/
+  `xsim`, not `iverilog` — not on this machine's PATH despite `fpga/testbenches/camera_i2c/
+  run_tests.sh` assuming it, a separate pre-existing inconsistency, not fixed here): **all
+  checks passed, 0 errors** (verified directly against the real `xsim.log`, not just the
+  agent's report). See `fpga/optical_bridge/README.md` for the full placeholder-by-placeholder
+  checklist of what must be real before this sketch becomes a real design.
 - [ ] **Camera/UDP video streaming** `[FPGA/camera hardware — not the Jetson robot, but still
   real physical hardware to verify against, not software-closeable alone]` (status per
   `CLAUDE.md`'s Current State table: "separately unresolved") -- not touched this session,
