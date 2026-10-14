@@ -96,6 +96,62 @@ without any of these — the ledger below leads with exactly which items those a
   `docs/PROJECT_LOGBOOK.md` 13/10/2026
   entries (`f88877e`, `9c76748`, manifest-tier shipped) and 14/10/2026, "Reverted the
   manifest-position colour-ID fix out of all 4 live/operation call sites."
+- [ ] **The "permanently forbidden" `fliplr` augmentation bug is still live in 2 YOLO training
+  scripts + 1 Colab notebook, with real checkpoints trained while it was active** (flagged
+  2026-10-14, owner: ml-vision) — `docs/PROJECT_LOGBOOK.md` already documents finding and fixing
+  this exact bug once: `fliplr=0.5` silently corrupts pose-keypoint labels with strict spatial
+  semantics (e.g. Keypoint 0 = Top-Left) because a horizontal flip mirrors the image without
+  mirroring the semantic labels; `train_yolo.py` was fixed to `fliplr=0.0` with an explanatory
+  comment. That fix was never propagated to its two near-identical siblings —
+  `train_yolov8_platform_pose_markers.py` and `train_yolov8_platform_corners.py` (plus
+  `colab_train_yolo.ipynb` cell 3) both still pass `fliplr=0.5`. Confirmed directly (not
+  assumed): both scripts' hardcoded `name=` output directories
+  (`yolov8_platform_pose_markers_0728_v3`, `yolov8_platform_corners_0730_v1`) match real
+  checkpoint directories that exist under `host_software/ml_vision/models/` right now — those
+  checkpoints were, as far as verifiable from the code, trained with the corrupting augmentation
+  active. Real risk for Arm 1's still-open small-vs-medium (YOLO/ResNet) decision: if any of
+  these checkpoints (or a fresh Colab run from the same notebook cell) feeds that comparison, the
+  result is silently corrupted by an already-fixed-elsewhere failure mode. Fix is trivial going
+  forward (`fliplr=0.0` in the 3 call sites); existing affected checkpoints need retraining to be
+  trusted. Source: `train_yolov8_platform_pose_markers.py` line 49,
+  `train_yolov8_platform_corners.py` line 52, `colab_train_yolo.ipynb` cell 3; the original fix at
+  `train_yolo.py` line 67; `docs/PROJECT_LOGBOOK.md` ~line 2307.
+- [ ] **2 tests for the project's most historically bug-prone code paths are stale, testing an
+  API/schema that no longer exists — zero real coverage on auto-labeling and the CNN's I/O
+  contract** (flagged 2026-10-14, owner: ml-vision) — both confirmed by actually running them,
+  not inferred: `test_auto_label_shared_vision.py` calls `AUTO_LABEL.load_manifest(...)`, which
+  doesn't exist (`AttributeError`; the real loader is `load_manifest_full()`, requiring a schema
+  this test's fixture never matches). `test_shared_vision_training.py` expects a 3-tuple dataset
+  item and a 4-tuple model output including a `tracker_features` head that was deliberately
+  removed (the current code's own comment: "feature_head removed — it had no semantic target and
+  wasted ~5K params") — `ValueError: too many values to unpack`. Why it matters: `auto_label_
+  shared_vision.py` generates every ball/marker ground-truth label and has already shipped two
+  serious, previously-undetected bugs in exactly this area (the ball-label point-reflection sign
+  bug, ~34%-undersized marker masks — both in `CLAUDE.md`'s "Known-fixed bugs" list); its
+  manifest-loading/mask-rendering path currently has zero exercised test coverage, so a third
+  regression here would go unnoticed the same way the first two did. `evaluate_shared_vision_
+  backbone.py` was separately confirmed to correctly use the real current shapes — only these two
+  tests have drifted, not the production eval path. Fix is small (update both tests to the
+  current function name/schema and tuple arity), no production code changes needed. Source:
+  `ml_vision/tests/test_auto_label_shared_vision.py` line 34;
+  `ml_vision/tests/test_shared_vision_training.py` lines 39, 47;
+  `ml_vision/data_processing/auto_label_shared_vision.py` lines 22, 43-50;
+  `ml_vision/training/shared_vision_dataset.py` lines 84-115;
+  `ml_vision/training/train_cnn_2d_tracker_marker.py` lines 95-105.
+- [ ] **Running `pytest host_software/ml_vision/tests/` with no flags hard-aborts with zero
+  tests run, not a partial pass — a false-confidence trap for "I ran the tests, they're clean"**
+  (flagged 2026-10-14, owner: ml-vision) — `test_combined_controller.py` imports a module
+  (`combined_audio_video_controller`) that doesn't exist anywhere in the repo;
+  `test_openvino_yolo.py`/`test_yolo_ov.py` reference a YOLO/OpenVINO export path that doesn't
+  exist on disk. Pytest treats collection errors as fatal by default, so running the suite with
+  no flags gives `Interrupted: 3 errors during collection` and executes zero tests — the only way
+  to get real signal is already knowing to pass `--continue-on-collection-errors` or exclude
+  these 3 files, which is exactly the tribal knowledge this session's own "150 passed/1 skip"-
+  style claims have been quietly relying on. None of the 3 appear to test anything on the current
+  premier pipeline (dead module reference; stale export path) -- safe to delete, fix the path, or
+  mark with a proper skip/collect-ignore. Fix is small, a few hours. Source:
+  `ml_vision/tests/test_combined_controller.py` line 7; `test_openvino_yolo.py` line 15;
+  `test_yolo_ov.py` line 4.
 
 ## Audio (`ml-audio`)
 
