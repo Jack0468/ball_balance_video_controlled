@@ -2,6 +2,44 @@
 
 ## 14/10/2026
 
+### `get_target_coords()` now distinguishes "no filter at all" from "filter unconfirmed" — fixes the `go_grey` silent-failure TODO item
+
+`TargetStateMachine.get_target_coords()` (`host_software/src/state_machine.py`) previously
+collapsed two genuinely different cases into the same silent `(0.0, 0.0)` center fallback:
+(a) a real color with a seeded `_MarkerPositionFilter` that just hasn't confirmed yet (normal,
+transient, self-resolving), and (b) a color like `grey` that has no `marker_filters` entry at
+all (a real, producible audio command per `audio_receiver_onnx.py`'s `LABEL_NAMES` — permanent,
+never resolves). Fix: added `self._unfilterable_targets_warned: set` and a one-time
+`print(...)` warning in case (b), distinguishing it from case (a) which stays silent. Verified:
+2 new tests in `ml_vision/tests/test_state_machine_auto_hold.py`
+(`test_get_target_coords_warns_once_for_a_colour_with_no_filter_at_all`,
+`test_get_target_coords_does_not_warn_for_a_colour_with_a_real_but_unconfirmed_filter`), all 6
+tests in that file pass. Checked `maybe_auto_hold()` separately — it already failed safe for
+both cases (resets `_on_target_frames`, returns early) and needed no change.
+
+### Cheap first step on the `control_net.py` dt-mismatch TODO item — and a correction to that item's own framing
+
+Built `host_software/ml_jetson_vla/experiments/analyze_control_loop_dt.py`, a reusable tool
+computing a dt histogram from any telemetry CSV's `host_timestamp_ms` column (same column name
+in both `session_jetson_track4_*/telemetry.csv` and `run_policy_live.py`/`run_jetson_standalone.py`
+output — confirmed by reading both writers). Ran it against real training-data telemetry
+(`session_jetson_track4_20260915_151627/telemetry.csv`, 2596 ticks): mean dt **41.37ms (std
+2.91ms, implied ~24.2Hz)**, p50=40ms, p90=45ms, p99=50ms, max=57ms.
+
+While building this, caught and corrected a framing mistake in the TODO item itself (and in this
+script's own first draft): `session_jetson_track4_*` sessions are **not** an STM32-native/
+hardware-rate signal. Checked `data_collection/collect_vla_data.py` directly — it's a
+laptop-webcam collection loop (`cv2.CAP_PROP_FPS=30`, `cap.read()`-bound), the same category of
+camera-bound host loop a real Jetson deployment run is, not the STM32's fast internal loop. The
+real open question for `ControlNet`'s fixed-alpha `VEL_FILTER_ALPHA` EMA is "does a real Jetson
+deployment loop's dt distribution differ from this training-data collection loop's," not
+"hardware loop vs. software loop" — corrected in both the script's docstring/flag names
+(`--training-data`/`--deployment`, not `--stm32-native`/`--jetson-loop`) and the TODO item.
+Still blocked on real hardware: no `.telemetry.csv` from an actual `run_policy_live.py`/
+`run_jetson_standalone.py` run exists on this machine (checked `ml_jetson_vla/reports/` — only
+JSON result summaries were ever pasted into chat, not the sidecar CSVs) — needs to be copied
+back from the Jetson to complete the comparison.
+
 ### Reverted the manifest-position colour-ID fix out of all 4 live/operation call sites — real design-direction correction, not a bug
 
 User correction, directly quoted because it's the actual governing principle and shouldn't be

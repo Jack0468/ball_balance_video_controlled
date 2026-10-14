@@ -111,3 +111,36 @@ def test_maybe_auto_hold_resets_on_center_or_hold_target() -> None:
     sm.current_target_name = "hold"
     sm.maybe_auto_hold(0.0, 0.0, {})
     assert sm._on_target_frames == 0
+
+
+def test_get_target_coords_warns_once_for_a_colour_with_no_filter_at_all() -> None:
+    """2026-10-14 fix: "grey" is a real, producible audio command (confirmed via
+    audio_receiver_onnx.py's LABEL_NAMES) with no marker_filters entry -- it used to silently
+    resolve to permanent center-hold, indistinguishable from the normal "filter exists, not yet
+    confirmed" transient. Now logs a one-time warning distinguishing the two cases, via
+    `_unfilterable_targets_warned`."""
+    sm = TargetStateMachine()
+    sm.current_target_name = "grey"
+    assert "grey" not in sm.marker_filters  # the real, confirmed-missing case this fix targets
+
+    assert sm._unfilterable_targets_warned == set()
+    x, y = sm.get_target_coords()
+    assert (x, y) == (0.0, 0.0)  # behavior unchanged -- still falls back to center
+    assert sm._unfilterable_targets_warned == {"grey"}
+
+    # Second call for the same target must not re-warn (checked via the tracking set staying
+    # a single entry, not growing) -- repeat calls are the normal per-frame case.
+    sm.get_target_coords()
+    assert sm._unfilterable_targets_warned == {"grey"}
+
+
+def test_get_target_coords_does_not_warn_for_a_colour_with_a_real_but_unconfirmed_filter() -> None:
+    """The normal, NOT-broken case: a real color (has a marker_filters entry) that just hasn't
+    been seen/confirmed yet must stay silent -- only the no-filter-at-all case (above) warns."""
+    sm = TargetStateMachine()
+    sm.current_target_name = "blue"
+    assert "blue" in sm.marker_filters  # has a real filter, just unconfirmed
+
+    x, y = sm.get_target_coords()
+    assert (x, y) == (0.0, 0.0)
+    assert sm._unfilterable_targets_warned == set()  # no warning for this case

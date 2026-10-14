@@ -425,25 +425,40 @@ without any of these — the ledger below leads with exactly which items those a
   `self._image_fallback_count`. Verified by a new test confirming the counter increments
   correctly across repeated failures (`ml_multimodal/tests/test_dataset.py`). Source:
   `host_software/ml_multimodal/core/dataset.py`.
-- [ ] **Jetson expert-pipeline control-net port (`core/control_net.py`) is further along than
+- [~] **Jetson expert-pipeline control-net port (`core/control_net.py`) is further along than
   `CLAUDE.md`'s current framing suggests, and its velocity-filter timing is unverified against
   real achieved loop rate** `[the dt-comparison analysis itself needs no hardware -- existing
-  telemetry has what's needed; trusting the result on real motors is JETSON-HW]` (flagged
-  2026-10-14, owner: ml-multimodal) — this module is a real, working port already wired into
+  telemetry has what's needed; completing the comparison + trusting it on real motors is
+  JETSON-HW]` (flagged 2026-10-14, owner: ml-multimodal) — this module is a real, working port already wired into
   `runtime/run_jetson_standalone.py --remote-control` (Phase B), with matching firmware already
   built and functioning at `firmware/stm32_jetson_remote_control/BallBalancingBot/
   RemoteStepControl.cpp` (confirmed: parses `S,<a>,<b>,<c>`, clamps to +/-98 steps, fails safe to
   level after 3s stale). Worth noting since the project's own current-state framing describes
   this track as earlier-stage than the code actually is. Real open risk: `ControlNet.infer()`'s
   `VEL_FILTER_ALPHA=0.35` EMA (mirroring `RLControl.cpp`) is applied identically regardless of
-  `actual_dt`, but the Jetson's camera-frame-bound loop (30fps hard cap + ArUco + CNN + marker
-  overhead) almost certainly runs at a looser, less uniform dt than the STM32's native loop that
-  generated the as-deployed training distribution -- a fixed-alpha EMA's effective time constant
-  is dt-dependent, so the filtered velocity could lag more than the policy was ever exposed to.
-  Cheap first step, no hardware needed: compare the real dt histogram from existing
-  `session_jetson_track4_*/telemetry.csv` (STM32-native) against a dry-run of the Jetson loop's
-  achieved frame timing, before trusting Phase B output on real hardware. Source:
-  `host_software/ml_jetson_vla/core/control_net.py` (`VEL_FILTER_ALPHA`, line ~152-153);
+  `actual_dt` -- a fixed-alpha EMA's effective time constant is dt-dependent, so if the real
+  Jetson deployment loop's dt distribution differs from the training data's, the filtered
+  velocity could lag more than the policy was ever exposed to.
+  **Correction to this item's own original framing (2026-10-14):** `session_jetson_track4_*/
+  telemetry.csv` is NOT an STM32-native/hardware-rate signal as first assumed -- checked
+  `data_collection/collect_vla_data.py` directly: it's a laptop-webcam collection loop
+  (`cv2.CAP_PROP_FPS=30`, `cap.read()`-bound), i.e. the same *category* of camera-bound host
+  loop a real Jetson deployment run is, not the STM32's internal fast loop. The real open
+  question is "does the Jetson's camera-bound loop run at a different dt than the
+  training-data collection loop did," not "hardware loop vs. software loop."
+  **Done so far (no hardware needed):** built `ml_jetson_vla/experiments/analyze_control_loop_dt.py`
+  (reusable dt-histogram tool, same `host_timestamp_ms` column on both sides) and ran it against
+  real training-data telemetry (`session_jetson_track4_20260915_151627/telemetry.csv`, 2596
+  ticks): mean dt **41.37ms (std 2.91ms, implied ~24.2Hz)**, p50=40ms, p90=45ms, p99=50ms,
+  max=57ms -- i.e. the training data's own host loop never ran anywhere close to the 30fps cap,
+  let alone 120Hz.
+  **Still blocked, JETSON-HW:** no real `run_policy_live.py`/`run_jetson_standalone.py`
+  `.telemetry.csv` from an actual Jetson deployment run exists on this machine yet (checked
+  `ml_jetson_vla/reports/` -- the earlier test session's JSON summaries were pasted into chat,
+  not the sidecar CSVs) -- copy one back from the Jetson and re-run the tool with
+  `--deployment <path>` to get the real comparison number. Source:
+  `host_software/ml_jetson_vla/core/control_net.py` (`VEL_FILTER_ALPHA`, line 49);
+  `host_software/ml_jetson_vla/experiments/analyze_control_loop_dt.py` (new);
   `firmware/stm32_jetson_remote_control/BallBalancingBot/RemoteStepControl.cpp`.
 
 ## FPGA

@@ -188,6 +188,16 @@ class TargetStateMachine:
         # but we only run the handler when the command changes.
         self._last_command = None
 
+        # Fixed 2026-10-14: a target name with NO entry in marker_filters at all (e.g. "grey" --
+        # a real, producible audio command, confirmed via audio_receiver_onnx.py's LABEL_NAMES,
+        # that MarkerClassifier never emits -- plus the never-real "cyan"/"purple"/"orange"/
+        # "pink"/"brown" entries above) used to silently resolve to permanent center-hold,
+        # indistinguishable from the normal "filter exists, just not confirmed yet" transient.
+        # Logged once per target name (not every frame) so this is visible instead of silent --
+        # see docs/TODO.md's Shared/Fusion section for the real fix options this doesn't decide
+        # between (reconcile valid_targets, or give vision a real class for the colour).
+        self._unfilterable_targets_warned: set = set()
+
     # -----------------------------------------------------------------
     # Command handling (edge-triggered)
     # -----------------------------------------------------------------
@@ -382,5 +392,17 @@ class TargetStateMachine:
         if filt is not None and filt.position is not None:
             return filt.position
 
-        # Not yet confirmed for this target -> fall back to center.
+        if filt is None and self.current_target_name not in self._unfilterable_targets_warned:
+            # Distinct from "not yet confirmed" below: this target has NO filter at all and
+            # never will until marker_filters/valid_targets is reconciled -- will fall back to
+            # center forever, not just until the marker is first seen.
+            self._unfilterable_targets_warned.add(self.current_target_name)
+            print(
+                f"WARNING: TargetStateMachine target {self.current_target_name!r} has no "
+                f"marker_filters entry -- falling back to center PERMANENTLY for this target "
+                f"(not a transient 'still confirming' state). See docs/TODO.md Shared/Fusion."
+            )
+
+        # Not yet confirmed for this target (or no filter exists at all, logged above) ->
+        # fall back to center.
         return 0.0, 0.0
