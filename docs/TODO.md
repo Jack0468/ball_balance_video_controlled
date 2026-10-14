@@ -85,7 +85,15 @@ without any of these — the ledger below leads with exactly which items those a
   from pixels correctly under the current sheet/lighting — per-session/per-sheet HSV
   auto-calibration, a trained/learned colour classifier, relative/contrastive colour matching, or
   explicit sheet-identity detection paired with sheet-specific *pixel* calibration loaded at
-  runtime (not a position-to-ground-truth lookup). Source: `docs/PROJECT_LOGBOOK.md` 13/10/2026
+  runtime (not a position-to-ground-truth lookup). **Priority note (2026-10-14, corrected)**: this
+  blocks trusting any live colour-grounding result from the policies that actually route through
+  `MarkerClassifier` — `hybrid_small_cnn_act` (`SmallCnnGroundingPolicy`) and the original
+  production scripts (`run_jetson_standalone.py`, both `main_onnx_shared_vision_*.py`). It does
+  NOT affect `hybrid_qwen_act` or `smolvla_direct` — checked directly, not assumed: Qwen grounds
+  itself via its own VLM reasoning directly on the image (`MinimalVLMPolicy`/`QwenVLBackend`,
+  never touches `MarkerClassifier`), and `SmolVLADirectPolicy` grounds itself on the instruction
+  text alone (no `_Grounder`, no marker classifier reference anywhere in its construction). Source:
+  `docs/PROJECT_LOGBOOK.md` 13/10/2026
   entries (`f88877e`, `9c76748`, manifest-tier shipped) and 14/10/2026, "Reverted the
   manifest-position colour-ID fix out of all 4 live/operation call sites."
 
