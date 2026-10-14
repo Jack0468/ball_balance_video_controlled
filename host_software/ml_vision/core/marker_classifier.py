@@ -28,6 +28,14 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import cv2
 import numpy as np
 
+# 2026-10-14 (REOPENED): the real, still-open fix for the aruco_markers_01-vs-
+# _03 sheet/lighting failure (see this file's manifest_path tier below, which
+# was the WRONG fix -- reverted per docs/PROJECT_LOGBOOK.md 14/10/2026, "using
+# ground truth at inference time defeats the project's actual purpose"). See
+# core/color_calibration.py's module docstring for the full method: a
+# per-session, pixel-only (never manifest-reading) adaptive colour calibrator.
+from .color_calibration import AdaptiveColorCalibrator
+
 TOUCHPAD_W_MM = 187.5
 TOUCHPAD_H_MM = 142.0
 PAPER_MARGIN_MM = 6.0
@@ -207,12 +215,16 @@ class MarkerDetection:
     # 13/10/2026 sheet-identity fix (see _load_feature_positions_touch_mm() and
     # MarkerClassifier's manifest_path param below): which tier actually produced
     # `color` for this blob -- "manifest_position" (ground-truth sheet lookup,
-    # lighting-invariant) or "hsv_bins" (the original, lighting-sensitive classical-
-    # CV path). New field with a fixed default -- every existing consumer
-    # (main_onnx_shared_vision_audio.py, run_jetson_standalone.py,
-    # small_cnn_grounder.py, ...) only ever reads .color/.shape/.x_mm/.y_mm/.area_px
-    # by attribute, never positionally/by field count, so this is additive and does
-    # not change behavior for any caller that doesn't look at it.
+    # EVALUATION/TRAINING ONLY, see manifest_path's own docstring -- never wire
+    # into live operation), "adaptive_calibration" (2026-10-14 REOPENED fix --
+    # this session's own camera-derived colour table, see color_calibration.py;
+    # safe for live operation, never reads the manifest), or "hsv_bins" (the
+    # original, lighting-sensitive static-threshold path). New field with a
+    # fixed default -- every existing consumer (main_onnx_shared_vision_audio.py,
+    # run_jetson_standalone.py, small_cnn_grounder.py, ...) only ever reads
+    # .color/.shape/.x_mm/.y_mm/.area_px by attribute, never positionally/by
+    # field count, so this is additive and does not change behavior for any
+    # caller that doesn't look at it.
     classification_source: str = "hsv_bins"
 
 
@@ -496,12 +508,28 @@ class MarkerClassifier:
         # _load_feature_positions_touch_mm()'s docstring for the fix itself.
         manifest_path: Optional[Union[str, Path]] = None,
         manifest_match_radius_mm: float = DEFAULT_MANIFEST_MATCH_RADIUS_MM,
+        # 2026-10-14 REOPENED fix (docs/TODO.md's "Marker colour classification
+        # needs a robust design" item, corrected framing): the manifest_path
+        # tier above is ground truth and is explicitly restricted to
+        # evaluation/training scripts (see its own docstring) -- it must never
+        # be the thing resolving colour for a live/operation call site. This is
+        # the real live-operation fix: an optional, caller-owned
+        # AdaptiveColorCalibrator (core/color_calibration.py) that derives its
+        # own position->colour table purely from this session's own observed
+        # camera pixels (never reads hardware/platform_templates/). None by
+        # default -- every existing call site constructs MarkerClassifier()
+        # without this argument, so behavior is byte-for-byte unchanged unless
+        # a caller explicitly opts in. Caller-owned (not built internally from
+        # a bool flag) so the same calibrator instance can be inspected,
+        # reset() on a sheet change, or shared/logged by the caller.
+        adaptive_calibrator: Optional[AdaptiveColorCalibrator] = None,
     ) -> None:
         self.input_size = input_size
         self.mask_threshold = mask_threshold
         self.min_blob_area_px = min_blob_area_px
         self.fallback_hue_threshold = fallback_hue_threshold
         self.manifest_match_radius_mm = manifest_match_radius_mm
+        self.adaptive_calibrator = adaptive_calibrator
         self._manifest_features: List[Dict[str, Any]] = (
             _load_feature_positions_touch_mm(manifest_path) if manifest_path is not None else []
         )
@@ -570,20 +598,41 @@ class MarkerClassifier:
                 }
             )
 
-        # Color identification, two tiers:
+        # Feed this frame's blobs to the adaptive calibrator (if the caller
+        # supplied one) before resolving any colour this frame -- it only
+        # accumulates per-slot statistics and never itself reads a single
+        # pixel's colour decision, so observing now vs. after classification
+        # makes no difference to this frame's own output, only to how soon
+        # calibration's warm-up condition is met. No-op once already
+        # calibrated (see AdaptiveColorCalibrator.observe()).
+        if self.adaptive_calibrator is not None:
+            for info in blob_infos:
+                mean_h, mean_s, mean_v = info["mean_hsv"]
+                self.adaptive_calibrator.observe(mean_h, mean_s, mean_v, info["x_mm"], info["y_mm"])
+            self.adaptive_calibrator.maybe_calibrate()
+
+        # Color identification, three tiers (in order):
         #   1. Manifest-position lookup (self._manifest_features, only non-empty when
-        #      `manifest_path` was supplied at construction) -- a static marker's color
-        #      is fixed, by design, for the whole session on whatever sheet is actually
-        #      mounted, so matching this blob's own (x_mm, y_mm) against the active
-        #      sheet's known feature slots and reading `color` straight off the manifest
-        #      never inspects a single pixel of this frame. Lighting/camera/ink-invariant
-        #      by construction -- the real fix for the 13/10/2026 "_01 vs _03, different
-        #      sheet + lighting" failure (see _load_feature_positions_touch_mm()).
-        #   2. _classify_color()'s HSV bins (original path, unchanged) -- used whenever
-        #      no manifest was supplied, or this specific blob doesn't land within
-        #      manifest_match_radius_mm of any still-unclaimed slot (wrong sheet loaded,
-        #      a spurious/off-position blob, or a real marker reading unusually far off
-        #      its true spot that frame).
+        #      `manifest_path` was supplied at construction) -- EVALUATION/TRAINING
+        #      ONLY (see manifest_path's own docstring and docs/PROJECT_LOGBOOK.md
+        #      14/10/2026's revert) -- reads a static marker's known-correct colour
+        #      straight off the sheet manifest by matched physical slot position.
+        #      Lighting/camera/ink-invariant by construction, but it is ground
+        #      truth, not something the vision pipeline determined -- must never be
+        #      the tier a live/operation call site relies on.
+        #   2. Adaptive calibration (self.adaptive_calibrator, only used once
+        #      `is_calibrated`) -- the real live-operation fix for the same
+        #      lighting/sheet-identity failure (2026-10-14 REOPENED): a
+        #      position->colour table this SESSION's own camera derived via
+        #      relative/ordinal reasoning over its own observed markers (see
+        #      core/color_calibration.py). Never reads the manifest.
+        #   3. _classify_color()'s HSV bins (original path, unchanged) -- the
+        #      always-available fallback/safety net: used whenever no manifest
+        #      was supplied, no calibrator was supplied, the calibrator hasn't
+        #      finished its warm-up yet, or this specific blob doesn't land near
+        #      any resolved slot from tier 1/2 (wrong sheet loaded, a spurious/
+        #      off-position blob, or a real marker reading unusually far off its
+        #      true spot that frame).
         #
         # Largest-area-first claim order (only exercised when the manifest tier is
         # active -- with it off, every index's own iteration order is unaffected, so
@@ -616,6 +665,12 @@ class MarkerClassifier:
                     color = str(self._manifest_features[best_idx]["color"])
                     claimed_feature_indices.add(best_idx)
                     source = "manifest_position"
+
+            if color is None and self.adaptive_calibrator is not None:
+                calibrated_color = self.adaptive_calibrator.classify_position(info["x_mm"], info["y_mm"])
+                if calibrated_color is not None:
+                    color = calibrated_color
+                    source = "adaptive_calibration"
 
             if color is None:
                 color = _classify_color(info["mean_hsv"], fallback_hue_threshold=self.fallback_hue_threshold)

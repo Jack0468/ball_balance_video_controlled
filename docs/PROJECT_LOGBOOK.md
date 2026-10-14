@@ -2,6 +2,48 @@
 
 ## 14/10/2026
 
+### Real, pixel-only marker-colour fix built — `AdaptiveColorCalibrator` — the project's own top-priority remaining item
+
+Dispatched `ml-vision` for the reopened "Marker colour classification needs a robust design, not
+another hardcoded fix" TODO item. New `core/color_calibration.py`'s `AdaptiveColorCalibrator`:
+tracks each spatially-stable blob slot across frames (same "a marker is a static physical object
+for the session" fact `state_machine.py`'s `_MarkerPositionFilter` already relies on), then
+assigns colour by *relative* reasoning only — the single clearly-darkest slot (by brightness
+rank, not an absolute threshold) becomes "black"; the remaining chromatic slots get assigned to
+whichever contiguous run of the fixed hue order `[red, yellow, green, blue]` best fits the
+*whole* observed hue set together (`_best_fit_canonical_run`), not nearest-centre-per-point —
+this is the part that actually survives a global hue/lighting shift, unlike the existing
+nearest-hue fallback tier. Never reads `hardware/platform_templates/` — pixel-only, by
+construction, the thing the 14/10 revert required.
+
+Wired into `MarkerClassifier` as a new opt-in `adaptive_calibrator=` constructor param — three
+tiers in order: `manifest_path` (unchanged, explicitly re-documented as eval/training-only),
+`adaptive_calibrator` (the new live-operation fix), then the original HSV bins (unchanged
+fallback). Verified additive: every existing call site constructs `MarkerClassifier()` bare, so
+`adaptive_calibrator is None` and behavior is byte-for-byte unchanged unless a caller explicitly
+opts in.
+
+Independently re-verified here, not just trusted from the agent's report: ran both new test
+files myself (17/17 pass) and the full `ml_vision/tests/` suite (42 passed, 2 skipped, 2
+errors — same 2 pre-existing, unrelated errors documented before this change). Real numbers:
+on 1200 real `_03` frames (`session_20260810_114330`), adaptive calibration matches or beats
+static bins on every colour with zero regressions (e.g. `blue_triangle` 3.9%->99.8%); on the
+actual logged real `aruco_markers_01` failure frame (13/10/2026 entry), 3/5 correct -> **5/5
+correct**, with zero manifest access — the real target case this item exists for.
+
+Known, explicitly documented, not-yet-solved limitation: assumes each position slot is a
+distinct colour, which is wrong for `aruco_markers_02` (4 real shapes are all "blue" by design) —
+pinned by a test asserting the current, known-incorrect behaviour rather than hiding it; no real
+`_02` capture exists yet to design a fix against.
+
+Two things deliberately left open, both correctly flagged back rather than done unilaterally:
+wiring `adaptive_calibrator=` into the 4 actual live call sites (2 of them sit in
+`ml_jetson_vla/`, outside ml-vision's write boundary, and this is exactly the kind of
+operation-wiring decision the 14/10 revert said should never be made silently again — handed to
+ml-multimodal next), and live-Jetson re-verification against genuinely independent real `_01`
+frames (today's numbers replay the single logged frame to satisfy warm-up, not independent
+captures).
+
 ### Real regression coverage added for the production audio Conv1D pipeline (offline/live feature parity + label-order sanity)
 
 Dispatched `ml-audio` for the TODO item scoping the project's two historical

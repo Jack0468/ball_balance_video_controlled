@@ -96,6 +96,35 @@ without any of these — the ledger below leads with exactly which items those a
   `docs/PROJECT_LOGBOOK.md` 13/10/2026
   entries (`f88877e`, `9c76748`, manifest-tier shipped) and 14/10/2026, "Reverted the
   manifest-position colour-ID fix out of all 4 live/operation call sites."
+  **2026-10-14 real fix built (pixel-only, no ground truth)**: new
+  `core/color_calibration.py`'s `AdaptiveColorCalibrator` — a per-session, pixel-only calibrator
+  that tracks each spatially-stable blob slot across frames and assigns colour via *relative*
+  reasoning (darkest slot -> black by brightness rank; remaining slots -> whichever contiguous
+  run of the fixed hue order `[red,yellow,green,blue]` best fits the *whole* observed hue set
+  together, not nearest-centre-per-point) — never reads the manifest. Wired into
+  `MarkerClassifier` as a new opt-in `adaptive_calibrator=` tier (between the still-eval-only
+  `manifest_path` tier and the original HSV-bin fallback); bare `MarkerClassifier()` construction
+  verified byte-for-byte unchanged (every existing call site still constructs it bare).
+  Independently re-verified (not just trusting the agent's report): full `ml_vision/tests/` run
+  -> **42 passed, 2 skipped, 2 errors** (same 2 pre-existing unrelated errors as before — see
+  this file's own note on `test_preprocessor.py`/`test_yolo_tracking.py`), 17 new tests all
+  passing. Real numbers on `session_20260810_114330` (1200 real `_03` frames): adaptive
+  calibration matches or beats static bins on every colour (e.g. `blue_triangle` 3.9%->99.8%,
+  `black_circle` 95.2%->100.0%). On the actual real documented `_01` failure (the one logged
+  frame from the 13/10 entry): 3/5 correct (static bins) -> **5/5 correct** (adaptive
+  calibration), with zero manifest access. **Known, documented, not-yet-solved limitation**:
+  assumes each position slot is a visually distinct colour — true for `aruco_markers_01`/`_03`
+  (confirmed, real data), **wrong for `aruco_markers_02`** (4 real shapes are all "blue" by
+  design) — no real `_02` capture exists yet to design against.
+  **Still open**: (1) wiring `adaptive_calibrator=` into the 4 actual live call sites
+  (`small_cnn_grounder.py`, `run_jetson_standalone.py`, both `main_onnx_shared_vision_*.py`) —
+  ml-vision deliberately did not do this itself (2 of the 4 sit in `ml_jetson_vla/`, outside its
+  write boundary; this is also the exact kind of operation-wiring decision the 14/10 revert said
+  should never be made silently again) — handed to ml-multimodal to review and decide. (2)
+  Live-Jetson re-verification against genuinely independent real `_01` frames (today's numbers
+  replay the single logged frame several times to satisfy warm-up, not independent captures).
+  Source: `host_software/ml_vision/core/color_calibration.py` (new);
+  `host_software/ml_vision/core/marker_classifier.py` (`adaptive_calibrator` tier, additive).
 - [x] **The "permanently forbidden" `fliplr` augmentation bug was still live in 2 YOLO training
   scripts + 1 Colab notebook, with real checkpoints trained while it was active** (flagged
   2026-10-14, fixed same day, commit `db5fee2`) — `train_yolov8_platform_pose_markers.py`,
