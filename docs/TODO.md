@@ -247,6 +247,68 @@ without any of these — the ledger below leads with exactly which items those a
   real physical hardware to verify against, not software-closeable alone]` (status per
   `CLAUDE.md`'s Current State table: "separately unresolved") -- not touched this session,
   carried over from project state.
+- [ ] **`stepper_motor_controller.v`'s step-rate constants are calibrated for 48MHz; porting to
+  the Zynq fabric clock (100MHz) silently changes real motor behaviour** `[needs synthesis/
+  hardware timing check, not Jetson]` (flagged 2026-10-14, owner: fpga) — `p_term = abs_error <<
+  6` and the `700` max-speed clamp ("~2kHz step rate max") are tuned against a 24-bit phase
+  accumulator validated specifically at 48MHz (confirmed in `fpga/tests/motor_test/test_motor.py`'s
+  `pll.SetReference(48.0)` and `single_motor_test_top.v`'s "PLL0 48MHz"). This project's own
+  `zynq_camera_sys` block design (`camera_system.hwh`) sets `PCW_FPGA0_PERIPHERAL_FREQMHZ = 100` —
+  if Domain 4 ports this module into that same block design (the precedent its own doc comment
+  points to) without re-deriving these constants, the real max step rate silently becomes
+  ~4.17kHz instead of ~2kHz and the whole proportional-gain curve shifts, with no compile/sim
+  error to catch it (same class of clocking assumption this project has already been burned by
+  once). Fix: re-derive `<<6`/`700` for the real target clock, or parameterize on `CLK_FREQ_HZ`.
+  Source: `fpga/main_controller/stepper_motor_controller.v` lines 19-23.
+- [ ] **`PIDControllers.cpp`'s hardcoded `dt=0.001` (1000Hz) contradicts `CLAUDE.md`'s own binding
+  120Hz/8.3ms loop-rate constraint** `[needs a timing-architecture decision, not just a constant
+  edit]` (flagged 2026-10-14, owner: fpga) — `integ_x += error_x * dt` /
+  `deriv_x = (error_x - error_prev_x) / dt` both use this constant directly; at a real ~8.3ms call
+  interval the integral term under-accumulates by ~8.3x and the derivative term is over-amplified
+  by ~8.3x relative to whatever the gains (`kp=0.8, ki=0.2, kd=0.09`) were tuned against.
+  `balance_controller` is `s_axilite`-controlled (PS-polled), and nothing currently guarantees a
+  deterministic call interval -- the real fix needs that invocation mechanism (timer-triggered vs.
+  software-scheduled polling) decided first, not just a new constant. Source:
+  `fpga/hls_hardware/PIDControllers.cpp` lines 13, 41, 44; `CLAUDE.md` System Constraints.
+- [ ] **No reset path for `balance_controller`'s persistent integrator state, and `ik_solver`
+  fails silently with no fault signal** `[needs Vitis HLS semantics check + a design decision]`
+  (flagged 2026-10-14, owner: fpga) — `error_prev_x/y`, `integ_x/y` are `static` C variables
+  persisting across every AXI-Lite-triggered call with no exposed port to clear them (e.g. on
+  ball-drop/re-placement -- plausible in practice given ball-drop detection doesn't exist yet,
+  see the Task-Success-Rate item above); genuinely unconfirmed whether Vitis HLS 2025.2's default
+  `ap_rst` resets static C state or only control-FSM state -- needs checking, not assuming either
+  way. Separately: `ik_solver` (`InverseKinematics.cpp` lines 164-167) silently returns
+  `{alpha:0, theta2:0}` on an unreachable target, propagated straight to `out_thetaA/B/C` with no
+  fault bit anywhere on the interface -- one leg going unreachable would silently command that
+  motor to 0° while the other two keep running, a real asymmetric-platform-motion risk once wired
+  to real motors. Source: `fpga/hls_hardware/PIDControllers.cpp` lines 16-19;
+  `fpga/hls_hardware/InverseKinematics.cpp` lines 164-167.
+- [ ] **`calculate_triangle`'s tilt model may only rotate the Z-coordinate of each attachment
+  point, not the full rigid-body position -- unverified, exactly what the planned testbench
+  should target** `[needs the Domain-4 digital testbench, at/near max tilt specifically]` (flagged
+  2026-10-14, owner: fpga) — the loop (`InverseKinematics.cpp` lines 122-128) explicitly comments
+  "keep x/y unchanged" and only computes rotated Z. At the system's own `max_angle=12.5°` clamp,
+  the lateral displacement this would ignore is `~86.2mm × sin(12.5°) ≈ 18.6mm` against an 86.2mm
+  arm radius -- roughly 21%, not obviously negligible. Not asserted as a bug (could be a
+  deliberate, correct simplification for this delta robot's real joint geometry) -- flagged
+  because it's unverified and would be invisible at small tilt angles, so the first testbench
+  case should specifically exercise near-max tilt, not just small angles. Source:
+  `fpga/hls_hardware/InverseKinematics.cpp` lines 122-128; `PIDControllers.cpp` line 10
+  (`max_angle`).
+- [ ] **Repeated, unshared transcendental HLS math calls — real but unverified risk against the
+  220-DSP ceiling** `[needs a real `csynth` run, not assumable from source alone]` (flagged
+  2026-10-14, owner: fpga) — `get_angles()` calls `ik_solver` three times (once per leg); each
+  call plus `calculate_triangle` pulls in `hls::sin/cos/sqrt(x2)/acos/atan2` on
+  `ap_fixed<32,16>`, with no `#pragma HLS ALLOCATION` or other resource-sharing directive anywhere
+  in either file -- absent automatic tool inference, this likely synthesizes 3 separate hardware
+  instances of each transcendental op rather than time-multiplexing one. Whether that fits inside
+  220 DSP slices is genuinely unknown without running synthesis (not asserted either way).
+  Separately unconfirmed: whether `hls::sin/cos/sqrt/acos/atan2` in Vitis HLS 2025.2's
+  `hls_math.h` accept `ap_fixed<32,16>` directly as written -- check against a real `csynth` run
+  or current UG1399 docs before assuming it compiles as-is. Note: `fpga/external_ip/
+  CORDIC-Unit-main/` already has a working CORDIC IP core with its own testbenches, unused here --
+  worth a look if `hls_math.h`'s built-in trig proves too resource-hungry. Source:
+  `fpga/hls_hardware/InverseKinematics.cpp` lines 181-210.
 
 ## Hardware (human/EE decisions — not an agent's call)
 
