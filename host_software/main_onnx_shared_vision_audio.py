@@ -52,6 +52,7 @@ from host_software.ml_vision.data_processing.auto_label_shared_vision import (
     load_manifest_full,
     warp_to_platform,
 )
+from host_software.ml_vision.core.color_calibration import AdaptiveColorCalibrator
 from host_software.ml_vision.core.marker_classifier import MarkerClassifier
 from host_software.ml_vision.core.keyboard_command_receiver import KeyboardCommandReceiver
 from host_software.ml_vision.core.scripted_command_sequencer import ScriptedCommandSequencer
@@ -398,7 +399,19 @@ def main() -> None:
     # generating labels), not live operation -- this script drives the real robot, and the
     # CNN+MarkerClassifier pipeline must be the thing actually determining marker colour here,
     # not a ground-truth lookup standing in for it.
-    marker_classifier = MarkerClassifier(input_size=INPUT_SIZE, mask_threshold=args.mask_threshold)
+    #
+    # 2026-10-14 REOPENED fix, wired in (not just left as an opt-in capability): one
+    # AdaptiveColorCalibrator for this process's single marker_classifier instance (never
+    # shared/global -- host_software/ml_vision/core/color_calibration.py), deriving a
+    # position->colour table purely from THIS session's own observed camera pixels, never from
+    # hardware/platform_templates/. marker_classifier is constructed once here and driven by a
+    # single continuous `while True` loop below for the life of one process -- exactly the "one
+    # sheet mounted per session" shape the calibrator assumes; a real sheet swap means
+    # restarting this script, which naturally creates a fresh calibrator.
+    adaptive_calibrator = AdaptiveColorCalibrator()
+    marker_classifier = MarkerClassifier(
+        input_size=INPUT_SIZE, mask_threshold=args.mask_threshold, adaptive_calibrator=adaptive_calibrator
+    )
 
     # ---- 2. ArUco / Warp Init ----
     aruco_markers, _features, platform_w_mm, platform_h_mm = load_manifest_full(GROUND_TRUTH_MANIFEST)

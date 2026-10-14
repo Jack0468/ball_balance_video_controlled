@@ -43,6 +43,7 @@ if _HOST_SOFTWARE_DIR not in sys.path:
 
 from ml_jetson_vla.core import small_cnn_grounder as scg  # noqa: E402
 from ml_jetson_vla.core.policy_interface import Policy, PolicyCommand  # noqa: E402
+from host_software.ml_vision.core.color_calibration import AdaptiveColorCalibrator  # noqa: E402
 
 _MARKERS = [{"id": i, "center_mm": [float(i), float(i)]} for i in range(4)]
 _HOMOGRAPHY = np.eye(3)
@@ -125,6 +126,39 @@ class ConstructionAndProtocolTests(unittest.TestCase):
         self.assertEqual(list(inspect.signature(policy.reset).parameters), [])
         policy.reset()
         self.assertEqual(policy.last_debug, {})
+
+
+class AdaptiveCalibratorWiringTests(unittest.TestCase):
+    """2026-10-14 REOPENED fix: SmallCnnGroundingPolicy must construct its own
+    AdaptiveColorCalibrator and pass it into MarkerClassifier (see
+    docs/PROJECT_LOGBOOK.md/docs/TODO.md) -- never ground truth, never shared/global
+    across instances."""
+
+    def test_constructs_a_real_adaptive_calibrator_and_passes_it_to_marker_classifier(self) -> None:
+        captured_kwargs: dict = {}
+
+        def _capturing_marker_classifier(**kw):
+            captured_kwargs.update(kw)
+            return _FakeMarkerClassifier([])
+
+        fake_ort = mock.Mock()
+        fake_ort.SessionOptions.return_value = mock.Mock()
+        fake_ort.InferenceSession.return_value = _FakeSession()
+        with mock.patch.object(scg, "ort", fake_ort), \
+             mock.patch.object(scg, "load_manifest_full", return_value=(_MARKERS, [], 187.5, 142.0)), \
+             mock.patch.object(scg, "MarkerClassifier", side_effect=_capturing_marker_classifier):
+            policy = scg.SmallCnnGroundingPolicy()
+
+        self.assertIn("adaptive_calibrator", captured_kwargs)
+        self.assertIsInstance(captured_kwargs["adaptive_calibrator"], AdaptiveColorCalibrator)
+        self.assertIs(policy.adaptive_calibrator, captured_kwargs["adaptive_calibrator"])
+
+    def test_two_instances_get_two_distinct_calibrators_not_shared_global_state(self) -> None:
+        policy1 = _build()
+        policy2 = _build()
+        self.assertIsInstance(policy1.adaptive_calibrator, AdaptiveColorCalibrator)
+        self.assertIsInstance(policy2.adaptive_calibrator, AdaptiveColorCalibrator)
+        self.assertIsNot(policy1.adaptive_calibrator, policy2.adaptive_calibrator)
 
 
 class UnrecognisedInstructionTests(unittest.TestCase):

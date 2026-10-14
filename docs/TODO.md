@@ -116,15 +116,53 @@ without any of these — the ledger below leads with exactly which items those a
   assumes each position slot is a visually distinct colour — true for `aruco_markers_01`/`_03`
   (confirmed, real data), **wrong for `aruco_markers_02`** (4 real shapes are all "blue" by
   design) — no real `_02` capture exists yet to design against.
-  **Still open**: (1) wiring `adaptive_calibrator=` into the 4 actual live call sites
-  (`small_cnn_grounder.py`, `run_jetson_standalone.py`, both `main_onnx_shared_vision_*.py`) —
-  ml-vision deliberately did not do this itself (2 of the 4 sit in `ml_jetson_vla/`, outside its
-  write boundary; this is also the exact kind of operation-wiring decision the 14/10 revert said
-  should never be made silently again) — handed to ml-multimodal to review and decide. (2)
-  Live-Jetson re-verification against genuinely independent real `_01` frames (today's numbers
-  replay the single logged frame several times to satisfy warm-up, not independent captures).
-  Source: `host_software/ml_vision/core/color_calibration.py` (new);
-  `host_software/ml_vision/core/marker_classifier.py` (`adaptive_calibrator` tier, additive).
+  **2026-10-14, wired into all 4 live call sites (ml-multimodal, reviewed not rubber-stamped)**:
+  `small_cnn_grounder.py`'s `SmallCnnGroundingPolicy` and `run_jetson_standalone.py`'s
+  `JetsonExpertPolicy` each now construct `self.adaptive_calibrator = AdaptiveColorCalibrator()`
+  in `__init__` and pass it to their own `MarkerClassifier(...)`; `main_onnx_shared_vision_audio.py`
+  and `main_onnx_shared_vision_nemo_audio.py` (root-level, touched by ml-multimodal for wiring
+  consistency with the other 2) do the same at their single `marker_classifier = MarkerClassifier(...)`
+  construction site in `main()`. One calibrator instance per `MarkerClassifier` instance in every
+  case — never shared/global. Compatibility checked, not assumed: all 4 sites construct their
+  `MarkerClassifier` exactly ONCE per process and drive it from a single continuous loop for that
+  process's whole lifetime (`run_jetson_standalone.py`/both `main_onnx_shared_vision_*.py`'s
+  `while True:`; `SmallCnnGroundingPolicy`'s instance persists for `HybridSmallCnnActPolicy`'s
+  whole life, surviving `_orchestrator.reset()` calls between episodes within the same process,
+  which is correct since the physical sheet doesn't change between episodes) — exactly the
+  "one sheet mounted per session" shape the calibrator's warm-up design assumes. No call site
+  wires `calibrator.reset()` into its own `.reset()`/episode-reset path, deliberately: a real
+  sheet swap requires restarting the process (which naturally creates a fresh calibrator), and
+  resetting on every episode would discard an already-good calibration for no reason. The live
+  sheet these 4 sites actually target (`aruco_markers_01`, per the sheet-mismatch this item is
+  about) has 4 distinct chromatic colours + black — the calibrator's supported case, not the
+  known-wrong `aruco_markers_02` (4-same-colour) case, so that documented limitation does not
+  block this wiring. Verified for real: `pytest host_software/ml_vision/tests/` ->
+  **42 passed, 2 skipped, 2 errors** (same 2 pre-existing `test_preprocessor.py`/
+  `test_yolo_tracking.py` errors, unchanged, confirming the untouched `ml_vision/` files still
+  behave identically); `pytest host_software/ml_jetson_vla/tests/` -> **155 passed, 1 skipped**
+  (150 prior + 5 new: 2 added to `test_small_cnn_grounder_cpu.py`, 3 in a new
+  `test_run_jetson_standalone_cpu.py` that does a REAL, unmocked `JetsonExpertPolicy` construction
+  — real ONNX session, real `MarkerClassifier`, real `AdaptiveColorCalibrator` — confirming
+  per-instance wiring and that `.reset()` doesn't discard the calibrator). The 2 root-level
+  `main_onnx_shared_vision_*.py` files have no pre-existing test harness at all (hardware-driving
+  `main()` scripts, never covered by any test file) — their wiring was verified by `py_compile`
+  plus direct code review using the exact same `MarkerClassifier(..., adaptive_calibrator=...)`
+  call shape already exercised by the suites above, not by a new dedicated test file (building
+  one was judged out of scope for a wiring-only change).
+  **Still genuinely open**: (1) live-Jetson re-verification against genuinely independent real
+  `_01` frames (the numbers above still replay the one logged frame to satisfy warm-up, not
+  independent captures) — needs real hardware access. (2) `aruco_markers_02`'s 4-same-colour
+  case remains unhandled if that sheet is ever physically mounted at one of these 4 call sites —
+  not currently the case, so not a blocker today, but flagged for whoever changes the mounted
+  sheet next.
+  Source: `host_software/ml_vision/core/color_calibration.py`,
+  `host_software/ml_vision/core/marker_classifier.py` (`adaptive_calibrator` tier, additive);
+  `host_software/ml_jetson_vla/core/small_cnn_grounder.py`,
+  `host_software/ml_jetson_vla/runtime/run_jetson_standalone.py`,
+  `host_software/main_onnx_shared_vision_audio.py`,
+  `host_software/main_onnx_shared_vision_nemo_audio.py` (wiring, additive);
+  `host_software/ml_jetson_vla/tests/test_small_cnn_grounder_cpu.py`,
+  `host_software/ml_jetson_vla/tests/test_run_jetson_standalone_cpu.py` (new wiring tests).
 - [x] **The "permanently forbidden" `fliplr` augmentation bug was still live in 2 YOLO training
   scripts + 1 Colab notebook, with real checkpoints trained while it was active** (flagged
   2026-10-14, fixed same day, commit `db5fee2`) — `train_yolov8_platform_pose_markers.py`,

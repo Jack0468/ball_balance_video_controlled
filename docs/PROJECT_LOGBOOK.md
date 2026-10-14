@@ -44,6 +44,44 @@ ml-multimodal next), and live-Jetson re-verification against genuinely independe
 frames (today's numbers replay the single logged frame to satisfy warm-up, not independent
 captures).
 
+### Adaptive colour calibrator wired into all 4 live call sites — reviewed decision, not a rubber-stamp
+
+Dispatched `ml-multimodal` to decide whether `AdaptiveColorCalibrator` (previous entry) should
+be wired into the 4 call sites the manifest-position fix was reverted from earlier today. It
+read the calibrator and `MarkerClassifier` itself, checked each site's actual runtime shape
+(all 4 construct their `MarkerClassifier` exactly once per process and drive it from one
+continuous loop for the process's whole life — exactly the "one sheet mounted per session"
+shape the calibrator's warm-up design assumes), and checked which physical sheet each site
+actually targets (`aruco_markers_01`, the calibrator's supported 4-distinct-colour case, not
+the known-wrong `aruco_markers_02` 4-same-colour case) before deciding yes.
+
+Wired `self.adaptive_calibrator = AdaptiveColorCalibrator()` (one instance per
+`MarkerClassifier` instance, never shared/global) into `small_cnn_grounder.py`'s
+`SmallCnnGroundingPolicy`, `run_jetson_standalone.py`'s `JetsonExpertPolicy`, and both
+`main_onnx_shared_vision_*.py` root-level scripts — touched slightly outside its own
+`ml_jetson_vla/` lane for the latter two, flagged explicitly as a deliberate consistency choice
+since all 4 are one decision. Deliberately did NOT wire `calibrator.reset()` into any
+episode/policy `.reset()` path — the physical sheet doesn't change between episodes within a
+process, so resetting would only discard an already-good calibration; a real sheet swap means
+restarting the process, which naturally creates a fresh calibrator.
+
+Independently re-verified every real diff and test result here, not just trusted the report:
+all 4 diffs are minimal and additive (confirmed via `git diff`); re-ran
+`pytest host_software/ml_vision/tests/` myself -> **42 passed, 2 skipped, 2 errors** (identical
+pre-existing baseline) and `pytest host_software/ml_jetson_vla/tests/` -> **155 passed, 1
+skipped**, matching the agent's claims exactly. Read the new
+`test_run_jetson_standalone_cpu.py` directly — real, unmocked `JetsonExpertPolicy` construction
+(real ONNX session, real manifest) with genuine assertions (distinct calibrators per instance,
+`.reset()` preserves the calibrator). Honest limitation carried over: the 2 root-level
+`main_onnx_shared_vision_*.py` scripts have no pre-existing test harness at all (hardware-driving
+`main()` scripts never covered by any test file) — their wiring was verified by `py_compile` +
+code review only, not a new dedicated test, explicitly flagged as such rather than silently
+called "tested."
+
+Two things remain genuinely open, correctly left unchecked in `docs/TODO.md`: live-Jetson
+re-verification against independent real `_01` frames (not just the one replayed logged frame),
+and the `aruco_markers_02` limitation if that sheet is ever mounted at one of these 4 sites.
+
 ### Real regression coverage added for the production audio Conv1D pipeline (offline/live feature parity + label-order sanity)
 
 Dispatched `ml-audio` for the TODO item scoping the project's two historical

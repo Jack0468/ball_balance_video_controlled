@@ -73,6 +73,7 @@ for _p in (_HOST_SOFTWARE_DIR, _REPO_ROOT_DIR):
 from ml_jetson_vla.core.minimal_vlm_policy import COLOR_COMMANDS  # noqa: E402
 from ml_jetson_vla.core.policy_interface import Policy, PolicyCommand  # noqa: E402
 
+from host_software.ml_vision.core.color_calibration import AdaptiveColorCalibrator  # noqa: E402
 from host_software.ml_vision.core.marker_classifier import MarkerClassifier  # noqa: E402
 from host_software.ml_vision.data_processing.auto_label_shared_vision import (  # noqa: E402
     build_paper_corners,
@@ -141,7 +142,25 @@ class SmallCnnGroundingPolicy(Policy):
         # wrong here, since this grounder drives real robot motor commands and the whole point
         # is that the CNN+MarkerClassifier pipeline is the thing actually determining marker
         # colour, not a ground-truth lookup standing in for it.
-        self.marker_classifier = MarkerClassifier(input_size=INPUT_SIZE, mask_threshold=mask_threshold)
+        #
+        # 2026-10-14 REOPENED fix, wired in (not just left as an opt-in capability): one
+        # AdaptiveColorCalibrator per SmallCnnGroundingPolicy instance (never shared/global
+        # across instances/sessions) -- a per-session, pixel-only calibrator
+        # (host_software/ml_vision/core/color_calibration.py) that derives a position->colour
+        # table purely from THIS session's own observed camera pixels, never from
+        # hardware/platform_templates/. This policy is constructed once and run continuously
+        # for the life of one process (see module docstring + runtime/run_jetson_standalone.py's
+        # JetsonExpertPolicy, the reference this grounder mirrors) -- exactly the "one sheet
+        # mounted per session" shape the calibrator assumes. `reset()` below deliberately does
+        # NOT reset this calibrator: HybridSmallCnnActPolicy's own reset() (core/hybrid_policy.py)
+        # is called between EPISODES within the same process, not sheet changes -- the physical
+        # sheet doesn't change there, so re-running warm-up every episode would only throw away
+        # an already-good calibration for no reason. A genuine sheet swap requires restarting
+        # the process, which naturally creates a fresh calibrator.
+        self.adaptive_calibrator = AdaptiveColorCalibrator()
+        self.marker_classifier = MarkerClassifier(
+            input_size=INPUT_SIZE, mask_threshold=mask_threshold, adaptive_calibrator=self.adaptive_calibrator
+        )
 
         aruco_markers, _features, platform_w_mm, platform_h_mm = load_manifest_full(GROUND_TRUTH_MANIFEST)
         self.aruco_lookup = {int(m["id"]): list(m["center_mm"]) for m in aruco_markers}
