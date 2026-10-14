@@ -87,8 +87,8 @@ Triangle calculate_triangle(fixed_t theta_deg, fixed_t phi_deg, fixed_t d, fixed
   // Create initial triangle vertices
   fixed_t vertices_i[3][3] = {
     { 0, d, h },                       // VA_i
-    { -d * sqrt3_half, -d * 0.5, h },  // VB_i
-    { d * sqrt3_half, -d * 0.5, h }    // VC_i
+    { -d * sqrt3_half, -d * (fixed_t)0.5, h },  // VB_i
+    { d * sqrt3_half, -d * (fixed_t)0.5, h }    // VC_i
   };
 
   // Calculate centroid of initial triangle
@@ -162,29 +162,48 @@ IKResult ik_solver(fixed_t base_point[3], fixed_t top_point[3], fixed_t e, fixed
   if (diff < 0) diff = -diff; // absolute value
   
   if (d2 < (fixed_t)0.001 || d2 > e + f || d2 < diff) {
-    IKResult err = {0, 0};
-    return err;  // Error case
+    IKResult err = {0, 0, true};  // Error case -- fault=true, was silently {0,0}
+    return err;
   }
 
   // Calculate angles
   fixed_t e2 = e * e, f2 = f * f, d2_2 = d2 * d2;
   fixed_t alpha = hls::acos((e2 + f2 - d2_2) / (2 * e * f));
-  fixed_t phi2 = hls::atan2(r[2], hls::sqrt(r[0] * r[0] + r[1] * r[1]));
+  // Both args must be cast to the exact same fixed_t (ap_fixed<32,16>) type:
+  // hls::sqrt(r[0]*r[0]+r[1]*r[1]) returns a wider ap_fixed type from HLS's
+  // own mult/add bit-growth rules, which left hls::atan2()'s only exact-match
+  // ap_fixed<W,I> template unable to deduce W,I -- real csynth error 207-4085
+  // ("call to 'atan2' is ambiguous") confirmed this against a real 2025.2 run.
+  fixed_t phi2 = hls::atan2((fixed_t)r[2], (fixed_t)hls::sqrt(r[0] * r[0] + r[1] * r[1]));
   fixed_t beta = hls::acos((e2 + d2_2 - f2) / (2 * e * d2));
   fixed_t theta2 = phi2 - beta;
 
-  IKResult res = { alpha * (fixed_t)(180.0 / PI), theta2 * (fixed_t)(180.0 / PI) };
+  IKResult res = { alpha * (fixed_t)(180.0 / PI), theta2 * (fixed_t)(180.0 / PI), false };
   return res;
 }
 
 //gets angles, using ik_solver function and calculate_triangle function. theta will balance y axis, phi will balance x axis
 CalculatedAngles get_angles(fixed_t theta, fixed_t phi, fixed_t h) {
+  // Real csynth run (2026-10-14) confirmed the 220-DSP ceiling itself is NOT
+  // the binding constraint (136/220 DSP, 61%) -- but with no sharing, the
+  // three sequential ik_solver() calls below synthesized as three fully
+  // separate hardware instances (~24 DSP / ~52000 LUT each), blowing LUT
+  // utilization on the real xc7z020 fabric to 309% of capacity (164443 used
+  // vs 53200 available). This ALLOCATION directive forces the tool to
+  // time-multiplex all three calls onto one shared ik_solver instance.
+  // Correct 2025.2 syntax confirmed against UG1399's "pragma HLS allocation"
+  // page after a first attempt ("instances=... limit=... function", type
+  // keyword last) was REJECTED by a real csynth run with
+  // "WARNING: [HLS 207-7036] unexpected pragma argument 'ik_solver', expects
+  // function/operation" -- the <type> keyword must come immediately after
+  // ALLOCATION, before instances=.
+#pragma HLS ALLOCATION function instances=ik_solver limit=1
 
   // Base points - initial triangle vertices with z = 0
   fixed_t sqrt3_half = hls::sqrt((fixed_t)3) / (fixed_t)2;
   fixed_t base_VA[3] = { 0, d, 0 };                       // VA_i with z = 0
-  fixed_t base_VB[3] = { -d * sqrt3_half, -d * 0.5, 0 };  // VB_i with z = 0
-  fixed_t base_VC[3] = { d * sqrt3_half, -d * 0.5, 0 };   // VC_i with z = 0
+  fixed_t base_VB[3] = { -d * sqrt3_half, -d * (fixed_t)0.5, 0 };  // VB_i with z = 0
+  fixed_t base_VC[3] = { d * sqrt3_half, -d * (fixed_t)0.5, 0 };   // VC_i with z = 0
 
   //calculate rotated triangle from the given inputs
   Triangle tri;
@@ -205,6 +224,7 @@ CalculatedAngles get_angles(fixed_t theta, fixed_t phi, fixed_t h) {
   result.thetaA = angles_A.theta2;
   result.thetaB = angles_B.theta2;
   result.thetaC = angles_C.theta2;
+  result.fault = angles_A.fault || angles_B.fault || angles_C.fault;
 
   return result;
 }

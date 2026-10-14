@@ -2,6 +2,54 @@
 
 ## 14/10/2026
 
+### Real Vitis HLS synthesis run resolves 2 TODO items — DSP budget fine, but surfaced a worse LUT problem; `ap_rst` confirmed not to clear integrator state
+
+Dispatched `fpga` to get real, tool-verified answers (not source-reading speculation) for two
+items on `fpga/hls_hardware/{PIDControllers,InverseKinematics}.cpp`: whether the repeated,
+unshared transcendental HLS math calls across 3 `ik_solver` instances fit the 220-DSP ceiling,
+and whether `ap_rst` actually resets the `static` C integrator/derivative state. This machine's
+Vitis 2025.2 install has no standalone `vitis_hls` binary — the agent built a reusable
+`fpga/hls_hardware/run_csynth.tcl` driven via `vitis-run --mode hls --tcl`, part
+`xc7z020clg484-1` (confirmed against this project's own real Vivado build logs — not the
+`XC7Z020-1CSG484CES` string that appears in the fpga agent's own role description, which matches
+no real build log anywhere in this repo and is now flagged as suspect).
+
+The source as originally written didn't even compile under real `csynth` — ambiguous
+`ap_fixed`-vs-`double` `operator*` and an ambiguous `hls::atan2` call from a type mismatch.
+Fixed with explicit `(fixed_t)` casts. Once compiled, real unshared numbers: 136/220 DSP (62%,
+fits) but **164443/53200 LUT — 309%, ~3x over the entire xc7z020's LUT fabric**. The 220-DSP
+ceiling the item worried about was never the real risk; LUT exhaustion from the same
+triplicated-`ik_solver` mechanism is, and is far worse than "unverified." Fixed with
+`#pragma HLS ALLOCATION function instances=ik_solver limit=1` (first attempt used the wrong
+pragma argument order, rejected by a real csynth run, corrected per UG1399's template) — re-run
+shows a single shared instance: **85/220 DSP (39%), 59315/53200 LUT (111%)**. LUT overrun cut
+from ~3x to ~1.11x, not eliminated — closing the rest needs a real architecture choice
+(lower-precision `ap_fixed`, the existing unused `fpga/external_ip/CORDIC-Unit-main/` CORDIC IP,
+or further restructuring), correctly left open rather than guessed at.
+
+`ap_rst` semantics confirmed two ways: AMD's own UG1399 states the default reset level only
+covers FSM/protocol registers, not registers derived from `static`/global C variables; separately
+confirmed against this project's own real csynth run (`WARNING: [RTGEN 206-101] Register
+'integ_x' is power-on initialization`) and the actual generated Verilog. Fixed with
+`#pragma HLS RESET variable=...` on all four statics; re-verified in the real generated RTL that
+asserting the block's `ap_rst_n` now clears them. Also added the missing `ik_solver` fault
+signal (previously silently returned `{0,0}` on an unreachable target) — `IKResult`/
+`CalculatedAngles` now carry `bool fault`, `balance_controller()` gained a new `out_fault`
+output port; confirmed no other file in the repo calls these, so the new argument doesn't break
+anything today.
+
+**Independently re-verified every real number and claim here, not just trusted the report**: ran
+`run_csynth.tcl` myself from a clean state against the already-fixed source — identical output
+(`WARNING: [RTGEN 206-101] Register 'integ_x' is power-on initialization` reproduced, confirming
+the pre-fix behavior this fix targets), and the real `balance_controller_csynth.rpt` shows
+**85/220 DSP (38%), 59315/53200 LUT (111%)** — matching the agent's claim exactly. Directly
+inspected the generated `balance_controller.v` and confirmed the real reset logic:
+`if (ap_rst_n_inv == 1'b1) integ_x <= 23'd0;` for all four statics.
+
+Both TODO items marked `[x]` with the real outcome; the residual ~11% LUT overrun and the
+software-selective-integrator-clear design question are both honestly flagged as newly-surfaced,
+still-open follow-ups within the same entries, not hidden by the checkmark.
+
 ### Ball-drop detection designed, offline-validated, and wired into `evaluate_system_control.py` — real `Task_Success_Rate_Percent_Drop_Corrected` now available
 
 Dispatched `ml-multimodal` for the long-open "Task Success Rate can't distinguish a dropped

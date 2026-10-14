@@ -640,19 +640,39 @@ without any of these — the ledger below leads with exactly which items those a
   deterministic call interval -- the real fix needs that invocation mechanism (timer-triggered vs.
   software-scheduled polling) decided first, not just a new constant. Source:
   `fpga/hls_hardware/PIDControllers.cpp` lines 13, 41, 44; `CLAUDE.md` System Constraints.
-- [ ] **No reset path for `balance_controller`'s persistent integrator state, and `ik_solver`
-  fails silently with no fault signal** `[needs Vitis HLS semantics check + a design decision]`
-  (flagged 2026-10-14, owner: fpga) — `error_prev_x/y`, `integ_x/y` are `static` C variables
-  persisting across every AXI-Lite-triggered call with no exposed port to clear them (e.g. on
-  ball-drop/re-placement -- plausible in practice given ball-drop detection doesn't exist yet,
-  see the Task-Success-Rate item above); genuinely unconfirmed whether Vitis HLS 2025.2's default
-  `ap_rst` resets static C state or only control-FSM state -- needs checking, not assuming either
-  way. Separately: `ik_solver` (`InverseKinematics.cpp` lines 164-167) silently returns
-  `{alpha:0, theta2:0}` on an unreachable target, propagated straight to `out_thetaA/B/C` with no
-  fault bit anywhere on the interface -- one leg going unreachable would silently command that
-  motor to 0° while the other two keep running, a real asymmetric-platform-motion risk once wired
-  to real motors. Source: `fpga/hls_hardware/PIDControllers.cpp` lines 16-19;
-  `fpga/hls_hardware/InverseKinematics.cpp` lines 164-167.
+- [x] **No reset path for `balance_controller`'s persistent integrator state, and `ik_solver`
+  failed silently with no fault signal** `[RESOLVED 2026-10-14, owner: fpga — real tool-verified
+  fix, not a guess]` — **ap_rst semantics, confirmed two ways**: (1) AMD's own UG1399
+  ("Controlling Initialization and Reset Behavior") states the default `config_rtl -reset` level
+  is `control` — only FSM/I-O-protocol registers reset on `ap_rst_n`; registers derived from
+  static/global C variables are explicitly left un-reset by default. (2) Confirmed directly
+  against this project's own real csynth run and its generated RTL (not just the doc): the
+  *unmodified* source first failed to even compile under Vitis HLS 2025.2 (ambiguous `operator*`
+  between `ap_fixed` and raw `double` literals, and an ambiguous `hls::atan2` call — see the DSP
+  item below); after fixing those compile errors and re-running csynth with no reset directive,
+  `balance_controller_csynth.rpt` logged `WARNING: [RTGEN 206-101] Register 'integ_x' is
+  power-on initialization` (same for `error_prev_x`/`integ_y`/`error_prev_y`) — i.e. cleared only
+  at FPGA configuration, not by `ap_rst_n` during operation, exactly as the doc predicted. **Fix
+  applied and verified**: added `#pragma HLS RESET variable=error_prev_x/y` and
+  `variable=integ_x/y` inside `balance_controller()` (`fpga/hls_hardware/PIDControllers.cpp`).
+  Re-ran csynth and inspected the actual generated Verilog
+  (`hls_proj/solution1/syn/verilog/balance_controller.v`, not just the report) — confirmed
+  `integ_x`/`error_prev_x` now have `if (ap_rst_n_inv == 1'b1) integ_x <= 23'd0;` etc., i.e. a
+  real synchronous clear tied to the block's existing `ap_rst_n`. **Not fully closed**: this only
+  means asserting the whole block's reset now also clears the integrators — it does **not** give
+  software a way to clear just the integrators on ball-drop/re-placement without resetting the
+  whole control core. That's a separate, still-open design decision (a software-writable clear
+  register vs. some other mechanism) this agent should not make unilaterally.
+  **`ik_solver` fault signal — added**: `IKResult`/`CalculatedAngles` (`InverseKinematics.h`) now
+  carry a `bool fault` field; `ik_solver`'s unreachable-target branch sets it true instead of
+  silently returning `{0,0}`; `get_angles()` ORs all three legs' faults; `balance_controller()`
+  now has a new `bool &out_fault` output (`s_axilite`, bundle `CTRL`) — confirmed it synthesizes
+  cleanly in the same csynth run. Note: this is a new output port, so anything that later wires
+  `balance_controller()` into `main.c`/a PS driver needs to account for the extra signature
+  argument — nothing currently does (Domain 4 isn't wired up yet per `CLAUDE.md`), so no breakage
+  today, but flagging for whoever does that wiring next.
+  Source: `fpga/hls_hardware/PIDControllers.cpp`, `fpga/hls_hardware/InverseKinematics.{h,cpp}`,
+  `fpga/hls_hardware/run_csynth.tcl` (new batch-build script used to verify all of this).
 - [ ] **`calculate_triangle`'s tilt model may only rotate the Z-coordinate of each attachment
   point, not the full rigid-body position -- unverified, exactly what the planned testbench
   should target** `[needs the Domain-4 digital testbench, at/near max tilt specifically]` (flagged
@@ -665,20 +685,47 @@ without any of these — the ledger below leads with exactly which items those a
   case should specifically exercise near-max tilt, not just small angles. Source:
   `fpga/hls_hardware/InverseKinematics.cpp` lines 122-128; `PIDControllers.cpp` line 10
   (`max_angle`).
-- [ ] **Repeated, unshared transcendental HLS math calls — real but unverified risk against the
-  220-DSP ceiling** `[needs a real `csynth` run, not assumable from source alone]` (flagged
-  2026-10-14, owner: fpga) — `get_angles()` calls `ik_solver` three times (once per leg); each
-  call plus `calculate_triangle` pulls in `hls::sin/cos/sqrt(x2)/acos/atan2` on
-  `ap_fixed<32,16>`, with no `#pragma HLS ALLOCATION` or other resource-sharing directive anywhere
-  in either file -- absent automatic tool inference, this likely synthesizes 3 separate hardware
-  instances of each transcendental op rather than time-multiplexing one. Whether that fits inside
-  220 DSP slices is genuinely unknown without running synthesis (not asserted either way).
-  Separately unconfirmed: whether `hls::sin/cos/sqrt/acos/atan2` in Vitis HLS 2025.2's
-  `hls_math.h` accept `ap_fixed<32,16>` directly as written -- check against a real `csynth` run
-  or current UG1399 docs before assuming it compiles as-is. Note: `fpga/external_ip/
-  CORDIC-Unit-main/` already has a working CORDIC IP core with its own testbenches, unused here --
-  worth a look if `hls_math.h`'s built-in trig proves too resource-hungry. Source:
-  `fpga/hls_hardware/InverseKinematics.cpp` lines 181-210.
+- [x] **Repeated, unshared transcendental HLS math calls against the 220-DSP ceiling** `[REAL
+  csynth run completed 2026-10-14, owner: fpga — DSP is fine, but it surfaced a worse, real LUT
+  problem the original item didn't anticipate]` — Ran actual `vitis_hls`/`vitis-run --mode hls`
+  batch `csynth_design` (no standalone `vitis_hls` binary ships in this 2025.2 install; new script
+  `fpga/hls_hardware/run_csynth.tcl` does it via `vitis-run --mode hls --tcl`, part string
+  `xc7z020clg484-1` — the one this project's real Vivado builds actually use, NOT the
+  `XC7Z020-1CSG484CES` string that appears in this agent's own role description, which doesn't
+  match any real build log in this repo and should be treated as suspect).
+  **As originally written, the file did not compile at all** — real `csynth` errors (HLS
+  207-4090/207-4085), independent of resource sharing: ambiguous `operator*` between `ap_fixed`
+  and bare `double` literals (`-d * 0.5` etc. in `calculate_triangle`/`get_angles`), and an
+  ambiguous `hls::atan2` call because `hls::sqrt(r[0]*r[0]+r[1]*r[1])`'s HLS-promoted return type
+  didn't exactly match `r[2]`'s `ap_fixed<32,16>`, so `hls_math.h`'s only exact-match
+  `atan2(ap_fixed<W,I>,ap_fixed<W,I>)` template couldn't bind. Fixed by casting the literals to
+  `(fixed_t)` and both `atan2` args to `(fixed_t)` explicitly (`InverseKinematics.cpp`). **Once it
+  compiled**, `hls::sin/cos/sqrt/acos/atan2` on `ap_fixed<32,16>` synthesized fine — confirms that
+  part of the item, but only after the above fix, not as originally written.
+  **Real numbers, unshared** (as the TODO worried): `balance_controller_csynth.rpt` —
+  136/220 DSP (62%, fits with margin) but **164443/53200 LUT (309% — ~3x over the real xc7z020's
+  entire LUT fabric)**, driven by exactly the triplicated-`ik_solver` mechanism this item
+  predicted (3 full separate instances, ~24 DSP/~52000 LUT each, confirmed in the report's
+  Instance table). **So the 220-DSP ceiling itself was never the real risk — LUT exhaustion from
+  the same root cause is**, and is far more severe than "unverified."
+  **Fix applied and verified**: `#pragma HLS ALLOCATION function instances=ik_solver limit=1` in
+  `get_angles()` (`InverseKinematics.cpp`). First attempt used the wrong argument order
+  (`instances=... limit=... function`) and was rejected by a real csynth run (`WARNING: [HLS
+  207-7036] unexpected pragma argument 'ik_solver', expects function/operation`) — corrected to
+  `ALLOCATION function instances=... limit=...` per UG1399's documented pragma template, then
+  re-verified: the report now shows a single shared `ik_solver` instance (not three), and real
+  numbers dropped to **85/220 DSP (39%)** and **59315/53200 LUT (111%)** — DSP now has real
+  margin, and LUT overrun is cut from ~3x to ~1.11x but **not fully eliminated**. Trade-off: max
+  latency rose to 1594 cycles (~15.9us @ the 10ns/100MHz clock used for this synthesis run, itself
+  just a generic default for getting a real number — not a resolution of the separate, explicitly
+  off-limits 48MHz/100MHz clock-architecture item above), still far inside the 8.3ms budget.
+  **Still open**: closing the remaining ~11% LUT overrun needs either lower-precision `ap_fixed`
+  (would need recalibration, not guessed), swapping to the existing unused
+  `fpga/external_ip/CORDIC-Unit-main/` CORDIC IP for some of the trig, or further algorithmic
+  restructuring — a real architecture choice, not made here.
+  Source: `fpga/hls_hardware/InverseKinematics.cpp`, `fpga/hls_hardware/run_csynth.tcl`,
+  `fpga/hls_hardware/hls_proj/solution1/syn/report/balance_controller_csynth.rpt` (gitignored
+  build artifact — rerun `run_csynth.tcl` to regenerate).
 
 ## Hardware (human/EE decisions — not an agent's call)
 

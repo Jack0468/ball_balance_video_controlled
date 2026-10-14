@@ -17,6 +17,12 @@ struct Triangle {
 struct IKResult {
   fixed_t alpha;   // elbow angle in degrees
   fixed_t theta2;  // shoulder angle in degrees
+  // Set true when ik_solver's target was unreachable (d2 < 0.001 || d2 > e+f
+  // || d2 < |e-f|) -- previously this case silently returned {0,0} with no
+  // way for a caller to tell "leg unreachable, commanded to 0 deg" apart from
+  // "leg genuinely computed 0 deg". Real fault signal, flagged in
+  // docs/TODO.md (item 600) as missing; added 2026-10-14.
+  bool fault;
 };
 
 //Structure to hold calculated angles for each motor. Combines calculate_triangle and ik_solver functions
@@ -24,6 +30,11 @@ struct CalculatedAngles {
   fixed_t thetaA;
   fixed_t thetaB;
   fixed_t thetaC;
+  // OR of all three legs' IKResult::fault -- true if ANY leg's target was
+  // unreachable this call. Does not identify which leg; a caller needing
+  // per-leg fault detail should read the three IKResult values directly
+  // instead of going through get_angles().
+  bool fault;
 };
 
 // Function declarations
