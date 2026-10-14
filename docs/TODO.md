@@ -165,22 +165,28 @@ without any of these — the ledger below leads with exactly which items those a
 
 ## Audio (`ml-audio`)
 
-- [ ] **Unbounded live audio chunk queue with blocking inference — no backpressure or staleness
-  detection** (flagged 2026-10-14, owner: ml-audio) — `nemo_live_receiver.py`'s
-  `self.chunk_queue = queue.Queue()` has no `maxsize`; `audio_receiver_pytorch.py` has the
+- [x] **Unbounded live audio chunk queue with blocking inference — no backpressure or staleness
+  detection** (flagged 2026-10-14, fixed same day) — `nemo_live_receiver.py`'s
+  `self.chunk_queue = queue.Queue()` had no `maxsize`; `audio_receiver_pytorch.py` had the
   identical shape. A single consumer thread runs a blocking model forward pass before pulling
-  the next chunk; if that ever takes longer on average than `step_seconds` (0.2s default) —
-  plausible on CPU, especially sharing the Jetson with vision inference — chunks silently
-  accumulate with nothing bounding the queue, dropping stale chunks, or even logging it.
-  `latest_inference_time_ms` is computed but only ever read for cosmetic display, never compared
-  against `step_seconds`. Concrete failure: the audio command stream progressively lags real
-  time, unboundedly, with the fusion state machine potentially acting on a "live" command that's
-  actually seconds stale during real robot operation — exactly the class of bug this project's
-  own non-blocking-execution constraint (`CLAUDE.md`) exists to prevent. Not yet measured live;
-  the code has no mechanism to prevent or detect it either way. Fix: bound the queue with a
-  drop-oldest policy, or a watchdog comparing `latest_inference_time_ms` against `step_seconds`.
-  Source: `host_software/ml_audio/evaluations/nemo_live_receiver.py` lines 100-105, 187-224;
-  `host_software/ml_audio/audio_receiver_pytorch.py` lines 147, 234-274.
+  the next chunk; if that ever took longer on average than `step_seconds` (0.2s default) —
+  plausible on CPU, especially sharing the Jetson with vision inference — chunks would silently
+  accumulate with nothing bounding the queue or logging it, letting the command stream drift
+  seconds behind real time while still looking "live" — exactly the class of bug this project's
+  own non-blocking-execution constraint (`CLAUDE.md`) exists to prevent. **Fixed in both files**:
+  `chunk_queue` now bounded at `CHUNK_QUEUE_MAXSIZE=5` (1s of backlog at the default
+  `step_seconds`); a new `_put_chunk_dropping_oldest()` helper drops the OLDEST buffered chunk
+  on overflow rather than blocking the real-time audio callback, with every 10th drop logged
+  (rate-limited, not every one, to avoid log-flooding during a sustained stall) so a real
+  backlog is visible instead of silent. Deliberately left the file-reader loop's own
+  `chunk_queue.put()` (not `put_nowait`) unchanged in both files -- that's a self-throttling,
+  reproducible offline-replay path, not a real-time callback that must never block; bounding the
+  queue just means it now self-paces slightly earlier under a sustained stall, which is correct
+  behavior there, not a regression. 6 new tests
+  (`ml_audio/tests/test_chunk_queue_bounding.py`), all passing — confirming the bound, the
+  drop-oldest-not-newest ordering, and the rate-limited warning. Source:
+  `host_software/ml_audio/evaluations/nemo_live_receiver.py`;
+  `host_software/ml_audio/audio_receiver_pytorch.py`.
 - [x] **Module-level mutable `LABEL_NAMES` global in the legacy PyTorch receiver — same bug
   class that already cost ~80 accuracy points in production** (flagged 2026-10-14, fixed same
   day) — `audio_receiver_pytorch.py`'s `AudioCommandReceiver.__init__` no longer does

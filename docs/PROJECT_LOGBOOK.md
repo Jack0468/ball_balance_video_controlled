@@ -181,6 +181,28 @@ from `Interrupted: 3 errors during collection` (0 tests ran) to `23 passed, 2 sk
 scripts mistaken for pytest tests, failing on missing fixtures, not collection-time import
 errors), not touched this pass.
 
+### Fixed the unbounded audio chunk_queue (both receiver classes) -- another audit finding converted to a real fix
+
+`nemo_live_receiver.py` and `audio_receiver_pytorch.py` both had an unbounded `chunk_queue` fed
+by a real-time mic callback, with a single consumer thread doing a blocking model forward pass
+before pulling the next chunk -- if inference ever averaged slower than `step_seconds`, chunks
+would accumulate forever with no backpressure or staleness detection, letting the command
+stream silently drift seconds behind real time.
+
+Fixed in both: `chunk_queue` now bounded at `CHUNK_QUEUE_MAXSIZE=5` (1s of backlog at the
+default 0.2s step), with a new `_put_chunk_dropping_oldest()` helper used by `_audio_callback`
+(the real-time mic path) -- drops the oldest buffered chunk on overflow rather than blocking the
+callback, with every 10th drop logged (rate-limited) so a real backlog is visible. Deliberately
+left each file's file-reader loop's own blocking `chunk_queue.put()` unchanged -- that's a
+self-throttling, reproducible offline-replay path (feeds a pre-recorded file, paced with
+`time.sleep` to simulate real-time), not a real-time callback that must never block; a drop
+policy there would non-deterministically lose data from a reproducible evaluation tool, which
+is strictly worse. 6 new tests (`ml_audio/tests/test_chunk_queue_bounding.py`) against a bare
+stand-in object (no real model/mic needed -- pure queue-mechanics check): confirm the bound,
+that drops take the oldest item not the newest, and that the warning is rate-limited rather than
+logged on every single drop. Full `ml_audio/tests/` suite: 9 passed (3 existing + 6 new), same 2
+pre-existing unrelated errors (`test_nemo_noise_mix.py`, needs a separate conda env) as before.
+
 ## 13/10/2026
 
 ### Manifest-position fix for the 3 remaining call sites: patches drafted, write-boundary conflict found and not overridden

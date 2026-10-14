@@ -49,6 +49,15 @@ import torch
 
 from ml_audio.audio_dsp import OUTPUT_SEQUENCE_LENGTH, SAMPLE_RATE
 
+# Bounds chunk_queue (fixed 2026-10-14): it was unbounded, with a single consumer thread doing a
+# blocking model forward pass before pulling the next chunk -- if inference ever averaged slower
+# than step_seconds (plausible on CPU, especially sharing the Jetson with vision inference),
+# chunks accumulated silently forever, with no backpressure/staleness detection, and the command
+# stream could lag real time by seconds while still looking "live". 5 chunks = 1s of backlog at
+# the default step_seconds=0.2 -- enough to absorb a brief stall, not enough to let the receiver
+# silently drift arbitrarily far behind.
+CHUNK_QUEUE_MAXSIZE: int = 5
+
 
 def find_device_by_name(name_substring: str) -> Optional[int]:
     """Same lookup as audio_receiver_onnx.py's find_device_by_name -- kept
@@ -99,7 +108,8 @@ class NemoAudioCommandReceiver:
 
         self.command_queue = queue.Queue(maxsize=1)
         self.running = True
-        self.chunk_queue = queue.Queue()
+        self.chunk_queue: "queue.Queue" = queue.Queue(maxsize=CHUNK_QUEUE_MAXSIZE)
+        self.dropped_chunk_count = 0
 
         self.min_confidence = min_confidence
         self.min_margin = min_margin
@@ -146,10 +156,34 @@ class NemoAudioCommandReceiver:
         self.thread = threading.Thread(target=self._process_loop, daemon=True)
         self.thread.start()
 
+    def _put_chunk_dropping_oldest(self, chunk: np.ndarray) -> None:
+        """Non-blocking enqueue with a drop-oldest policy (fixed 2026-10-14, see
+        CHUNK_QUEUE_MAXSIZE's comment): if the consumer has fallen behind and the queue is full,
+        drop the OLDEST buffered chunk rather than blocking the producer or growing unboundedly --
+        keeps the receiver tracking close to real time instead of accumulating an ever-growing
+        backlog of stale audio. Every 10th drop is logged (not every one, to avoid log-flooding
+        during a sustained stall) so a real backlog is visible instead of silent."""
+        try:
+            self.chunk_queue.put_nowait(chunk)
+        except queue.Full:
+            try:
+                self.chunk_queue.get_nowait()
+            except queue.Empty:
+                pass
+            self.chunk_queue.put_nowait(chunk)
+            self.dropped_chunk_count += 1
+            if self.dropped_chunk_count % 10 == 1:
+                print(
+                    f"WARNING: NemoAudioCommandReceiver chunk_queue full, dropping oldest chunk "
+                    f"(total dropped so far: {self.dropped_chunk_count}) -- inference is falling "
+                    f"behind real time (last inference: {self.latest_inference_time_ms:.1f}ms vs "
+                    f"step_seconds={self.step_seconds*1000:.0f}ms)."
+                )
+
     def _audio_callback(self, indata, frames, time_info, status):
         if status:
             pass
-        self.chunk_queue.put(indata.copy().squeeze())
+        self._put_chunk_dropping_oldest(indata.copy().squeeze())
 
     def _file_reader_loop(self):
         try:

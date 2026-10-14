@@ -27,6 +27,15 @@ except ImportError:
     except ImportError:
         wavfile = None
 
+# Bounds chunk_queue (fixed 2026-10-14): it was unbounded, with a single consumer thread doing
+# a blocking model forward pass before pulling the next chunk -- if inference ever averaged
+# slower than step_seconds (plausible on CPU, especially sharing the Jetson with vision
+# inference), chunks accumulated silently forever, with no backpressure/staleness detection, and
+# the command stream could lag real time by seconds while still looking "live". 5 chunks = 1s of
+# backlog at the default step_seconds=0.2 -- enough to absorb a brief stall, not enough to let
+# the receiver silently drift arbitrarily far behind.
+CHUNK_QUEUE_MAXSIZE = 5
+
 LABEL_NAMES = [
     "go_blue",
     "go_green",
@@ -151,7 +160,8 @@ class AudioCommandReceiver:
         self.command_queue = queue.Queue(maxsize=1)
         self.running = True
 
-        self.chunk_queue = queue.Queue()
+        self.chunk_queue = queue.Queue(maxsize=CHUNK_QUEUE_MAXSIZE)
+        self.dropped_chunk_count = 0
 
         self.min_confidence = 0.8
         self.min_margin = 0.15
@@ -233,10 +243,32 @@ class AudioCommandReceiver:
             except Exception as e:
                 raise RuntimeError(f"Audio resampling failed: {e}")
 
+    def _put_chunk_dropping_oldest(self, chunk) -> None:
+        """Non-blocking enqueue with a drop-oldest policy (fixed 2026-10-14, see
+        CHUNK_QUEUE_MAXSIZE's comment): if the consumer has fallen behind and the queue is full,
+        drop the OLDEST buffered chunk rather than blocking the real-time audio callback or
+        growing the backlog unboundedly. Every 10th drop is logged (not every one, to avoid
+        log-flooding during a sustained stall) so a real backlog is visible instead of silent."""
+        try:
+            self.chunk_queue.put_nowait(chunk)
+        except queue.Full:
+            try:
+                self.chunk_queue.get_nowait()
+            except queue.Empty:
+                pass
+            self.chunk_queue.put_nowait(chunk)
+            self.dropped_chunk_count += 1
+            if self.dropped_chunk_count % 10 == 1:
+                print(
+                    f"WARNING: AudioCommandReceiver chunk_queue full, dropping oldest chunk "
+                    f"(total dropped so far: {self.dropped_chunk_count}) -- inference is "
+                    f"falling behind real time."
+                )
+
     def _audio_callback(self, indata, frames, time_info, status):
         if status:
             pass
-        self.chunk_queue.put(indata.copy().squeeze())
+        self._put_chunk_dropping_oldest(indata.copy().squeeze())
 
     def _process_loop(self):
         while self.running:
