@@ -138,6 +138,49 @@ unrelated caller. All 3 edited files `py_compile` clean.
 RL implementation) is substantial and out of scope for a cheap mitigation pass -- left as the
 still-open part of this TODO item.
 
+### ml-vision implements all 3 dispatched fixes, plus finds and fixes a 4th, previously-unknown bug
+
+Resumed the `ml-vision` agent from its own earlier audit to implement real fixes for the
+`fliplr`/stale-tests/pytest-collection-abort findings, within its own write boundary. All 3 done
+and committed (`db5fee2`, `150f805`, `fb92add`); docs updates drafted by the agent (outside its
+boundary) and applied here.
+
+**fliplr**: `train_yolov8_platform_pose_markers.py`, `train_yolov8_platform_corners.py`, and
+`colab_train_yolo.ipynb` cell 3 now match `train_yolo.py`'s existing `fliplr=0.0` fix exactly.
+Confirmed real affected checkpoints (`yolov8_platform_pose_markers_0728_v3`,
+`yolov8_platform_corners_0730_v1`) still need retraining -- not done, a real compute cost.
+
+**The 2 stale tests**: both rewritten to exercise the real current API/schema with meaningful
+assertions (non-trivial homography for `project_points()`, real polygon-area-ratio checks per
+marker shape, real heatmap-degeneracy checks) instead of the broken calls that crashed on
+`AttributeError`/`ValueError` before.
+
+**New bug found + fixed along the way (commit `e41a463`)**: while debugging what looked like a
+flaky test, found that `ultralytics` globally monkeypatches `cv2.imread`/`imwrite`/`imshow` the
+instant it's imported anywhere in a process (`ultralytics/utils/__init__.py`), and its
+replacement `imread()` unconditionally appends a trailing channel axis to any grayscale result.
+Confirmed with a direct 6-line repro: `cv2.imread(path, cv2.IMREAD_GRAYSCALE)` returns `(64,64)`
+before `from ultralytics import YOLO` runs anywhere in the process, `(64,64,1)` after, silently,
+process-wide, for good. Since every shared-vision mask is square (128x128), the extra axis does
+NOT raise downstream -- it silently mis-broadcasts against `mask_logits` instead, worse than a
+crash. Fixed by squeezing the trailing singleton axis back to 2D in all 4 existing grayscale
+mask readers (`shared_vision_dataset.py`, `merge_shared_vision_sessions.py`,
+`verify_shared_vision_labels.py`, `trial_augmentation_strategies.py`), no-op when `ultralytics`
+isn't imported, with a dedicated regression test monkeypatching `cv2.imread` the same way
+`ultralytics` does (not a slow real import) so this is pinned down rather than left to accident
+of test order.
+
+**Collection-abort**: `test_combined_controller.py` deleted (confirmed via `git log --all` the
+module it imported never existed anywhere, nothing to restore); the 2 OpenVINO test files
+wrapped in real `pytest.mark.skipif`-gated tests instead of deleted, since that parity check is
+still worth having back if the export ever reappears.
+
+**Real pass counts, before -> after**: flagless `pytest host_software/ml_vision/tests/` went
+from `Interrupted: 3 errors during collection` (0 tests ran) to `23 passed, 2 skipped, 2 errors`
+(no abort) -- the 2 remaining errors are a separate, pre-existing, out-of-scope issue (bare
+scripts mistaken for pytest tests, failing on missing fixtures, not collection-time import
+errors), not touched this pass.
+
 ## 13/10/2026
 
 ### Manifest-position fix for the 3 remaining call sites: patches drafted, write-boundary conflict found and not overridden
