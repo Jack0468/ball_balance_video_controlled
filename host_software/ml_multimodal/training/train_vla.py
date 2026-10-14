@@ -114,19 +114,24 @@ def fine_tune_rl(model):
     Stage 2: Reinforcement Learning Fine-Tuning.
     Introduces explicit penalties for high Control Effort (Jerk)
     and Steady-State Error to surpass the expert's performance.
+
+    NOT IMPLEMENTED (confirmed 2026-10-14): this never ran PPO/REINFORCE, never collected
+    trajectories, never called torch.save -- it only printed success-sounding status text and
+    returned, matching the project's own "no fabricated/silently misleading results" convention
+    being violated rather than followed. `models/vla_v1/rl_finetuned_vla.pth` (what
+    `run_eval_our_vla.py` would load if its own commented-out load line were restored) has never
+    been produced by this function and does not exist anywhere in the repo. Raises instead of
+    printing fake-success text so nothing downstream can mistake "ran this script" for "have a
+    real RL-fine-tuned checkpoint."
     """
-    print("\nStarting Stage 2: RL Fine-Tuning (PPO/REINFORCE Proxy)...")
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    optimizer = optim.Adam(model.parameters(), lr=0.0001)
-
-    # In a full RL setup, we would interact with the environment or a simulator.
-    # Here we use the dataset as a proxy environment to demonstrate the loss augmentation.
-    # Reward = - (Euclidean Error) - alpha * (Control Effort)
-
-    print(
-        "RL Fine-Tuning loop ready. (Requires live simulator or physical robot loop to collect trajectories)."
+    raise NotImplementedError(
+        "fine_tune_rl() is a design placeholder, not a real Stage 2 implementation -- it has "
+        "never run PPO/REINFORCE, collected trajectories, or saved a checkpoint. A real "
+        "implementation needs a live simulator or physical-robot loop to collect trajectories "
+        "against the reward Reward = -(Euclidean Error) - alpha*(Control Effort), then an actual "
+        "training loop + torch.save to models/vla_v1/rl_finetuned_vla.pth. See "
+        "docs/TODO.md's Multimodal/VLA section for the full context."
     )
-    print("VLA Model is now fully prepared for deployment and RL refinement!")
 
 
 if __name__ == "__main__":

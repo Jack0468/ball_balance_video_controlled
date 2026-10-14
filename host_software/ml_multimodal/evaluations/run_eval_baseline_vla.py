@@ -12,7 +12,23 @@ from ml_multimodal.core.vla_architecture import RT1LiteVLA
 
 
 class VLAEvaluator:
+    """NOT a real evaluation (confirmed 2026-10-14): never touches a camera or the firmware --
+    `get_marker_coordinates()` returns hardcoded mock positions, touch state is a fixed offset
+    from the mock target, and the image fed to the model is `torch.zeros(1,3,224,224)`. Both
+    `run_eval_baseline_vla.py` and `run_eval_our_vla.py` construct this with the same untrained,
+    randomly-initialized model -- `run_eval_our_vla.py`'s weight-loading line is commented out --
+    so "baseline" and "our VLA" are the same model, not two distinct checkpoints. Output is
+    written with a MOCK filename (see __init__) specifically so it cannot be mistaken for real
+    telemetry if fed into evaluate_system_control.py. Real fix needs actual camera/serial
+    integration and a real Stage 2 RL implementation (see train_vla.fine_tune_rl, which now
+    raises NotImplementedError rather than pretending to have run) -- see docs/TODO.md."""
+
     def __init__(self, port="COM3", baud=115200, is_baseline=True):
+        print(
+            "WARNING: VLAEvaluator is a MOCK evaluator -- no camera, no firmware connection, "
+            "no real inference against distinct weights. Output is for pipeline/schema testing "
+            "only, never a real Arm comparison. See this class's docstring."
+        )
         print(f"Connecting to Arduino VLADirectControl on {port}...")
         # self.serial = SerialConnection(port, baud)
         # self.vision = OpenVINODispatcher("models/yolov8_marker_best.xml")
@@ -33,10 +49,13 @@ class VLAEvaluator:
         )
         os.makedirs(self.output_dir, exist_ok=True)
 
+        # _MOCK_ in the filename deliberately (2026-10-14): this class produces no real
+        # inference/actuation, and a schema-correct-looking CSV is otherwise indistinguishable
+        # from real telemetry once it reaches evaluate_system_control.py -- see class docstring.
         filename = (
-            "labels_sequential_baseline_vla.csv"
+            "labels_sequential_baseline_vla_MOCK.csv"
             if is_baseline
-            else "labels_sequential_our_vla.csv"
+            else "labels_sequential_our_vla_MOCK.csv"
         )
         self.csv_file = open(os.path.join(self.output_dir, filename), "w", newline="")
         self.writer = csv.writer(self.csv_file)

@@ -113,6 +113,31 @@ agent (already has full audit context) to fix within its own write boundary; the
 firmware-subsystem findings (need a design decision or firmware-owner sign-off) are left as
 ledger items only.
 
+### Cheap mitigation applied to the mocked VLA eval scripts (not the real fix -- that stays substantial)
+
+Picked up the one remaining "cheap mitigation" the audit explicitly called out, rather than
+leaving it as a ledger-only item: `run_eval_baseline_vla.py`/`run_eval_our_vla.py` produce
+schema-correct output with zero real inference/actuation behind it (same untrained,
+randomly-initialized model for both "baseline" and "our VLA" -- the weight-load line for the
+latter is commented out), which is a real landmine for a project whose current top priority is
+exactly this kind of cross-arm comparison.
+
+Applied: both output CSVs renamed with an explicit `_MOCK` suffix
+(`labels_sequential_{baseline,our}_vla_MOCK.csv`) so they can't be mistaken for real telemetry if
+fed into `evaluate_system_control.py`; a loud runtime warning added to `VLAEvaluator.__init__`
+and its class docstring; `evaluate_system_control.py`'s own `--help` example path updated to
+match and flag the mock status. `train_vla.py`'s `fine_tune_rl()` now raises
+`NotImplementedError` with a real explanation of what's actually missing (a live simulator/
+physical-robot trajectory-collection loop, a real training loop, `torch.save`), instead of
+printing "VLA Model is now fully prepared for deployment and RL refinement!" after doing
+nothing -- confirmed via grep that `fine_tune_rl` has exactly one real caller (its own
+`__main__`), so this is a safe, isolated behavior change, not something that silently breaks an
+unrelated caller. All 3 edited files `py_compile` clean.
+
+**Explicitly not attempted**: the real fix (actual camera/serial integration, a genuine Stage 2
+RL implementation) is substantial and out of scope for a cheap mitigation pass -- left as the
+still-open part of this TODO item.
+
 ## 13/10/2026
 
 ### Manifest-position fix for the 3 remaining call sites: patches drafted, write-boundary conflict found and not overridden

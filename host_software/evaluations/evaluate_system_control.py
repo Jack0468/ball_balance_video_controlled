@@ -580,7 +580,9 @@ if __name__ == "__main__":
         type=_parse_run_arg,
         help="Comparison mode: one or more label=path/to.csv (e.g. "
         "expert=data/04_evaluation/expert_evaluation_run_X.csv "
-        "our_vla=data/04_evaluation/labels_sequential_our_vla.csv)",
+        "our_vla=data/04_evaluation/labels_sequential_our_vla_MOCK.csv -- note the _MOCK "
+        "suffix: run_eval_our_vla.py is a mocked, non-functional placeholder as of 2026-10-14, "
+        "see its own module docstring)",
     )
     parser.add_argument(
         "--output_dir",

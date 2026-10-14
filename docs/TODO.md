@@ -385,22 +385,23 @@ without any of these — the ledger below leads with exactly which items those a
   checkpoint was trained under the old, broken mapping and needs retraining** to actually
   benefit from this fix — not done here (a real compute cost, not an agent's call to schedule).
   Source: `host_software/ml_multimodal/core/dataset.py`.
-- [ ] **`run_eval_baseline_vla.py`/`run_eval_our_vla.py` are 100% mocked but write
-  schema-correct output indistinguishable from a real Arm comparison** (flagged 2026-10-14,
-  owner: ml-multimodal) — both scripts never touch a camera or the firmware: mock marker
-  coordinates, mock touch state (`tx+8.0, ty+2.0`), a zero image tensor. `run_eval_our_vla.py`
-  comments out the one line that would load different weights than the baseline, so both
-  literally run the same untrained, randomly-initialized model. `rl_finetuned_vla.pth` (what
-  "our VLA" is supposed to load) doesn't exist anywhere — `train_vla.py`'s `fine_tune_rl()` only
-  prints status text, no real RL implementation. Both write to the exact column schema
-  `evaluate_system_control.py` expects, so running them and feeding the output into a real
-  cross-arm comparison produces a completely fabricated, internally-plausible-looking 4-metric
-  result with zero real inference/actuation behind either side — a live landmine given this
-  project's current top priority is exactly this kind of comparison. Cheap mitigation available
-  now: rename/flag the outputs so they can't be mistaken for real telemetry, and make
-  `fine_tune_rl()` raise `NotImplementedError` instead of printing success-sounding text; the
-  real fix (actual camera/serial integration + a real Stage-2 RL implementation) is substantial.
-  Source: `host_software/ml_multimodal/evaluations/run_eval_baseline_vla.py` lines 17-18, 65-75,
+- [ ] **`run_eval_baseline_vla.py`/`run_eval_our_vla.py` are 100% mocked — cheap mitigation
+  applied 2026-10-14, real fix still substantial and NOT done** (flagged 2026-10-14) — both
+  scripts never touch a camera or the firmware: mock marker coordinates, mock touch state
+  (`tx+8.0, ty+2.0`), a zero image tensor; `run_eval_our_vla.py` comments out the one line that
+  would load different weights than the baseline, so both literally run the same untrained,
+  randomly-initialized model. **Mitigation applied**: output files renamed to
+  `labels_sequential_{baseline,our}_vla_MOCK.csv` (an `_MOCK` suffix specifically so they can't
+  be mistaken for real telemetry if fed into `evaluate_system_control.py`), a loud runtime
+  warning added to `VLAEvaluator.__init__`, and `train_vla.py`'s `fine_tune_rl()` now raises
+  `NotImplementedError` with a clear explanation instead of printing "VLA Model is now fully
+  prepared for deployment and RL refinement!" when it never actually ran PPO/REINFORCE or saved
+  a checkpoint. `evaluate_system_control.py`'s own `--help` example path updated to match.
+  Verified: all 3 edited files `py_compile` clean; confirmed `fine_tune_rl` has exactly one real
+  caller (its own `__main__`), so this is a safe, isolated change. **Still substantial, not
+  attempted**: the real fix needs actual camera/serial integration and a genuine Stage-2 RL
+  implementation before "our VLA" means anything different from "baseline." Source:
+  `host_software/ml_multimodal/evaluations/run_eval_baseline_vla.py` lines 17-18, 65-75,
   100-112; `run_eval_our_vla.py` lines 12-13; `train_vla.py` lines 112-129.
 - [x] **`VLADataset.__getitem__`'s bare `except:` silently substituted a blank image with zero
   logging** (flagged 2026-10-14, fixed same day) — narrowed to `(FileNotFoundError, OSError)`
