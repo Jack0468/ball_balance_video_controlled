@@ -49,7 +49,7 @@ def main():
         exist_ok=True,
         # Heavy augmentations
         perspective=0.001,  # Perspective warp
-        fliplr=0.5,
+        fliplr=0.0,  # Disable horizontal flip to preserve Top-Left/Top-Right semantic order
         degrees=90.0,  # Rotations (increased for rotational invariance)
         translate=0.2,  # Horizontal/vertical shift
         scale=0.9,  # Zoom out/in by 90% (increased for distance invariance)
