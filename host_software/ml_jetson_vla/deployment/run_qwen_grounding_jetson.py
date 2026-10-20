@@ -235,7 +235,11 @@ def generate(
 
 def run(bundle_dir: str, checkpoint_path: str, max_frames: Optional[int], max_new_tokens: int) -> None:
     manifest = pd.read_csv(os.path.join(bundle_dir, "manifest.csv"))
-    images_dir = os.path.join(bundle_dir, "images")
+    # manifest["image_file"] is already "images/<name>.jpg" (build_colab_grounding_bundle.py writes
+    # it relative to bundle_dir, not relative to an images/ subdirectory) -- join directly against
+    # bundle_dir, matching the notebook's own `os.path.join(BUNDLE, row.image_file)`. Joining against
+    # a separate images_dir here doubled the prefix (2026-10-20, first real run on the Jetson: every
+    # one of the 10,850 remaining calls failed with FileNotFoundError on .../images/images/...).
     work_manifest = manifest.head(max_frames) if max_frames is not None else manifest
 
     done = load_done_keys(checkpoint_path)
@@ -260,7 +264,7 @@ def run(bundle_dir: str, checkpoint_path: str, max_frames: Optional[int], max_ne
     errors = 0
     run_start = time.time()
     for row in work_manifest.itertuples(index=False):
-        image_path = os.path.join(images_dir, row.image_file)
+        image_path = os.path.join(bundle_dir, row.image_file)
         tests = ["ball", "motor"] + (["marker"] if row.audio_command in COLOR_SET else [])
         for test in tests:
             key = (row.image_file, test)
@@ -291,16 +295,17 @@ def run(bundle_dir: str, checkpoint_path: str, max_frames: Optional[int], max_ne
                     "model_input_hw": model_input_hw, "latency_s": latency, "revision": REVISION,
                 }
             except Exception as exc:  # noqa: BLE001 -- deliberate: one bad frame must not kill an unattended run
+                # Deliberately NOT checkpointed and NOT added to `done`: an exception here (bad
+                # path, corrupt image, a transient CUDA error, ...) means this pair was never
+                # actually attempted with the model, so it must stay eligible for the NEXT run to
+                # retry -- checkpointing it as a "done" parse_ok=False result would permanently
+                # skip it on every future run even after the underlying problem is fixed (exactly
+                # what happened 2026-10-20 with the images/images/ path bug: all 10,850 affected
+                # pairs got wrongly marked done and had to be stripped out of the checkpoint by
+                # hand before they could be retried).
                 errors += 1
-                record = {
-                    "image_file": row.image_file, "session": row.session,
-                    "frame_index": int(row.frame_index), "audio_command": row.audio_command,
-                    "test": test, "raw_text": None, "parse_ok": False,
-                    "parse_reason": f"generate_exception: {type(exc).__name__}: {exc}",
-                    "x_px": None, "y_px": None, "theta": None, "image_w": None, "image_h": None,
-                    "model_input_hw": None, "latency_s": None, "revision": REVISION,
-                }
                 print(f"ERROR on {row.image_file} / {test}: {type(exc).__name__}: {exc}", file=sys.stderr)
+                continue
             append_record(checkpoint_path, record)
             done.add(key)
             written += 1
